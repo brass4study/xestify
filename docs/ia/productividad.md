@@ -537,5 +537,22 @@
 - **Iteraciones:** 4 (ajuste de semántica de relaciones + endurecimiento de tests + rename final de naming)
 - **Decisión manual:** La relación `belongs_to` se declara únicamente en `relations` con `key` + `target_entity` + `target_field`; si falta valor, la relación se trata como ausente (pedido anónimo válido). Normativa aplicada: entidades en plural y slug sin prefijo `entity_`.
 
+---
+
+## EPIC 5 — Frontend Dinámico Base
+
+### STORY 5.1: Frontend - Crear página Login
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~35 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/pages/Login.js` con formulario email/password, validación de requeridos y `POST /api/v1/auth/login`
+  - Integró flujo de autenticación en `frontend/src/js/main.js`: render condicional Login/Dashboard, persistencia de token, logout
+  - Añadió estilos base en `frontend/src/css/main.css` para pantalla de login y shell principal
+  - Creó `frontend/tests/LoginTest.html` con 5 casos (render, validación, éxito, error)
+  - Añadió `tools/dev/frontend-router.php` para servir frontend y proxy `/api` en el mismo origen local
+- **Iteraciones:** 3 (ajuste de warnings Sonar + compatibilidad PHP 8.5 + corrección de conflicto de servidor local en puerto 8081)
+- **Decisión manual:** Mantener `API_BASE = '/api/v1'` en frontend y resolver localmente con router-proxy para no introducir diferencias entre entorno local y despliegue real.
 
 

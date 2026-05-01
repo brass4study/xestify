@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>LoginTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>LoginTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { Login } from '../src/js/pages/Login.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function makeSandbox() {
+    const el = document.createElement('div');
+    document.getElementById('sandbox').appendChild(el);
+    return el;
+  }
+
+  async function test(name, fn) {
+    try {
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (err) {
+      log(`  ❌ ${name}`);
+      log(`     ${err.message}`);
+      failed++;
+    }
+  }
+
+  log('----------------------------------------');
+
+  await test('constructor throws on missing container', async () => {
+    let threw = false;
+    try {
+      new Login('#does-not-exist-ever');
+    } catch {
+      threw = true;
+    }
+    assertTrue(threw, 'Expected TypeError for missing container');
+  });
+
+  await test('renders email, password and submit', async () => {
+    const container = makeSandbox();
+    new Login(container);
+
+    assertTrue(container.querySelector('[name="email"]') !== null, 'Email input missing');
+    assertTrue(container.querySelector('[name="password"]') !== null, 'Password input missing');
+    assertTrue(container.querySelector('button[type="submit"]') !== null, 'Submit button missing');
+  });
+
+  await test('submit shows required field errors when empty', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+
+    await page.submit();
+
+    const emailErrors = container.querySelector('.xt-login__field-errors[data-field="email"]');
+    const passwordErrors = container.querySelector('.xt-login__field-errors[data-field="password"]');
+    assertTrue(emailErrors !== null, 'Email errors should exist');
+    assertTrue(passwordErrors !== null, 'Password errors should exist');
+  });
+
+  await test('submit calls onSuccess with access token on valid credentials', async () => {
+    const container = makeSandbox();
+    const apiStub = {
+      post: async () => ({ data: { access_token: 'jwt-demo-token' } }),
+    };
+
+    let payload = null;
+    const page = new Login(container, {
+      api: apiStub,
+      onSuccess: (result) => {
+        payload = result;
+      },
+    });
+
+    container.querySelector('[name="email"]').value = 'admin@xestify.local';
+    container.querySelector('[name="password"]').value = 'secret';
+    await page.submit();
+
+    assertEquals(payload, { accessToken: 'jwt-demo-token' }, 'onSuccess payload should match');
+  });
+
+  await test('submit shows global error on invalid credentials', async () => {
+    const container = makeSandbox();
+    const apiStub = {
+      post: async () => {
+        throw new Error('Invalid credentials.');
+      },
+    };
+
+    const page = new Login(container, { api: apiStub });
+    container.querySelector('[name="email"]').value = 'admin@xestify.local';
+    container.querySelector('[name="password"]').value = 'wrong';
+    await page.submit();
+
+    const banner = container.querySelector('.xt-login__error');
+    assertTrue(banner !== null && !banner.hidden, 'Global error should be visible');
+    assertTrue(banner.textContent.includes('Error desconocido'), 'Should show fallback error text');
+  });
+
+  log('----------------------------------------');
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`<span class="${cls}">Resultado: ${passed} passed, ${failed} failed</span>`);
+
+  document.getElementById('output').innerHTML = document.getElementById('output').textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>

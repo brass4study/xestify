@@ -581,3 +581,23 @@ STORY 4.7 — Implementar contrato final de schema:
 **Resultado:** 14/14 tests unitarios de plugin + 22/22 tests integración de plugins en verde; contrato y naming final (`clients`) alineados en código y documentación
 **Iteraciones:** 4 (aclaración progresiva de semántica de relaciones opcionales + rename final de plugin)
 
+---
+
+## EPIC 5 — Frontend Dinámico Base
+
+### STORY 5.1 — Frontend - Crear página Login
+
+**Prompt:**
+```
+Implementa STORY 5.1 completa en frontend:
+- Crear página Login (frontend/src/js/pages/Login.js) con formulario email/password
+- Consumir POST /api/v1/auth/login usando Api.js
+- Guardar access_token y mostrar error si credenciales inválidas
+- Integrar flujo en main.js: si no hay token mostrar Login, si hay token mostrar dashboard
+- Añadir botón de logout
+- Crear LoginTest.html con pruebas de render, validación, éxito y error
+- Mantener arquitectura vanilla JS actual y AppState existente
+```
+**Resultado:** Login funcional integrado en el entrypoint, token persistido en `localStorage`, logout operativo, test `LoginTest.html` en verde (5/5) y helper `tools/dev/frontend-router.php` para prueba local same-origin sin tocar `API_BASE`.
+**Iteraciones:** 3 (ajuste anti-warning Sonar en `main.js`, fallback MIME por ausencia de `mime_content_type`, limpieza de conflicto de servidor local en 8081)
+

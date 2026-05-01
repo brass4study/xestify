@@ -12,3 +12,86 @@ body {
 #app {
   min-height: 100vh;
 }
+
+.xt-login {
+  max-width: 420px;
+  margin: 4rem auto;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.xt-login__title {
+  margin-bottom: 1rem;
+}
+
+.xt-login__form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.xt-login__form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.xt-login__form input {
+  border: 1px solid #d4d4d4;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.xt-login__error {
+  margin-bottom: 0.75rem;
+  border: 1px solid #fca5a5;
+  border-radius: 0.45rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 0.5rem 0.65rem;
+}
+
+.xt-login__field-errors {
+  margin-top: 0.35rem;
+  list-style-position: inside;
+  color: #b91c1c;
+  font-size: 0.925rem;
+}
+
+.xt-btn {
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.55rem 0.85rem;
+}
+
+.xt-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.xt-btn--primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.xt-btn--secondary {
+  background: #fff;
+  border-color: #d4d4d4;
+  color: #1f2937;
+}
+
+.xt-shell {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 1.25rem;
+}
+
+.xt-shell__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}

@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 5 — Frontend Dinámico Base (🔄 EN PROGRESO)  
-**Próxima story:** STORY 5.1 — Frontend - Crear página Login
+**Próxima story:** STORY 5.2 — Frontend - Integrar navegación básica
 
 ---
 
@@ -120,7 +120,13 @@
 | 4.4 ✅ | Plugin clients (manifest, schema, Hooks, Installer) | 989ef37 | 13/13 ✅ |
 | 4.5 ✅ | Ciclo de vida de plugin (onInstall, onActivate, onDeactivate) | d1a476e | 8/8 ✅ |
 | 4.6 ✅ | Metadatos de plugin (compatibilidad, dependencias entre plugins) | 441be1c | 6/6 ✅ |
-| 4.7 ✅ | Extender schema con identidades, campos obligatorios y relaciones opcionales | pendiente (este commit) | 14/14 ✅ |
+| 4.7 ✅ | Extender schema con identidades, campos obligatorios y relaciones opcionales | 7c794a6 | 14/14 ✅ |
+
+### 🔄 EPIC 5 — Frontend Dinámico Base (EN PROGRESO)
+
+| Story | Descripción | Commit | Tests |
+|-------|-------------|--------|-------|
+| 5.1 ✅ | Frontend - Crear página Login | pendiente (este commit) | 5/5 ✅ |
 
 ---
 

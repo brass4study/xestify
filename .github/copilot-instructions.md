@@ -28,13 +28,24 @@ Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar
 3. Actualizar docs/ia/sesion.md
 4. Actualizar docs/ia/productividad.md
 5. Actualizar docs/ia/prompts.md
-6. git add -A && git commit -m "feat: STORY X.X - [Título del backlog]"
+6. git add -A && git commit con el formato obligatorio (ver abajo)
 ```
 
 **Formato de commit obligatorio:**
-- Stories individuales: `feat: STORY X.X - [Título exacto del backlog]`
-- EPICs completos (cuando se commitean en bloque): `feat: EPIC X - [Título del EPIC]`
+- Stories individuales: primera línea `feat: STORY X.X - [Título exacto del backlog]`, seguida de línea en blanco y cuerpo con lista breve de los cambios realizados (archivos creados/modificados + resumen de qué hace cada uno).
+- EPICs completos (cuando se commitean en bloque): `feat: EPIC X - [Título del EPIC]` con el mismo cuerpo descriptivo.
 - Nunca usar el formato `feat(scope):` — siempre `feat:` sin paréntesis
+
+**Ejemplo de mensaje de commit correcto:**
+```
+feat: STORY 5.1 - Frontend - Crear página Login
+
+- frontend/src/js/pages/Login.js: nueva página con form email/password, validación, POST /auth/login y callback onSuccess
+- frontend/src/js/main.js: flujo bootstrap con render condicional Login/Dashboard y logout
+- frontend/src/css/main.css: estilos base login y shell
+- frontend/tests/LoginTest.html: 5 tests (render, validación, éxito, error)
+- tools/dev/frontend-router.php: proxy local para servir frontend y API en mismo origen
+```
 
 ---
 
