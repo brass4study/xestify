@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 3.10 — Frontend EntityList
+**Próxima story:** STORY 3.11 — Frontend EntityEdit
 
 ---
 
@@ -99,7 +99,8 @@
 | 3.6 ✅ | Frontend Api.js (cliente HTTP genérico) | 82c8ea6 | 11/11 ✅ |
 | 3.7 ✅ | Frontend - Crear State.js (estado global) | f9d77b1 | 11/11 ✅ |
 | 3.8 ✅ | Frontend - Crear DynamicForm.js | c6473f0 | 6/6 ✅ |
-| 3.9 ✅ | Frontend - Crear DynamicTable.js | pendiente (este commit) | 6/6 ✅ |
+| 3.9 ✅ | Frontend - Crear DynamicTable.js | 8878f59 | 6/6 ✅ |
+| 3.10 ✅ | Frontend - Crear página EntityList | pendiente (este commit) | 7/7 ✅ |
 | 3.x ✅ | Correcciones SonarQube/VS Code previas a STORY 3.7 | d410958 | checks editor en verde ✅ |
 
 **Estado actual (2026-05-01):**

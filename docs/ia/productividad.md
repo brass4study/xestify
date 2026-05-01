@@ -399,3 +399,21 @@
   - Verificó ejecución real en navegador local (`6 passed, 0 failed`)
 - **Iteraciones:** 1
 - **Decisión manual:** paginación simple sin sorting/filtros para cumplir criterio MUST sin sobrecargar la story
+
+---
+
+### STORY 3.10: Frontend - Crear página EntityList
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/pages/EntityList.js` con carga de entidades vía GET /entities
+  - Implementó botones de selección de entidad y carga de registros vía GET /entities/:slug/records
+  - Integró `DynamicTable` para renderizado de registros
+  - Expuso botón "Crear nuevo registro" con callback configurable `onCreateNew`
+  - Sincronizó `AppState` con entidades actuales, entidad seleccionada y registros cargados
+  - Creó `frontend/tests/EntityListTest.html` con 7 tests (7/7 pasando)
+  - Usó `mockFetch` con ordenamiento por longitud de clave para resolver ambigüedad URL `/entities` vs `/entities/:slug/records`
+- **Iteraciones:** 2 (primera iteración: mock API duck-typing + orden de claves en mockFetch)
+- **Decisión manual:** duck-typing en constructor para aceptar mock APIs sin `instanceof`; `mockFetch` ordena por longitud de clave descendente para evitar match prematuro de prefijo `/entities`

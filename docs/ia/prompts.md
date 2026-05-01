@@ -416,6 +416,23 @@ STORY 3.9 — Frontend - Crear DynamicTable.js:
 
 ---
 
+### STORY 3.10 — Frontend EntityList
+**Prompt:**
+```
+STORY 3.10 — Frontend - Crear página EntityList:
+- Clase EntityList en frontend/src/js/pages/
+- init(): carga GET /entities y renderiza botones de selección
+- loadEntity(slug): carga GET /entities/:slug/records y usa DynamicTable
+- Botón "Crear nuevo registro" con callback onCreateNew
+- Integración con AppState (entities, currentEntity, records)
+- Tests en HTML runner con mockFetch
+```
+**Resultado:** `EntityList.js` implementado con render completo; `EntityListTest.html` con 7 pruebas (7/7 pasando en navegador local).
+**Iteraciones:** 2 (corrección duck-typing en constructor + orden de claves en mockFetch)
+**Lección:** Al hacer mock de fetch con prefijos URL como `/entities`, hay que ordenar las claves por longitud descendente para que `/entities/client/records` coincida antes que `/entities`.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
