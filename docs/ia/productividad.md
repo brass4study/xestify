@@ -180,3 +180,43 @@
 ### Patrón observado
 > IA es muy efectiva en "implementar una especificación clara".  
 > El humano sigue siendo el responsable de "definir qué construir y por qué".
+
+---
+
+## EPIC 2 — Modelo de Datos Core
+
+### STORY 2.1: Crear tabla `system_entities` (registro de entidades)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 1h
+- **Tiempo real con IA:** ~10 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Generó `002_core.sql` con UUID PK, slug UNIQUE, campos nullable y timestamps
+  - Creó `SystemEntitiesTableTest.php` con 3 tests (table exists, columns, unique constraint)
+  - Replicó el patrón de DatabaseTest (connectivity probe, skip graceful, helpers)
+- **Iteraciones:** 1 (tests pasaron al primer intento)
+- **Decisión manual:** Sin FK formal a otras tablas — slug como clave de unión para flexibilidad con plugins dinámicos
+
+---
+
+### STORY 2.4: Crear tabla `plugins_registry` (plugins instalados)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 1h
+- **Tiempo real con IA:** ~10 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Amplió `002_core.sql` con CHECK constraints para `plugin_type` y `status`
+  - Creó `PluginsRegistryTableTest.php` con 5 tests (table, columns, unique, check type, check status)
+  - Verificó idempotencia de la migración (segunda ejecución sin errores)
+- **Iteraciones:** 1 (tests pasaron al primer intento)
+- **Decisión manual:** CHECK constraints en SQL en lugar de validación en PHP — el dominio es pequeño y estable
+
+---
+
+## Resumen EPIC 2 (parcial)
+
+| Story | Sin IA | Con IA (real) | Aceleración real |
+|-------|--------|---------------|------------------|
+| 2.1 system_entities | 1h | ~10 min | 83% |
+| 2.4 plugins_registry | 1h | ~10 min | 83% |
+| 2.2, 2.3, 2.5, 2.6, 2.7 | — | — | — |

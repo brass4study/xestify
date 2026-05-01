@@ -189,6 +189,31 @@ expirado, firma incorrecta, malformado.
 - No pedir tests de integración para controllers desde el primer prompt → se añadieron en iteración posterior
 - No pedir `?Request $request = null` en el constructor del controller desde el inicio → obligó a refactor para testabilidad
 
+---
+
+## EPIC 2 — Modelo de Datos Core
+
+### STORY 2.1 — Tabla system_entities
+**Prompt:**
+```
+implementa STORY 2.1 y 2.4
+[Con plan previo detallado en contexto: SQL idempotente IF NOT EXISTS, campos id/slug/name/source_plugin_slug/is_active/created_at/updated_at, UNIQUE en slug, test con connectivity probe y skip graceful]
+```
+**Resultado:** `002_core.sql` + `SystemEntitiesTableTest.php` generados, 3 tests pasando al primer intento
+**Iteraciones:** 1
+
+---
+
+### STORY 2.4 — Tabla plugins_registry
+**Prompt:** (mismo turno que 2.1)
+```
+implementa STORY 2.1 y 2.4
+[Con plan previo: SQL con CHECK plugin_type IN ('entity','extension'), CHECK status IN ('active','inactive','error'), UNIQUE plugin_slug, 5 tests incluyendo verificación de constraints]
+```
+**Resultado:** `002_core.sql` ampliado + `PluginsRegistryTableTest.php` con 5 tests, pasando al primer intento
+**Iteraciones:** 1
+**Lección:** Añadir CHECK constraints directamente en SQL (no en PHP) hace que los tests de constraint sean más simples — se verifica contra `information_schema.check_constraints`.
+
 ## Lecciones acumuladas
 
 - **Testabilidad desde el diseño:** siempre pedir `?Dependency $dep = null` o inyección de constructor en controllers para que los tests no dependan de globals

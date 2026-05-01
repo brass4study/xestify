@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-01  
-**EPIC activo:** EPIC 2 — Entidades (próximo)  
-**Próxima story:** STORY 2.1 — (a definir en backlog)
+**EPIC activo:** EPIC 2 — Modelo de Datos Core (en progreso)  
+**Próxima story:** STORY 2.2 — Crear tabla `entity_metadata` (schema versionado)
 
 ---
 
@@ -61,7 +61,24 @@
 **Infraestructura:**
 - `C:\php\php.ini` — habilitada extensión `pdo_pgsql` (estaba comentada)
 
-### ⏭ EPIC 2-5 — Pendiente
+### 🔄 EPIC 2 — Modelo de Datos Core (EN PROGRESO)
+
+| Story | Descripción | Commit | Tests |
+|-------|-------------|--------|-------|
+| 2.1 ✅ | Tabla `system_entities` + migración 002_core.sql | `b0c1430` | 3/3 ✅ |
+| 2.2 ⏳ | Tabla `entity_metadata` (schema versionado) | — | — |
+| 2.3 ⏳ | Tabla `entity_data` (registros de negocio) | — | — |
+| 2.4 ✅ | Tabla `plugins_registry` (plugins instalados) | `9cc6a96` | 5/5 ✅ |
+| 2.5 ⏳ | Tabla `plugin_hook_registry` (hooks registrados) | — | — |
+| 2.6 ⏳ | GenericRepository (CRUD JSONB) | — | — |
+| 2.7 ⏳ | Migración 002_core.sql consolidada | — | — |
+
+**Archivos creados (EPIC 2 hasta ahora):**
+- `backend/database/migrations/002_core.sql` — tablas system_entities + plugins_registry
+- `backend/tests/integration/SystemEntitiesTableTest.php` — 3 tests
+- `backend/tests/integration/PluginsRegistryTableTest.php` — 5 tests
+
+### ⏭ EPIC 3-5 — Pendiente
 
 ---
 
@@ -85,7 +102,8 @@ backend/
 ├── public/index.php              ← Entry point
 ├── database/
 │   └── migrations/
-│       └── 001_users.sql         ✅ Tabla users
+│       ├── 001_users.sql         ✅ Tabla users
+│       └── 002_core.sql         ✅ system_entities + plugins_registry
 ├── src/
 │   ├── bootstrap.php             ← Autoloader + env loader
 │   ├── app.php                   ← Wiring Container + Router

@@ -9,6 +9,35 @@ stories completadas, la story en progreso y las convenciones establecidas.
 
 Después de leerlo, confirma brevemente en qué punto está el proyecto y qué toca hacer a continuación.
 
+---
+
+## ⛔ REGLA OBLIGATORIA: Actualizar docs/ia antes de cada commit
+
+**Esta regla es mandatoria. No hay excepciones. Nunca omitirla.**
+
+Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar los tres archivos siguientes **en ese orden**:
+
+1. **`docs/ia/sesion.md`** — Marcar la story como completada, añadir commit hash, actualizar "Última actualización" y "Próxima story".
+2. **`docs/ia/productividad.md`** — Añadir entrada de la story con: fecha, estimado sin IA, tiempo real con IA, aceleración %, qué hizo la IA, iteraciones, decisión manual.
+3. **`docs/ia/prompts.md`** — Añadir el prompt exacto que se usó para la story, resultado e iteraciones.
+
+**Flujo obligatorio para cada story:**
+```
+1. Implementar código + tests
+2. Verificar que los tests pasan
+3. Actualizar docs/ia/sesion.md
+4. Actualizar docs/ia/productividad.md
+5. Actualizar docs/ia/prompts.md
+6. git add -A && git commit -m "feat: STORY X.X - [Título del backlog]"
+```
+
+**Formato de commit obligatorio:**
+- Stories individuales: `feat: STORY X.X - [Título exacto del backlog]`
+- EPICs completos (cuando se commitean en bloque): `feat: EPIC X - [Título del EPIC]`
+- Nunca usar el formato `feat(scope):` — siempre `feat:` sin paréntesis
+
+---
+
 ## Convenciones del proyecto
 
 - **Sin Composer ni autoload PSR-4** — usar únicamente el autoloader manual de `bootstrap.php`
