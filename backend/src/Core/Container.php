@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Xestify\Core;
 
 use InvalidArgumentException;
-use RuntimeException;
 
 /**
  * Contenedor de inyección de dependencias minimalista.

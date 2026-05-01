@@ -91,7 +91,7 @@ class Request
 
     public function bearerToken(): ?string
     {
-        $auth = $this->header('authorization', '');
+        $auth = (string) $this->header('authorization', '');
         if (str_starts_with($auth, 'Bearer ')) {
             return substr($auth, 7);
         }

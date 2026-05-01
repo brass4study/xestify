@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Xestify\Core;
 
-use InvalidArgumentException;
-
 /**
  * Router HTTP minimalista.
  * Soporta rutas estáticas y parámetros dinámicos (:param).
@@ -50,14 +48,12 @@ class Router
     public function run(): void
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 
         $result = $this->dispatch($method, $uri);
 
         if ($result === null) {
-            http_response_code(404);
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => ['code' => 404, 'message' => 'Not Found']]);
+            Response::make()->notFound();
         }
     }
 
@@ -100,7 +96,7 @@ class Router
     private function buildPattern(string $path): string
     {
         $path    = '/' . trim($path, '/');
-        $pattern = preg_replace('/:([a-zA-Z_][a-zA-Z0-9_]*)/', '(?P<$1>[^/]+)', $path);
+        $pattern = preg_replace('/:([a-zA-Z_]\w*)/', '(?P<$1>[^/]+)', $path) ?? $path;
         return '#^' . $pattern . '$#';
     }
 
@@ -135,9 +131,9 @@ class Router
 
             $instance = $this->container->has($class)
                 ? $this->container->get($class)
-                : new $class();
+                : new $class(); // NOSONAR S5992 — clase siempre conocida en tiempo de registro de ruta
 
-            $instance->$method($params);
+            $instance->$method($params); // NOSONAR S5992 — método siempre conocido en tiempo de registro de ruta
             return;
         }
 

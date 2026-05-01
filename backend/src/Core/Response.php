@@ -125,6 +125,7 @@ class Response
             }
         }
 
-        echo json_encode($envelope, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $json = json_encode($envelope, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        echo $json !== false ? $json : '{"ok":false,"error":{"code":500,"message":"Encoding error"}}';
     }
 }
