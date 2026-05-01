@@ -316,3 +316,14 @@
   - 4 tests nuevos en `RequestResponseTest.php` (total: 24 tests)
 - **Iteraciones:** 1
 - **Decisión manual:** ninguna
+
+### STORY 3.5: Modelo SystemEntity (acceso a metadata)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 1h 30min
+- **Tiempo real con IA:** ~8 min
+- **Aceleración:** ~91% ⚡
+- **Qué hizo IA:**
+  - Creó `backend/src/models/SystemEntity.php` con `getActive()`, `getBySlug()`, `findOrFail()` y caché en memoria
+  - 7 tests de integración en `SystemEntityTest.php` (fixtures temporales en DB, cleanup al final)
+- **Iteraciones:** 1
+- **Decisión manual:** ninguna

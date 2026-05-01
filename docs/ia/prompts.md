@@ -317,6 +317,22 @@ Añadir 4 tests en RequestResponseTest.php (total 24 tests):
 
 ---
 
+### STORY 3.5 — Modelo SystemEntity (acceso a metadata)
+**Prompt:**
+```
+STORY 3.5 — Crear Xestify\models\SystemEntity con:
+- getActive(): array            → todas las entidades activas (caché en memoria)
+- getBySlug(string): ?array     → entidad por slug (usa caché, fallback a query)
+- findOrFail(string): array     → igual pero lanza EntityServiceException si no existe
+- Caché slug-keyed en propiedad privada, poblada una sola vez por instancia
+- 7 tests de integración con fixtures temporales (insert + cleanup)
+```
+**Resultado:** SystemEntity + 7/7 tests en primera iteración
+**Iteraciones:** 1
+**Lección:** El patrón cache-on-first-load con `?array $cache = null` es limpio y evita queries redundantes sin complejidad de TTL.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
