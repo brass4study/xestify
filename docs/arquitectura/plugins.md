@@ -26,7 +26,7 @@ plugins/<plugin_slug>/
 
 ```json
 {
-  "slug": "entity_client",
+  "slug": "clients",
   "name": "Clientes",
   "version": "1.0.0",
   "type": "entity",
@@ -54,6 +54,6 @@ plugins/<plugin_slug>/
 
 ## Caso ejemplo
 
-- entity_client aporta CRUD base
+- clients aporta CRUD base
 - extension_optometria registra tab en ficha de cliente
 - extension_optometria persiste sus datos en su propio espacio logico

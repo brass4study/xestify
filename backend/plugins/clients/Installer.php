@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Xestify\plugins\entity_client;
+namespace Xestify\plugins\clients;
 
 use PDO;
 use PDOException;
 use Xestify\exceptions\PluginException;
 
 /**
- * Installer for the entity_client plugin.
+ * Installer for the clients plugin.
  *
- * Registers the "client" entity in system_entities and seeds its
+ * Registers the "clients" entity in system_entities and seeds its
  * schema definition into entity_metadata.
  *
  * Idempotent: safe to run multiple times (uses INSERT … ON CONFLICT DO NOTHING).
  */
 final class Installer
 {
-    private const ENTITY_SLUG  = 'client';
+    private const ENTITY_SLUG  = 'clients';
     private const ENTITY_NAME  = 'Clientes';
-    private const PLUGIN_SLUG  = 'entity_client';
+    private const PLUGIN_SLUG  = 'clients';
     private const SCHEMA_VERSION = 1;
 
     public function __construct(private PDO $pdo)
@@ -39,7 +39,7 @@ final class Installer
             $this->seedSchema();
         } catch (PDOException $e) {
             throw new PluginException(
-                'entity_client installer failed: ' . $e->getMessage(),
+                'clients installer failed: ' . $e->getMessage(),
                 (int) $e->getCode(),
                 $e
             );
@@ -68,19 +68,19 @@ final class Installer
         $raw = file_get_contents($schemaPath);
 
         if ($raw === false) {
-            throw new PluginException('entity_client: schema.json not found at ' . $schemaPath);
+            throw new PluginException('clients: schema.json not found at ' . $schemaPath);
         }
 
         $decoded = json_decode($raw, true);
 
         if (!is_array($decoded) || !isset($decoded['fields'])) {
-            throw new PluginException('entity_client: schema.json is invalid or missing "fields" key');
+            throw new PluginException('clients: schema.json is invalid or missing "fields" key');
         }
 
         $schemaJson = json_encode(['fields' => $decoded['fields']]);
 
         if ($schemaJson === false) {
-            throw new PluginException('entity_client: failed to re-encode schema JSON');
+            throw new PluginException('clients: failed to re-encode schema JSON');
         }
 
         $this->pdo->prepare(

@@ -173,7 +173,7 @@ Entregables:
 
 - DynamicTabs y carga de componentes de extension.
 - Hooks registerTabs/registerActions.
-- Caso completo: extension_optometria sobre entity_client.
+- Caso completo: extension_optometria sobre clients.
 
 Criterios de aceptacion:
 

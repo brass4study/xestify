@@ -1,0 +1,53 @@
+{
+    "entity": "clients",
+    "version": "1.0.0",
+    "identities": {
+        "id": {
+            "type": "uuid",
+            "label": "ID",
+            "auto_generated": true,
+            "editable": false
+        }
+    },
+    "fields": {
+        "nombre": {
+            "type": "string",
+            "required": true,
+            "label": "Nombre"
+        },
+        "apellidos": {
+            "type": "string",
+            "required": true,
+            "label": "Apellidos"
+        }
+    },
+    "custom_fields": [
+        {
+            "key": "email",
+            "type": "string",
+            "required": false,
+            "label": "Email"
+        },
+        {
+            "key": "telefono",
+            "type": "string",
+            "required": false,
+            "label": "Teléfono"
+        },
+        {
+            "key": "creation_stamp",
+            "type": "timestamp",
+            "required": false,
+            "default": "now",
+            "label": "Fecha de alta"
+        },        
+        {
+            "key": "activo",
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "label": "Activo"
+        }
+    ],
+    "relations": []
+}

@@ -10,7 +10,7 @@ Combinar integridad relacional con flexibilidad para campos variables por entida
 
 Catalogo de entidades instaladas.
 
-Campos sugeridos:
+Columnas:
 
 - id (uuid)
 - slug (text unique)
@@ -29,6 +29,15 @@ Definicion de campos por entidad y version.
 - schema_version (text)
 - schema_json (jsonb)
 - created_at (timestamp)
+
+`schema_json` guarda el schema vivo usado en runtime por validacion/persistencia.
+Actualmente mantiene la estructura de `fields` para compatibilidad con la constraint SQL.
+
+El contrato completo del plugin (`schema.json`) se define con:
+- `identities` (identidad tecnica del sistema)
+- `fields` (campos funcionales obligatorios)
+- `custom_fields` (sugerencias opcionales para frontend)
+- `relations` (metadatos de relaciones opcionales)
 
 ## entity_data
 

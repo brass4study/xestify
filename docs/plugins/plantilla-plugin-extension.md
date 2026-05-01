@@ -26,11 +26,11 @@ plugins/extension_<slug>/
   "name": "Optometrias",
   "version": "1.0.0",
   "type": "extension",
-  "owner_entity": "client",
+  "owner_entity": "clients",
   "compatibility": {
     "core": ">=1.0.0"
   },
-  "requires": ["entity_client>=1.0.0"]
+  "requires": ["clients>=1.0.0"]
 }
 ```
 
@@ -39,7 +39,7 @@ plugins/extension_<slug>/
 ```json
 {
   "entity": "optometria",
-  "owner_entity": "client",
+  "owner_entity": "clients",
   "version": "1.0.0",
   "fields": [
     {"name": "fecha_revision", "type": "date", "required": true},

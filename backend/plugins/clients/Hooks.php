@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Xestify\plugins\entity_client;
+namespace Xestify\plugins\clients;
 
 use PDO;
 use Xestify\exceptions\HookException;
 use Xestify\plugins\HookDispatcher;
 
 /**
- * Hooks for the entity_client plugin.
+ * Hooks for the clients plugin.
  *
  * Registers a beforeSave hook that enforces email uniqueness
- * across all client records.
+ * across all records of the clients entity.
  */
 final class Hooks
 {
-    private const ENTITY_SLUG = 'client';
+    private const ENTITY_SLUG = 'clients';
 
     public function __construct(private PDO $pdo)
     {
@@ -35,7 +35,7 @@ final class Hooks
     }
 
     /**
-     * Enforce that no other active client record has the same email.
+    * Enforce that no other active record in the clients entity has the same email.
      *
      * @param  array<string, mixed> $ctx
      * @return array<string, mixed>

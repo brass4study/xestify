@@ -562,3 +562,22 @@ STORY 4.6 — Validar dependencias entre plugins en manifest.json:
 **Resultado:** 6/6 tests de integración pasando al primer intento
 **Iteraciones:** 1
 
+---
+
+### STORY 4.7 — Schema final de entidad (identities/fields/custom_fields/relations)
+
+**Prompt:**
+```
+STORY 4.7 — Implementar contrato final de schema:
+ - Separar identidad técnica en `identities` (id autogenerado)
+ - Definir campos obligatorios de dominio en `fields`
+ - Mantener sugerencias opcionales para frontend en `custom_fields`
+ - Definir relaciones en `relations` como opcionales con `required:false`
+ - No duplicar FK como custom_field obligatoria: inferir por `target_entity` + `target_field`
+ - Caso de negocio: pedido con cliente opcional (pedido anónimo válido)
+ - Actualizar tests y documentación técnica/backlog
+ - Aplicar normativa de naming: entidad/plural y plugin sin prefijo entity_ (clients)
+```
+**Resultado:** 14/14 tests unitarios de plugin + 22/22 tests integración de plugins en verde; contrato y naming final (`clients`) alineados en código y documentación
+**Iteraciones:** 4 (aclaración progresiva de semántica de relaciones opcionales + rename final de plugin)
+

@@ -47,7 +47,7 @@ Demostrar que:
 **EPIC 4 - Plugins Backend (3-4 días)**
 - ✅ PluginLoader minimo
 - ✅ HookDispatcher básico
-- ✅ Plugin entity_client de ejemplo
+- ✅ Plugin clients de ejemplo
 - ✅ Hooks beforeSave/afterSave
 
 **EPIC 5 - Frontend Dinámico (1 semana)**
@@ -128,7 +128,7 @@ Demostrar que:
 **Tareas:**
 - PluginLoader
 - HookDispatcher
-- Plugin entity_client
+- Plugin clients
 - Frontend E2E integration
 
 **IA Usage:**

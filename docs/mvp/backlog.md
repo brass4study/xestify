@@ -524,7 +524,7 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Dependencias:** STORY 4.2, STORY 3.2
 - **Blockers:** Ninguno
 
-### STORY 4.4: Crear plugin de entidad base (entity_client)
+### STORY 4.4: Crear plugin de entidad base (clients)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Plugin
@@ -559,35 +559,45 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Dependencias:** STORY 4.1
 - **Blockers:** Ninguno
 
-### STORY 4.7: Extender schema con identidad,  campos sugeridos  y relaciones entre entidades
+### STORY 4.7: Extender schema con identidades, campos obligatorios y relaciones opcionales
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Feature
 - **Descripción:**
-  Ampliar el contrato de schema para soportar el modelo definitivo de campos y relaciones:
+  Definir el contrato definitivo de `schema.json` para entidades dinámicas con cuatro bloques:
 
-  **Campos de identidad** (`identity: true`): gestionados por el sistema (UUID auto), nunca modificables por el admin.
+  **`identities`**: campos técnicos de identidad del sistema (autogenerados, no editables).
 
-  **Campos sugeridos** (`suggested: true`): vienen de la plantilla del plugin. El admin puede aceptarlos, modificarlos o eliminarlos al configurar la entidad. Son la propuesta típica del tipo de entidad.
+  **`fields`**: campos funcionales del dominio definidos por el plugin.
+  Aquí se declaran los obligatorios del negocio (`required: true`).
 
-  **Campos personalizados**: creados por el admin desde el panel. Sin marcador especial.
+  **`custom_fields`**: catálogo de sugerencias opcionales para frontend en la configuración.
+  El admin puede seleccionar estas sugerencias o crear campos manuales adicionales.
 
-  El `schema.json` del plugin es solo la **plantilla inicial**. El schema que usa el sistema en runtime es el **schema vivo** almacenado en `entity_metadata`, que refleja las decisiones del admin.
+  **`relations`**: metadatos de relaciones entre entidades.
+  Cada relación puede ser opcional (`required: false`) y su tipo/propiedades se infieren
+  desde la entidad destino mediante `target_entity` + `target_field`.
 
-  **Relaciones**: colección `relations` en el schema del plugin. Los campos FK son campos sugeridos normales — si el admin los elimina, la relación queda inactiva sin error.
+  El `schema.json` del plugin define la plantilla/contrato inicial. El schema usado en runtime
+  sigue siendo el schema vivo en `entity_metadata`, resultado de la configuración del admin.
 
-  **Futuro (no en MVP)**: el admin podrá escoger entre diferentes plantillas de campos al configurar una entidad (por tipo de negocio).
+  Caso esperado: un pedido puede tener relación opcional con cliente (`belongs_to`) y permitir
+  registros anónimos (sin cliente asociado).
 
 - **Criteria:**
-  - ✅ Propiedad `suggested` (boolean) en campos de la plantilla del plugin
-  - ✅ Colección `relations` en schema.json del plugin (puede estar vacía o ausente)
-  - ✅ Cada relación define: `name`, `type` (belongs_to | has_many | has_one), `target_entity`, `foreign_key`, `label`
-  - ✅ El schema vivo en `entity_metadata` NO contiene `suggested` ni `identity` — son solo metadatos de la plantilla
+  - ✅ `schema.json` de plugin usa estructura: `identities`, `fields`, `custom_fields`, `relations`
+  - ✅ `identities.id` declarado como identidad de sistema (autogenerado, no editable)
+  - ✅ `fields` contiene los obligatorios del dominio (`required: true`) definidos por el plugin
+  - ✅ `custom_fields` contiene sugerencias opcionales para configuración en frontend
+  - ✅ `relations` permite relaciones opcionales con `required: false`
+  - ✅ Cada relación define al menos: `key`, `type` (belongs_to | has_many | has_one), `target_entity`, `target_field`, `required`, `label`
+  - ✅ La relación no requiere declarar una `custom_field` extra para su FK; se infiere por `target_field`
+  - ✅ Caso de pedido anónimo soportado: relación a cliente opcional sin romper validación
   - ✅ `ValidationService` valida siempre contra el schema vivo (el que el admin ha configurado)
-  - ✅ Si el campo FK de una relación no existe en el schema vivo, la relación se ignora silenciosamente
+  - ✅ Si una relación opcional no se informa en runtime, el registro sigue siendo válido
   - ✅ `entity_metadata.schema_json` CHECK constraint sigue validando solo `fields` (retrocompatible)
-  - ✅ Actualizar schema.json de `entity_client` con `suggested: true` en todos sus campos
-  - ✅ Tests: instalador usa plantilla como base; ValidationService valida schema vivo; relación inactiva sin campo FK no rompe
+  - ✅ Actualizar schema de `clients` según contrato nuevo (`identities` + `fields` + `custom_fields` + `relations`)
+  - ✅ Tests: instalador usa plantilla base; ValidationService valida schema vivo; relación opcional no rompe
 - **Dependencias:** STORY 4.4, STORY 3.1
 - **Blockers:** Decisiones 5 y 6 aprobadas (ver docs/mvp/decisiones-tecnicas.md)
 

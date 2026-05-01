@@ -495,7 +495,7 @@
   - Creó `backend/plugins/entity_client/schema.json` con campos nombre, email, teléfono, activo
   - Creó `backend/plugins/entity_client/Hooks.php` con hook `beforeSave` que valida email único contra `entity_data`
   - Creó `backend/plugins/entity_client/Installer.php` con `install()` idempotente (INSERT … ON CONFLICT) en `system_entities` y `entity_metadata`
-  - Creó `EntityClientPluginTest.php` con 13 tests unitarios (stubs PDO, sin BD real)
+  - Creó `EntityClientPluginTest.php` (renombrado después a `ClientsPluginTest.php`) con 13 tests unitarios (stubs PDO, sin BD real)
 - **Iteraciones:** 1
 - **Decisión manual:** Installer separado de Hooks para mantener responsabilidad única; `ON CONFLICT … DO UPDATE` en `system_entities` para permitir actualizaciones de versión sin error
 
@@ -522,6 +522,20 @@
   - Creó `backend/tests/integration/PluginDependenciesTest.php` con 6 tests (requires vacío, dep no instalada, dep instalada, versión baja, entry malformada, sin campo version)
 - **Iteraciones:** 1
 - **Decisión manual:** `requires` sin campo `version` usa `0.0.0` como mínimo (acepta cualquier versión instalada); no se comprueba status del plugin dependiente (solo que esté registrado)
+
+### STORY 4.7: Extender schema con identidades, campos obligatorios y relaciones opcionales
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** ~40 min
+- **Aceleración:** ~87% ⚡
+- **Qué hizo IA:**
+  - Actualizó `backend/plugins/clients/schema.json` al contrato final: `identities`, `fields`, `custom_fields`, `relations`
+  - Reestructuró `clients`: obligatorios de dominio en `fields` (`nombre`, `apellidos`) y sugerencias frontend en `custom_fields` (`email`, `telefono`, `activo`, `creation_stamp`)
+  - Actualizó `backend/tests/unit/ClientsPluginTest.php` a 14 tests para validar contrato nuevo y que el instalador siga sembrando solo `fields` en `entity_metadata`
+  - Renombró plugin para cumplir normativa: carpeta `backend/plugins/clients`, slug `clients`, namespace `Xestify\plugins\clients`
+  - Alineó documentación funcional/técnica: `docs/plugins/plantilla-plugin-entidad.md`, `docs/plugins/plantilla-plugin-extension.md`, `docs/mvp/backlog.md`, `docs/mvp/decisiones-tecnicas.md`, `docs/arquitectura/plugins.md`, `docs/roadmap.md`
+- **Iteraciones:** 4 (ajuste de semántica de relaciones + endurecimiento de tests + rename final de naming)
+- **Decisión manual:** La relación `belongs_to` se declara únicamente en `relations` con `key` + `target_entity` + `target_field`; si falta valor, la relación se trata como ausente (pedido anónimo válido). Normativa aplicada: entidades en plural y slug sin prefijo `entity_`.
 
 
 
