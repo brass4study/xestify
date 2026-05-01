@@ -452,6 +452,24 @@ STORY 3.11 — Frontend - Crear página EntityEdit:
 
 ---
 
+## EPIC 4 — Sistema de Plugins y Hooks Backend
+
+### STORY 4.1 — PluginLoader
+**Prompt:**
+```
+STORY 4.1 — Crear PluginLoader:
+- Explora backend/plugins/ y lee manifest.json de cada plugin
+- Valida compatibilidad (core_version del plugin <= CORE_VERSION actual)
+- Registra plugin en plugins_registry si nuevo; actualiza version si ya existe
+- Carga Hooks.php del plugin con require_once
+- Tests de integración standalone con fixtures temporales (sys_get_temp_dir)
+```
+**Resultado:** `PluginLoader.php` + `PluginException.php` implementados; `PluginLoaderTest.php` con 8 pruebas (8/8 pasando).
+**Iteraciones:** 1
+**Lección:** Usar `sys_get_temp_dir()` con nombre aleatorio (`bin2hex(random_bytes(4))`) para fixtures de filesystem en tests de integración garantiza aislamiento sin interferir con otros tests.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

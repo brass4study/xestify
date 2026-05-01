@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.1 — PluginLoader
+**Próxima story:** STORY 4.2 — HookDispatcher
 
 ---
 

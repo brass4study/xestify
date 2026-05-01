@@ -434,3 +434,22 @@
   - Creó `frontend/tests/EntityEditTest.html` con 12 tests (12/12 pasando al primer intento)
 - **Iteraciones:** 1
 - **Decisión manual:** pre-relleno via `#applyInitialData` que mapea `initialData` como `field.default` reutilizando la lógica existente de DynamicForm sin modificarla
+
+---
+
+## EPIC 4 — Sistema de Plugins y Hooks Backend
+
+### STORY 4.1: Crear PluginLoader
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~89% ⚡
+- **Qué hizo IA:**
+  - Creó `PluginException` en `backend/src/exceptions/`
+  - Implementó `PluginLoader` con `discover()`, `load()`, `loadAll()`
+  - Validación de manifest (campos obligatorios, tipo válido, compatibilidad de core version)
+  - Registro en `plugins_registry` con INSERT o UPDATE según si ya existe
+  - Carga de `Hooks.php` via `require_once` cuando presente
+  - Creó `PluginLoaderTest.php` con 8 tests de integración usando fixtures temporales en `sys_get_temp_dir()`
+- **Iteraciones:** 1
+- **Decisión manual:** fixtures en `sys_get_temp_dir()` con nombres aleatorios para evitar colisiones; cleanup de BD por slug después de cada test
