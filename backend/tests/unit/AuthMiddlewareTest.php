@@ -3,16 +3,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/../../src/Exceptions/AuthException.php';
-require_once __DIR__ . '/../../src/Services/JwtService.php';
-require_once __DIR__ . '/../../src/Core/Request.php';
-require_once __DIR__ . '/../../src/Core/Response.php';
-require_once __DIR__ . '/../../src/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../../src/exceptions/AuthException.php';
+require_once __DIR__ . '/../../src/services/JwtService.php';
+require_once __DIR__ . '/../../src/core/Request.php';
+require_once __DIR__ . '/../../src/core/Response.php';
+require_once __DIR__ . '/../../src/middleware/AuthMiddleware.php';
 
-use Xestify\Core\Request;
-use Xestify\Exceptions\AuthException;
-use Xestify\Middleware\AuthMiddleware;
-use Xestify\Services\JwtService;
+use Xestify\core\Request;
+use Xestify\exceptions\AuthException;
+use Xestify\middleware\AuthMiddleware;
+use Xestify\services\JwtService;
 
 const AUTH_SECRET = 'auth-middleware-test-secret';
 

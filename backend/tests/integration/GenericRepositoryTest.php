@@ -16,15 +16,15 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Exceptions/RepositoryException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
-require_once BASE_PATH . '/src/Repositories/GenericRepository.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
+require_once BASE_PATH . '/src/core/Database.php';
+require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 
-use Xestify\Core\Database;
-use Xestify\Exceptions\DatabaseException;
-use Xestify\Exceptions\RepositoryException;
-use Xestify\Repositories\GenericRepository;
+use Xestify\core\Database;
+use Xestify\exceptions\DatabaseException;
+use Xestify\exceptions\RepositoryException;
+use Xestify\repositories\GenericRepository;
 
 // ---------------------------------------------------------------------------
 // Load .env

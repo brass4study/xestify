@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/../../src/Exceptions/AuthException.php';
-require_once __DIR__ . '/../../src/Services/JwtService.php';
+require_once __DIR__ . '/../../src/exceptions/AuthException.php';
+require_once __DIR__ . '/../../src/services/JwtService.php';
 
-use Xestify\Services\JwtService;
-use Xestify\Exceptions\AuthException;
+use Xestify\services\JwtService;
+use Xestify\exceptions\AuthException;
 
 const JWT_TEST_SECRET = 'test-secret-key-for-unit-tests';
 const JWT_TEST_TTL    = 3600;

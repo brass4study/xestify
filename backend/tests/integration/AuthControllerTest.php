@@ -15,21 +15,21 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Exceptions/AuthException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
-require_once BASE_PATH . '/src/Core/Request.php';
-require_once BASE_PATH . '/src/Core/Response.php';
-require_once BASE_PATH . '/src/Services/JwtService.php';
-require_once BASE_PATH . '/src/Database/Seeders/UserSeeder.php';
-require_once BASE_PATH . '/src/Controllers/AuthController.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/exceptions/AuthException.php';
+require_once BASE_PATH . '/src/core/Database.php';
+require_once BASE_PATH . '/src/core/Request.php';
+require_once BASE_PATH . '/src/core/Response.php';
+require_once BASE_PATH . '/src/services/JwtService.php';
+require_once BASE_PATH . '/src/database/Seeders/UserSeeder.php';
+require_once BASE_PATH . '/src/controllers/AuthController.php';
 
-use Xestify\Controllers\AuthController;
-use Xestify\Core\Database;
-use Xestify\Core\Request;
-use Xestify\Database\Seeders\UserSeeder;
-use Xestify\Exceptions\DatabaseException;
-use Xestify\Services\JwtService;
+use Xestify\controllers\AuthController;
+use Xestify\core\Database;
+use Xestify\core\Request;
+use Xestify\database\Seeders\UserSeeder;
+use Xestify\exceptions\DatabaseException;
+use Xestify\services\JwtService;
 
 // ---------------------------------------------------------------------------
 // Load .env

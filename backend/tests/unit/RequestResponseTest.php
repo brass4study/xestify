@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use Xestify\Core\Request;
-use Xestify\Core\Response;
+use Xestify\core\Request;
+use Xestify\core\Response;
 
 require_once __DIR__ . '/helpers.php';
-require_once dirname(__DIR__, 2) . '/src/Core/Request.php';
-require_once dirname(__DIR__, 2) . '/src/Core/Response.php';
+require_once dirname(__DIR__, 2) . '/src/core/Request.php';
+require_once dirname(__DIR__, 2) . '/src/core/Response.php';
 
 const CONTENT_TYPE_JSON = 'application/json';
 

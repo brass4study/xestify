@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use Xestify\Core\Container;
-use Xestify\Core\Router;
+use Xestify\core\Container;
+use Xestify\core\Router;
 
 require_once __DIR__ . '/helpers.php';
-require_once dirname(__DIR__, 2) . '/src/Core/Container.php';
-require_once dirname(__DIR__, 2) . '/src/Core/Router.php';
+require_once dirname(__DIR__, 2) . '/src/core/Container.php';
+require_once dirname(__DIR__, 2) . '/src/core/Router.php';
 
 const ROUTE_HEALTH = '/health';
 const ROUTE_ENTITY_1 = '/entities/1';

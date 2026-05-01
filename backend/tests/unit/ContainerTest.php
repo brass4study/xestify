@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Xestify\Core\Container;
+use Xestify\core\Container;
 
 require_once __DIR__ . '/helpers.php';
-require_once dirname(__DIR__, 2) . '/src/Core/Container.php';
+require_once dirname(__DIR__, 2) . '/src/core/Container.php';
 
 // ---------------------------------------------------------------------------
 // Tests

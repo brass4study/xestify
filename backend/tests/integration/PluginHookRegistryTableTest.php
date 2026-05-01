@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * PluginHookRegistryTableTest — Integration tests.
@@ -15,11 +15,13 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/core/Database.php';
 
-use Xestify\Core\Database;
-use Xestify\Exceptions\DatabaseException;
+use Xestify\core\Database;
+use Xestify\exceptions\DatabaseException;
+
+const QUERY_EXECUTE_MSG = 'Query should execute';
 
 // ---------------------------------------------------------------------------
 // Load .env
@@ -64,7 +66,7 @@ TestSuite::run('plugin_hook_registry table exists after migration', function ():
             AND   table_name   = 'plugin_hook_registry'
         ) AS exists"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false && $row['exists'] === true, 'plugin_hook_registry table must exist');
 });
@@ -76,7 +78,7 @@ TestSuite::run('plugin_hook_registry has expected columns', function (): void {
          WHERE table_schema = 'public' AND table_name = 'plugin_hook_registry'
          ORDER BY ordinal_position"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
     foreach (['id', 'plugin_slug', 'target_entity_slug', 'hook_name', 'priority', 'enabled'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
@@ -91,7 +93,7 @@ TestSuite::run('plugin_hook_registry priority defaults to 10', function (): void
            AND table_name   = 'plugin_hook_registry'
            AND column_name  = 'priority'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false, 'priority column must exist');
     assertTrue($row['column_default'] === '10', "priority default must be 10, got: {$row['column_default']}");
@@ -105,7 +107,7 @@ TestSuite::run('plugin_hook_registry enabled defaults to true', function (): voi
            AND table_name   = 'plugin_hook_registry'
            AND column_name  = 'enabled'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false, 'enabled column must exist');
     assertTrue($row['column_default'] === 'true', "enabled default must be true, got: {$row['column_default']}");
@@ -120,7 +122,7 @@ TestSuite::run('plugin_hook_registry has composite index on (target_entity_slug,
            AND tablename  = 'plugin_hook_registry'
            AND indexname  = 'idx_plugin_hook_registry_target_hook'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_plugin_hook_registry_target_hook');
 });

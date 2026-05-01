@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
-use Xestify\Controllers\AuthController;
-use Xestify\Core\Database;
-use Xestify\Database\Seeders\UserSeeder;
-use Xestify\Services\JwtService;
+use Xestify\controllers\AuthController;
+use Xestify\core\Database;
+use Xestify\database\Seeders\UserSeeder;
+use Xestify\services\JwtService;
 
 // --- Database -----------------------------------------------------------------
 

@@ -61,7 +61,7 @@
 **Infraestructura:**
 - `C:\php\php.ini` — habilitada extensión `pdo_pgsql` (estaba comentada)
 
-### 🔄 EPIC 2 — Modelo de Datos Core (EN PROGRESO)
+### 🔄 EPIC 2 — Modelo de Datos Core (✅ COMPLETADO)
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
@@ -71,7 +71,7 @@
 | 2.4 ✅ | Tabla `plugins_registry` (plugins instalados) | `17fa5df` | 5/5 ✅ |
 | 2.5 ✅ | Tabla `plugin_hook_registry` (hooks registrados) | `3352b4a` | 5/5 ✅ |
 | 2.6 ✅ | GenericRepository (CRUD JSONB) | `58a2670` | 7/7 ✅ |
-| 2.7 ⏳ | Migración 002_core.sql consolidada | — | — |
+| 2.7 ✅ | Verificar idempotencia 002_core.sql | `906b595` | 3/3 ✅ |
 
 **Archivos creados (EPIC 2 hasta ahora):**
 - `backend/database/migrations/002_core.sql` — tablas system_entities + entity_metadata + entity_data + plugins_registry + plugin_hook_registry

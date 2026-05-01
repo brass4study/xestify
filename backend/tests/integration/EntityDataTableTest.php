@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * EntityDataTableTest — Integration tests.
@@ -15,11 +15,13 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/core/Database.php';
 
-use Xestify\Core\Database;
-use Xestify\Exceptions\DatabaseException;
+use Xestify\core\Database;
+use Xestify\exceptions\DatabaseException;
+
+const QUERY_EXECUTE_MSG = 'Query should execute';
 
 // ---------------------------------------------------------------------------
 // Load .env
@@ -64,7 +66,7 @@ TestSuite::run('entity_data table exists after migration', function (): void {
             AND   table_name   = 'entity_data'
         ) AS exists"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false && $row['exists'] === true, 'entity_data table must exist');
 });
@@ -76,7 +78,7 @@ TestSuite::run('entity_data has expected columns', function (): void {
          WHERE table_schema = 'public' AND table_name = 'entity_data'
          ORDER BY ordinal_position"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
     foreach (['id', 'entity_slug', 'owner_id', 'content', 'created_at', 'updated_at', 'deleted_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
@@ -91,7 +93,7 @@ TestSuite::run('entity_data deleted_at column is nullable (soft delete)', functi
            AND table_name   = 'entity_data'
            AND column_name  = 'deleted_at'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false, 'deleted_at column must exist');
     assertTrue($row['is_nullable'] === 'YES', 'deleted_at must be nullable for soft delete');
@@ -106,7 +108,7 @@ TestSuite::run('entity_data has GIN index on content', function (): void {
            AND tablename  = 'entity_data'
            AND indexname  = 'idx_entity_data_content_gin'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected GIN index idx_entity_data_content_gin');
 });
@@ -120,7 +122,7 @@ TestSuite::run('entity_data has btree index on entity_slug', function (): void {
            AND tablename  = 'entity_data'
            AND indexname  = 'idx_entity_data_slug'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_entity_data_slug');
 });

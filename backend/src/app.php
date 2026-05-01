@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
-use Xestify\Core\Container;
-use Xestify\Core\Router;
+use Xestify\core\Container;
+use Xestify\core\Router;
 
 $container = new Container();
 

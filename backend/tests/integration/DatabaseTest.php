@@ -21,13 +21,13 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
-require_once BASE_PATH . '/src/Database/Seeders/UserSeeder.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/core/Database.php';
+require_once BASE_PATH . '/src/database/Seeders/UserSeeder.php';
 
-use Xestify\Core\Database;
-use Xestify\Database\Seeders\UserSeeder;
-use Xestify\Exceptions\DatabaseException;
+use Xestify\core\Database;
+use Xestify\database\Seeders\UserSeeder;
+use Xestify\exceptions\DatabaseException;
 
 // ---------------------------------------------------------------------------
 // Load .env so $_ENV is populated (mirrors bootstrap.php, no full bootstrap)
@@ -69,7 +69,9 @@ function resetDatabaseSingleton(): void
 {
     $ref      = new ReflectionClass(Database::class);
     $property = $ref->getProperty('pdo');
+    $property->setAccessible(true);
     $property->setValue(null, null);
+    $property->setAccessible(false);
 }
 
 // ---------------------------------------------------------------------------

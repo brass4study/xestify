@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * EntityMetadataTableTest — Integration tests.
@@ -15,11 +15,13 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/Exceptions/DatabaseException.php';
-require_once BASE_PATH . '/src/Core/Database.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/core/Database.php';
 
-use Xestify\Core\Database;
-use Xestify\Exceptions\DatabaseException;
+use Xestify\core\Database;
+use Xestify\exceptions\DatabaseException;
+
+const QUERY_EXECUTE_MSG = 'Query should execute';
 
 // ---------------------------------------------------------------------------
 // Load .env
@@ -64,7 +66,7 @@ TestSuite::run('entity_metadata table exists after migration', function (): void
             AND   table_name   = 'entity_metadata'
         ) AS exists"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue($row !== false && $row['exists'] === true, 'entity_metadata table must exist');
 });
@@ -76,7 +78,7 @@ TestSuite::run('entity_metadata has expected columns', function (): void {
          WHERE table_schema = 'public' AND table_name = 'entity_metadata'
          ORDER BY ordinal_position"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
     foreach (['id', 'entity_slug', 'schema_version', 'schema_json', 'created_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
@@ -92,7 +94,7 @@ TestSuite::run('entity_metadata has index on (entity_slug, schema_version)', fun
            AND tablename = 'entity_metadata'
            AND indexname = 'idx_entity_metadata_slug_version'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_entity_metadata_slug_version');
 });
