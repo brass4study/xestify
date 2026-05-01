@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 2 — Modelo de Datos Core (en progreso)  
-**Próxima story:** STORY 2.5 — Crear tabla `plugin_hook_registry` (hooks registrados)
+**Próxima story:** STORY 2.6 — GenericRepository (CRUD JSONB)
 
 ---
 
@@ -67,18 +67,19 @@
 |-------|-------------|--------|-------|
 | 2.1 ✅ | Tabla `system_entities` + migración 002_core.sql | `2c88d64` | 3/3 ✅ |
 | 2.2 ✅ | Tabla `entity_metadata` (schema versionado) | `0445672` | 4/4 ✅ |
-| 2.3 ✅ | Tabla `entity_data` (registros de negocio) | `(este commit)` | 5/5 ✅ |
+| 2.3 ✅ | Tabla `entity_data` (registros de negocio) | `195db58` | 5/5 ✅ |
 | 2.4 ✅ | Tabla `plugins_registry` (plugins instalados) | `17fa5df` | 5/5 ✅ |
-| 2.5 ⏳ | Tabla `plugin_hook_registry` (hooks registrados) | — | — |
+| 2.5 ✅ | Tabla `plugin_hook_registry` (hooks registrados) | `(este commit)` | 5/5 ✅ |
 | 2.6 ⏳ | GenericRepository (CRUD JSONB) | — | — |
 | 2.7 ⏳ | Migración 002_core.sql consolidada | — | — |
 
 **Archivos creados (EPIC 2 hasta ahora):**
-- `backend/database/migrations/002_core.sql` — tablas system_entities + entity_metadata + entity_data + plugins_registry
+- `backend/database/migrations/002_core.sql` — tablas system_entities + entity_metadata + entity_data + plugins_registry + plugin_hook_registry
 - `backend/tests/integration/SystemEntitiesTableTest.php` — 3 tests
 - `backend/tests/integration/EntityMetadataTableTest.php` — 4 tests
 - `backend/tests/integration/EntityDataTableTest.php` — 5 tests
 - `backend/tests/integration/PluginsRegistryTableTest.php` — 5 tests
+- `backend/tests/integration/PluginHookRegistryTableTest.php` — 5 tests
 
 ### ⏭ EPIC 3-5 — Pendiente
 

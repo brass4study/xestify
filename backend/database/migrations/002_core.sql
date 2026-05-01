@@ -3,10 +3,11 @@
 -- Idempotent: safe to run multiple times (CREATE TABLE IF NOT EXISTS).
 --
 -- Tables in this file:
---   1. system_entities   (STORY 2.1)
---   2. entity_metadata   (STORY 2.2)
---   3. entity_data       (STORY 2.3)
---   4. plugins_registry  (STORY 2.4)
+--   1. system_entities        (STORY 2.1)
+--   2. entity_metadata        (STORY 2.2)
+--   3. entity_data            (STORY 2.3)
+--   4. plugins_registry       (STORY 2.4)
+--   5. plugin_hook_registry   (STORY 2.5)
 
 -- ---------------------------------------------------------------------------
 -- STORY 2.1: system_entities
@@ -71,6 +72,25 @@ CREATE INDEX IF NOT EXISTS idx_entity_data_owner
 
 CREATE INDEX IF NOT EXISTS idx_entity_data_content_gin
     ON entity_data USING GIN (content);
+
+-- ---------------------------------------------------------------------------
+-- STORY 2.5: plugin_hook_registry
+-- Maps plugins to the entity hooks they handle.
+-- hook_name: e.g. 'beforeSave', 'afterSave', 'registerTabs'
+-- priority: lower value = executed first (default 10)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS plugin_hook_registry (
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    plugin_slug         VARCHAR(100) NOT NULL,
+    target_entity_slug  VARCHAR(100) NOT NULL,
+    hook_name           VARCHAR(50)  NOT NULL,
+    priority            INTEGER      NOT NULL DEFAULT 10,
+    enabled             BOOLEAN      NOT NULL DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS idx_plugin_hook_registry_target_hook
+    ON plugin_hook_registry (target_entity_slug, hook_name);
 
 -- ---------------------------------------------------------------------------
 -- STORY 2.4: plugins_registry
