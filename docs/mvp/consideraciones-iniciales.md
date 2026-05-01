@@ -28,25 +28,25 @@ Guía ejecutiva para iniciar desarrollo del MVP con las decisiones ya tomadas. I
 xestify/
 ├── backend/
 │   ├── src/
-│   │   ├── Core/
+│   │   ├── core/
 │   │   │   ├── Container.php          (DI container casero)
 │   │   │   ├── Router.php             (ruteo HTTP)
 │   │   │   ├── Database.php           (conexión PDO)
 │   │   │   └── Request.php            (objeto request)
-│   │   ├── Services/
+│   │   ├── services/
 │   │   │   ├── EntityService.php      (CRUD dinámico)
 │   │   │   ├── ValidationService.php  (schema validation)
 │   │   │   ├── PluginLoader.php       (cargador plugins)
 │   │   │   ├── HookDispatcher.php     (ejecutor hooks)
 │   │   │   └── AuthService.php        (JWT)
-│   │   ├── Controllers/
+│   │   ├── controllers/
 │   │   │   ├── EntityController.php
 │   │   │   ├── AuthController.php
 │   │   │   └── HealthController.php   (ping)
-│   │   ├── Middleware/
+│   │   ├── middleware/
 │   │   │   ├── AuthMiddleware.php
 │   │   │   └── ErrorHandler.php
-│   │   ├── Models/
+│   │   ├── models/
 │   │   │   ├── User.php
 │   │   │   ├── SystemEntity.php
 │   │   │   ├── EntityData.php

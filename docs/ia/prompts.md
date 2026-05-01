@@ -400,6 +400,22 @@ STORY 3.8 — Frontend - Crear DynamicForm.js:
 
 ---
 
+### STORY 3.9 — Frontend DynamicTable.js
+**Prompt:**
+```
+STORY 3.9 — Frontend - Crear DynamicTable.js:
+- Clase para renderizar tabla de registros
+- Recibe records y schema
+- Renderiza columnas dinámicamente
+- Manejo básico de paginación
+- Añadir tests unitarios standalone
+```
+**Resultado:** `DynamicTable.js` implementado con render de columnas dinámicas, render de filas por página y controles `Prev/Next`; `DynamicTableTest.html` con 6 pruebas (6/6 pasando en navegador local).
+**Iteraciones:** 1
+**Lección:** Mantener la paginación como estado interno (`currentPage` + `pageSize`) simplifica integración posterior con vistas `EntityList` y evita recalcular offsets en cada componente consumidor.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

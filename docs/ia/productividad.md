@@ -384,3 +384,18 @@
   - Corrigió hallazgos SonarQube puntuales en `Api.js` y `ApiTest.html` manteniendo `11/11` tests
 - **Iteraciones:** 2
 - **Decisión manual:** mantener validación básica enfocada en reglas necesarias del backlog, sin listeners ni lógica reactiva
+
+### STORY 3.9: Frontend - Crear DynamicTable.js
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~18 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/DynamicTable.js` como clase para renderizar tablas por schema y records
+  - Implementó renderizado dinámico de columnas para schema en formato lista y mapa
+  - Implementó paginación básica con `Prev/Next`, `getCurrentPage()`, `getTotalPages()` y `getCurrentPageRecords()`
+  - Añadió `setRecords()` y `setSchema()` para actualizar dataset y estructura sin recrear instancia
+  - Creó `frontend/tests/DynamicTableTest.html` con 6 tests (columnas, rows, paginación, límites, reset de página y estado vacío)
+  - Verificó ejecución real en navegador local (`6 passed, 0 failed`)
+- **Iteraciones:** 1
+- **Decisión manual:** paginación simple sin sorting/filtros para cumplir criterio MUST sin sobrecargar la story

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamicTableTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 0.75rem; }
+    th, td { border: 1px solid #333; padding: 0.35rem 0.5rem; text-align: left; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>DynamicTableTest</h2>
+<div id="sandbox"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { DynamicTable } from '../src/js/modules/DynamicTable.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+  const sandbox = document.getElementById('sandbox');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function createSchema() {
+    return {
+      fields: [
+        { name: 'id', label: 'ID' },
+        { name: 'title', label: 'Title' },
+        { name: 'status', label: 'Status' }
+      ]
+    };
+  }
+
+  function createRecords(total = 5) {
+    const records = [];
+    for (let i = 1; i <= total; i++) {
+      records.push({ id: i, title: `Record ${i}`, status: i % 2 === 0 ? 'done' : 'open' });
+    }
+    return records;
+  }
+
+  async function test(name, fn) {
+    try {
+      sandbox.innerHTML = '<div id="table-container"></div>';
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (e) {
+      log(`  ❌ ${name}`);
+      log(`     ${e.message}`);
+      failed++;
+    }
+  }
+
+  log('----------------------------------------');
+
+  await test('render() shows dynamic columns from schema', async () => {
+    const table = new DynamicTable(createRecords(2), createSchema(), '#table-container');
+    table.render();
+
+    const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent);
+    assertEquals(headers, ['ID', 'Title', 'Status']);
+  });
+
+  await test('render() shows rows for current page', async () => {
+    const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', { pageSize: 10 });
+    table.render();
+
+    const rows = sandbox.querySelectorAll('tbody tr');
+    assertEquals(rows.length, 3);
+  });
+
+  await test('basic pagination: nextPage() changes visible records', async () => {
+    const table = new DynamicTable(createRecords(5), createSchema(), '#table-container', { pageSize: 2 });
+    table.render();
+
+    let firstRow = sandbox.querySelector('tbody tr td');
+    assertTrue(firstRow !== null, 'first row should exist on page 1');
+    assertEquals(firstRow.textContent, '1');
+
+    table.nextPage();
+    table.render();
+
+    firstRow = sandbox.querySelector('tbody tr td');
+    assertTrue(firstRow !== null, 'first row should exist on page 2');
+    assertEquals(firstRow.textContent, '3');
+  });
+
+  await test('pagination bounds: prev on page 1 and next on last page stay in range', async () => {
+    const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', { pageSize: 2 });
+
+    table.prevPage();
+    assertEquals(table.getCurrentPage(), 1);
+
+    table.nextPage();
+    table.nextPage();
+    assertEquals(table.getCurrentPage(), 2);
+  });
+
+  await test('setRecords() resets to first page', async () => {
+    const table = new DynamicTable(createRecords(5), createSchema(), '#table-container', { pageSize: 2 });
+
+    table.nextPage();
+    assertEquals(table.getCurrentPage(), 2);
+
+    table.setRecords(createRecords(1));
+    assertEquals(table.getCurrentPage(), 1);
+    assertEquals(table.getTotalPages(), 1);
+  });
+
+  await test('empty records render fallback row', async () => {
+    const table = new DynamicTable([], createSchema(), '#table-container');
+    table.render();
+
+    const cell = sandbox.querySelector('tbody tr td');
+    assertTrue(cell !== null, 'fallback cell should exist');
+    assertEquals(cell.textContent, 'No records');
+  });
+
+  log('----------------------------------------');
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+
+  out.innerHTML = out.textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>
