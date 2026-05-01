@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * PluginHookRegistryTableTest — Integration tests.

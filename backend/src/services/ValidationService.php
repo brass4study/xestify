@@ -6,13 +6,13 @@ namespace Xestify\services;
 
 final class ValidationService
 {
-    public function validate(array $data, array $schema): array
+    public function validate(array $data, array $schema, bool $requireAll = true): array
     {
         $errors = [];
         $fields = $this->extractFields($schema);
 
         foreach ($fields as $fieldName => $rules) {
-            $fieldErrors = $this->validateField($fieldName, $data, $rules);
+            $fieldErrors = $this->validateField($fieldName, $data, $rules, $requireAll);
             if ($fieldErrors !== []) {
                 $errors[$fieldName] = $fieldErrors;
             }
@@ -63,10 +63,10 @@ final class ValidationService
         return null;
     }
 
-    private function validateField(string $fieldName, array $data, array $rules): array
+    private function validateField(string $fieldName, array $data, array $rules, bool $requireAll = true): array
     {
         $errors = [];
-        $isRequired = $this->toBool($rules['required'] ?? false);
+        $isRequired = $requireAll && $this->toBool($rules['required'] ?? false);
         $isPresent = array_key_exists($fieldName, $data);
         $value = $isPresent ? $data[$fieldName] : null;
 

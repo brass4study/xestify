@@ -259,6 +259,25 @@ STORY 3.1 — Crear Xestify\services\ValidationService con:
 
 ---
 
+### STORY 3.2 — EntityService (orquestación CRUD)
+**Prompt:**
+```
+STORY 3.2 — Crear Xestify\services\EntityService con:
+- Métodos: createRecord($entitySlug, $data, $ownerId), updateRecord($id, $entitySlug, $data),
+  deleteRecord($id), getRecord($id), listRecords($entitySlug, $includeDeleted)
+- Obtiene schema vigente de entity_metadata (schema_version DESC LIMIT 1)
+- Valida con ValidationService (full para create, $requireAll=false para update)
+- Persiste en entity_data via GenericRepository
+- Dispara hooks (stub vacío para EPIC 4)
+- Excepciones de dominio: EntityServiceException + ValidationException con getErrors()
+- 6 tests de integración: create válido, create inválido, create sin schema, update parcial, delete soft, listRecords
+```
+**Resultado:** EntityService + 2 nuevas excepciones + 6/6 tests; se detectó BOM UTF-8 en 21 archivos que habría roto todos los tests
+**Iteraciones:** 1
+**Lección:** El BOM UTF-8 (EF BB BF) al inicio de archivos PHP con `declare(strict_types=1)` impide la ejecución cuando el archivo es requerido como script principal. Eliminar con PowerShell: `$bytes[3..($bytes.Length-1)]`.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
@@ -272,3 +291,4 @@ STORY 3.1 — Crear Xestify\services\ValidationService con:
 9. **php:S113** — Newline obligatoria al final de cada archivo.
 10. **Directorios minúsculas** — Convención consistente en toda la estructura.
 11. **Separar validaciones por tipo** — Un método por tipo facilita extensión y reduce complejidad.
+12. **BOM UTF-8 en PHP** — EF BB BF antes de `<?php` rompe `declare(strict_types=1)` en scripts requeridos. Eliminar con `$bytes[3..]` en PowerShell.

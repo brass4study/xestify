@@ -277,3 +277,17 @@
   - 8 tests unitarios standalone
 - **Iteraciones:** 2 (segunda para refactor de calidad SonarQube)
 - **Decisión manual:** ninguna
+
+### STORY 3.2: EntityService (orquestación CRUD)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** ~25 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Implementó `EntityService` con 5 métodos (createRecord, updateRecord, deleteRecord, getRecord, listRecords)
+  - Creó excepciones de dominio `EntityServiceException` y `ValidationException`
+  - Extendió `ValidationService::validate()` con `$requireAll` para updates parciales
+  - Detectó y eliminó BOM UTF-8 de 21 archivos PHP (prevenía ejecución de todos los tests)
+  - 6 tests de integración: create, validación fallida, schema ausente, update parcial, delete, listado
+- **Iteraciones:** 1 (fix BOM fue diagnóstico inmediato)
+- **Decisión manual:** ninguna
