@@ -4,6 +4,7 @@
 --
 -- Tables in this file:
 --   1. system_entities   (STORY 2.1)
+--   2. entity_metadata   (STORY 2.2)
 --   2. plugins_registry  (STORY 2.4)
 
 -- ---------------------------------------------------------------------------
@@ -23,6 +24,26 @@ CREATE TABLE IF NOT EXISTS system_entities (
 
     CONSTRAINT system_entities_slug_unique UNIQUE (slug)
 );
+
+-- ---------------------------------------------------------------------------
+-- STORY 2.2: entity_metadata
+-- Stores versioned schema definitions for each entity slug.
+-- schema_json must be an object containing at least the "fields" key.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS entity_metadata (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_slug     VARCHAR(100) NOT NULL,
+    schema_version  INTEGER      NOT NULL DEFAULT 1,
+    schema_json     JSONB        NOT NULL,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT entity_metadata_schema_json_check
+        CHECK (jsonb_typeof(schema_json) = 'object' AND schema_json ? 'fields')
+);
+
+CREATE INDEX IF NOT EXISTS idx_entity_metadata_slug_version
+    ON entity_metadata (entity_slug, schema_version);
 
 -- ---------------------------------------------------------------------------
 -- STORY 2.4: plugins_registry
