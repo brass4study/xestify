@@ -88,8 +88,13 @@ function callLogin(AuthController $controller, array $body): array
 $jwt        = new JwtService($_ENV['JWT_SECRET'] ?? 'changeme', 3600);
 $controller = new AuthController($jwt);
 
+define('ADMIN_EMAIL',        'admin@xestify.local');
+define('ADMIN_PASSWORD',     'admin123');
+define('MSG_OK_FALSE',       'ok should be false');
+define('MSG_CODE_422',       'code should be 422');
+
 TestSuite::run('login returns access_token for valid credentials', function () use ($controller): void {
-    $result = callLogin($controller, ['email' => 'admin@xestify.local', 'password' => 'admin123']);
+    $result = callLogin($controller, ['email' => ADMIN_EMAIL, 'password' => ADMIN_PASSWORD]);
 
     assertTrue($result['ok'] ?? false, 'ok should be true');
     assertTrue(isset($result['data']['access_token']), 'access_token should be present');
@@ -97,54 +102,54 @@ TestSuite::run('login returns access_token for valid credentials', function () u
 });
 
 TestSuite::run('access_token is a valid decodable JWT', function () use ($controller, $jwt): void {
-    $result = callLogin($controller, ['email' => 'admin@xestify.local', 'password' => 'admin123']);
+    $result = callLogin($controller, ['email' => ADMIN_EMAIL, 'password' => ADMIN_PASSWORD]);
     $token  = $result['data']['access_token'] ?? '';
 
     $payload = $jwt->decode($token);
 
     assertTrue(isset($payload['sub']), 'JWT payload should have sub');
-    assertEquals('admin@xestify.local', $payload['email'] ?? null, 'JWT email should match');
+    assertEquals(ADMIN_EMAIL, $payload['email'] ?? null, 'JWT email should match');
     assertTrue(in_array('admin', $payload['roles'] ?? [], true), 'JWT roles should contain admin');
 });
 
 TestSuite::run('login returns 401 for wrong password', function () use ($controller): void {
-    $result = callLogin($controller, ['email' => 'admin@xestify.local', 'password' => 'wrongpassword']);
+    $result = callLogin($controller, ['email' => ADMIN_EMAIL, 'password' => 'wrongpassword']);
 
-    assertFalse($result['ok'] ?? true, 'ok should be false');
+    assertFalse($result['ok'] ?? true, MSG_OK_FALSE);
     assertEquals(401, $result['error']['code'] ?? null, 'code should be 401');
 });
 
 TestSuite::run('login returns 401 for unknown email', function () use ($controller): void {
     $result = callLogin($controller, ['email' => 'noexiste@xestify.local', 'password' => 'admin123']);
 
-    assertFalse($result['ok'] ?? true, 'ok should be false');
+    assertFalse($result['ok'] ?? true, MSG_OK_FALSE);
     assertEquals(401, $result['error']['code'] ?? null, 'code should be 401');
 });
 
 TestSuite::run('login returns 422 when email is missing', function () use ($controller): void {
     $result = callLogin($controller, ['password' => 'admin123']);
 
-    assertFalse($result['ok'] ?? true, 'ok should be false');
-    assertEquals(422, $result['error']['code'] ?? null, 'code should be 422');
+    assertFalse($result['ok'] ?? true, MSG_OK_FALSE);
+    assertEquals(422, $result['error']['code'] ?? null, MSG_CODE_422);
 });
 
 TestSuite::run('login returns 422 when password is missing', function () use ($controller): void {
-    $result = callLogin($controller, ['email' => 'admin@xestify.local']);
+    $result = callLogin($controller, ['email' => ADMIN_EMAIL]);
 
-    assertFalse($result['ok'] ?? true, 'ok should be false');
-    assertEquals(422, $result['error']['code'] ?? null, 'code should be 422');
+    assertFalse($result['ok'] ?? true, MSG_OK_FALSE);
+    assertEquals(422, $result['error']['code'] ?? null, MSG_CODE_422);
 });
 
 TestSuite::run('login returns 422 when both fields are empty strings', function () use ($controller): void {
     $result = callLogin($controller, ['email' => '', 'password' => '']);
 
-    assertFalse($result['ok'] ?? true, 'ok should be false');
-    assertEquals(422, $result['error']['code'] ?? null, 'code should be 422');
+    assertFalse($result['ok'] ?? true, MSG_OK_FALSE);
+    assertEquals(422, $result['error']['code'] ?? null, MSG_CODE_422);
     assertTrue(isset($result['error']['details']), 'details should be present');
 });
 
 TestSuite::run('login does not reveal whether email exists (same 401 for both cases)', function () use ($controller): void {
-    $wrongPass    = callLogin($controller, ['email' => 'admin@xestify.local', 'password' => 'bad']);
+    $wrongPass    = callLogin($controller, ['email' => ADMIN_EMAIL, 'password' => 'bad']);
     $unknownEmail = callLogin($controller, ['email' => 'ghost@xestify.local', 'password' => 'bad']);
 
     assertEquals(

@@ -11,6 +11,8 @@ require_once dirname(__DIR__, 2) . '/src/core/Response.php';
 
 const CONTENT_TYPE_JSON = 'application/json';
 
+const MSG_VALIDATION_FAILED = 'Validation failed';
+
 // Helper específico: captura y decodifica output de Response
 function capture(callable $fn): array
 {
@@ -118,7 +120,7 @@ TestSuite::run('error() emite envelope ok:false con code y message', function ()
 
 TestSuite::run('error() incluye details si se pasa', function () {
     $details  = ['email' => ['El email es inválido']];
-    $envelope = capture(fn() => Response::make()->error(422, 'Validation failed', $details));
+    $envelope = capture(fn() => Response::make()->error(422, MSG_VALIDATION_FAILED, $details));
     assertEquals($details, $envelope['error']['details']);
 });
 
@@ -129,7 +131,7 @@ TestSuite::run('error() omite details si está vacío', function () {
 
 TestSuite::run('unprocessable() shortcut emite 422', function () {
     $details  = ['name' => ['Requerido']];
-    $envelope = capture(fn() => Response::make()->unprocessable('Validation failed', $details));
+    $envelope = capture(fn() => Response::make()->unprocessable(MSG_VALIDATION_FAILED, $details));
     assertEquals(false, $envelope['ok']);
     assertEquals(422, $envelope['error']['code']);
     assertEquals($details, $envelope['error']['details']);
@@ -167,7 +169,7 @@ TestSuite::run('apiError() emite envelope ok:false con code y message', function
 
 TestSuite::run('apiError() incluye details de validación por campo', function () {
     $details  = ['email' => ['Formato inválido'], 'name' => ['Requerido']];
-    $envelope = capture(fn() => Response::apiError(422, 'Validation failed', $details));
+    $envelope = capture(fn() => Response::apiError(422, MSG_VALIDATION_FAILED, $details));
     assertEquals(false, $envelope['ok']);
     assertEquals(422, $envelope['error']['code']);
     assertEquals($details, $envelope['error']['details']);

@@ -6,6 +6,8 @@ use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 
+define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
+
 $router->get('/health', [HealthController::class, 'index']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
 
@@ -13,6 +15,6 @@ $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
 $router->get('/api/v1/entities/{slug}/schema',        [EntityController::class, 'schema']);
 $router->get('/api/v1/entities/{slug}/records',       [EntityController::class, 'index']);
 $router->post('/api/v1/entities/{slug}/records',      [EntityController::class, 'create']);
-$router->get('/api/v1/entities/{slug}/records/{id}',  [EntityController::class, 'show']);
-$router->put('/api/v1/entities/{slug}/records/{id}',  [EntityController::class, 'update']);
-$router->delete('/api/v1/entities/{slug}/records/{id}', [EntityController::class, 'destroy']);
+$router->get(ROUTE_ENTITY_RECORD,    [EntityController::class, 'show']);
+$router->put(ROUTE_ENTITY_RECORD,    [EntityController::class, 'update']);
+$router->delete(ROUTE_ENTITY_RECORD, [EntityController::class, 'destroy']);

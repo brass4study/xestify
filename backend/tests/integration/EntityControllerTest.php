@@ -14,6 +14,10 @@ declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__, 2));
 
+define('MSG_OK_TRUE',    'ok must be true');
+define('MSG_OK_FALSE',   'ok must be false');
+define('MSG_CODE_404',   'code must be 404');
+
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
@@ -126,7 +130,7 @@ TestSuite::run('GET schema returns schema_json for existing entity', function ()
 
     $result = callController($ctrl, 'schema', ['slug' => CTRL_ENTITY_SLUG]);
 
-    assertTrue($result['ok'] ?? false, 'ok must be true');
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(isset($result['data']['schema']), 'data.schema must be present');
     assertTrue($result['data']['entity_slug'] === CTRL_ENTITY_SLUG, 'entity_slug must match');
 
@@ -138,8 +142,8 @@ TestSuite::run('GET schema returns 404 for unknown entity', function (): void {
 
     $result = callController($ctrl, 'schema', ['slug' => 'nonexistent_slug_xyz']);
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
-    assertTrue(($result['error']['code'] ?? 0) === 404, 'code must be 404');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
+    assertTrue(($result['error']['code'] ?? 0) === 404, MSG_CODE_404);
 });
 
 TestSuite::run('POST create returns 201 and record for valid data', function (): void {
@@ -149,7 +153,7 @@ TestSuite::run('POST create returns 201 and record for valid data', function ():
 
     $result = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => 'Hello']);
 
-    assertTrue($result['ok'] ?? false, 'ok must be true');
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(isset($result['data']['id']), 'data.id must be present');
 
     cleanCtrlData();
@@ -162,7 +166,7 @@ TestSuite::run('POST create returns 422 for invalid data', function (): void {
 
     $result = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['score' => 10]);
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
     assertTrue(($result['error']['code'] ?? 0) === 422, 'code must be 422');
     assertTrue(isset($result['error']['details']['title']), 'details must mention missing title');
 
@@ -178,7 +182,7 @@ TestSuite::run('GET index returns list of active records', function (): void {
 
     $result = callController($ctrl, 'index', ['slug' => CTRL_ENTITY_SLUG]);
 
-    assertTrue($result['ok'] ?? false, 'ok must be true');
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(count($result['data'] ?? []) === 2, 'must list 2 records');
 
     cleanCtrlData();
@@ -193,7 +197,7 @@ TestSuite::run('GET show returns single record by id', function (): void {
 
     $result = callController($ctrl, 'show', ['slug' => CTRL_ENTITY_SLUG, 'id' => $id]);
 
-    assertTrue($result['ok'] ?? false, 'ok must be true');
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(($result['data']['id'] ?? '') === $id, 'id must match');
 
     cleanCtrlData();
@@ -204,8 +208,8 @@ TestSuite::run('GET show returns 404 for unknown id', function (): void {
 
     $result = callController($ctrl, 'show', ['slug' => CTRL_ENTITY_SLUG, 'id' => '00000000-0000-0000-0000-000000000000']);
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
-    assertTrue(($result['error']['code'] ?? 0) === 404, 'code must be 404');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
+    assertTrue(($result['error']['code'] ?? 0) === 404, MSG_CODE_404);
 });
 
 TestSuite::run('PUT update merges data into existing record', function (): void {
@@ -217,7 +221,7 @@ TestSuite::run('PUT update merges data into existing record', function (): void 
 
     $result = callController($ctrl, 'update', ['slug' => CTRL_ENTITY_SLUG, 'id' => $id], ['score' => 99]);
 
-    assertTrue($result['ok'] ?? false, 'ok must be true');
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(($result['data']['id'] ?? '') === $id, 'id must match');
 
     cleanCtrlData();
@@ -244,3 +248,5 @@ TestSuite::run('DELETE destroy soft-deletes record — show returns 404 afterwar
 // ---------------------------------------------------------------------------
 
 TestSuite::summary();
+exit(TestSuite::exitCode());
+

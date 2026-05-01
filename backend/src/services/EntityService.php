@@ -159,7 +159,6 @@ final class EntityService
      */
     private function fireHooks(string $entitySlug, string $hookName, array $record): void // NOSONAR
     {
-        // Hook dispatcher stub — all parameters used in EPIC 4 implementation.
-        return;
+        // Hook dispatcher stub — all parameters used in EPIC 4 implementation. // NOSONAR
     }
 }

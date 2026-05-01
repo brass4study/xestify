@@ -127,7 +127,7 @@ TestSuite::run('findOrFail() lanza EntityServiceException para slug inexistente'
     assertTrue($thrown, 'findOrFail() debe lanzar EntityServiceException para slug desconocido');
 });
 
-TestSuite::run('getActive() usa cache: segunda llamada no relanza query', function () use ($pdo, $testSlug): void {
+TestSuite::run('getActive() usa cache: segunda llamada no relanza query', function () use ($pdo): void {
     $model = new SystemEntity($pdo);
     $first  = $model->getActive();
     $second = $model->getActive();
@@ -151,3 +151,4 @@ $pdo->prepare('DELETE FROM system_entities WHERE slug = :slug')->execute([':slug
 
 TestSuite::summary();
 exit(TestSuite::exitCode());
+

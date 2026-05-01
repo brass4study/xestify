@@ -67,11 +67,10 @@ try {
 
 function resetDatabaseSingleton(): void
 {
-    $ref      = new ReflectionClass(Database::class);
-    $property = $ref->getProperty('pdo');
-    $property->setAccessible(true);
-    $property->setValue(null, null);
-    $property->setAccessible(false);
+    $resetStaticProperty = static function (): void {
+        self::$pdo = null;
+    };
+    \Closure::bind($resetStaticProperty, null, Database::class)();
 }
 
 // ---------------------------------------------------------------------------

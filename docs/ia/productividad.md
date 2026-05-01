@@ -340,3 +340,17 @@
   - Test runner HTML standalone `frontend/tests/ApiTest.html` con 11 tests (fetch mockeado)
 - **Iteraciones:** 1
 - **Decisión manual:** test runner HTML en vez de Node.js (sin bundlers, Vanilla puro)
+
+### HARDENING PRE 3.7: Corrección de hallazgos SonarQube + VS Code
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~25 min
+- **Aceleración:** ~79% ⚡
+- **Qué hizo IA:**
+  - Normalizó mensajes de asserts duplicados con constantes en tests de integración
+  - Eliminó `return` redundante y redujo ruido de calidad en servicios/controladores
+  - Añadió/confirmó newline final en archivos reportados por Sonar
+  - Sustituyó reset por reflection con `Closure::bind` en `DatabaseTest.php` para evitar deprecación de `setAccessible()` en PHP 8.5
+  - Validó diagnóstico global del editor sin errores
+- **Iteraciones:** 2
+- **Decisión manual:** priorizar limpieza completa de calidad antes de iniciar STORY 3.7

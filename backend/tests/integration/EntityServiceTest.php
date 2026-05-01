@@ -202,3 +202,5 @@ TestSuite::run('listRecords() returns only active records', function (): void {
 // ---------------------------------------------------------------------------
 
 TestSuite::summary();
+exit(TestSuite::exitCode());
+

@@ -97,6 +97,12 @@
 | 3.4 ✅ | Helpers apiSuccess/apiError en Response | 55507f4 | 24/24 ✅ |
 | 3.5 ✅ | Modelo SystemEntity (getActive/getBySlug/findOrFail) | b4b39f1 | 7/7 ✅ |
 | 3.6 ✅ | Frontend Api.js (cliente HTTP genérico) | 82c8ea6 | 11/11 ✅ |
+| 3.x ✅ | Correcciones SonarQube/VS Code previas a STORY 3.7 | pendiente (este commit) | checks editor en verde ✅ |
+
+**Estado actual (2026-05-01):**
+- Limpieza de hallazgos completada antes de STORY 3.7.
+- Ajustes aplicados en tests y capa backend para eliminar literales duplicados, newline finales, returns redundantes y warning PHP1412.
+- `DatabaseTest.php` actualizado para evitar `setAccessible()` (deprecado en PHP 8.5).
 
 ---
 

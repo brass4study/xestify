@@ -32,6 +32,9 @@ class EntityController
     {
     }
 
+    private const MSG_SLUG_REQUIRED      = 'Entity slug is required.';
+    private const MSG_RECORD_ID_REQUIRED = 'Record id is required.';
+
     /**
      * GET /api/v1/entities/{slug}/schema
      * Returns the latest schema_json for the entity type.
@@ -42,7 +45,7 @@ class EntityController
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
-            Response::make()->notFound('Entity slug is required.');
+              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
@@ -79,7 +82,7 @@ class EntityController
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
-            Response::make()->notFound('Entity slug is required.');
+              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
@@ -100,7 +103,7 @@ class EntityController
         $ownerId = $this->resolveOwnerId($request);
 
         if ($slug === '') {
-            Response::make()->notFound('Entity slug is required.');
+              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
@@ -127,7 +130,7 @@ class EntityController
         $id      = (string) ($params['id'] ?? '');
 
         if ($id === '') {
-            Response::make()->notFound('Record id is required.');
+              Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 
@@ -153,7 +156,7 @@ class EntityController
         $data    = $request->allBody();
 
         if ($id === '') {
-            Response::make()->notFound('Record id is required.');
+                Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 
@@ -162,10 +165,7 @@ class EntityController
         } catch (ValidationException $e) {
             Response::make()->unprocessable('Validation failed.', $e->getErrors());
             return;
-        } catch (EntityServiceException $e) {
-            Response::make()->notFound($e->getMessage());
-            return;
-        } catch (RepositoryException $e) {
+            } catch (EntityServiceException | RepositoryException $e) {
             Response::make()->notFound($e->getMessage());
             return;
         }
@@ -183,7 +183,7 @@ class EntityController
         $id = (string) ($params['id'] ?? '');
 
         if ($id === '') {
-            Response::make()->notFound('Record id is required.');
+              Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 

@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
+use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\database\Seeders\UserSeeder;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 use Xestify\services\ValidationService;
+
+$container = isset($container) ? $container : null;
+if (!($container instanceof Container)) {
+    return;
+}
+
+/** @var Container $container injected by bootstrap.php */
 
 // --- Database -----------------------------------------------------------------
 

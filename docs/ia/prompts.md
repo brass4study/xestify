@@ -351,6 +351,23 @@ STORY 3.6 — Crear frontend/src/js/modules/Api.js con:
 
 ---
 
+### HARDENING PRE 3.7 — Limpieza de SonarQube/VS Code
+**Prompt:**
+```
+Antes de STORY 3.7, corrige todos los hallazgos activos de VS Code y SonarQube.
+Prioriza:
+- newlines finales faltantes
+- strings duplicadas en asserts
+- returns redundantes
+- warning de variable no asignada en config/app.php
+- deprecaciones en tests (setAccessible en PHP 8.5)
+```
+**Resultado:** Workspace sin errores en diagnósticos del editor; `DatabaseTest.php` migrado a `Closure::bind` para reset de singleton sin APIs deprecadas; bloque de calidad cerrado para iniciar STORY 3.7.
+**Iteraciones:** 2
+**Lección:** Para tests que necesitan tocar estado estático privado, `Closure::bind` evita depender de reflection legacy y mantiene compatibilidad hacia PHP 8.5+.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

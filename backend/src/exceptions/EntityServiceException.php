@@ -13,3 +13,4 @@ use RuntimeException;
 class EntityServiceException extends RuntimeException
 {
 }
+
