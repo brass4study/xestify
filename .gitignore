@@ -1,0 +1,34 @@
+# PHP
+/backend/vendor/
+/backend/.env
+/backend/*.log
+
+# Composer
+composer.phar
+
+# PostgreSQL
+*.sql.bak
+*.dump
+
+# Node / Frontend
+/frontend/node_modules/
+/frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Docker (para referencia futura)
+# docker-compose.override.yml
+
+# Xestify runtime
+/backend/storage/logs/
+/backend/storage/cache/
+/plugins/*.zip
