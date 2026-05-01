@@ -23,3 +23,24 @@ CREATE TABLE IF NOT EXISTS system_entities (
 
     CONSTRAINT system_entities_slug_unique UNIQUE (slug)
 );
+
+-- ---------------------------------------------------------------------------
+-- STORY 2.4: plugins_registry
+-- Registry of all plugins installed in the system.
+-- plugin_type: 'entity' | 'extension'
+-- status:      'active' | 'inactive' | 'error'
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS plugins_registry (
+    id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    plugin_slug  VARCHAR(100) NOT NULL,
+    plugin_type  VARCHAR(20)  NOT NULL,
+    version      VARCHAR(20)  NOT NULL,
+    status       VARCHAR(20)  NOT NULL DEFAULT 'inactive',
+    installed_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT plugins_registry_slug_unique   UNIQUE (plugin_slug),
+    CONSTRAINT plugins_registry_type_check    CHECK  (plugin_type IN ('entity', 'extension')),
+    CONSTRAINT plugins_registry_status_check  CHECK  (status IN ('active', 'inactive', 'error'))
+);
