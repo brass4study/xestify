@@ -5,7 +5,8 @@
 -- Tables in this file:
 --   1. system_entities   (STORY 2.1)
 --   2. entity_metadata   (STORY 2.2)
---   2. plugins_registry  (STORY 2.4)
+--   3. entity_data       (STORY 2.3)
+--   4. plugins_registry  (STORY 2.4)
 
 -- ---------------------------------------------------------------------------
 -- STORY 2.1: system_entities
@@ -44,6 +45,32 @@ CREATE TABLE IF NOT EXISTS entity_metadata (
 
 CREATE INDEX IF NOT EXISTS idx_entity_metadata_slug_version
     ON entity_metadata (entity_slug, schema_version);
+
+-- ---------------------------------------------------------------------------
+-- STORY 2.3: entity_data
+-- Business records for any registered entity type.
+-- content is an untyped JSONB bag; schema validated at application layer.
+-- Soft delete via deleted_at (NULL = active).
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS entity_data (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_slug  VARCHAR(100) NOT NULL,
+    owner_id     UUID         NULL,
+    content      JSONB        NOT NULL DEFAULT '{}',
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    deleted_at   TIMESTAMPTZ  NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_entity_data_slug
+    ON entity_data (entity_slug);
+
+CREATE INDEX IF NOT EXISTS idx_entity_data_owner
+    ON entity_data (owner_id);
+
+CREATE INDEX IF NOT EXISTS idx_entity_data_content_gin
+    ON entity_data USING GIN (content);
 
 -- ---------------------------------------------------------------------------
 -- STORY 2.4: plugins_registry
