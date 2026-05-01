@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamicFormTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>DynamicFormTest</h2>
+<div id="sandbox"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { DynamicForm } from '../src/js/modules/DynamicForm.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+  const sandbox = document.getElementById('sandbox');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function setInputValue(selector, value) {
+    const input = sandbox.querySelector(selector);
+    if (!input) {
+      throw new Error(`Input not found: ${selector}`);
+    }
+    input.value = value;
+  }
+
+  function setCheckbox(selector, checked) {
+    const input = sandbox.querySelector(selector);
+    if (!input) {
+      throw new Error(`Checkbox not found: ${selector}`);
+    }
+    input.checked = Boolean(checked);
+  }
+
+  function buildFullSchema() {
+    return {
+      fields: [
+        { name: 'title', label: 'Title', type: 'string', required: true, minLength: 3 },
+        { name: 'amount', label: 'Amount', type: 'number', min: 1, max: 100 },
+        { name: 'email', label: 'Email', type: 'email', required: true },
+        { name: 'due_date', label: 'Due Date', type: 'date', required: true },
+        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
+        { name: 'is_active', label: 'Active', type: 'boolean' }
+      ]
+    };
+  }
+
+  async function test(name, fn) {
+    try {
+      sandbox.innerHTML = '<div id="form-container"></div>';
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (e) {
+      log(`  ❌ ${name}`);
+      log(`     ${e.message}`);
+      failed++;
+    }
+  }
+
+  log('----------------------------------------');
+
+  await test('render() creates controls for all supported field types', async () => {
+    const form = new DynamicForm(buildFullSchema(), '#form-container');
+    form.render();
+
+    assertTrue(sandbox.querySelector('input[name="title"][type="text"]') !== null, 'string input missing');
+    assertTrue(sandbox.querySelector('input[name="amount"][type="number"]') !== null, 'number input missing');
+    assertTrue(sandbox.querySelector('input[name="email"][type="email"]') !== null, 'email input missing');
+    assertTrue(sandbox.querySelector('input[name="due_date"][type="date"]') !== null, 'date input missing');
+    assertTrue(sandbox.querySelector('select[name="status"]') !== null, 'select input missing');
+    assertTrue(sandbox.querySelector('input[name="is_active"][type="checkbox"]') !== null, 'boolean input missing');
+  });
+
+  await test('getData() returns normalized values by type', async () => {
+    const form = new DynamicForm(buildFullSchema(), '#form-container');
+    form.render();
+
+    setInputValue('input[name="title"]', 'Invoice A');
+    setInputValue('input[name="amount"]', '25');
+    setInputValue('input[name="email"]', 'admin@xestify.local');
+    setInputValue('input[name="due_date"]', '2026-05-01');
+    setInputValue('select[name="status"]', 'published');
+    setCheckbox('input[name="is_active"]', true);
+
+    const data = form.getData();
+    assertEquals(data.title, 'Invoice A');
+    assertEquals(data.amount, 25);
+    assertEquals(data.email, 'admin@xestify.local');
+    assertEquals(data.due_date, '2026-05-01');
+    assertEquals(data.status, 'published');
+    assertEquals(data.is_active, true);
+  });
+
+  await test('validate() passes for valid input', async () => {
+    const form = new DynamicForm(buildFullSchema(), '#form-container');
+    form.render();
+
+    setInputValue('input[name="title"]', 'Invoice A');
+    setInputValue('input[name="amount"]', '50');
+    setInputValue('input[name="email"]', 'admin@xestify.local');
+    setInputValue('input[name="due_date"]', '2026-05-10');
+    setInputValue('select[name="status"]', 'draft');
+
+    const result = form.validate();
+    assertTrue(result.isValid === true, 'validation should pass');
+    assertEquals(result.errors, {});
+  });
+
+  await test('validate() reports required errors', async () => {
+    const form = new DynamicForm(buildFullSchema(), '#form-container');
+    form.render();
+
+    const result = form.validate();
+    assertTrue(result.isValid === false, 'validation should fail');
+    assertTrue(Array.isArray(result.errors.title), 'title errors should exist');
+    assertTrue(Array.isArray(result.errors.email), 'email errors should exist');
+    assertTrue(Array.isArray(result.errors.status), 'status errors should exist');
+  });
+
+  await test('validate() reports type and range errors', async () => {
+    const form = new DynamicForm(buildFullSchema(), '#form-container');
+    form.render();
+
+    setInputValue('input[name="title"]', 'ab');
+    setInputValue('input[name="amount"]', '150');
+    setInputValue('input[name="email"]', 'invalid-email');
+    setInputValue('input[name="due_date"]', '05/10/2026');
+    setInputValue('select[name="status"]', 'not-allowed');
+
+    const result = form.validate();
+
+    assertTrue(result.isValid === false, 'validation should fail');
+    assertTrue(result.errors.title.length > 0, 'title minLength error expected');
+    assertTrue(result.errors.amount.length > 0, 'amount range error expected');
+    assertTrue(result.errors.email.length > 0, 'email format error expected');
+    assertTrue(result.errors.due_date.length > 0, 'date format error expected');
+    assertTrue(result.errors.status.length > 0, 'select options error expected');
+  });
+
+  await test('constructor accepts schema.fields as object map', async () => {
+    const schema = {
+      fields: {
+        title: { type: 'string', required: true },
+        count: { type: 'number' }
+      }
+    };
+
+    const form = new DynamicForm(schema, '#form-container');
+    form.render();
+
+    assertTrue(sandbox.querySelector('input[name="title"]') !== null, 'title should render');
+    assertTrue(sandbox.querySelector('input[name="count"]') !== null, 'count should render');
+  });
+
+  log('----------------------------------------');
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+
+  out.innerHTML = out.textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>

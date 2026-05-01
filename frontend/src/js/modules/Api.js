@@ -137,7 +137,7 @@ export class Api {
     let response;
     try {
       response = await fetch(url, init);
-    } catch (networkError) {
+    } catch {
       throw new ApiError(0, 'Network error — server unreachable');
     }
 

@@ -383,6 +383,23 @@ STORY 3.7 — Frontend - Crear State.js (estado global):
 
 ---
 
+### STORY 3.8 — Frontend DynamicForm.js
+**Prompt:**
+```
+STORY 3.8 — Frontend - Crear DynamicForm.js:
+- Clase que recibe schema y container
+- render() genera inputs por tipo
+- validate() valida en cliente
+- getData() devuelve object con valores
+- Soporta string, number, email, date, select, boolean
+- Añadir tests: render diferentes tipos + validación básica
+```
+**Resultado:** `DynamicForm.js` implementado con renderizado por schema, lectura de datos tipados y validación básica en cliente; `DynamicFormTest.html` con 6 pruebas (6/6 pasando en navegador local). Además, se ajustaron hallazgos SonarQube en `Api.js` y `ApiTest.html` sin regresiones (11/11).
+**Iteraciones:** 2
+**Lección:** Añadir una opción placeholder vacía en `select` mejora el manejo de `required` en formularios dinámicos y evita falsos positivos al validar.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

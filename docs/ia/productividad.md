@@ -368,3 +368,19 @@
   - Verificó ejecución real en navegador local (`11 passed, 0 failed`)
 - **Iteraciones:** 1
 - **Decisión manual:** mantener patrón de objeto plano (no clase, no listeners, no Proxy)
+
+### STORY 3.8: Frontend - Crear DynamicForm.js
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h 30min
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~87% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/DynamicForm.js` como clase que recibe schema + container
+  - Implementó `render()` para generar controles por tipo (`string`, `number`, `email`, `date`, `select`, `boolean`)
+  - Implementó `validate()` con reglas básicas cliente (`required`, tipo, min/max, minLength/maxLength, options)
+  - Implementó `getData()` devolviendo objeto normalizado por tipo
+  - Creó `frontend/tests/DynamicFormTest.html` con 6 pruebas (render tipos, getData, validación básica y schema en formato mapa)
+  - Validó ejecución real en navegador local (`6 passed, 0 failed`)
+  - Corrigió hallazgos SonarQube puntuales en `Api.js` y `ApiTest.html` manteniendo `11/11` tests
+- **Iteraciones:** 2
+- **Decisión manual:** mantener validación básica enfocada en reglas necesarias del backlog, sin listeners ni lógica reactiva

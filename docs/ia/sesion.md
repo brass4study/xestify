@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 3.8 — Frontend DynamicForm.js
+**Próxima story:** STORY 3.9 — Frontend DynamicTable.js
 
 ---
 
@@ -97,13 +97,15 @@
 | 3.4 ✅ | Helpers apiSuccess/apiError en Response | 55507f4 | 24/24 ✅ |
 | 3.5 ✅ | Modelo SystemEntity (getActive/getBySlug/findOrFail) | b4b39f1 | 7/7 ✅ |
 | 3.6 ✅ | Frontend Api.js (cliente HTTP genérico) | 82c8ea6 | 11/11 ✅ |
-| 3.7 ✅ | Frontend - Crear State.js (estado global) | pendiente (este commit) | 11/11 ✅ |
-| 3.x ✅ | Correcciones SonarQube/VS Code previas a STORY 3.7 | pendiente (este commit) | checks editor en verde ✅ |
+| 3.7 ✅ | Frontend - Crear State.js (estado global) | f9d77b1 | 11/11 ✅ |
+| 3.8 ✅ | Frontend - Crear DynamicForm.js | pendiente (este commit) | 6/6 ✅ |
+| 3.x ✅ | Correcciones SonarQube/VS Code previas a STORY 3.7 | d410958 | checks editor en verde ✅ |
 
 **Estado actual (2026-05-01):**
 - Limpieza de hallazgos completada antes de STORY 3.7.
 - Ajustes aplicados en tests y capa backend para eliminar literales duplicados, newline finales, returns redundantes y warning PHP1412.
 - `DatabaseTest.php` actualizado para evitar `setAccessible()` (deprecado en PHP 8.5).
+- Ajustes de SonarQube en frontend: `Api.js` (catch simplificado) y `ApiTest.html` (`replaceAll`) sin regresión funcional.
 
 ---
 
