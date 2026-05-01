@@ -453,3 +453,19 @@
   - Creó `PluginLoaderTest.php` con 8 tests de integración usando fixtures temporales en `sys_get_temp_dir()`
 - **Iteraciones:** 1
 - **Decisión manual:** fixtures en `sys_get_temp_dir()` con nombres aleatorios para evitar colisiones; cleanup de BD por slug después de cada test
+
+### STORY 4.2: Crear HookDispatcher
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Creó `HookException` en `backend/src/exceptions/`
+  - Implementó `HookDispatcher` con `register()` y `execute()`
+  - Ejecución de callbacks en orden de prioridad ascendente (menor = primero)
+  - `beforeXxx` hooks: excepción propaga y bloquea operación; `\Throwable` genérico se envuelve en `HookException`
+  - `afterXxx` hooks: excepción no propaga, se loguea a STDERR como warning
+  - Callback retornando no-array preserva contexto anterior
+  - Creó `HookDispatcherTest.php` con 11 tests unitarios standalone
+- **Iteraciones:** 1
+- **Decisión manual:** `fwrite(STDERR, ...)` para warnings de after* (sin dependencia de Logger); callbacks retornan array modificado o null para no-op

@@ -470,6 +470,22 @@ STORY 4.1 — Crear PluginLoader:
 
 ---
 
+### STORY 4.2 — HookDispatcher
+**Prompt:**
+```
+STORY 4.2 — Crear HookDispatcher:
+- register($hook, $callback, $priority=10)
+- execute($hook, $context): ejecuta callbacks en orden prioridad ascendente
+- beforeXxx: si callback lanza, propagar excepción (bloquear operación)
+- afterXxx: si callback lanza, log warning y continuar
+- Tests unitarios standalone
+```
+**Resultado:** `HookDispatcher.php` + `HookException.php` implementados; `HookDispatcherTest.php` con 11 pruebas (11/11 al primer intento).
+**Iteraciones:** 1
+**Lección:** Los wildcards `*` en docblocks PHP (e.g. `before*`) son interpretados como operadores por el linter de VS Code — usar `beforeXxx` / `afterXxx` como alternativa segura.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

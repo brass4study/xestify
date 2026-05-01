@@ -117,8 +117,15 @@ function removeFixture(string $root): void
 function cleanupPlugin(PDO $db, string $slug): void
 {
     $stmt = $db->prepare('DELETE FROM plugins_registry WHERE plugin_slug = :slug');
-    $stmt->execute([':slug' => $slug]);
+    $stmt->execute([SLUG_BIND_PARAM => $slug]);
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+define('SLUG_BIND_PARAM', ':slug');
+define('SEMVER_1_0', '1.0.0');
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -132,7 +139,7 @@ TestSuite::run('discover() returns empty array when plugins dir does not exist',
 });
 
 TestSuite::run('discover() returns slug when valid plugin dir exists', function (): void {
-    $manifest = ['slug' => 'test_disc', 'name' => 'Test', 'version' => '1.0.0', 'type' => 'entity', 'core_version' => '1.0.0'];
+    $manifest = ['slug' => 'test_disc', 'name' => 'Test', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => SEMVER_1_0];
     $root = createPluginFixture($manifest);
 
     try {
@@ -185,7 +192,7 @@ TestSuite::run('load() throws PluginException when manifest has invalid JSON', f
 });
 
 TestSuite::run('load() throws PluginException when plugin requires higher core version', function () use ($pdo): void {
-    $manifest = ['slug' => 'future_plugin', 'name' => 'Future', 'version' => '1.0.0', 'type' => 'entity', 'core_version' => '99.0.0'];
+    $manifest = ['slug' => 'future_plugin', 'name' => 'Future', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => '99.0.0'];
     $root = createPluginFixture($manifest);
 
     try {
@@ -206,7 +213,7 @@ TestSuite::run('load() throws PluginException when plugin requires higher core v
 
 TestSuite::run('load() registers new plugin in plugins_registry', function () use ($pdo): void {
     $slug = 'test_reg_' . bin2hex(random_bytes(3));
-    $manifest = ['slug' => $slug, 'name' => 'Test Reg', 'version' => '1.0.0', 'type' => 'entity', 'core_version' => '1.0.0'];
+    $manifest = ['slug' => $slug, 'name' => 'Test Reg', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => SEMVER_1_0];
     $root = createPluginFixture($manifest);
 
     try {
@@ -216,12 +223,12 @@ TestSuite::run('load() registers new plugin in plugins_registry', function () us
         assertEquals($slug, $loaded['slug'], 'Returned manifest slug should match');
 
         $stmt = $pdo->prepare('SELECT plugin_slug, version, status FROM plugins_registry WHERE plugin_slug = :slug');
-        $stmt->execute([':slug' => $slug]);
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertTrue($row !== false, 'Plugin should be inserted in plugins_registry');
         assertEquals($slug, (string) $row['plugin_slug'], 'plugin_slug should match');
-        assertEquals('1.0.0', (string) $row['version'], 'version should match');
+        assertEquals(SEMVER_1_0, (string) $row['version'], 'version should match');
         assertEquals('inactive', (string) $row['status'], 'status should default to inactive');
     } finally {
         cleanupPlugin($pdo, $slug);
@@ -236,9 +243,9 @@ TestSuite::run('load() updates version when plugin already registered', function
         "INSERT INTO plugins_registry (plugin_slug, plugin_type, version, status)
          VALUES (:slug, 'entity', '0.9.0', 'inactive')"
     );
-    $stmt->execute([':slug' => $slug]);
+    $stmt->execute([SLUG_BIND_PARAM => $slug]);
 
-    $manifest = ['slug' => $slug, 'name' => 'Test Upd', 'version' => '1.1.0', 'type' => 'entity', 'core_version' => '1.0.0'];
+    $manifest = ['slug' => $slug, 'name' => 'Test Upd', 'version' => '1.1.0', 'type' => 'entity', 'core_version' => SEMVER_1_0];
     $root = createPluginFixture($manifest);
 
     try {
@@ -246,7 +253,7 @@ TestSuite::run('load() updates version when plugin already registered', function
         $loader->load($slug);
 
         $check = $pdo->prepare('SELECT version FROM plugins_registry WHERE plugin_slug = :slug');
-        $check->execute([':slug' => $slug]);
+        $check->execute([SLUG_BIND_PARAM => $slug]);
         $row = $check->fetch(PDO::FETCH_ASSOC);
 
         assertEquals('1.1.0', (string) ($row['version'] ?? ''), 'Version should be updated to 1.1.0');
@@ -267,7 +274,7 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
         $dir = $root . '/' . $s;
         mkdir($dir, 0777, true);
         file_put_contents($dir . '/manifest.json', (string) json_encode([
-            'slug' => $s, 'name' => $s, 'version' => '1.0.0', 'type' => 'extension', 'core_version' => '1.0.0',
+            'slug' => $s, 'name' => $s, 'version' => SEMVER_1_0, 'type' => 'extension', 'core_version' => SEMVER_1_0,
         ]));
     }
 

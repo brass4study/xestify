@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.2 — HookDispatcher
+**Próxima story:** STORY 4.3 — hooks beforeSave/afterSave en EntityService
 
 ---
 
@@ -87,7 +87,7 @@
 
 ### ⏭ EPIC 3-5 — Pendiente
 
-### 🔄 EPIC 3 — Motor de Entidades Dinámicas (EN PROGRESO)
+### ✅ EPIC 3 — Motor de Entidades Dinámicas (COMPLETADO)
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
@@ -109,6 +109,13 @@
 - Ajustes aplicados en tests y capa backend para eliminar literales duplicados, newline finales, returns redundantes y warning PHP1412.
 - `DatabaseTest.php` actualizado para evitar `setAccessible()` (deprecado en PHP 8.5).
 - Ajustes de SonarQube en frontend: `Api.js` (catch simplificado) y `ApiTest.html` (`replaceAll`) sin regresión funcional.
+
+### 🔄 EPIC 4 — Sistema de Plugins y Hooks Backend (EN PROGRESO)
+
+| Story | Descripción | Commit | Tests |
+|-------|-------------|--------|-------|
+| 4.1 ✅ | PluginLoader (descubre, valida, registra) | 75ad5f4 | 8/8 ✅ |
+| 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | pendiente (este commit) | 11/11 ✅ |
 
 ---
 
