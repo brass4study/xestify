@@ -559,6 +559,38 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Dependencias:** STORY 4.1
 - **Blockers:** Ninguno
 
+### STORY 4.7: Extender schema con campos sugeridos, identidad y relaciones entre entidades
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Feature
+- **Descripción:**
+  Ampliar el contrato de schema para soportar el modelo definitivo de campos y relaciones:
+
+  **Campos de identidad** (`identity: true`): gestionados por el sistema (UUID auto), nunca modificables por el admin.
+
+  **Campos sugeridos** (`suggested: true`): vienen de la plantilla del plugin. El admin puede aceptarlos, modificarlos o eliminarlos al configurar la entidad. Son la propuesta típica del tipo de entidad.
+
+  **Campos personalizados**: creados por el admin desde el panel. Sin marcador especial.
+
+  El `schema.json` del plugin es solo la **plantilla inicial**. El schema que usa el sistema en runtime es el **schema vivo** almacenado en `entity_metadata`, que refleja las decisiones del admin.
+
+  **Relaciones**: colección `relations` en el schema del plugin. Los campos FK son campos sugeridos normales — si el admin los elimina, la relación queda inactiva sin error.
+
+  **Futuro (no en MVP)**: el admin podrá escoger entre diferentes plantillas de campos al configurar una entidad (por tipo de negocio).
+
+- **Criteria:**
+  - ✅ Propiedad `suggested` (boolean) en campos de la plantilla del plugin
+  - ✅ Colección `relations` en schema.json del plugin (puede estar vacía o ausente)
+  - ✅ Cada relación define: `name`, `type` (belongs_to | has_many | has_one), `target_entity`, `foreign_key`, `label`
+  - ✅ El schema vivo en `entity_metadata` NO contiene `suggested` ni `identity` — son solo metadatos de la plantilla
+  - ✅ `ValidationService` valida siempre contra el schema vivo (el que el admin ha configurado)
+  - ✅ Si el campo FK de una relación no existe en el schema vivo, la relación se ignora silenciosamente
+  - ✅ `entity_metadata.schema_json` CHECK constraint sigue validando solo `fields` (retrocompatible)
+  - ✅ Actualizar schema.json de `entity_client` con `suggested: true` en todos sus campos
+  - ✅ Tests: instalador usa plantilla como base; ValidationService valida schema vivo; relación inactiva sin campo FK no rompe
+- **Dependencias:** STORY 4.4, STORY 3.1
+- **Blockers:** Decisiones 5 y 6 aprobadas (ver docs/mvp/decisiones-tecnicas.md)
+
 ---
 
 ## EPIC 5: Frontend Dinámico Base (Fase 5 - Semanas 9-12)

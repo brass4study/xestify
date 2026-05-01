@@ -484,3 +484,18 @@
   - Creó `EntityServiceHooksTest.php` con 10 tests unitarios standalone
 - **Iteraciones:** 1
 - **Decisión manual:** `?HookDispatcher $hooks = null` para mantener compatibilidad con wiring existente sin romper `buildService()` en `EntityServiceTest.php`
+
+### STORY 4.4: Plugin de entidad base (entity_client)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Creó `backend/plugins/entity_client/manifest.json` con campos requeridos por PluginLoader
+  - Creó `backend/plugins/entity_client/schema.json` con campos nombre, email, teléfono, activo
+  - Creó `backend/plugins/entity_client/Hooks.php` con hook `beforeSave` que valida email único contra `entity_data`
+  - Creó `backend/plugins/entity_client/Installer.php` con `install()` idempotente (INSERT … ON CONFLICT) en `system_entities` y `entity_metadata`
+  - Creó `EntityClientPluginTest.php` con 13 tests unitarios (stubs PDO, sin BD real)
+- **Iteraciones:** 1
+- **Decisión manual:** Installer separado de Hooks para mantener responsabilidad única; `ON CONFLICT … DO UPDATE` en `system_entities` para permitir actualizaciones de versión sin error
+

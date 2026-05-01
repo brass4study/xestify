@@ -1,0 +1,8 @@
+{
+    "slug": "entity_client",
+    "name": "Clientes",
+    "version": "1.0.0",
+    "type": "entity",
+    "core_version": "1.0.0",
+    "description": "Entidad base de clientes: nombre, email, teléfono y estado activo."
+}

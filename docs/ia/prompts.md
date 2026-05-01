@@ -515,3 +515,19 @@ STORY 4.3 — Integrar HookDispatcher en EntityService:
 10. **Directorios minúsculas** — Convención consistente en toda la estructura.
 11. **Separar validaciones por tipo** — Un método por tipo facilita extensión y reduce complejidad.
 12. **BOM UTF-8 en PHP** — EF BB BF antes de `<?php` rompe `declare(strict_types=1)` en scripts requeridos. Eliminar con `$bytes[3..]` en PowerShell.
+
+---
+
+### STORY 4.4 � Crear plugin entity_client
+
+**Prompt:**
+`````n STORY 4.4 � Crear plugin de entidad base entity_client:
+ - Estructura: manifest.json (slug, name, version, type, core_version)
+ - schema.json con campos nombre (required), email (required), tel�fono (optional), activo (boolean, default true)
+ - Hooks.php: hook beforeSave que valida email �nico en entity_data
+ - Installer.php: registra entidad en system_entities + siembra schema en entity_metadata (idempotente)
+ - Tests unitarios con stubs PDO
+`````n
+**Resultado:** 13/13 tests unitarios pasando al primer intento
+**Iteraciones:** 1
+

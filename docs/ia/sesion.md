@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-01  
-**EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.4 — plugin de entidad base (entity_client)
+**EPIC activo:** EPIC 4 — Sistema de Plugins y Hooks Backend (🔄 EN PROGRESO)  
+**Próxima story:** STORY 4.5 — ciclo de vida de plugin (onInstall, onActivate)
 
 ---
 
@@ -116,7 +116,8 @@
 |-------|-------------|--------|-------|
 | 4.1 ✅ | PluginLoader (descubre, valida, registra) | 75ad5f4 | 8/8 ✅ |
 | 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | b053e91 | 11/11 ✅ |
-| 4.3 ✅ | hooks beforeSave/afterSave en EntityService | pendiente (este commit) | 10/10 ✅ |
+| 4.3 ✅ | hooks beforeSave/afterSave en EntityService | c8c9755 | 10/10 ✅ |
+| 4.4 ✅ | Plugin entity_client (manifest, schema, Hooks, Installer) | pendiente (este commit) | 13/13 ✅ |
 
 ---
 

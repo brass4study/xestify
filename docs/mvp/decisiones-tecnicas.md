@@ -158,42 +158,124 @@ Transición a sesión local es reversible (cambio de ~300 líneas en backend y f
 
 ---
 
-## DECISION 5: Schema de Entidades - Custom Minimalista
+## DECISION 5: Schema de Entidades — Plantilla del plugin + Schema vivo del admin
 
-**Seleccionado:** Schema custom minimalista  
-**Alternativas consideradas:** JSON Schema estándar, Schema custom con soporte futuro a JSON Schema  
-**Fecha:** Mayo 1, 2026
+**Seleccionado:** Dos capas de schema: plantilla (plugin) + schema vivo (admin)  
+**Alternativas consideradas:** Schema fijo por plugin, JSON Schema estándar  
+**Fecha:** Mayo 1, 2026  
+**Actualizado:** Mayo 2, 2026 — modelo de campos de identidad + campos sugeridos + campos custom
 
-### Justificacion
-- Ultra simple, fácil parsear.
-- Validador casero = ~100 líneas de PHP.
-- Controlamos exactamente qué soportamos.
-- MVP rápido.
+### Modelo conceptual
 
-### Estructura esperada
+Una entidad tiene **tres tipos de campos**, con diferente origen y mutabilidad:
+
+| Tipo | Origen | ¿Puede modificarlo el admin? | Marcador en schema |
+|------|--------|-----------------------------|--------------------|
+| **Identidad** | Sistema (auto) | No — nunca | `identity: true` |
+| **Sugerido** | Plantilla del plugin | Sí — puede modificar o eliminar | `suggested: true` |
+| **Personalizado** | Creado por el admin | Sí — control total | (sin marcador) |
+
+**Regla fundamental:** el único campo obligatorio de cualquier entidad es su identificador (`id` UUID, generado automáticamente por el sistema). Todo lo demás es opcional o sugerido.
+
+### Flujo de configuración de una entidad
+
+```
+Plugin define schema.json           Admin configura la entidad
+(plantilla / sugerencia)            (schema vivo en entity_metadata)
+        │                                      │
+  fields con suggested:true   ──→   Admin acepta, modifica o elimina
+  identity fields              ──→   Siempre presentes, no editables
+                               ──→   Admin añade campos propios (custom)
+                               ──→   Schema vivo guardado en entity_metadata
+```
+
+### Estructura de schema.json del plugin (plantilla)
+
 ```json
 {
-  "entity": "client",
-  "version": "1.0.0",
-  "fields": [
-    {
-      "name": "nombre",
-      "type": "string",
-      "required": true,
-      "label": "Nombre completo",
-      "validation": {"minLength": 1, "maxLength": 255}
+    "entity": "client",
+    "version": "1.0.0",
+    "fields": {
+        "nombre": {
+            "type": "string",
+            "required": false,
+            "label": "Nombre",
+            "suggested": true
+        },
+        "email": {
+            "type": "email",
+            "required": false,
+            "label": "Email",
+            "suggested": true
+        },
+        "telefono": {
+            "type": "string",
+            "required": false,
+            "label": "Teléfono",
+            "suggested": true
+        },
+        "activo": {
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "label": "Activo",
+            "suggested": true
+        }
     },
-    {
-      "name": "email",
-      "type": "email",
-      "required": false,
-      "label": "Email"
-    }
-  ]
+    "relations": []
 }
 ```
 
-### Tipos soportados (MVP)
+### Estructura de schema vivo en entity_metadata (tras configuración del admin)
+
+El admin puede haber eliminado `telefono`, renombrado etiquetas, añadido un campo propio y marcado `email` como requerido:
+
+```json
+{
+    "fields": {
+        "nombre": {
+            "type": "string",
+            "required": true,
+            "label": "Nombre del cliente"
+        },
+        "email": {
+            "type": "email",
+            "required": true,
+            "label": "Email de contacto"
+        },
+        "activo": {
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "label": "Activo"
+        },
+        "notas_internas": {
+            "type": "string",
+            "required": false,
+            "label": "Notas internas"
+        }
+    },
+    "relations": []
+}
+```
+
+Los marcadores `suggested` e `identity` **no se guardan** en el schema vivo — son solo información de la plantilla del plugin para guiar la UI del panel.
+
+### Plantillas de campos (futuro)
+
+En una versión posterior, al configurar una entidad el admin podrá elegir entre diferentes colecciones de campos sugeridos según el tipo de negocio:
+
+```
+Entidad "Cliente":
+  → Plantilla: Servicios B2B  (empresa, CIF, contacto, sector)
+  → Plantilla: Comercio       (nombre, email, teléfono, dirección)
+  → Plantilla: Básico         (nombre, email)
+  → Personalizado             (el admin parte desde cero)
+```
+
+Cada plantilla sería una variante del `schema.json` del plugin o un archivo adicional en el directorio del plugin (`templates/b2b.json`, `templates/retail.json`, etc.).
+
+### Tipos de campo soportados (MVP)
 - `string`, `email`, `phone`
 - `number`, `integer`
 - `boolean`
@@ -202,14 +284,13 @@ Transición a sesión local es reversible (cambio de ~300 líneas en backend y f
 
 ### Futuro
 - `array`, `object` (para extensiones complejas)
+- Plantillas de campos múltiples por plugin
 
 ### Implicaciones
-- Documentación propia: 1 página.
-- Validador PHP casero: <100 líneas.
-- Si crece, migración a JSON Schema es cambio puro de parser.
-
-### Riesgos mitigados
-- Over-engineering inicial.
+- `schema.json` del plugin es **solo referencia / sugerencia** — no se almacena directamente.
+- El schema que usa `ValidationService` siempre viene de `entity_metadata` (schema vivo).
+- `entity_metadata.schema_json` CHECK constraint solo valida `fields` → retrocompatible.
+- El panel de administración necesita una pantalla de configuración de entidad que lea la plantilla del plugin y la combine con el schema vivo actual.
 
 ### Cambio futuro
 Migración a JSON Schema es viable sin romper (1 semana de refactor puro).
@@ -225,8 +306,82 @@ Migración a JSON Schema es viable sin romper (1 semana de refactor puro).
 | Frontend | Vanilla JS | ✅ Si | 🔴 Alto |
 | Autenticación | JWT | ✅ Si | 🟢 Bajo |
 | Schema | Custom | ✅ Si | 🟢 Bajo |
+| Relaciones | FK en JSONB | ✅ Si | 🟡 Medio |
 
 ---
+
+## DECISION 6: Relaciones entre entidades — FK en JSONB, sin tablas relacionales
+
+**Seleccionado:** FK almacenada como campo en `entity_data.content` (JSONB), declarada en `relations` del schema  
+**Alternativas consideradas:** Tabla `entity_relations` separada, usar FK real de PostgreSQL  
+**Fecha:** Mayo 1, 2026  
+**Actualizado:** Mayo 2, 2026 — ajuste: campos FK son sugeridos por el plugin, no fijos
+
+### Justificacion
+- Las entidades son dinámicas: no se puede crear una FK real de PostgreSQL en tiempo de ejecución sin DDL dinámico (peligroso y complejo).
+- Almacenar la FK como un campo más en el JSONB `content` es coherente con el modelo existente.
+- La relación se declara en `schema.json` del plugin → el sistema sabe cómo resolver la referencia, sin necesidad de join de BD.
+- Retrocompatible: no requiere nueva tabla ni migración.
+
+### Cómo encajan las relaciones con el modelo de campos
+
+Un campo FK (por ejemplo `id_cliente`) es un campo más del schema. En la plantilla del plugin se declara como `suggested: true`, igual que cualquier otro campo. El admin puede:
+- **Mantenerlo**: la relación funciona y el panel puede ofrecer un selector del registro relacionado.
+- **Eliminarlo**: la relación declarada en `relations` queda inactiva (no se resuelve), sin error.
+
+Los campos FK no son fijos del plugin — son sugerencias necesarias para que la relación funcione, pero el admin tiene la última palabra.
+
+### Contrato de una relación (en schema.json del plugin)
+```json
+{
+    "fields": {
+        "id_cliente": {
+            "type": "string",
+            "required": false,
+            "label": "Cliente",
+            "suggested": true
+        }
+    },
+    "relations": [
+        {
+            "name": "cliente",
+            "type": "belongs_to",
+            "target_entity": "client",
+            "foreign_key": "id_cliente",
+            "label": "Cliente del pedido"
+        }
+    ]
+}
+```
+
+### Tipos de relación soportados (MVP)
+| Tipo | Semántica | FK vive en |
+|------|-----------|-----------|
+| `belongs_to` | Este registro apunta a otro (N:1) | `content` del registro actual |
+| `has_many` | Otros registros apuntan a este (1:N) | `content` de los otros registros |
+| `has_one` | Un único otro registro apunta a este (1:1) | `content` del otro registro |
+
+### Cómo se resuelve una relación
+Para `belongs_to`: el campo `id_cliente` en `content` contiene el UUID del registro `client`. Para resolver:
+```sql
+SELECT content FROM entity_data
+WHERE entity_slug = 'client'
+  AND id = :id_cliente_value
+  AND deleted_at IS NULL
+```
+No hay JOIN automático — la resolución es explícita, bajo demanda (lazy).
+
+### Implicaciones
+- `ValidationService` no valida existencia del registro relacionado — eso es responsabilidad del Hook `beforeSave` del plugin.
+- No hay integridad referencial en BD — es responsabilidad de la capa de aplicación / hooks.
+- Si el admin elimina el campo FK del schema vivo, la relación en `relations` se ignora silenciosamente.
+
+### Riesgos
+- Sin FK real → posibles registros huérfanos si se elimina el registro referenciado.
+- **Mitigación:** Hook `beforeDelete` en el plugin que tenga `has_many` puede bloquear el borrado si existen registros dependientes.
+
+### Futuro
+Si la complejidad de relaciones crece, se puede añadir una tabla `entity_relations` materializada para joins rápidos sin romper el contrato de schema (cambio aditivo).
 
 ## Proximo paso
 
