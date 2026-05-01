@@ -19,7 +19,7 @@ class AuthController
     }
 
     /**
-     * POST /api/auth/login
+     * POST /api/v1/auth/login
      * Body: { "email": "...", "password": "..." }
      *
      * @param array   $params  Route params (none for this route)

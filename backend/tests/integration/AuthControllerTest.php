@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AuthControllerTest — Integration tests for POST /api/auth/login.
+ * AuthControllerTest — Integration tests for POST /api/v1/auth/login.
  *
  * Tests the AuthController directly (no HTTP server needed).
  * Requires a real PostgreSQL connection with the users table migrated.

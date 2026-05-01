@@ -361,7 +361,7 @@ Objetivo: CRUD genérico con validación por schema.
 - **Type:** Feature
 - **Criteria:**
   - ✅ Métodos: `createRecord()`, `updateRecord()`, `deleteRecord()`, `getRecord()`, `listRecords()`
-  - ✅ Obtiene schema vigente
+  - ✅ Obtiene schema vigenteSi
   - ✅ Valida con ValidationService
   - ✅ Persiste en entity_data
   - ✅ Dispara hooks (implementado vacío por ahora)
@@ -374,12 +374,12 @@ Objetivo: CRUD genérico con validación por schema.
 - **Priority:** MUST
 - **Type:** API
 - **Criteria:**
-  - ✅ GET `/api/entities/{slug}/schema` → schema_json
-  - ✅ GET `/api/entities/{slug}/records` → listado paginado
-  - ✅ POST `/api/entities/{slug}/records` → crear registro
-  - ✅ GET `/api/entities/{slug}/records/{id}` → registro por id
-  - ✅ PUT `/api/entities/{slug}/records/{id}` → actualizar
-  - ✅ DELETE `/api/entities/{slug}/records/{id}` → soft delete
+  - ✅ GET `/api/v1/entities/{slug}/schema` → schema_json
+  - ✅ GET `/api/v1/entities/{slug}/records` → listado paginado
+  - ✅ POST `/api/v1/entities/{slug}/records` → crear registro
+  - ✅ GET `/api/v1/entities/{slug}/records/{id}` → registro por id
+  - ✅ PUT `/api/v1/entities/{slug}/records/{id}` → actualizar
+  - ✅ DELETE `/api/v1/entities/{slug}/records/{id}` → soft delete
   - ✅ Tests E2E de cada endpoint
 - **Dependencias:** STORY 3.2, STORY 1.4
 - **Blockers:** Ninguno

@@ -278,6 +278,26 @@ STORY 3.2 — Crear Xestify\services\EntityService con:
 
 ---
 
+### STORY 3.3 — EntityController (endpoints REST)
+**Prompt:**
+```
+STORY 3.3 — Crear Xestify\controllers\EntityController con:
+- GET    /api/entities/{slug}/schema        → schema_json vigente
+- GET    /api/entities/{slug}/records       → listado activo con meta.total
+- POST   /api/entities/{slug}/records       → crear (ValidationException→422, EntityServiceException→404)
+- GET    /api/entities/{slug}/records/{id}  → registro único o 404
+- PUT    /api/entities/{slug}/records/{id}  → update parcial (merge JSONB)
+- DELETE /api/entities/{slug}/records/{id}  → soft delete
+- Registrar rutas en config/routes.php
+- Registrar bindings en config/app.php
+- 9 tests E2E standalone (sin HTTP server)
+```
+**Resultado:** EntityController + rutas + app bindings + 9/9 tests en primera iteración
+**Iteraciones:** 1
+**Lección:** El patrón `ob_start() / ob_get_clean()` para capturar Response::json() en tests E2E es limpio y reutilizable; basta con construir un `Request` con body/params sintéticos.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
