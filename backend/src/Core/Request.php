@@ -14,6 +14,7 @@ class Request
     private array $body;
     private array $headers;
     private array $routeParams;
+    private ?array $user = null;
 
     public function __construct(
         array $query       = [],
@@ -124,5 +125,19 @@ class Request
     public function uri(): string
     {
         return parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+    }
+
+    // -----------------------------------------------------------------------
+    // Auth user (set by AuthMiddleware)
+    // -----------------------------------------------------------------------
+
+    public function setUser(array $payload): void
+    {
+        $this->user = $payload;
+    }
+
+    public function user(): ?array
+    {
+        return $this->user;
     }
 }

@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-01  
-**EPIC activo:** EPIC 1 — Autenticación  
-**Próxima story:** STORY 1.1 — Tabla `users` + seeder
+**EPIC activo:** EPIC 2 — Entidades (próximo)  
+**Próxima story:** STORY 2.1 — (a definir en backlog)
 
 ---
 
@@ -27,14 +27,39 @@
 | 0.5 | Entorno local PHP + PostgreSQL | `fc8e52c` | — |
 | 0.6 | Frontend skeleton | `fc8e52c` | — |
 
-### 🔄 EPIC 1 — Autenticación (EN PROGRESO)
+### ✅ EPIC 1 — Autenticación (COMPLETADO)
 
-| Story | Descripción | Estado |
-|-------|-------------|--------|
-| 1.1 | Tabla `users` + migración SQL + seeder | ⏳ Siguiente |
-| 1.2 | JwtService (encode/decode HS256) | ⏳ |
-| 1.3 | AuthController (POST /api/auth/login) | ⏳ |
-| 1.4 | AuthMiddleware (valida JWT en rutas protegidas) | ⏳ |
+| Story | Descripción | Tests |
+|-------|-------------|-------|
+| 1.1 | Tabla `users` + migración SQL + seeder | 8/8 ✅ (integración) |
+| 1.2 | JwtService (encode/decode HS256) | 8/8 ✅ |
+| 1.3 | AuthController (POST /api/auth/login) | 8/8 ✅ (integración) |
+| 1.4 | AuthMiddleware + `Request::setUser/user` | 6/6 ✅ |
+
+**Tests EPIC 1:** 30 nuevos (14 unit + 17 integración) → **Total acumulado: 68 tests**
+
+**Archivos creados:**
+- `backend/database/migrations/001_users.sql`
+- `backend/src/Core/Database.php` — PDO singleton
+- `backend/src/Exceptions/DatabaseException.php`
+- `backend/src/Exceptions/AuthException.php`
+- `backend/src/Services/JwtService.php` — HS256 puro PHP
+- `backend/src/Controllers/AuthController.php` — POST /api/auth/login (con Request inyectable)
+- `backend/src/Middleware/AuthMiddleware.php`
+- `backend/src/Database/Seeders/UserSeeder.php`
+- `backend/tests/unit/JwtServiceTest.php`
+- `backend/tests/unit/AuthMiddlewareTest.php`
+- `backend/tests/integration/DatabaseTest.php` — 9 tests
+- `backend/tests/integration/AuthControllerTest.php` — 8 tests
+
+**Archivos modificados:**
+- `backend/src/Core/Request.php` — añadido `setUser()` / `user()`
+- `backend/src/config/app.php` — registra `Database`, `JwtService`, `AuthController`; llama `UserSeeder`
+- `backend/src/config/routes.php` — añadida ruta `POST /api/auth/login`
+- `backend/public/index.php` — eliminado BOM UTF-8 que causaba error `strict_types`
+
+**Infraestructura:**
+- `C:\php\php.ini` — habilitada extensión `pdo_pgsql` (estaba comentada)
 
 ### ⏭ EPIC 2-5 — Pendiente
 
@@ -58,23 +83,44 @@
 ```
 backend/
 ├── public/index.php              ← Entry point
+├── database/
+│   └── migrations/
+│       └── 001_users.sql         ✅ Tabla users
 ├── src/
 │   ├── bootstrap.php             ← Autoloader + env loader
 │   ├── app.php                   ← Wiring Container + Router
 │   ├── Core/
 │   │   ├── Container.php         ✅ DI container
 │   │   ├── Router.php            ✅ HTTP router
-│   │   ├── Request.php           ✅ Request helper
-│   │   └── Response.php          ✅ Response helper (envelope JSON)
+│   │   ├── Request.php           ✅ + setUser/user (STORY 1.4)
+│   │   ├── Response.php          ✅ Response helper (envelope JSON)
+│   │   └── Database.php          ✅ PDO singleton
 │   ├── Controllers/
-│   │   └── HealthController.php  ✅ GET /health
+│   │   ├── HealthController.php  ✅ GET /health
+│   │   └── AuthController.php    ✅ POST /api/auth/login
+│   ├── Database/
+│   │   └── Seeders/
+│   │       └── UserSeeder.php    ✅ Seed admin on boot
+│   ├── Exceptions/
+│   │   ├── AuthException.php     ✅ Dominio: auth errors
+│   │   └── DatabaseException.php ✅ Dominio: db errors
+│   ├── Middleware/
+│   │   └── AuthMiddleware.php    ✅ Valida JWT en rutas protegidas
+│   ├── Services/
+│   │   └── JwtService.php        ✅ HS256 puro PHP
 │   └── config/
-│       ├── app.php               ← Service registrations
-│       └── routes.php            ← Route definitions
-└── tests/unit/
-    ├── ContainerTest.php         ✅ 8 tests
-    ├── RouterTest.php            ✅ 10 tests
-    └── RequestResponseTest.php  ✅ 20 tests
+│       ├── app.php               ✅ Registra Database, JwtService, AuthController
+│       └── routes.php            ✅ /health + /api/auth/login
+└── tests/
+    ├── unit/
+    │   ├── helpers.php            ← TestSuite + assertion helpers
+    │   ├── ContainerTest.php      ✅ 8 tests
+    │   ├── RouterTest.php         ✅ 10 tests
+    │   ├── RequestResponseTest.php✅ 20 tests
+    │   ├── JwtServiceTest.php     ✅ 8 tests
+    │   └── AuthMiddlewareTest.php ✅ 6 tests
+    └── integration/
+        └── DatabaseTest.php       ✅ 8 tests (requiere PostgreSQL)
 ```
 
 ---
