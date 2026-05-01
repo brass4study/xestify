@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 3.7 — Frontend State.js (estado global)
+**Próxima story:** STORY 3.8 — Frontend DynamicForm.js
 
 ---
 
@@ -97,6 +97,7 @@
 | 3.4 ✅ | Helpers apiSuccess/apiError en Response | 55507f4 | 24/24 ✅ |
 | 3.5 ✅ | Modelo SystemEntity (getActive/getBySlug/findOrFail) | b4b39f1 | 7/7 ✅ |
 | 3.6 ✅ | Frontend Api.js (cliente HTTP genérico) | 82c8ea6 | 11/11 ✅ |
+| 3.7 ✅ | Frontend - Crear State.js (estado global) | pendiente (este commit) | 11/11 ✅ |
 | 3.x ✅ | Correcciones SonarQube/VS Code previas a STORY 3.7 | pendiente (este commit) | checks editor en verde ✅ |
 
 **Estado actual (2026-05-01):**

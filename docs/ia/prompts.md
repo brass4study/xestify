@@ -368,6 +368,21 @@ Prioriza:
 
 ---
 
+### STORY 3.7 — Frontend State.js (estado global)
+**Prompt:**
+```
+STORY 3.7 — Frontend - Crear State.js (estado global):
+- Objeto AppState con setUser(), getUser(), setCurrentEntity(), etc.
+- Métodos setter/getter simples
+- Sin listeners y sin Proxy (Vanilla puro)
+- Añadir tests unitarios standalone en HTML runner
+```
+**Resultado:** `State.js` implementado como objeto global simple + `StateTest.html` con 11 pruebas (11/11 pasando en navegador local).
+**Iteraciones:** 1
+**Lección:** Un `AppState` explícito con setters/getters y `reset()` simplifica pruebas y evita acoplar componentes frontend en etapas tempranas.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

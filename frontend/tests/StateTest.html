@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>StateTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>StateTest</h2>
+<pre id="output"></pre>
+
+<script type="module">
+  import { AppState } from '../src/js/modules/State.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  async function test(name, fn) {
+    try {
+      AppState.reset();
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (e) {
+      log(`  ❌ ${name}`);
+      log(`     ${e.message}`);
+      failed++;
+    }
+  }
+
+  log('----------------------------------------');
+
+  await test('setUser/getUser stores and returns user', async () => {
+    const user = { id: 'u1', email: 'admin@xestify.local' };
+    AppState.setUser(user);
+    assertEquals(AppState.getUser(), user);
+  });
+
+  await test('setUser(null) clears user', async () => {
+    AppState.setUser({ id: 'u1' });
+    AppState.setUser(null);
+    assertTrue(AppState.getUser() === null, 'user must be null');
+  });
+
+  await test('setCurrentEntity/getCurrentEntity works', async () => {
+    AppState.setCurrentEntity('client');
+    assertTrue(AppState.getCurrentEntity() === 'client', 'currentEntity must match');
+  });
+
+  await test('setEntities/getEntities stores list', async () => {
+    AppState.setEntities([{ slug: 'client' }, { slug: 'invoice' }]);
+    assertEquals(AppState.getEntities().length, 2);
+  });
+
+  await test('setEntities with non-array resets to []', async () => {
+    AppState.setEntities('invalid');
+    assertEquals(AppState.getEntities(), []);
+  });
+
+  await test('setRecords/getRecords stores list', async () => {
+    AppState.setRecords([{ id: 1 }, { id: 2 }]);
+    assertEquals(AppState.getRecords().length, 2);
+  });
+
+  await test('setMetadata/getMetadata stores object', async () => {
+    AppState.setMetadata({ total: 10, page: 1 });
+    assertEquals(AppState.getMetadata(), { total: 10, page: 1 });
+  });
+
+  await test('setToken/getToken stores token', async () => {
+    AppState.setToken('jwt-token');
+    assertTrue(AppState.getToken() === 'jwt-token', 'token must match');
+  });
+
+  await test('setLoading/isLoading toggles loading flag', async () => {
+    AppState.setLoading(true);
+    assertTrue(AppState.isLoading() === true, 'loading must be true');
+    AppState.setLoading(false);
+    assertTrue(AppState.isLoading() === false, 'loading must be false');
+  });
+
+  await test('setError/getError stores error object', async () => {
+    const error = { code: 422, message: 'Validation failed' };
+    AppState.setError(error);
+    assertEquals(AppState.getError(), error);
+  });
+
+  await test('reset() restores initial state', async () => {
+    AppState.setUser({ id: 'u1' });
+    AppState.setCurrentEntity('client');
+    AppState.setEntities([{ slug: 'client' }]);
+    AppState.setRecords([{ id: 1 }]);
+    AppState.setMetadata({ total: 1 });
+    AppState.setToken('abc');
+    AppState.setLoading(true);
+    AppState.setError({ message: 'boom' });
+
+    AppState.reset();
+
+    assertTrue(AppState.getUser() === null, 'user must be null');
+    assertTrue(AppState.getCurrentEntity() === null, 'currentEntity must be null');
+    assertEquals(AppState.getEntities(), []);
+    assertEquals(AppState.getRecords(), []);
+    assertEquals(AppState.getMetadata(), {});
+    assertTrue(AppState.getToken() === null, 'token must be null');
+    assertTrue(AppState.isLoading() === false, 'loading must be false');
+    assertTrue(AppState.getError() === null, 'error must be null');
+  });
+
+  log('----------------------------------------');
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+
+  out.innerHTML = out.textContent
+    .replace(/✅/g, '<span class="pass">✅</span>')
+    .replace(/❌/g, '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>

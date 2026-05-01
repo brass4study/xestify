@@ -354,3 +354,17 @@
   - Validó diagnóstico global del editor sin errores
 - **Iteraciones:** 2
 - **Decisión manual:** priorizar limpieza completa de calidad antes de iniciar STORY 3.7
+
+### STORY 3.7: Frontend - Crear State.js (estado global)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 1h
+- **Tiempo real con IA:** ~12 min
+- **Aceleración:** ~80% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/State.js` con objeto global `AppState`
+  - Implementó setters/getters simples para `user`, `currentEntity`, `entities`, `records`, `metadata`, `token`, `loading`, `error`
+  - Añadió método `reset()` para restaurar estado inicial de forma explícita
+  - Creó test runner `frontend/tests/StateTest.html` con 11 casos unitarios
+  - Verificó ejecución real en navegador local (`11 passed, 0 failed`)
+- **Iteraciones:** 1
+- **Decisión manual:** mantener patrón de objeto plano (no clase, no listeners, no Proxy)
