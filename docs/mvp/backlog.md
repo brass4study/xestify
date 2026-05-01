@@ -70,24 +70,33 @@ Objetivo: Entorno dev reproducible, baseline arquitectura, pipeline de calidad.
 
 ### STORY 0.3: Crear Router HTTP básico
 - **Points:** 3
+- **Sin IA:** 5 horas
+- **Con IA:** 2 horas
+- **Aceleración:** **60%** ⚡
 - **Priority:** MUST
 - **Type:** Feature
 - **Criteria:**
   - ✅ Clase `Xestify\Core\Router` con `get()`, `post()`, `put()`, `delete()`
   - ✅ Mapear rutas a controladores
-  - ✅ Extraer parámetros de URL
-  - ✅ Tests de rutas
+  - ✅ Extraer parámetros de URL con named capture groups
+  - ✅ 10 tests unitarios
+- **IA Usage:** Generar regex de rutas dinámicas, lógica de dispatch, suite de tests
 - **Dependencias:** STORY 0.1
 - **Blockers:** Ninguno
 
 ### STORY 0.4: Crear Request/Response helpers
 - **Points:** 2
+- **Sin IA:** 4 horas
+- **Con IA:** 1.5 horas
+- **Aceleración:** **62%** ⚡
 - **Priority:** MUST
 - **Type:** Feature
 - **Criteria:**
-  - ✅ Clase `Xestify\Core\Request` (headers, body, query params)
-  - ✅ Helper `response()` que devuelve JSON
-  - ✅ Helper `response()->json($data, $status)`
+  - ✅ Clase `Xestify\Core\Request` (headers, body, query params, bearerToken)
+  - ✅ Clase `Xestify\Core\Response` con envelope JSON estándar
+  - ✅ Shortcuts: notFound(), unauthorized(), unprocessable(), serverError()
+  - ✅ 20 tests unitarios (11 Request + 9 Response)
+- **IA Usage:** Generar estructura de clases, envelope format, suite de tests, fix PHP_SAPI
 - **Dependencias:** STORY 0.1
 - **Blockers:** Ninguno
 
@@ -124,13 +133,17 @@ Objetivo: Entorno dev reproducible, baseline arquitectura, pipeline de calidad.
 
 ### STORY 0.6: Setup frontend skeleton (HTML + CSS + JS)
 - **Points:** 2
+- **Sin IA:** 1.5 horas
+- **Con IA:** 0.5 horas
+- **Aceleración:** **67%** ⚡
 - **Priority:** MUST
 - **Type:** UI
 - **Criteria:**
   - ✅ `frontend/src/index.html` con estructura base
   - ✅ `frontend/src/js/main.js` carga sin errores
-  - ✅ CSS reset minimo
+  - ✅ CSS reset mínimo
   - ✅ Página carga en navegador
+- **IA Usage:** Generar HTML base, CSS reset, estructura JS entry point
 - **Dependencias:** STORY 0.1
 - **Blockers:** Ninguno
 

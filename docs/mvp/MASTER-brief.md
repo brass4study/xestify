@@ -79,7 +79,7 @@ Demostrar que:
 - ✅ Dockerizable y reproducible en cualquier máquina
 
 ### 2. Documentación de Proceso (30% de la nota)
-- ✅ [ia-productivity-template.md](ia-productivity-template.md) — análisis de cómo IA aceleró
+- ✅ [ia-productivity-template.md](../ia/ia-productivity-template.md) — análisis de cómo IA aceleró
 - ✅ Comparativa: tiempo sin IA vs con IA por tarea
 - ✅ Prompts efectivos guardados + análisis
 - ✅ Problemas encontrados y soluciones
@@ -252,7 +252,7 @@ Esto es lo que defenderás académicamente.
 
 ## Próximo Paso
 
-1. Lee [ia-productivity-template.md](ia-productivity-template.md) para entender qué documentar.
+1. Lee [ia-productivity-template.md](../ia/ia-productivity-template.md) para entender qué documentar.
 2. Revisa [backlog.md](backlog.md) **versión Master reducida** (40 puntos).
 3. **Semana 1:** Empieza EPIC 0 inmediatamente.
 4. **Cada semana:** Actualiza [ia-productivity-analysis.md](ia-productivity-analysis.md) con tiempos reales.
