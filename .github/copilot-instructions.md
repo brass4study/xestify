@@ -34,6 +34,21 @@ Aplica estas reglas **siempre** al generar o modificar código PHP o JavaScript.
 - **SQL siempre con parámetros preparados (PDO)** — nunca interpolación de variables en queries
 - **Sin `eval()`**
 - **Declara tipos en firmas** (`string $foo`, `: bool`, etc.) — el proyecto ya usa `declare(strict_types=1)`
+- **Llaves obligatorias en todo bloque condicional** (php:S121) — nunca `if (...) return;` ni `if (...) continue;` en una sola línea; usar siempre llaves `{}`
+- **Sin código muerto tras `return`/`exit`/`throw`** (php:S1763) — eliminar cualquier sentencia inalcanzable
+- **Newline al final de cada archivo** (php:S113) — el último carácter del archivo debe ser `\n`
+- **Sin imports `use` no usados** (php:S1128) — revisa que cada `use` se use en el archivo; dentro del mismo namespace no se necesita `use`
+- **Comprobar retorno de funciones que pueden devolver null** (php:S4797) — `preg_replace`, `json_encode`, `file_get_contents`, etc. devuelven `null|false`; usar `?? fallback` o comprobar antes de usar
+- **Sin instanciación dinámica con variable** (php:S5992) — evitar `new $class()` y `$obj->$method()`; usar un mapa explícito o factory conocido
+- **Cast explícito antes de funciones con tipo estricto** (php:S4423) — si una función devuelve `mixed`, hacer `(string)`, `(int)`, etc. antes de pasarla a funciones que esperan un tipo concreto
+- **Sin variables globales** (php:S2188) — nunca `global $var`; encapsular estado en clase o pasar como parámetro
+- **Sin código duplicado entre archivos** (php:S1192) — extraer a función o clase compartida
+- **Nombres de funciones y métodos en camelCase** (php:S100) — nunca snake_case; `assertEquals` no `assert_equals`
+- **Sin lanzar excepciones genéricas** (php:S112) — nunca `throw new RuntimeException` ni `throw new Exception`; usar `\AssertionError` en helpers de test, excepciones de dominio en producción
+- **Sin código comentado** (php:S125) — eliminar bloques de código comentado; el historial de git conserva el código antiguo
+- **Sin parámetros de función no usados** (php:S1172) — eliminar parámetros que no se usen en el cuerpo; si la firma es fija por interfaz, suprimir con `// NOSONAR`
+- **Sin bloques de código vacíos** (php:S108) — `function () {}` dispara el finding; usar `fn() => null` para handlers no-op o añadir un `return;` con comentario
+- **Usar clases de caracteres abreviadas en regex** (php:S4784) — `\w` en lugar de `[a-zA-Z0-9_]`, `\d` en lugar de `[0-9]`, `\s` en lugar de `[ \t\n\r]`
 
 ### JavaScript
 - **`const` por defecto**, `let` cuando necesites reasignar, nunca `var`
