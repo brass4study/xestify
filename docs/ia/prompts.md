@@ -333,6 +333,24 @@ STORY 3.5 — Crear Xestify\models\SystemEntity con:
 
 ---
 
+### STORY 3.6 — Frontend Api.js (cliente HTTP genérico)
+**Prompt:**
+```
+STORY 3.6 — Crear frontend/src/js/modules/Api.js con:
+- Clase Api con constructor(baseUrl = '/api/v1')
+- Métodos: get(path), post(path, body), put(path, body), delete(path)
+- setToken(token|null) inyecta Authorization: Bearer en headers
+- Valida envelopes { ok, data, error } — lanza ApiError(code, message, details) en ok:false
+- Maneja errores de red (fetch rejection) como ApiError con code 0
+- Clase ApiError extends Error con propiedades code y details
+- Test runner HTML standalone (sin Node.js, sin npm) con fetch mockeado — 11 tests
+```
+**Resultado:** Api.js + ApiError + ApiTest.html → 11/11 en primera iteración
+**Iteraciones:** 1
+**Lección:** Para tests frontend vanilla sin bundler, un HTML con `type="module"` y fetch mockeado con `globalThis.fetch = async () => {}` es equivalente al patrón PHP standalone.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

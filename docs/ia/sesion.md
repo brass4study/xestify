@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 3.6 — Frontend Api.js (cliente HTTP genérico)
+**Próxima story:** STORY 3.7 — Frontend State.js (estado global)
 
 ---
 
@@ -96,6 +96,7 @@
 | 3.3 ✅ | EntityController (endpoints REST) + rutas /api/v1 | pendiente | 9/9 ✅ |
 | 3.4 ✅ | Helpers apiSuccess/apiError en Response | 55507f4 | 24/24 ✅ |
 | 3.5 ✅ | Modelo SystemEntity (getActive/getBySlug/findOrFail) | b4b39f1 | 7/7 ✅ |
+| 3.6 ✅ | Frontend Api.js (cliente HTTP genérico) | pendiente | 11/11 ✅ |
 
 ---
 

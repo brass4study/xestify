@@ -327,3 +327,16 @@
   - 7 tests de integración en `SystemEntityTest.php` (fixtures temporales en DB, cleanup al final)
 - **Iteraciones:** 1
 - **Decisión manual:** ninguna
+
+### STORY 3.6: Frontend Api.js (cliente HTTP genérico)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~10 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/Api.js` con clase `Api` (get/post/put/delete) y clase `ApiError`
+  - Token Bearer inyectado automáticamente en headers cuando se establece con `setToken()`
+  - Validación de envelope `{ ok, data, error }` con propagación via `ApiError`
+  - Test runner HTML standalone `frontend/tests/ApiTest.html` con 11 tests (fetch mockeado)
+- **Iteraciones:** 1
+- **Decisión manual:** test runner HTML en vez de Node.js (sin bundlers, Vanilla puro)

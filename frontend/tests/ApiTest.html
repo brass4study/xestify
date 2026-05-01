@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ApiTest — Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .sep { color: #444; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+    .summary { margin-top: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+<h2>ApiTest</h2>
+<pre id="output"></pre>
+
+<script type="module">
+  import { Api, ApiError } from '../src/js/modules/Api.js';
+
+  // ---------------------------------------------------------------------------
+  // Mini test runner
+  // ---------------------------------------------------------------------------
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  async function test(name, fn) {
+    try {
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (e) {
+      log(`  ❌ ${name}`);
+      log(`     ${e.message}`);
+      failed++;
+    }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) { throw new Error(msg); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // fetch mock helpers
+  // ---------------------------------------------------------------------------
+
+  /** Replace global fetch with a one-shot mock that returns an enveloped response. */
+  function mockFetch(status, envelope, captureRequest = null) {
+    globalThis.fetch = async (url, init) => {
+      if (captureRequest) { captureRequest.url = url; captureRequest.init = init; }
+      return {
+        status,
+        json: async () => envelope,
+      };
+    };
+  }
+
+  /** Mock fetch to simulate a network-level failure (Promise rejection). */
+  function mockFetchNetworkError() {
+    globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tests
+  // ---------------------------------------------------------------------------
+
+  log('----------------------------------------');
+
+  await test('get() sends GET request to correct URL', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: { id: 1 } }, req);
+    const api = new Api('/api/v1');
+    await api.get('/entities/client/records');
+    assertEquals(req.init.method, 'GET');
+    assertTrue(req.url.endsWith('/api/v1/entities/client/records'));
+  });
+
+  await test('get() returns data from envelope', async () => {
+    mockFetch(200, { ok: true, data: { id: 42 }, meta: { total: 1 } });
+    const api = new Api('/api/v1');
+    const result = await api.get('/things');
+    assertEquals(result.data, { id: 42 });
+    assertEquals(result.meta, { total: 1 });
+  });
+
+  await test('post() sends POST with JSON body', async () => {
+    const req = {};
+    mockFetch(201, { ok: true, data: { id: 5 } }, req);
+    const api = new Api('/api/v1');
+    await api.post('/entities/client/records', { name: 'Acme' });
+    assertEquals(req.init.method, 'POST');
+    assertEquals(JSON.parse(req.init.body), { name: 'Acme' });
+  });
+
+  await test('put() sends PUT with JSON body', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: { id: 5 } }, req);
+    const api = new Api('/api/v1');
+    await api.put('/entities/client/records/5', { name: 'Updated' });
+    assertEquals(req.init.method, 'PUT');
+    assertEquals(JSON.parse(req.init.body), { name: 'Updated' });
+  });
+
+  await test('delete() sends DELETE without body', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: null }, req);
+    const api = new Api('/api/v1');
+    await api.delete('/entities/client/records/5');
+    assertEquals(req.init.method, 'DELETE');
+    assertTrue(req.init.body === undefined, 'DELETE must not send body');
+  });
+
+  await test('setToken() adds Authorization header', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: {} }, req);
+    const api = new Api('/api/v1');
+    api.setToken('my-jwt-token');
+    await api.get('/things');
+    assertEquals(req.init.headers['Authorization'], 'Bearer my-jwt-token');
+  });
+
+  await test('sin token no incluye Authorization header', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: {} }, req);
+    const api = new Api('/api/v1');
+    await api.get('/things');
+    assertTrue(!('Authorization' in req.init.headers), 'No debe haber header Authorization');
+  });
+
+  await test('setToken(null) elimina el token', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: {} }, req);
+    const api = new Api('/api/v1');
+    api.setToken('old-token');
+    api.setToken(null);
+    await api.get('/things');
+    assertTrue(!('Authorization' in req.init.headers), 'Token debe haberse eliminado');
+  });
+
+  await test('respuesta ok:false lanza ApiError con code y message', async () => {
+    mockFetch(401, { ok: false, error: { code: 401, message: 'Unauthorized' } });
+    const api = new Api('/api/v1');
+    let caught = null;
+    try { await api.get('/protected'); } catch (e) { caught = e; }
+    assertTrue(caught instanceof ApiError, 'Debe lanzar ApiError');
+    assertEquals(caught.code, 401);
+    assertEquals(caught.message, 'Unauthorized');
+  });
+
+  await test('respuesta 422 incluye details por campo', async () => {
+    const details = { email: ['Formato inválido'] };
+    mockFetch(422, { ok: false, error: { code: 422, message: 'Validation failed', details } });
+    const api = new Api('/api/v1');
+    let caught = null;
+    try { await api.post('/entities/client/records', {}); } catch (e) { caught = e; }
+    assertTrue(caught instanceof ApiError);
+    assertEquals(caught.details, details);
+  });
+
+  await test('error de red lanza ApiError con code 0', async () => {
+    mockFetchNetworkError();
+    const api = new Api('/api/v1');
+    let caught = null;
+    try { await api.get('/things'); } catch (e) { caught = e; }
+    assertTrue(caught instanceof ApiError, 'Debe lanzar ApiError en error de red');
+    assertEquals(caught.code, 0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Summary
+  // ---------------------------------------------------------------------------
+
+  log('----------------------------------------');
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`<span class="${cls}">Resultado: ${passed} passed, ${failed} failed</span>`);
+
+  document.getElementById('output').innerHTML = document.getElementById('output').textContent
+    .replace(/✅/g, '<span class="pass">✅</span>')
+    .replace(/❌/g, '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>
