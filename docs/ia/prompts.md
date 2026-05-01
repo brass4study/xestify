@@ -220,6 +220,45 @@ STORY 2.7 — Crear test de idempotencia de migración 002_core.sql:
 
 ---
 
+---
+
+## Refactor — Calidad + Estructura
+
+### Refactor: directorios a minúsculas + namespaces + calidad
+**Prompt:**
+```
+Hay 165 problemas en intelephense. Los namespaces están en CamelCase (Xestify\Core)
+pero los directorios en minúsculas (core/). Corrige todo:
+- Actualizar namespace y use statements a Xestify\core, Xestify\controllers, etc.
+- Resolver strings duplicadas con constante QUERY_EXECUTE_MSG
+- Limpiar trailing whitespace
+- Reducir complejidad cognitiva y número de returns en métodos
+```
+**Resultado:** 165 problemas → 0 problemas
+**Iteraciones:** 2 (segunda para refactor de calidad SonarQube tras nuevos errores detectados)
+**Lección:** En Windows, git con `core.ignorecase=false` es necesario para detectar renombrados de directorio en case-insensitive FS.
+
+---
+
+## EPIC 3 — Motor de Entidades Dinámicas
+
+### STORY 3.1 — ValidationService (valida contra schema JSONB)
+**Prompt:**
+```
+STORY 3.1 — Crear Xestify\services\ValidationService con:
+- Método validate(array $data, array $schema): array (devuelve errores por campo)
+- Tipos soportados: string, number, boolean, date (YYYY-MM-DD), email, select
+- Validaciones: required, minLength, maxLength, min, max, options
+- Schema dual: fields como mapa string=>rules O como lista [{name, type, ...}]
+- 8 tests unitarios standalone: payload válido, required, tipo incorrecto, email, longitud, rango, select, lista-style
+- Cumplir reglas SonarQube: ≤3 returns, complejidad cognitiva ≤15
+```
+**Resultado:** ValidationService + 8 tests, 0 errores intelephense, refactor automático de calidad
+**Iteraciones:** 2 (segunda para reducir returns y complejidad cognitiva con switch)
+**Lección:** Separar cada validación de tipo en método privado propio (`validateStringType`, `validateDateType`, etc.) reduce complejidad cognitiva y facilita añadir nuevos tipos.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
@@ -232,3 +271,4 @@ STORY 2.7 — Crear test de idempotencia de migración 002_core.sql:
 8. **Caracteres encoding** — UTF-8 sin BOM en todos los archivos.
 9. **php:S113** — Newline obligatoria al final de cada archivo.
 10. **Directorios minúsculas** — Convención consistente en toda la estructura.
+11. **Separar validaciones por tipo** — Un método por tipo facilita extensión y reduce complejidad.

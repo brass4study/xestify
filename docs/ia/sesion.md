@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-01  
-**EPIC activo:** EPIC 2 — Modelo de Datos Core (✅ COMPLETADO)  
-**Próxima story:** EPIC 3 (Pendiente de planificación)
+**EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
+**Próxima story:** STORY 3.2 — Crear EntityService (orquestación CRUD)
 
 ---
 
@@ -86,6 +86,12 @@
 - `backend/tests/integration/MigrationIdempotenceTest.php` — 3 tests (idempotencia 002_core.sql)
 
 ### ⏭ EPIC 3-5 — Pendiente
+
+### 🔄 EPIC 3 — Motor de Entidades Dinámicas (EN PROGRESO)
+
+| Story | Descripción | Commit | Tests |
+|-------|-------------|--------|-------|
+| 3.1 ✅ | ValidationService (valida contra schema JSONB) | pendiente | 8/8 ✅ |
 
 ---
 

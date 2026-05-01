@@ -240,3 +240,40 @@
 
 **Archivos creados:** 40+
 **Líneas de código:** 2000+
+
+---
+
+## Refactor — Calidad + Estructura (2026-05-01)
+
+### Refactor: Directorios a minúsculas + encodings + calidad
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Recuperó 14 archivos PHP desde git y los copió en directorios minúsculos (core/, controllers/, etc.)
+  - Actualizó todos los namespace y use statements de CamelCase a minúsculas
+  - Añadió newline final en todos los archivos PHP (php:S113)
+  - Extrajo constante `QUERY_EXECUTE_MSG` para eliminar strings duplicadas en 3 tests
+  - Limpió trailing whitespace en MigrationIdempotenceTest.php
+  - Redujo 165 problemas de intelephense a 0
+- **Iteraciones:** 2 (segunda iteración para reducir complejidad cognitiva)
+- **Decisión manual:** ninguna
+
+---
+
+## EPIC 3 — Motor de Entidades Dinámicas
+
+### STORY 3.1: ValidationService (valida contra schema JSONB)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~89% ⚡
+- **Qué hizo IA:**
+  - Implementó `validate(data, schema)` con soporte de 6 tipos: string, number, boolean, date, email, select
+  - Validaciones de required, minLength, maxLength, min, max, options
+  - Soporte dual de schema: `fields` como mapa clave→reglas o como lista con `name`
+  - Refactorizó automáticamente para cumplir reglas de calidad (≤3 returns, complejidad cognitiva ≤15)
+  - 8 tests unitarios standalone
+- **Iteraciones:** 2 (segunda para refactor de calidad SonarQube)
+- **Decisión manual:** ninguna
