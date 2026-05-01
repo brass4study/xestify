@@ -469,3 +469,18 @@
   - Creó `HookDispatcherTest.php` con 11 tests unitarios standalone
 - **Iteraciones:** 1
 - **Decisión manual:** `fwrite(STDERR, ...)` para warnings de after* (sin dependencia de Logger); callbacks retornan array modificado o null para no-op
+
+### STORY 4.3: Hooks beforeSave/afterSave en EntityService
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~88% ⚡
+- **Qué hizo IA:**
+  - Inyectó `?HookDispatcher $hooks = null` en `EntityService` (sin romper tests existentes)
+  - `createRecord` y `updateRecord`: `dispatchBefore` + `dispatchAfter` reemplazando stub `fireHooks`
+  - `beforeSave` puede mutar `$context['data']` antes de la persistencia
+  - `afterSave` falla silenciosamente (delegado a HookDispatcher)
+  - Creó stubs `PdoStub`, `PdoStatementStub`, `RepositoryStub` para tests unitarios sin BD
+  - Creó `EntityServiceHooksTest.php` con 10 tests unitarios standalone
+- **Iteraciones:** 1
+- **Decisión manual:** `?HookDispatcher $hooks = null` para mantener compatibilidad con wiring existente sin romper `buildService()` en `EntityServiceTest.php`

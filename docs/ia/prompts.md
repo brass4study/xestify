@@ -486,6 +486,21 @@ STORY 4.2 — Crear HookDispatcher:
 
 ---
 
+### STORY 4.3 — Hooks beforeSave/afterSave en EntityService
+**Prompt:**
+```
+STORY 4.3 — Integrar HookDispatcher en EntityService:
+- Inyectar HookDispatcher (nullable) en constructor
+- createRecord/updateRecord: beforeSave antes de persistir, afterSave después
+- beforeSave puede mutar context['data'] antes de llegue al repo
+- Tests unitarios con stubs (sin BD)
+```
+**Resultado:** `EntityService` modificado; `EntityServiceHooksTest.php` con 10 pruebas (10/10 al primer intento).
+**Iteraciones:** 1
+**Lección:** Usar `?HookDispatcher $hooks = null` como parámetro opcional mantiene compatibilidad retroactiva con tests de integración existentes sin modificarlos.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

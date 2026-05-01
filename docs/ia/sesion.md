@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.3 — hooks beforeSave/afterSave en EntityService
+**Próxima story:** STORY 4.4 — plugin de entidad base (entity_client)
 
 ---
 
@@ -115,7 +115,8 @@
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
 | 4.1 ✅ | PluginLoader (descubre, valida, registra) | 75ad5f4 | 8/8 ✅ |
-| 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | pendiente (este commit) | 11/11 ✅ |
+| 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | b053e91 | 11/11 ✅ |
+| 4.3 ✅ | hooks beforeSave/afterSave en EntityService | pendiente (este commit) | 10/10 ✅ |
 
 ---
 

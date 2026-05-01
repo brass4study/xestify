@@ -8,6 +8,7 @@ use PDO;
 use PDOException;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\ValidationException;
+use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 
 /**
@@ -15,7 +16,7 @@ use Xestify\repositories\GenericRepository;
  *
  * Fetches the current schema from entity_metadata, validates incoming data
  * with ValidationService, persists records via GenericRepository, and
- * dispatches hooks (stub — implemented in EPIC 4).
+ * dispatches beforeSave/afterSave hooks via HookDispatcher.
  *
  * Methods:
  *   createRecord(string $entitySlug, array $data, ?string $ownerId): array
@@ -35,7 +36,8 @@ final class EntityService
     public function __construct(
         private GenericRepository $repository,
         private ValidationService $validator,
-        private PDO $pdo
+        private PDO $pdo,
+        private ?HookDispatcher $hooks = null
     ) {
     }
 
@@ -57,8 +59,9 @@ final class EntityService
             throw new ValidationException($errors);
         }
 
-        $record = $this->repository->create($entitySlug, $data, $ownerId);
-        $this->fireHooks($entitySlug, 'after_create', $record);
+        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
+        $record  = $this->repository->create($entitySlug, $context['data'], $ownerId);
+        $this->dispatchAfter('afterSave', $entitySlug, $record);
 
         return $record;
     }
@@ -82,8 +85,9 @@ final class EntityService
             throw new ValidationException($errors);
         }
 
-        $record = $this->repository->update($id, $data);
-        $this->fireHooks($entitySlug, 'after_update', $record);
+        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
+        $record  = $this->repository->update($id, $context['data']);
+        $this->dispatchAfter('afterSave', $entitySlug, $record);
 
         return $record;
     }
@@ -152,13 +156,35 @@ final class EntityService
     }
 
     /**
-     * Fire registered hooks for an entity event.
-     * Intentionally empty stub — hook dispatcher implemented in EPIC 4.
+     * Dispatch a beforeSave hook through HookDispatcher.
+     * Returns the (possibly mutated) context so callers can use $context['data'].
+     * Throws if the hook blocks the operation.
      *
-     * @param array<string, mixed> $record // NOSONAR
+     * @param  array<string, mixed> $data
+     * @return array<string, mixed>
      */
-    private function fireHooks(string $entitySlug, string $hookName, array $record): void // NOSONAR
+    private function dispatchBefore(string $hook, string $entitySlug, array $data): array
     {
-        // Hook dispatcher stub — all parameters used in EPIC 4 implementation. // NOSONAR
+        $context = ['slug' => $entitySlug, 'data' => $data];
+
+        if ($this->hooks === null) {
+            return $context;
+        }
+
+        return $this->hooks->execute($hook, $context);
+    }
+
+    /**
+     * Dispatch an afterSave hook through HookDispatcher (non-blocking).
+     *
+     * @param  array<string, mixed> $record
+     */
+    private function dispatchAfter(string $hook, string $entitySlug, array $record): void
+    {
+        if ($this->hooks === null) {
+            return;
+        }
+
+        $this->hooks->execute($hook, ['slug' => $entitySlug, 'record' => $record]);
     }
 }
