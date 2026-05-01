@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 2 — Modelo de Datos Core (en progreso)  
-**Próxima story:** STORY 2.6 — GenericRepository (CRUD JSONB)
+**Próxima story:** STORY 2.7 — Verificar idempotencia migración 002_core.sql
 
 ---
 
@@ -69,8 +69,8 @@
 | 2.2 ✅ | Tabla `entity_metadata` (schema versionado) | `0445672` | 4/4 ✅ |
 | 2.3 ✅ | Tabla `entity_data` (registros de negocio) | `195db58` | 5/5 ✅ |
 | 2.4 ✅ | Tabla `plugins_registry` (plugins instalados) | `17fa5df` | 5/5 ✅ |
-| 2.5 ✅ | Tabla `plugin_hook_registry` (hooks registrados) | `(este commit)` | 5/5 ✅ |
-| 2.6 ⏳ | GenericRepository (CRUD JSONB) | — | — |
+| 2.5 ✅ | Tabla `plugin_hook_registry` (hooks registrados) | `3352b4a` | 5/5 ✅ |
+| 2.6 ✅ | GenericRepository (CRUD JSONB) | `(este commit)` | 7/7 ✅ |
 | 2.7 ⏳ | Migración 002_core.sql consolidada | — | — |
 
 **Archivos creados (EPIC 2 hasta ahora):**
@@ -80,6 +80,9 @@
 - `backend/tests/integration/EntityDataTableTest.php` — 5 tests
 - `backend/tests/integration/PluginsRegistryTableTest.php` — 5 tests
 - `backend/tests/integration/PluginHookRegistryTableTest.php` — 5 tests
+- `backend/src/Exceptions/RepositoryException.php`
+- `backend/src/Repositories/GenericRepository.php` — find, all, create, update, delete (soft), restore
+- `backend/tests/integration/GenericRepositoryTest.php` — 7 tests
 
 ### ⏭ EPIC 3-5 — Pendiente
 
