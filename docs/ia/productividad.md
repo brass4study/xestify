@@ -417,3 +417,20 @@
   - Usó `mockFetch` con ordenamiento por longitud de clave para resolver ambigüedad URL `/entities` vs `/entities/:slug/records`
 - **Iteraciones:** 2 (primera iteración: mock API duck-typing + orden de claves en mockFetch)
 - **Decisión manual:** duck-typing en constructor para aceptar mock APIs sin `instanceof`; `mockFetch` ordena por longitud de clave descendente para evitar match prematuro de prefijo `/entities`
+
+---
+
+### STORY 3.11: Frontend - Crear página EntityEdit
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~18 min
+- **Aceleración:** ~90% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/pages/EntityEdit.js` integrando `DynamicForm` para crear/editar registros
+  - Implementó submit con POST (crear) y PUT (editar) según presencia de `recordId`
+  - Implementó pre-relleno del formulario via `initialData` aplicado como defaults de schema
+  - Mostró errores por campo (`ApiError.details`) y banner global para errores genéricos
+  - Expuso callbacks `onSaved` y `onCancel` configurables
+  - Creó `frontend/tests/EntityEditTest.html` con 12 tests (12/12 pasando al primer intento)
+- **Iteraciones:** 1
+- **Decisión manual:** pre-relleno via `#applyInitialData` que mapea `initialData` como `field.default` reutilizando la lógica existente de DynamicForm sin modificarla

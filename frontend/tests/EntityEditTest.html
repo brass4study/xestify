@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>EntityEditTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .sep { color: #444; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+    .summary { margin-top: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+<h2>EntityEditTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { EntityEdit } from '../src/js/pages/EntityEdit.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) { throw new Error(msg); }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function makeSandbox() {
+    const el = document.createElement('div');
+    document.getElementById('sandbox').appendChild(el);
+    return el;
+  }
+
+  function mockFetch(urlMap) {
+    const original = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      const entries = Object.entries(urlMap).sort(([a], [b]) => b.length - a.length);
+      for (const [key, payload] of entries) {
+        if (url.includes(key)) {
+          return {
+            status: payload.status ?? 200,
+            json: async () => payload.envelope,
+          };
+        }
+      }
+      return {
+        status: 404,
+        json: async () => ({ ok: false, error: { message: 'Not found', code: 404, details: {} } }),
+      };
+    };
+    return original;
+  }
+
+  async function test(name, fn) {
+    const originalFetch = globalThis.fetch;
+    try {
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (err) {
+      log(`  ❌ ${name}`);
+      log(`     ${err.message}`);
+      failed++;
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }
+
+  const SCHEMA = {
+    fields: [
+      { name: 'name', label: 'Nombre', type: 'string', required: true },
+      { name: 'email', label: 'Email', type: 'email' },
+    ],
+  };
+
+  // -------------------------------------------------------------------------
+  // Tests
+  // -------------------------------------------------------------------------
+
+  log('----------------------------------------');
+
+  await test('constructor throws on missing container', async () => {
+    let threw = false;
+    try {
+      new EntityEdit('#does-not-exist-ever', 'client', SCHEMA);
+    } catch {
+      threw = true;
+    }
+    assertTrue(threw, 'Expected TypeError for missing container');
+  });
+
+  await test('renders form with schema fields', async () => {
+    const container = makeSandbox();
+    new EntityEdit(container, 'client', SCHEMA);
+
+    const inputs = container.querySelectorAll('input');
+    assertEquals(inputs.length, 2, 'Should render 2 inputs');
+    assertEquals(inputs[0].name, 'name', 'First input should be name');
+    assertEquals(inputs[1].name, 'email', 'Second input should be email');
+  });
+
+  await test('renders "Nuevo registro" title when no recordId', async () => {
+    const container = makeSandbox();
+    new EntityEdit(container, 'client', SCHEMA);
+
+    const title = container.querySelector('.xt-edit-wrapper__title');
+    assertTrue(title !== null, 'Title element should exist');
+    assertTrue(title.textContent.includes('Nuevo'), 'Title should say Nuevo registro');
+  });
+
+  await test('renders "Editar registro" title when recordId is provided', async () => {
+    const container = makeSandbox();
+    new EntityEdit(container, 'client', SCHEMA, { recordId: '42' });
+
+    const title = container.querySelector('.xt-edit-wrapper__title');
+    assertTrue(title.textContent.includes('Editar'), 'Title should say Editar registro');
+  });
+
+  await test('pre-fills form with initialData', async () => {
+    const container = makeSandbox();
+    new EntityEdit(container, 'client', SCHEMA, {
+      initialData: { name: 'ACME', email: 'info@acme.com' },
+    });
+
+    const nameInput = container.querySelector('[name="name"]');
+    const emailInput = container.querySelector('[name="email"]');
+    assertEquals(nameInput.value, 'ACME', 'name input should be pre-filled');
+    assertEquals(emailInput.value, 'info@acme.com', 'email input should be pre-filled');
+  });
+
+  await test('submit() POST to /entities/:slug/records on create', async () => {
+    const container = makeSandbox();
+    let capturedUrl = null;
+    let capturedBody = null;
+
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = url;
+      capturedBody = JSON.parse(init.body);
+      return { status: 201, json: async () => ({ ok: true, data: { id: 1, name: 'ACME' } }) };
+    };
+
+    const page = new EntityEdit(container, 'client', SCHEMA);
+    container.querySelector('[name="name"]').value = 'ACME';
+    container.querySelector('[name="email"]').value = 'info@acme.com';
+    await page.submit();
+
+    assertTrue(capturedUrl.includes('/entities/client/records'), 'Should POST to correct URL');
+    assertEquals(capturedBody.name, 'ACME', 'Body should contain name');
+  });
+
+  await test('submit() PUT to /entities/:slug/records/:id on edit', async () => {
+    const container = makeSandbox();
+    let capturedMethod = null;
+    let capturedUrl = null;
+
+    globalThis.fetch = async (url, init) => {
+      capturedMethod = init.method;
+      capturedUrl = url;
+      return { status: 200, json: async () => ({ ok: true, data: { id: '7', name: 'Updated' } }) };
+    };
+
+    const page = new EntityEdit(container, 'client', SCHEMA, { recordId: '7' });
+    container.querySelector('[name="name"]').value = 'Updated';
+    await page.submit();
+
+    assertEquals(capturedMethod, 'PUT', 'Should use PUT method');
+    assertTrue(capturedUrl.includes('/entities/client/records/7'), 'URL should include record id');
+  });
+
+  await test('submit() calls onSaved with saved record', async () => {
+    const container = makeSandbox();
+    const saved = { id: 1, name: 'ACME' };
+    globalThis.fetch = async () => ({ status: 201, json: async () => ({ ok: true, data: saved }) });
+
+    let calledWith = null;
+    const page = new EntityEdit(container, 'client', SCHEMA, {
+      onSaved: (record) => { calledWith = record; },
+    });
+    container.querySelector('[name="name"]').value = 'ACME';
+    await page.submit();
+
+    assertEquals(calledWith, saved, 'onSaved should be called with the saved record');
+  });
+
+  await test('submit() shows field errors from ApiError.details', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = async () => ({
+      status: 422,
+      json: async () => ({
+        ok: false,
+        error: { code: 422, message: 'Validation failed', details: { name: ['Too short'] } },
+      }),
+    });
+
+    const page = new EntityEdit(container, 'client', SCHEMA);
+    container.querySelector('[name="name"]').value = 'X';
+    await page.submit();
+
+    const errorList = container.querySelector('.xt-field-errors[data-field="name"]');
+    assertTrue(errorList !== null, 'Field error list should be rendered');
+    assertTrue(errorList.textContent.includes('Too short'), 'Error message should be shown');
+  });
+
+  await test('submit() shows global error banner on generic ApiError', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = async () => ({
+      status: 500,
+      json: async () => ({ ok: false, error: { code: 500, message: 'Server error', details: {} } }),
+    });
+
+    const page = new EntityEdit(container, 'client', SCHEMA);
+    container.querySelector('[name="name"]').value = 'ACME';
+    await page.submit();
+
+    const banner = container.querySelector('.xt-edit-error-banner');
+    assertTrue(banner !== null && !banner.hidden, 'Error banner should be visible');
+    assertTrue(banner.textContent.includes('Server error'), 'Banner should show error message');
+  });
+
+  await test('cancel button calls onCancel callback', async () => {
+    const container = makeSandbox();
+    let cancelled = false;
+    new EntityEdit(container, 'client', SCHEMA, { onCancel: () => { cancelled = true; } });
+
+    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    assertTrue(cancelBtn !== null, 'Cancel button should exist when onCancel is provided');
+    cancelBtn.click();
+    assertTrue(cancelled, 'onCancel should have been called');
+  });
+
+  await test('cancel button is absent when no onCancel provided', async () => {
+    const container = makeSandbox();
+    new EntityEdit(container, 'client', SCHEMA);
+
+    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    assertTrue(cancelBtn === null, 'Cancel button should not exist without onCancel');
+  });
+
+  // -------------------------------------------------------------------------
+  // Summary
+  // -------------------------------------------------------------------------
+
+  log('----------------------------------------');
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`<span class="${cls}">Resultado: ${passed} passed, ${failed} failed</span>`);
+
+  document.getElementById('output').innerHTML = document.getElementById('output').textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>

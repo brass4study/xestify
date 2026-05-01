@@ -433,6 +433,25 @@ STORY 3.10 — Frontend - Crear página EntityList:
 
 ---
 
+### STORY 3.11 — Frontend EntityEdit
+**Prompt:**
+```
+STORY 3.11 — Frontend - Crear página EntityEdit:
+- Clase EntityEdit en frontend/src/js/pages/
+- constructor(container, slug, schema, options)
+- Renderizar DynamicForm desde schema
+- Pre-rellenar con initialData cuando se edita
+- submit(): POST (crear) o PUT (editar según recordId)
+- Mostrar errores por campo (ApiError.details) y banner global
+- Callbacks onSaved y onCancel configurables
+- Tests en HTML runner con mockFetch
+```
+**Resultado:** `EntityEdit.js` implementado completo; `EntityEditTest.html` con 12 pruebas (12/12 pasando al primer intento).
+**Iteraciones:** 1
+**Lección:** Pre-rellenar formulario mapeando `initialData` a `field.default` reutiliza la lógica interna de DynamicForm sin necesidad de añadir método `setValue` al componente.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.
