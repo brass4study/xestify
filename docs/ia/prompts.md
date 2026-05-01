@@ -531,3 +531,19 @@ STORY 4.3 — Integrar HookDispatcher en EntityService:
 **Resultado:** 13/13 tests unitarios pasando al primer intento
 **Iteraciones:** 1
 
+---
+
+### STORY 4.5 — Ciclo de vida de plugin
+
+**Prompt:**
+```
+STORY 4.5 — Implementar ciclo de vida de plugins (onInstall, onActivate, onDeactivate):
+ - PluginLifecycleInterface: contrato con los tres métodos void
+ - PluginLoader: registerPlugin() retorna bool (nuevo=true), load() llama onInstall si es nuevo,
+   añadir activate() y deactivate() que actualizan status + llaman al hook correspondiente
+ - entity_client/Lifecycle.php: onInstall llama Installer::install()
+ - Tests de integración (8 tests) con BD real y fixtures temporales en sys_get_temp_dir()
+```
+**Resultado:** 8/8 tests de integración pasando
+**Iteraciones:** 2 (fix path helpers.php + `Database::connection()`)
+

@@ -15,6 +15,11 @@ use Xestify\exceptions\PluginException;
  *   - Hooks.php      Optional — loaded via require_once when present
  *
  * Compatibility rule: plugin's core_version must be <= current CORE_VERSION.
+ *
+ * Lifecycle:
+ *   - onInstall()    called the first time a plugin is registered
+ *   - onActivate()   called via activate($slug)
+ *   - onDeactivate() called via deactivate($slug)
  */
 class PluginLoader
 {
@@ -86,10 +91,44 @@ class PluginLoader
     {
         $manifest = $this->readManifest($slug);
         $this->validateCompatibility($manifest);
-        $this->registerPlugin($manifest);
+        $isNew = $this->registerPlugin($manifest);
         $this->loadHooks($slug);
+        $this->requireLifecycleFile($slug);
+
+        if ($isNew) {
+            $lifecycle = $this->instantiateLifecycle($slug);
+            if ($lifecycle !== null) {
+                $lifecycle->onInstall();
+            }
+        }
 
         return $manifest;
+    }
+
+    /**
+     * Activate a plugin: update status to 'active' and call onActivate().
+     */
+    public function activate(string $slug): void
+    {
+        $this->updateStatus($slug, 'active');
+        $this->requireLifecycleFile($slug);
+        $lifecycle = $this->instantiateLifecycle($slug);
+        if ($lifecycle !== null) {
+            $lifecycle->onActivate();
+        }
+    }
+
+    /**
+     * Deactivate a plugin: update status to 'inactive' and call onDeactivate().
+     */
+    public function deactivate(string $slug): void
+    {
+        $this->updateStatus($slug, 'inactive');
+        $this->requireLifecycleFile($slug);
+        $lifecycle = $this->instantiateLifecycle($slug);
+        if ($lifecycle !== null) {
+            $lifecycle->onDeactivate();
+        }
     }
 
     /**
@@ -173,7 +212,12 @@ class PluginLoader
         }
     }
 
-    private function registerPlugin(array $manifest): void
+    /**
+     * Register or update the plugin in plugins_registry.
+     *
+     * @return bool true when the plugin is brand-new (INSERT), false on UPDATE
+     */
+    private function registerPlugin(array $manifest): bool
     {
         $slug = $manifest['slug'];
 
@@ -184,25 +228,33 @@ class PluginLoader
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($existing !== false) {
-            $update = $this->pdo->prepare(
+            $this->pdo->prepare(
                 'UPDATE plugins_registry
                     SET version = :version, updated_at = NOW()
                   WHERE plugin_slug = :slug'
-            );
-            $update->execute([':version' => $manifest['version'], ':slug' => $slug]);
-            return;
+            )->execute([':version' => $manifest['version'], ':slug' => $slug]);
+
+            return false;
         }
 
-        $insert = $this->pdo->prepare(
+        $this->pdo->prepare(
             'INSERT INTO plugins_registry (plugin_slug, plugin_type, version, status)
              VALUES (:slug, :type, :version, :status)'
-        );
-        $insert->execute([
+        )->execute([
             ':slug'    => $slug,
             ':type'    => $manifest['type'],
             ':version' => $manifest['version'],
             ':status'  => 'inactive',
         ]);
+
+        return true;
+    }
+
+    private function updateStatus(string $slug, string $status): void
+    {
+        $this->pdo->prepare(
+            'UPDATE plugins_registry SET status = :status, updated_at = NOW() WHERE plugin_slug = :slug'
+        )->execute([':status' => $status, ':slug' => $slug]);
     }
 
     private function loadHooks(string $slug): void
@@ -212,5 +264,25 @@ class PluginLoader
         if (file_exists($hooksPath)) {
             require_once $hooksPath;
         }
+    }
+
+    private function requireLifecycleFile(string $slug): void
+    {
+        $path = $this->pluginsDir . '/' . $slug . '/Lifecycle.php';
+
+        if (file_exists($path)) {
+            require_once $path;
+        }
+    }
+
+    private function instantiateLifecycle(string $slug): ?PluginLifecycleInterface
+    {
+        $class = 'Xestify\\plugins\\' . $slug . '\\Lifecycle';
+
+        if (!class_exists($class)) {
+            return null;
+        }
+
+        return new $class($this->pdo); // NOSONAR — convention-based plugin lifecycle class
     }
 }

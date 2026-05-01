@@ -559,7 +559,7 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Dependencias:** STORY 4.1
 - **Blockers:** Ninguno
 
-### STORY 4.7: Extender schema con campos sugeridos, identidad y relaciones entre entidades
+### STORY 4.7: Extender schema con identidad,  campos sugeridos  y relaciones entre entidades
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Feature

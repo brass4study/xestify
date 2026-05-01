@@ -499,3 +499,17 @@
 - **Iteraciones:** 1
 - **Decisión manual:** Installer separado de Hooks para mantener responsabilidad única; `ON CONFLICT … DO UPDATE` en `system_entities` para permitir actualizaciones de versión sin error
 
+### STORY 4.5: Ciclo de vida de plugin (onInstall, onActivate, onDeactivate)
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~25 min
+- **Aceleración:** ~90% ⚡
+- **Qué hizo IA:**
+  - Creó `backend/src/plugins/PluginLifecycleInterface.php` con contrato `onInstall/onActivate/onDeactivate`
+  - Modificó `PluginLoader.php`: `registerPlugin()` retorna `bool` (nuevo/existente), añadidos `activate()`, `deactivate()`, `requireLifecycleFile()`, `instantiateLifecycle()`
+  - Creó `backend/plugins/entity_client/Lifecycle.php`: `onInstall` llama `Installer::install()`
+  - Creó `backend/tests/integration/PluginLifecycleTest.php` con 8 tests de integración (BD real, fixtures temporales con `$GLOBALS` para trackear llamadas)
+- **Iteraciones:** 2 (fix `helpers.php` path + `Database::connection()` vs `::getInstance()`)
+- **Decisión manual:** Fixture Lifecycle.php generado en `sys_get_temp_dir()` para evitar polución de `backend/plugins/`; `// NOSONAR` en `new $class()` justificado por convención de plugins
+
+

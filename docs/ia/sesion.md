@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-01  
+**Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 4 — Sistema de Plugins y Hooks Backend (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.5 — ciclo de vida de plugin (onInstall, onActivate)
+**Próxima story:** STORY 4.6 — metadatos de plugin (compatibilidad, dependencias)
 
 ---
 
@@ -117,7 +117,8 @@
 | 4.1 ✅ | PluginLoader (descubre, valida, registra) | 75ad5f4 | 8/8 ✅ |
 | 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | b053e91 | 11/11 ✅ |
 | 4.3 ✅ | hooks beforeSave/afterSave en EntityService | c8c9755 | 10/10 ✅ |
-| 4.4 ✅ | Plugin entity_client (manifest, schema, Hooks, Installer) | pendiente (este commit) | 13/13 ✅ |
+| 4.4 ✅ | Plugin entity_client (manifest, schema, Hooks, Installer) | 989ef37 | 13/13 ✅ |
+| 4.5 ✅ | Ciclo de vida de plugin (onInstall, onActivate, onDeactivate) | pendiente (este commit) | 8/8 ✅ |
 
 ---
 
