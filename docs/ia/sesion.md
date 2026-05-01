@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 4 — Sistema de Plugins y Hooks Backend (🔄 EN PROGRESO)  
-**Próxima story:** STORY 4.6 — metadatos de plugin (compatibilidad, dependencias)
+**Próxima story:** STORY 4.7 — Extender schema con campos sugeridos y relaciones entre entidades
 
 ---
 
@@ -118,7 +118,8 @@
 | 4.2 ✅ | HookDispatcher (registro y ejecución de hooks) | b053e91 | 11/11 ✅ |
 | 4.3 ✅ | hooks beforeSave/afterSave en EntityService | c8c9755 | 10/10 ✅ |
 | 4.4 ✅ | Plugin entity_client (manifest, schema, Hooks, Installer) | 989ef37 | 13/13 ✅ |
-| 4.5 ✅ | Ciclo de vida de plugin (onInstall, onActivate, onDeactivate) | pendiente (este commit) | 8/8 ✅ |
+| 4.5 ✅ | Ciclo de vida de plugin (onInstall, onActivate, onDeactivate) | d1a476e | 8/8 ✅ |
+| 4.6 ✅ | Metadatos de plugin (compatibilidad, dependencias entre plugins) | pendiente (este commit) | 6/6 ✅ |
 
 ---
 

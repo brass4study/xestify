@@ -91,6 +91,7 @@ class PluginLoader
     {
         $manifest = $this->readManifest($slug);
         $this->validateCompatibility($manifest);
+        $this->validateDependencies($manifest);
         $isNew = $this->registerPlugin($manifest);
         $this->loadHooks($slug);
         $this->requireLifecycleFile($slug);
@@ -209,6 +210,56 @@ class PluginLoader
                 "Plugin '{$manifest['slug']}' requires core >= {$manifest['core_version']}, "
                 . 'current core is ' . self::CORE_VERSION
             );
+        }
+    }
+
+    /**
+     * Validate that all plugins listed in manifest 'requires' are already registered
+     * in plugins_registry with a sufficient version.
+     *
+     * Expected format in manifest.json (optional):
+     *   "requires": [
+     *     {"slug": "other_plugin", "version": "1.0.0"}
+     *   ]
+     *
+     * @throws PluginException
+     */
+    private function validateDependencies(array $manifest): void
+    {
+        $requires = $manifest['requires'] ?? [];
+
+        if (!is_array($requires) || $requires === []) {
+            return;
+        }
+
+        foreach ($requires as $dep) {
+            if (!is_array($dep) || !isset($dep['slug']) || !is_string($dep['slug'])) {
+                throw new PluginException(
+                    "Plugin '{$manifest['slug']}' has an invalid 'requires' entry in manifest.json"
+                );
+            }
+
+            $depSlug = $dep['slug'];
+            $minVersion = isset($dep['version']) && is_string($dep['version']) ? $dep['version'] : '0.0.0';
+
+            $stmt = $this->pdo->prepare(
+                'SELECT version FROM plugins_registry WHERE plugin_slug = :slug'
+            );
+            $stmt->execute([':slug' => $depSlug]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($row === false) {
+                throw new PluginException(
+                    "Plugin '{$manifest['slug']}' requires plugin '{$depSlug}' which is not installed"
+                );
+            }
+
+            if (version_compare((string) $row['version'], $minVersion, '<')) {
+                throw new PluginException(
+                    "Plugin '{$manifest['slug']}' requires plugin '{$depSlug}' >= {$minVersion}, "
+                    . 'installed version is ' . $row['version']
+                );
+            }
         }
     }
 

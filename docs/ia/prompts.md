@@ -547,3 +547,18 @@ STORY 4.5 — Implementar ciclo de vida de plugins (onInstall, onActivate, onDea
 **Resultado:** 8/8 tests de integración pasando
 **Iteraciones:** 2 (fix path helpers.php + `Database::connection()`)
 
+---
+
+### STORY 4.6 — Metadatos de plugin (dependencias)
+
+**Prompt:**
+```
+STORY 4.6 — Validar dependencias entre plugins en manifest.json:
+ - Campo opcional `requires` en manifest.json: array de {slug, version}
+ - PluginLoader::validateDependencies(): comprueba plugins_registry antes de cargar
+ - Bloquear instalación con PluginException si dep faltante o versión insuficiente
+ - Tests de integración: 6 casos (sin requires, dep ausente, dep presente, versión baja, entry inválida, sin version)
+```
+**Resultado:** 6/6 tests de integración pasando al primer intento
+**Iteraciones:** 1
+

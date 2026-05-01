@@ -512,4 +512,16 @@
 - **Iteraciones:** 2 (fix `helpers.php` path + `Database::connection()` vs `::getInstance()`)
 - **Decisión manual:** Fixture Lifecycle.php generado en `sys_get_temp_dir()` para evitar polución de `backend/plugins/`; `// NOSONAR` en `new $class()` justificado por convención de plugins
 
+### STORY 4.6: Metadatos de plugin (compatibilidad, dependencias entre plugins)
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Añadió `validateDependencies()` a `PluginLoader`: valida campo `requires` del manifest (array de `{slug, version}`), comprueba que cada dependencia está en `plugins_registry` con versión suficiente
+  - Creó `backend/tests/integration/PluginDependenciesTest.php` con 6 tests (requires vacío, dep no instalada, dep instalada, versión baja, entry malformada, sin campo version)
+- **Iteraciones:** 1
+- **Decisión manual:** `requires` sin campo `version` usa `0.0.0` como mínimo (acepta cualquier versión instalada); no se comprueba status del plugin dependiente (solo que esté registrado)
+
+
 

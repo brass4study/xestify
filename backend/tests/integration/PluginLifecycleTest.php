@@ -12,6 +12,9 @@ require_once __DIR__ . '/../unit/helpers.php';
 use Xestify\plugins\PluginLoader;
 use Xestify\core\Database;
 
+define('LC_TEST_VERSION', '1.0.0');
+define('LC_STATUS_QUERY', 'SELECT status FROM plugins_registry WHERE plugin_slug = :slug');
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -33,9 +36,9 @@ function createLifecycleFixture(string $baseDir, string $slug): void
     file_put_contents($dir . '/manifest.json', json_encode([
         'slug'         => $slug,
         'name'         => 'Test Lifecycle Plugin',
-        'version'      => '1.0.0',
+        'version'      => LC_TEST_VERSION,
         'type'         => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => LC_TEST_VERSION,
     ]));
 
     // Write a Lifecycle.php whose methods increment $GLOBALS counters
@@ -114,7 +117,7 @@ TestSuite::run('activate() actualiza status a active en plugins_registry', funct
     $loader = new PluginLoader($tmpDir, $pdo);
     $loader->activate($slug);
 
-    $stmt = $pdo->prepare('SELECT status FROM plugins_registry WHERE plugin_slug = :slug');
+    $stmt = $pdo->prepare(LC_STATUS_QUERY);
     $stmt->execute([':slug' => $slug]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -133,7 +136,7 @@ TestSuite::run('deactivate() actualiza status a inactive en plugins_registry', f
     $loader = new PluginLoader($tmpDir, $pdo);
     $loader->deactivate($slug);
 
-    $stmt = $pdo->prepare('SELECT status FROM plugins_registry WHERE plugin_slug = :slug');
+    $stmt = $pdo->prepare(LC_STATUS_QUERY);
     $stmt->execute([':slug' => $slug]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -155,9 +158,9 @@ TestSuite::run('load() funciona sin Lifecycle.php (plugin sin ciclo de vida)', f
     file_put_contents($dir . '/manifest.json', json_encode([
         'slug'         => $noLcSlug,
         'name'         => 'No Lifecycle Plugin',
-        'version'      => '1.0.0',
+        'version'      => LC_TEST_VERSION,
         'type'         => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => LC_TEST_VERSION,
     ]));
 
     try {
@@ -183,7 +186,7 @@ TestSuite::run('activate() y deactivate() en ciclo completo', function () use ($
     assert($GLOBALS['lc_activate'] === 2, 'onActivate must be called twice');
     assert($GLOBALS['lc_deactivate'] === 1, 'onDeactivate must be called once');
 
-    $stmt = $pdo->prepare('SELECT status FROM plugins_registry WHERE plugin_slug = :slug');
+    $stmt = $pdo->prepare(LC_STATUS_QUERY);
     $stmt->execute([':slug' => $slug]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     assert(($row['status'] ?? '') === 'active', 'final status must be active');
