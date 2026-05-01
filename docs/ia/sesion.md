@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-01  
 **EPIC activo:** EPIC 3 — Motor de Entidades Dinámicas (🔄 EN PROGRESO)  
-**Próxima story:** STORY 3.4 — Crear respuesta REST envelopada (estándar)
+**Próxima story:** STORY 3.5 — Crear modelo SystemEntity (acceso a metadata)
 
 ---
 
@@ -94,6 +94,7 @@
 | 3.1 ✅ | ValidationService (valida contra schema JSONB) | pendiente | 8/8 ✅ |
 | 3.2 ✅ | EntityService (orquestación CRUD) | pendiente | 6/6 ✅ |
 | 3.3 ✅ | EntityController (endpoints REST) + rutas /api/v1 | pendiente | 9/9 ✅ |
+| 3.4 ✅ | Helpers apiSuccess/apiError en Response | pendiente | 24/24 ✅ |
 
 ---
 

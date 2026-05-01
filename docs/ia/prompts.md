@@ -298,6 +298,25 @@ STORY 3.3 — Crear Xestify\controllers\EntityController con:
 
 ---
 
+### STORY 3.4 — Helpers estáticos apiSuccess/apiError en Response
+**Prompt:**
+```
+STORY 3.4 — Añadir a Xestify\core\Response:
+- public static function apiSuccess(mixed $data = null, array $meta = []): void
+- public static function apiError(int $code, string $message, array $details = []): void
+Cada uno delega al método de instancia existente (json / error).
+Añadir 4 tests en RequestResponseTest.php (total 24 tests):
+- apiSuccess() emite envelope ok:true con data y meta
+- apiSuccess() omite meta cuando está vacío
+- apiError() emite envelope ok:false con code y message
+- apiError() incluye details de validación por campo
+```
+**Resultado:** 2 helpers estáticos + 4 tests → 24/24 en primera iteración
+**Iteraciones:** 1
+**Lección:** Los métodos estáticos que delegan a `self::make()` mantienen el patrón fluent intacto.
+
+---
+
 ## Lecciones acumuladas
 
 1. **Estructura antes de código** — Invertir 15 min en la estructura correcta evita reorganizaciones posteriores.

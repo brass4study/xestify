@@ -145,6 +145,34 @@ TestSuite::run('notFound() shortcut emite 404', function () {
     assertEquals(404, $envelope['error']['code']);
 });
 
+TestSuite::run('apiSuccess() emite envelope ok:true con data y meta', function () {
+    $envelope = capture(fn() => Response::apiSuccess(['id' => 5], ['total' => 1]));
+    assertEquals(true, $envelope['ok']);
+    assertEquals(['id' => 5], $envelope['data']);
+    assertEquals(1, $envelope['meta']['total']);
+});
+
+TestSuite::run('apiSuccess() omite meta cuando está vacío', function () {
+    $envelope = capture(fn() => Response::apiSuccess(['x' => 1]));
+    assertEquals(true, $envelope['ok']);
+    assertTrue(!array_key_exists('meta', $envelope), 'meta no debe existir si está vacío');
+});
+
+TestSuite::run('apiError() emite envelope ok:false con code y message', function () {
+    $envelope = capture(fn() => Response::apiError(400, 'Bad input'));
+    assertEquals(false, $envelope['ok']);
+    assertEquals(400, $envelope['error']['code']);
+    assertEquals('Bad input', $envelope['error']['message']);
+});
+
+TestSuite::run('apiError() incluye details de validación por campo', function () {
+    $details  = ['email' => ['Formato inválido'], 'name' => ['Requerido']];
+    $envelope = capture(fn() => Response::apiError(422, 'Validation failed', $details));
+    assertEquals(false, $envelope['ok']);
+    assertEquals(422, $envelope['error']['code']);
+    assertEquals($details, $envelope['error']['details']);
+});
+
 // ---------------------------------------------------------------------------
 // Resumen
 // ---------------------------------------------------------------------------

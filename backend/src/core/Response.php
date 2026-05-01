@@ -24,6 +24,29 @@ class Response
         return new self();
     }
 
+    /**
+     * Static shortcut: emit a success envelope and exit.
+     *
+     * @param mixed $data  Payload principal
+     * @param array $meta  Metadatos opcionales (paginación, etc.)
+     */
+    public static function apiSuccess(mixed $data = null, array $meta = []): void
+    {
+        self::make()->json($data, $meta);
+    }
+
+    /**
+     * Static shortcut: emit an error envelope and exit.
+     *
+     * @param int    $code     HTTP status code
+     * @param string $message  Human-readable message
+     * @param array  $details  Per-field validation errors or extra details
+     */
+    public static function apiError(int $code, string $message, array $details = []): void
+    {
+        self::make()->error($code, $message, $details);
+    }
+
     // -----------------------------------------------------------------------
     // Fluent setters
     // -----------------------------------------------------------------------

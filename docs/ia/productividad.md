@@ -294,6 +294,7 @@
 
 ### STORY 3.3: EntityController (endpoints REST)
 - **Fecha:** 2026-05-01
+
 - **Estimado sin IA:** 4h
 - **Tiempo real con IA:** ~20 min
 - **Aceleración:** ~92% ⚡
@@ -302,5 +303,16 @@
   - Registró 6 rutas en `routes.php` y bindings en `config/app.php`
   - Manejo de errores: `ValidationException` → 422, `EntityServiceException` → 404, `RepositoryException` → 404
   - 9 tests E2E: schema, schema 404, create, create 422, index, show, show 404, update, delete
+- **Iteraciones:** 1
+- **Decisión manual:** ninguna
+
+### STORY 3.4: Helpers apiSuccess/apiError (respuesta REST envelopada)
+- **Fecha:** 2026-05-01
+- **Estimado sin IA:** 1h
+- **Tiempo real con IA:** ~5 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Añadió `apiSuccess(data, meta)` y `apiError(code, message, details)` como métodos estáticos a `Response`
+  - 4 tests nuevos en `RequestResponseTest.php` (total: 24 tests)
 - **Iteraciones:** 1
 - **Decisión manual:** ninguna
