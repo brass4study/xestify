@@ -1,5 +1,6 @@
 import { Api } from './modules/Api.js';
 import { AppState } from './modules/State.js';
+import { EntityEdit } from './pages/EntityEdit.js';
 import { EntityList } from './pages/EntityList.js';
 import { Login } from './pages/Login.js';
 import { Navbar } from './modules/Navbar.js';
@@ -81,23 +82,11 @@ async function renderDashboard(container) {
   await navigateTo('entities', content, dashboardApi);
 }
 
-/**
- * Render the requested page into the content area.
- *
- * @param {string} page
- * @param {HTMLElement} content
- * @param {Api} api
- */
 async function navigateTo(page, content, api) {
   content.innerHTML = '';
 
   if (page === 'entities') {
-    const entityList = new EntityList(content, { api });
-    try {
-      await entityList.init();
-    } catch {
-      content.innerHTML = '<p>No se pudo cargar la lista de entidades.</p>';
-    }
+    await showEntityList(content, api, null);
     return;
   }
 
@@ -110,6 +99,71 @@ async function navigateTo(page, content, api) {
   }
 
   content.innerHTML = '<p>Página no encontrada.</p>';
+}
+
+/**
+ * Render EntityList in the content area, optionally pre-loading a specific entity.
+ *
+ * @param {HTMLElement} content
+ * @param {Api} api
+ * @param {string|null} preloadSlug  If set, loadEntity(preloadSlug) is called after init
+ */
+async function showEntityList(content, api, preloadSlug) {
+  content.innerHTML = '';
+
+  let entityListPage;
+
+  entityListPage = new EntityList(content, {
+    api,
+    onCreateNew: (slug) => {
+      showEntityEdit(content, api, slug, entityListPage, null, {});
+    },
+    onEdit: (slug, recordId, record) => {
+      showEntityEdit(content, api, slug, entityListPage, recordId, record);
+    },
+  });
+
+  try {
+    await entityListPage.init();
+    if (preloadSlug !== null) {
+      await entityListPage.loadEntity(preloadSlug);
+    }
+  } catch {
+    content.innerHTML = '<p>No se pudo cargar la lista de entidades.</p>';
+  }
+}
+
+/**
+ * Render EntityEdit in the content area. On save, returns to EntityList and
+ * reloads the entity records. On cancel, returns to EntityList.
+ *
+ * @param {HTMLElement} content
+ * @param {Api} api
+ * @param {string} slug
+ * @param {EntityList} entityListPage  Current list instance (not used directly)
+ * @param {string|null} recordId       null = create, string = edit existing
+ * @param {object} initialData         Pre-fill values for edit mode
+ */
+function showEntityEdit(content, api, slug, entityListPage, recordId, initialData) {
+  const entities = AppState.getEntities();
+  const schema = entities.find((e) => e.slug === slug) ?? { slug, fields: [] };
+
+  content.innerHTML = '';
+
+  void new EntityEdit(content, slug, schema, {
+    api,
+    recordId: recordId ?? null,
+    initialData: initialData ?? {},
+    onSaved: async () => {
+      await showEntityList(content, api, slug);
+    },
+    onCancel: async () => {
+      await showEntityList(content, api, slug);
+    },
+  });
+
+  // Suppress unused reference to entityListPage; kept for API consistency
+  void entityListPage;
 }
 
 function setAuthToken(token) {

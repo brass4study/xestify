@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>E2ETest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .sep { color: #444; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+    .summary { margin-top: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+<h2>E2ETest — EntityList + EntityEdit flow</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { EntityList } from '../src/js/pages/EntityList.js';
+  import { EntityEdit } from '../src/js/pages/EntityEdit.js';
+  import { AppState } from '../src/js/modules/State.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) { throw new Error(msg); }
+  }
+
+  function assertEquals(actual, expected, msg = '') {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) {
+      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
+    }
+  }
+
+  function makeSandbox() {
+    const el = document.createElement('div');
+    document.getElementById('sandbox').appendChild(el);
+    return el;
+  }
+
+  /**
+   * Install a fetch mock that routes by URL substring + optional method.
+   * Each entry: { url: string, method?: string, data: any, status?: number }
+   * Returns original fetch so callers can restore it.
+   *
+   * @param {Array<{url: string, method?: string, data: any, status?: number}>} routes
+   * @returns {typeof fetch}
+   */
+  function mockFetch(routes) {
+    const original = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      const method = (init?.method ?? 'GET').toUpperCase();
+      // Find most-specific match (longest url substring first)
+      const sorted = [...routes].sort((a, b) => b.url.length - a.url.length);
+      for (const route of sorted) {
+        const methodMatch = route.method === undefined || route.method.toUpperCase() === method;
+        if (methodMatch && url.includes(route.url)) {
+          const status = route.status ?? 200;
+          return {
+            status,
+            json: async () => status < 400
+              ? { ok: true, data: route.data }
+              : { ok: false, error: { message: route.data, code: status, details: route.details ?? {} } },
+          };
+        }
+      }
+      return {
+        status: 404,
+        json: async () => ({ ok: false, error: { message: 'Not found', code: 404, details: {} } }),
+      };
+    };
+    return original;
+  }
+
+  async function test(name, fn) {
+    const originalFetch = globalThis.fetch;
+    try {
+      AppState.reset();
+      await fn();
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (err) {
+      log(`  ❌ ${name}`);
+      log(`     ${err.message}`);
+      failed++;
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }
+
+  // ── Fixtures ───────────────────────────────────────────────────────────────
+
+  const ENTITIES = [
+    { slug: 'client', label: 'Clientes', fields: [
+      { name: 'name', label: 'Nombre', type: 'string', required: true },
+      { name: 'email', label: 'Email', type: 'email' },
+    ] },
+  ];
+
+  const RECORDS = [
+    { id: '1', name: 'Alice', email: 'alice@test.com' },
+    { id: '2', name: 'Bob', email: 'bob@test.com' },
+  ];
+
+  const CREATED_RECORD = { id: '3', name: 'Carol', email: 'carol@test.com' };
+
+  // ── Tests ──────────────────────────────────────────────────────────────────
+
+  log('── Flujo EntityList ───────────────────────────────────────────────────');
+
+  await test('init renders entity buttons', async () => {
+    const container = makeSandbox();
+    mockFetch([{ url: '/entities', data: ENTITIES }]);
+    const page = new EntityList(container);
+    await page.init();
+    const btn = container.querySelector('[data-slug="client"]');
+    assertTrue(btn !== null, 'Expected entity button with data-slug="client"');
+    assertEquals(btn.textContent, 'Clientes', 'Button label should be entity label');
+    container.remove();
+  });
+
+  await test('loadEntity renders records table', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', data: RECORDS },
+    ]);
+    const page = new EntityList(container);
+    await page.init();
+    await page.loadEntity('client');
+    const table = container.querySelector('table');
+    assertTrue(table !== null, 'Expected a <table> element after loadEntity');
+    const rows = table.querySelectorAll('tbody tr');
+    assertEquals(rows.length, 2, 'Should render 2 record rows');
+    container.remove();
+  });
+
+  await test('loadEntity renders "Crear nuevo registro" button', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', data: RECORDS },
+    ]);
+    const page = new EntityList(container);
+    await page.init();
+    await page.loadEntity('client');
+    const createBtn = container.querySelector('.xt-btn--primary');
+    assertTrue(createBtn !== null, 'Expected primary button');
+    assertTrue(createBtn.textContent.includes('Crear'), 'Button should say "Crear"');
+    container.remove();
+  });
+
+  await test('loadEntity renders "Editar" button per row when onEdit provided', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', data: RECORDS },
+    ]);
+    const page = new EntityList(container, { onEdit: () => { return; } });
+    await page.init();
+    await page.loadEntity('client');
+    const editBtns = container.querySelectorAll('.xt-btn--sm');
+    assertEquals(editBtns.length, RECORDS.length, `Expected ${RECORDS.length} edit buttons`);
+    container.remove();
+  });
+
+  log('');
+  log('── onCreateNew callback ───────────────────────────────────────────────');
+
+  await test('clicking "Crear nuevo registro" calls onCreateNew with slug', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', data: RECORDS },
+    ]);
+
+    let receivedSlug = null;
+    const page = new EntityList(container, {
+      onCreateNew: (slug) => { receivedSlug = slug; },
+    });
+    await page.init();
+    await page.loadEntity('client');
+
+    const createBtn = container.querySelector('.xt-btn--primary');
+    createBtn.click();
+    assertEquals(receivedSlug, 'client', 'onCreateNew should be called with "client"');
+    container.remove();
+  });
+
+  await test('clicking "Editar" calls onEdit with slug, recordId and record', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', data: RECORDS },
+    ]);
+
+    let editArgs = null;
+    const page = new EntityList(container, {
+      onEdit: (slug, recordId, record) => { editArgs = { slug, recordId, record }; },
+    });
+    await page.init();
+    await page.loadEntity('client');
+
+    const firstEditBtn = container.querySelector('.xt-btn--sm');
+    assertTrue(firstEditBtn !== null, 'Expected at least one edit button');
+    firstEditBtn.click();
+    assertTrue(editArgs !== null, 'onEdit should have been called');
+    assertEquals(editArgs.slug, 'client', 'onEdit slug should be "client"');
+    assertEquals(editArgs.recordId, '1', 'onEdit recordId should be "1"');
+    assertEquals(editArgs.record.name, 'Alice', 'onEdit record should match first record');
+    container.remove();
+  });
+
+  log('');
+  log('── EntityEdit ─────────────────────────────────────────────────────────');
+
+  await test('EntityEdit renders form for the entity schema', async () => {
+    const container = makeSandbox();
+    const schema = ENTITIES[0];
+    new EntityEdit(container, 'client', schema);
+    const inputs = container.querySelectorAll('input');
+    assertEquals(inputs.length, 2, 'Should render 2 inputs');
+    assertEquals(inputs[0].name, 'name', 'First input: name');
+    assertEquals(inputs[1].name, 'email', 'Second input: email');
+    container.remove();
+  });
+
+  await test('EntityEdit validates required fields on submit', async () => {
+    const container = makeSandbox();
+    const schema = ENTITIES[0];
+    let savedCalled = false;
+    const page = new EntityEdit(container, 'client', schema, {
+      onSaved: () => { savedCalled = true; },
+    });
+    await page.submit();
+    assertTrue(!savedCalled, 'onSaved should not be called when validation fails');
+    const errors = container.querySelectorAll('.xt-field-errors');
+    assertTrue(errors.length > 0, 'Expected validation error elements');
+    container.remove();
+  });
+
+  await test('EntityEdit POST on valid submit calls onSaved with record', async () => {
+    const container = makeSandbox();
+    const schema = ENTITIES[0];
+
+    mockFetch([
+      { url: '/records', method: 'POST', data: CREATED_RECORD },
+    ]);
+
+    let savedRecord = null;
+    const page = new EntityEdit(container, 'client', schema, {
+      onSaved: (record) => { savedRecord = record; },
+    });
+
+    // Fill required field
+    const nameInput = container.querySelector('input[name="name"]');
+    nameInput.value = 'Carol';
+
+    await page.submit();
+    assertTrue(savedRecord !== null, 'onSaved should be called after successful POST');
+    assertEquals(savedRecord.id, '3', 'Saved record should have id=3');
+    container.remove();
+  });
+
+  await test('EntityEdit shows global error on API failure', async () => {
+    const container = makeSandbox();
+    const schema = ENTITIES[0];
+
+    mockFetch([
+      { url: '/records', method: 'POST', status: 500, data: 'Internal server error' },
+    ]);
+
+    const page = new EntityEdit(container, 'client', schema);
+
+    const nameInput = container.querySelector('input[name="name"]');
+    nameInput.value = 'Test';
+
+    await page.submit();
+
+    const banner = container.querySelector('.xt-edit-error-banner');
+    assertTrue(banner !== null && !banner.hidden, 'Error banner should be visible');
+    container.remove();
+  });
+
+  await test('EntityEdit onCancel is called when cancel button clicked', async () => {
+    const container = makeSandbox();
+    const schema = ENTITIES[0];
+    let cancelCalled = false;
+    new EntityEdit(container, 'client', schema, {
+      onCancel: () => { cancelCalled = true; },
+    });
+    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    assertTrue(cancelBtn !== null, 'Expected cancel button');
+    cancelBtn.click();
+    assertTrue(cancelCalled, 'onCancel should be called on cancel click');
+    container.remove();
+  });
+
+  log('');
+  log('── E2E integrated flow ────────────────────────────────────────────────');
+
+  await test('full flow: list → select entity → create record → list reloads', async () => {
+    const container = makeSandbox();
+    let postCalled = false;
+
+    mockFetch([
+      { url: '/entities', data: ENTITIES },
+      { url: '/records', method: 'POST', data: CREATED_RECORD },
+      { url: '/records', data: RECORDS },
+    ]);
+
+    // Simulate the flow wired in main.js: EntityList with onCreateNew → EntityEdit
+    let entityListPage;
+    let entityEditPage;
+    const reloadSlug = await new Promise((resolve) => {
+      entityListPage = new EntityList(container, {
+        onCreateNew: (slug) => {
+          const schema = AppState.getEntities().find((e) => e.slug === slug) ?? { slug, fields: [] };
+          container.innerHTML = '';
+          entityEditPage = new EntityEdit(container, slug, schema, {
+            onSaved: () => { resolve(slug); },
+          });
+        },
+      });
+      entityListPage.init().then(() => entityListPage.loadEntity('client'));
+    });
+
+    // After save, simulate going back to EntityList and reloading
+    container.innerHTML = '';
+    let reloadedList;
+    reloadedList = new EntityList(container, {
+      onCreateNew: (s) => { void s; },
+    });
+    await reloadedList.init();
+    await reloadedList.loadEntity(reloadSlug);
+
+    const rows = container.querySelectorAll('tbody tr');
+    assertEquals(rows.length, 2, 'EntityList should show 2 rows after reload');
+    assertEquals(reloadSlug, 'client', 'Reloaded entity slug should be "client"');
+    container.remove();
+  });
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+
+  log('');
+  log('──────────────────────────────────────────────────────────────────────');
+
+  const cls = failed > 0 ? 'fail' : 'pass';
+  log(`\n${passed} passed, ${failed} failed`);
+  out.querySelector(`[class="${cls}"]`)?.scrollIntoView?.();
+
+  if (failed > 0) {
+    document.body.style.borderTop = '4px solid #f87171';
+  } else {
+    document.body.style.borderTop = '4px solid #4ade80';
+  }
+</script>
+</body>
+</html>

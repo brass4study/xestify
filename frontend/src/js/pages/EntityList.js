@@ -25,12 +25,15 @@ export class EntityList {
   /** @type {Function|null} */
   #onCreateNew;
 
+  /** @type {Function|null} */
+  #onEdit;
+
   /** @type {DynamicTable|null} */
   #table = null;
 
   /**
    * @param {string|HTMLElement} container
-   * @param {{api?: Api, onCreateNew?: Function}} options
+   * @param {{api?: Api, onCreateNew?: Function, onEdit?: Function}} options
    */
   constructor(container, options = {}) {
     this.#container = this.#resolveContainer(container);
@@ -39,6 +42,9 @@ export class EntityList {
       : new Api(BASE_URL);
     this.#onCreateNew = typeof options.onCreateNew === 'function'
       ? options.onCreateNew
+      : null;
+    this.#onEdit = typeof options.onEdit === 'function'
+      ? options.onEdit
       : null;
   }
 
@@ -182,6 +188,55 @@ export class EntityList {
 
     this.#table = new DynamicTable(records, schema, tableContainer);
     this.#table.render();
+
+    if (this.#onEdit !== null) {
+      this.#injectEditColumn(tableContainer, records, slug);
+    }
+  }
+
+  /**
+   * Inject an "Acciones" column into the rendered DynamicTable.
+   *
+   * @param {HTMLElement} tableContainer
+   * @param {Array<object>} records
+   * @param {string} slug
+   */
+  #injectEditColumn(tableContainer, records, slug) {
+    const table = tableContainer.querySelector('table');
+    if (table === null) {
+      return;
+    }
+
+    const theadRow = table.querySelector('thead tr');
+    if (theadRow !== null) {
+      const th = document.createElement('th');
+      th.textContent = 'Acciones';
+      theadRow.appendChild(th);
+    }
+
+    const tbodyRows = table.querySelectorAll('tbody tr');
+    const pageRecords = this.#table !== null
+      ? this.#table.getCurrentPageRecords()
+      : records;
+
+    tbodyRows.forEach((row, index) => {
+      const record = pageRecords[index];
+      if (record === undefined) {
+        return;
+      }
+      const td = document.createElement('td');
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'xt-btn xt-btn--secondary xt-btn--sm';
+      editBtn.textContent = 'Editar';
+      editBtn.addEventListener('click', () => {
+        if (this.#onEdit !== null) {
+          this.#onEdit(slug, record.id ?? null, record);
+        }
+      });
+      td.appendChild(editBtn);
+      row.appendChild(td);
+    });
   }
 
   // ---------------------------------------------------------------------------

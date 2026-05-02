@@ -569,3 +569,15 @@
 - **Iteraciones:** 1
 - **Decisión manual:** Email devuelto directamente en la respuesta de login (sin decodificar JWT en el cliente), para simplificar el frontend.
 
+### STORY 5.3: Frontend - Integración E2E EntityList + EntityEdit
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** ~25 min
+- **Aceleración:** ~92% ⚡
+- **Qué hizo IA:**
+  - Refactorizó `navigateTo('entities')` en `main.js` extrayendo `showEntityList` y `showEntityEdit` para el flujo completo
+  - Añadió importación de `EntityEdit` en `main.js` y cableo de `onCreateNew` → `showEntityEdit` → `onSaved`/`onCancel` → `showEntityList`
+  - Creó `frontend/tests/E2ETest.html` con 9 tests E2E que cubren: init de EntityList, carga de registros, botón "Crear", callback onCreateNew, validación de formulario, POST, error de API, cancel, y flujo completo integrado con mock fetch
+- **Iteraciones:** 1
+- **Decisión manual:** El schema se deriva de `AppState.getEntities()` en `showEntityEdit`, evitando pasarlo explícitamente por el callback de `onCreateNew`.
+

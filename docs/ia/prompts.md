@@ -616,3 +616,16 @@ Implementa STORY 5.2 completa:
 **Resultado:** Navbar operativa con routing básico entre Entidades y Plugins, email del usuario visible, sesión `docs/ia` actualizada y commit listo.
 **Iteraciones:** 1
 
+### STORY 5.3 — Frontend - Integración E2E EntityList + EntityEdit
+
+**Prompt:**
+```
+Implementa STORY 5.3 completa:
+- Conectar EntityList → EntityEdit en main.js: cuando onCreateNew dispara, mostrar EntityEdit en el mismo content area
+- Cuando EntityEdit.onSaved: volver a EntityList y recargar los registros de la entidad guardada
+- Cuando EntityEdit.onCancel: volver a EntityList sin recargar registros específicos
+- Crear E2ETest.html con tests E2E usando mock fetch que cubran el flujo completo
+```
+**Resultado:** Flujo completamente integrado en `main.js` con `showEntityList`/`showEntityEdit`. `E2ETest.html` con 9 tests que cubren cada paso del flujo.
+**Iteraciones:** 1
+
