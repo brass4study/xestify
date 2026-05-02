@@ -11,6 +11,9 @@ define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
 $router->get('/health', [HealthController::class, 'index']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
 
+// Entity list
+$router->get('/api/v1/entities', [EntityController::class, 'listEntities']);
+
 // Entity endpoints
 $router->get('/api/v1/entities/{slug}/schema',        [EntityController::class, 'schema']);
 $router->get('/api/v1/entities/{slug}/records',       [EntityController::class, 'index']);

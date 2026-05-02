@@ -36,6 +36,46 @@ class EntityController
     private const MSG_RECORD_ID_REQUIRED = 'Record id is required.';
 
     /**
+     * GET /api/v1/entities
+     * Returns all active entity types with their latest schema.
+     */
+    public function listEntities(array $params, ?Request $request = null): void
+    {
+        $request ??= Request::fromGlobals($params);
+
+        $stmt = $this->pdo->prepare(
+            'SELECT se.slug, se.name AS label,
+                    em.schema_json, em.schema_version
+             FROM system_entities se
+             LEFT JOIN LATERAL (
+                 SELECT schema_json, schema_version
+                 FROM entity_metadata
+                 WHERE entity_slug = se.slug
+                 ORDER BY schema_version DESC
+                 LIMIT 1
+             ) em ON true
+             WHERE se.is_active = true
+             ORDER BY se.name ASC'
+        );
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        $entities = [];
+        foreach ($rows as $row) {
+            $schema = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+            $fields = is_array($schema) && isset($schema['fields']) ? $schema['fields'] : [];
+            $entities[] = [
+                'slug'           => $row['slug'],
+                'label'          => $row['label'],
+                'schema_version' => (int) ($row['schema_version'] ?? 1),
+                'fields'         => $fields,
+            ];
+        }
+
+        Response::make()->json($entities);
+    }
+
+    /**
      * GET /api/v1/entities/{slug}/schema
      * Returns the latest schema_json for the entity type.
      */

@@ -129,6 +129,8 @@
 | 5.1 ✅ | Frontend - Crear página Login | `66c7747` | 5/5 ✅ |
 | 5.2 ✅ | Frontend - Crear navbar/sidebar de navegación | `a60a3b3` | 9/9 ✅ |
 | 5.3 ✅ | Frontend - Integración E2E EntityList + EntityEdit | `3258257` | 11/11 ✅ |
+| 5.3b ✅ | Fix: GET /api/v1/entities + EntitySeeder + UTF-8 | pendiente commit | — |
+| 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | pendiente commit | — |
 
 ---
 

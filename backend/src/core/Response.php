@@ -13,7 +13,7 @@ namespace Xestify\core;
 class Response
 {
     private int    $statusCode = 200;
-    private array  $headers    = ['Content-Type' => 'application/json'];
+    private array  $headers    = ['Content-Type' => 'application/json; charset=utf-8'];
 
     // -----------------------------------------------------------------------
     // Factories

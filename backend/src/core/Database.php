@@ -37,7 +37,7 @@ class Database
         $user = $_ENV['DB_USER'] ?? 'postgres';
         $pass = $_ENV['DB_PASSWORD'] ?? '';
 
-        $dsn = "pgsql:host={$host};port={$port};dbname={$name}";
+        $dsn = "pgsql:host={$host};port={$port};dbname={$name};options='--client_encoding=UTF8'";
 
         try {
             $pdo = new PDO($dsn, $user, $pass, [

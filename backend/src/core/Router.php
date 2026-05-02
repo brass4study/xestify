@@ -91,12 +91,13 @@ class Router
     }
 
     /**
-     * Convierte /entities/:slug/records/:id en un patr├│n con named groups.
+     * Convierte /entities/:slug/records/:id o /entities/{slug}/records/{id}
+     * en un patrón con named groups.
      */
     private function buildPattern(string $path): string
     {
         $path    = '/' . trim($path, '/');
-        $pattern = preg_replace('/:([a-zA-Z_]\w*)/', '(?P<$1>[^/]+)', $path) ?? $path;
+        $pattern = preg_replace(['/\{([a-zA-Z_]\w*)\}/', '/:([a-zA-Z_]\w*)/'], '(?P<$1>[^/]+)', $path) ?? $path;
         return '#^' . $pattern . '$#';
     }
 

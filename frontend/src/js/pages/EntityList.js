@@ -82,7 +82,7 @@ export class EntityList {
 
     try {
       const { data } = await this.#api.get(`/entities/${slug}/records`);
-      const records = Array.isArray(data) ? data : [];
+      const records = this.#normalizeRecords(data);
       AppState.setRecords(records);
 
       const schema = this.#schemaForSlug(slug);
@@ -215,9 +215,9 @@ export class EntityList {
     }
 
     const tbodyRows = table.querySelectorAll('tbody tr');
-    const pageRecords = this.#table !== null
-      ? this.#table.getCurrentPageRecords()
-      : records;
+    const pageRecords = this.#table === null
+      ? records
+      : this.#table.getCurrentPageRecords();
 
     tbodyRows.forEach((row, index) => {
       const record = pageRecords[index];
@@ -253,6 +253,65 @@ export class EntityList {
     const entities = AppState.getEntities();
     const found = entities.find((e) => e.slug === slug);
     return found ?? { slug, fields: [] };
+  }
+
+  /**
+   * Convert DB rows to flat records expected by DynamicTable/DynamicForm.
+   * backend returns dynamic fields inside `content` (JSONB).
+   *
+   * @param {unknown} data
+   * @returns {Array<object>}
+   */
+  #normalizeRecords(data) {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((row) => this.#normalizeRecord(row));
+  }
+
+  /**
+   * @param {unknown} row
+   * @returns {object}
+   */
+  #normalizeRecord(row) {
+    if (row === null || typeof row !== 'object') {
+      return {};
+    }
+
+    const source = /** @type {Record<string, unknown>} */ (row);
+    const content = this.#extractContentObject(source.content);
+
+    return {
+      ...content,
+      id: source.id ?? null,
+      entity_slug: source.entity_slug ?? null,
+      created_at: source.created_at ?? null,
+      updated_at: source.updated_at ?? null,
+    };
+  }
+
+  /**
+   * @param {unknown} rawContent
+   * @returns {Record<string, unknown>}
+   */
+  #extractContentObject(rawContent) {
+    if (rawContent !== null && typeof rawContent === 'object' && !Array.isArray(rawContent)) {
+      return /** @type {Record<string, unknown>} */ (rawContent);
+    }
+
+    if (typeof rawContent === 'string') {
+      try {
+        const parsed = JSON.parse(rawContent);
+        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return /** @type {Record<string, unknown>} */ (parsed);
+        }
+      } catch {
+        return {};
+      }
+    }
+
+    return {};
   }
 
   /**

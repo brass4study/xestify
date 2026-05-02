@@ -171,3 +171,123 @@ body {
   text-align: center;
 }
 
+.xt-entity-nav {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.xt-entity-nav__title {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.xt-entity-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.xt-entity-nav__btn {
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.xt-records-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.xt-records-section__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 0.75rem;
+}
+
+.xt-records-section__title {
+  font-size: 1rem;
+}
+
+.xt-records-section__table {
+  padding: 0.5rem 0.75rem 0.85rem;
+}
+
+.xt-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.xt-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.xt-table th,
+.xt-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.xt-table th {
+  background: #f9fafb;
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.xt-table td {
+  color: #1f2937;
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.xt-pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.6rem 0.1rem 0;
+}
+
+.xt-pagination button {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.xt-pagination span {
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .xt-shell__content {
+    padding: 0.85rem;
+  }
+
+  .xt-records-section__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+

@@ -581,3 +581,30 @@
 - **Iteraciones:** 1
 - **Decisión manual:** El schema se deriva de `AppState.getEntities()` en `showEntityEdit`, evitando pasarlo explícitamente por el callback de `onCreateNew`.
 
+### STORY 5.3b: Fix GET /api/v1/entities + EntitySeeder + UTF-8
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Añadió `listEntities()` a `EntityController.php` con JOIN LATERAL para última versión de schema
+  - Registró ruta `GET /api/v1/entities` en `routes.php` antes de las rutas de slug
+  - Creó `EntitySeeder.php` con entidades demo (Clientes y Productos) con seed idempotente
+  - Cabló `EntitySeeder::seedIfEmpty()` en `app.php`
+  - Corrigió encoding UTF-8 añadiendo `charset=utf-8` al `Content-Type` de Response y `client_encoding=UTF8` al DSN de PDO
+- **Iteraciones:** 3 (bootstrap path, BASE_PATH, UTF-8)
+- **Decisión manual:** Ninguna; el fix era directo.
+
+### STORY 5.3c: Fix Router params + tabla registros (tamaño y visualización)
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~18 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Corrigió `Router::buildPattern()` para soportar parámetros en formato `{slug}` además de `:slug`
+  - Solucionó 404 en `GET /api/v1/entities/{slug}/records` al hacer click en entidades desde frontend
+  - Normalizó registros en `EntityList` para mapear `content` (JSONB) a columnas visibles en `DynamicTable`
+  - Añadió estilos de tabla/records en `main.css` para ancho correcto, legibilidad y responsive
+- **Iteraciones:** 2 (fix funcional + ajuste lint)
+- **Decisión manual:** Mantener compatibilidad dual de rutas (`{param}` y `:param`) en el router.
+

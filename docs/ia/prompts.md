@@ -629,3 +629,25 @@ Implementa STORY 5.3 completa:
 **Resultado:** Flujo completamente integrado en `main.js` con `showEntityList`/`showEntityEdit`. `E2ETest.html` con 9 tests que cubren cada paso del flujo.
 **Iteraciones:** 1
 
+### STORY 5.3b — Fix GET /api/v1/entities + EntitySeeder + UTF-8
+
+**Prompt:**
+```
+La página web solo muestra un panel vacío. GET /api/v1/entities devuelve 404.
+Añade el endpoint listEntities, registra la ruta, crea un EntitySeeder con entidades demo
+y llámalo desde app.php. Además corrige el encoding UTF-8 en la respuesta JSON.
+```
+**Resultado:** Endpoint activo, EntitySeeder crea Clientes/Productos al arrancar, respuesta JSON con `charset=utf-8` y PDO con `client_encoding=UTF8`.
+**Iteraciones:** 3 (path bootstrap, BASE_PATH, UTF-8 fix)
+
+### STORY 5.3c — Fix Router params + tabla registros
+
+**Prompt:**
+```
+En la web, acabo de dar de alta 2 clientes, y veo una especie de tabla muy pequeña,
+pero no me muestra los datos. Soluciona el tamaño de la tabla y la visualizacion de
+los registros.
+```
+**Resultado:** Se corrigió el router para soportar `{slug}` y evitar 404 en records; se normalizaron filas `content` JSONB en `EntityList` para mostrar datos reales; y se mejoró el CSS de tabla para tamaño/legibilidad.
+**Iteraciones:** 2
+

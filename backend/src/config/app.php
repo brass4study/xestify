@@ -6,6 +6,7 @@ use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
 use Xestify\core\Container;
 use Xestify\core\Database;
+use Xestify\database\Seeders\EntitySeeder;
 use Xestify\database\Seeders\UserSeeder;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
@@ -25,6 +26,9 @@ $container->singleton(Database::class, fn() => Database::connection());
 
 // Auto-seed on boot: inserts default admin only if users table is empty
 UserSeeder::seedIfEmpty();
+
+// Auto-seed on boot: inserts demo entity types if system_entities is empty
+EntitySeeder::seedIfEmpty();
 
 // --- JWT ----------------------------------------------------------------------
 
