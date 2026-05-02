@@ -741,3 +741,13 @@ arranca el story 6.1
 **Iteraciones:** 3 (MIME type error, estilo tests incorrecto, router incompleto)
 **Lección:** El router de desarrollo no cubría las rutas de tests — es una infraestructura que hay que verificar al añadir nuevas carpetas servidas. El estilo de los tests debe compararse visualmente antes de dar por bueno.
 
+### STORY 6.2 — Backend - Hook `registerTabs` y `registerActions` en HookDispatcher
+
+**Prompt:**
+```
+Sigamos
+```
+**Resultado:** Método `applyFilter()` añadido a `HookDispatcher`. Semántica filter: callbacks reciben y retornan array acumulado (`$items`), fallos son tolerantes (log + continuar). `HookFilterTest.php` con 7 tests unitarios. Endpoint `GET /api/v1/entities/{slug}/tabs` añadido a `EntityController`, ruta en `routes.php`, `HookDispatcher` registrado como singleton en `config/app.php`. `HookFilterApiTest.php` con 6 tests de integración verificando que el plugin registra tab y aparece en la respuesta de la API. Regresión: 11 tests previos siguen pasando.
+**Iteraciones:** 2 (primera sin endpoint API, segunda tras corrección del criterio "aparece en respuesta de API")
+**Lección:** `applyFilter` es mejor nombre que `filter` para evitar confusión con built-ins de PHP. El criterio "plugin registra tab y aparece en respuesta de API" implica un test de integración con endpoint real, no solo unitario — leer los criterios con más detalle antes de implementar.
+

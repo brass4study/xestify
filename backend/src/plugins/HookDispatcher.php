@@ -60,6 +60,41 @@ class HookDispatcher
     }
 
     /**
+     * Apply a filter hook: callbacks receive and return an array value,
+     * accumulating items across all registered callbacks.
+     *
+     * Each callback receives ($items, $args) and must return an array.
+     * Callbacks are executed in ascending priority order.
+     *
+     * @param string $hook  Hook name, e.g. 'registerTabs', 'registerActions'.
+     * @param array  $items Initial value (usually empty array).
+     * @param array  $args  Extra read-only arguments passed to each callback.
+     * @return array        The accumulated result after all callbacks.
+     */
+    public function applyFilter(string $hook, array $items = [], array $args = []): array
+    {
+        if (!isset($this->hooks[$hook])) {
+            return $items;
+        }
+
+        $sorted = $this->hooks[$hook];
+        usort($sorted, static fn(array $a, array $b): int => $a['priority'] <=> $b['priority']);
+
+        foreach ($sorted as $entry) {
+            try {
+                $result = ($entry['callback'])($items, $args);
+                if (is_array($result)) {
+                    $items = $result;
+                }
+            } catch (\Exception | \Error $e) {
+                $this->logWarning($hook, $e->getMessage());
+            }
+        }
+
+        return $items;
+    }
+
+    /**
      * Invoke a single callback, handling exceptions per hook convention.
      *
      * @throws HookException When a beforeXxx callback throws.

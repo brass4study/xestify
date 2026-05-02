@@ -8,6 +8,7 @@ use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\database\Seeders\EntitySeeder;
 use Xestify\database\Seeders\UserSeeder;
+use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
@@ -51,6 +52,10 @@ $container->singleton(EntityService::class, fn() => new EntityService(
     $container->get(Database::class)
 ));
 
+// --- Plugins ------------------------------------------------------------------
+
+$container->singleton(HookDispatcher::class, fn() => new HookDispatcher());
+
 // --- Controllers --------------------------------------------------------------
 
 $container->singleton(AuthController::class, fn() => new AuthController(
@@ -59,5 +64,6 @@ $container->singleton(AuthController::class, fn() => new AuthController(
 
 $container->singleton(EntityController::class, fn() => new EntityController(
     $container->get(EntityService::class),
-    $container->get(Database::class)
+    $container->get(Database::class),
+    $container->get(HookDispatcher::class)
 ));

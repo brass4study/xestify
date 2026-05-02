@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 6 — Plugins tipo Extension (🔄 EN PROGRESO)  
-**Próxima story:** STORY 6.2 — Backend - Hook `registerTabs` y `registerActions`
+**Próxima story:** STORY 6.3 — Plugin `comments` (tipo extension)
 
 ---
 
@@ -137,7 +137,8 @@
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
-| 6.1 ✅ | Frontend - Crear módulo DynamicTabs.js | pendiente commit | 6/6 ✅ |
+| 6.1 ✅ | Frontend - Crear módulo DynamicTabs.js | `f16d2c5` | 6/6 ✅ |
+| 6.2 ✅ | Backend - Hook `registerTabs` y `registerActions` en HookDispatcher | pendiente commit | 7+10/17 ✅ |
 ---
 
 ## Stack decidido

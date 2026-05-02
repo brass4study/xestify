@@ -704,3 +704,19 @@
 - **Iteraciones:** 3 (MIME type error en servidor, ajuste estilo tests, refactoring router)
 - **Decisión manual:** La corrección del router fue identificada por el usuario; la API plugin-first de `DynamicTabs` se mantuvo sin cambios del diseño inicial
 
+### STORY 6.2: Backend - Hook `registerTabs` y `registerActions` en HookDispatcher
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 45 min (diseño API, implementación, tests)
+- **Tiempo real con IA:** ~8 min
+- **Aceleración:** ~82% ⚡
+- **Qué hizo IA:**
+  - Añadió método `applyFilter(string $hook, array $items, array $args): array` a `HookDispatcher`
+  - Implementó semántica filter: callbacks reciben y retornan array acumulado, fallos no son bloqueantes (log warning + continuar)
+  - Creó `HookFilterTest.php` con 7 tests unitarios (vacío, acumulación, prioridad, args, registerActions, fallo tolerante, coexistencia con `execute()`)
+  - Añadió endpoint `GET /api/v1/entities/{slug}/tabs` en `EntityController` + ruta en `routes.php` + singleton en `config/app.php`
+  - Creó `HookFilterApiTest.php` con 6 tests de integración: plugin registra tab y aparece en respuesta de API, slug en args, múltiples plugins, registerActions
+  - Verificó regresión: 11 tests `HookDispatcherTest` siguen pasando
+- **Iteraciones:** 2 (primera iteración sin endpoint API, segunda iteración con corrección del criterio de tests de integración)
+- **Decisión manual:** Nombre del método `applyFilter` (vs `filter`) para evitar colisión con built-ins de PHP
+
+

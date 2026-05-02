@@ -16,6 +16,8 @@ $router->get('/api/v1/entities', [EntityController::class, 'listEntities']);
 
 // Entity endpoints
 $router->get('/api/v1/entities/{slug}/schema',        [EntityController::class, 'schema']);
+$router->get('/api/v1/entities/{slug}/tabs',          [EntityController::class, 'tabs']);
+$router->get('/api/v1/entities/{slug}/actions',       [EntityController::class, 'actions']);
 $router->get('/api/v1/entities/{slug}/records',       [EntityController::class, 'index']);
 $router->post('/api/v1/entities/{slug}/records',      [EntityController::class, 'create']);
 $router->get(ROUTE_ENTITY_RECORD,    [EntityController::class, 'show']);

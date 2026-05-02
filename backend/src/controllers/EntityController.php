@@ -11,6 +11,7 @@ use Xestify\core\Response;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
+use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
@@ -28,8 +29,11 @@ use Xestify\services\ValidationService;
  */
 class EntityController
 {
-    public function __construct(private EntityService $service, private PDO $pdo)
-    {
+    public function __construct(
+        private EntityService $service,
+        private PDO $pdo,
+        private HookDispatcher $hookDispatcher = new HookDispatcher()
+    ) {
     }
 
     private const MSG_SLUG_REQUIRED      = 'Entity slug is required.';
@@ -241,6 +245,44 @@ class EntityController
         }
 
         Response::make()->json(['deleted' => true, 'id' => $id]);
+    }
+
+    /**
+     * GET /api/v1/entities/{slug}/tabs
+     * Returns the list of tabs registered by plugins for this entity.
+     * Calls applyFilter('registerTabs') to collect plugin contributions.
+     */
+    public function tabs(array $params, ?Request $request = null): void
+    {
+        $slug = (string) ($params['slug'] ?? '');
+
+        if ($slug === '') {
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            return;
+        }
+
+        $tabs = $this->hookDispatcher->applyFilter('registerTabs', [], ['entity' => $slug]);
+
+        Response::make()->json(['tabs' => $tabs, 'entity' => $slug]);
+    }
+
+    /**
+     * GET /api/v1/entities/{slug}/actions
+     * Returns the list of row actions registered by plugins for this entity.
+     * Calls applyFilter('registerActions') to collect plugin contributions.
+     */
+    public function actions(array $params, ?Request $request = null): void
+    {
+        $slug = (string) ($params['slug'] ?? '');
+
+        if ($slug === '') {
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            return;
+        }
+
+        $actions = $this->hookDispatcher->applyFilter('registerActions', [], ['entity' => $slug]);
+
+        Response::make()->json(['actions' => $actions, 'entity' => $slug]);
     }
 
     // -------------------------------------------------------------------------
