@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-02  
-**EPIC activo:** EPIC 6 — Plugins tipo Extension (⏭ SIGUIENTE)  
-**Próxima story:** STORY 6.1 — Frontend - Crear módulo DynamicTabs.js
+**EPIC activo:** EPIC 6 — Plugins tipo Extension (🔄 EN PROGRESO)  
+**Próxima story:** STORY 6.2 — Backend - Hook `registerTabs` y `registerActions`
 
 ---
 
@@ -133,7 +133,11 @@
 | 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
 | 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | `041ba40` | 5/5 ✅ |
 | 5.5 ✅ | Frontend - Mejoras responsive + refinamiento UX navbar/tabla | `84d0b70` | — |
+### 🔄 EPIC 6 — Plugins tipo Extension (EN PROGRESO)
 
+| Story | Descripción | Commit | Tests |
+|-------|-------------|--------|-------|
+| 6.1 ✅ | Frontend - Crear módulo DynamicTabs.js | pendiente commit | 6/6 ✅ |
 ---
 
 ## Stack decidido
@@ -242,7 +246,7 @@ backend/
 - **`label_singular`:** definido explícitamente en schema metadata, nunca inferido por heurística
 - **Frontend routing:** rutas tipo `entity:{slug}` para entidades dinámicas, `plugins` para gestor
 - **Font Awesome:** cargado vía CDN en `frontend/src/index.html` para iconografía
-- **Servidor dev:** `php -S localhost:8081 -t frontend/src tools/dev/frontend-router.php`
+- **Servidor dev:** `php -S localhost:8081 -t frontend/src tools/dev/frontend-router.php` — sirve `/tests/` y `/src/` además de la app
 - **Handler de ruta:** `[Controller::class, 'method']` o `callable`
 
 ---

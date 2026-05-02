@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamicTabsTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>DynamicTabsTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { DynamicTabs } from '../src/js/modules/DynamicTabs.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = 'assertEquals failed') {
+    if (actual !== expected) {
+      throw new Error(`${msg}: expected "${String(expected)}", got "${String(actual)}"`);
+    }
+  }
+
+  function it(name, fn) {
+    const container = document.createElement('div');
+    document.getElementById('sandbox').appendChild(container);
+
+    try {
+      fn(container);
+      log(`  ✅ ${name}`);
+      passed++;
+    } catch (error) {
+      log(`  ❌ ${name}`);
+      log(`     ${error.message}`);
+      failed++;
+    }
+
+    container.remove();
+  }
+
+  log('----------------------------------------');
+
+  it('render() monta barra de tabs y contenido inicial', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'general', label: 'General', content: () => 'Contenido general' },
+        { id: 'notas',   label: 'Notas',   content: () => 'Notas del registro' },
+      ],
+    });
+    tabs.render();
+
+    const bar = container.querySelector('.xt-tabs__bar');
+    assertTrue(bar !== null, 'Expected .xt-tabs__bar');
+
+    const buttons = bar.querySelectorAll('.xt-tabs__btn');
+    assertEquals(buttons.length, 2, 'Expected 2 tab buttons');
+    assertEquals(buttons[0].textContent, 'General', 'First tab label');
+    assertEquals(buttons[1].textContent, 'Notas', 'Second tab label');
+
+    const content = container.querySelector('.xt-tabs__content');
+    assertTrue(content !== null, 'Expected .xt-tabs__content');
+    assertTrue(content.textContent.includes('Contenido general'), 'First tab content visible on render');
+
+    tabs.destroy();
+  });
+
+  it('setActiveTab() cambia el tab activo y actualiza contenido', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'a', label: 'A', content: () => 'Contenido A' },
+        { id: 'b', label: 'B', content: () => 'Contenido B' },
+      ],
+    });
+    tabs.render();
+
+    tabs.setActiveTab('b');
+
+    assertEquals(tabs.getActiveTab(), 'b', 'Active tab should be b');
+
+    const content = container.querySelector('.xt-tabs__content');
+    assertTrue(content.textContent.includes('Contenido B'), 'Content B should be visible');
+
+    const activeBtn = container.querySelector('.xt-tabs__btn--active');
+    assertTrue(activeBtn !== null, 'Should have an active button');
+    assertEquals(activeBtn.dataset.tabId, 'b', 'Active button should be b');
+    assertEquals(activeBtn.getAttribute('aria-selected'), 'true', 'aria-selected true on active');
+
+    const inactiveBtn = container.querySelector('[data-tab-id="a"]');
+    assertEquals(inactiveBtn.getAttribute('aria-selected'), 'false', 'aria-selected false on inactive');
+
+    tabs.destroy();
+  });
+
+  it('getActiveTab() devuelve el primer tab por defecto', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'primero', label: 'Primero', content: () => 'P' },
+        { id: 'segundo', label: 'Segundo', content: () => 'S' },
+      ],
+    });
+    tabs.render();
+
+    assertEquals(tabs.getActiveTab(), 'primero', 'Default active should be first tab');
+
+    tabs.destroy();
+  });
+
+  it('registerTab() añade tab desde plugin después del render', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'base', label: 'Base', content: () => 'Base content' },
+      ],
+    });
+    tabs.render();
+
+    tabs.registerTab({ id: 'plugin-tab', label: 'Plugin', content: () => 'Plugin content' });
+
+    const bar = container.querySelector('.xt-tabs__bar');
+    const buttons = bar.querySelectorAll('.xt-tabs__btn');
+    assertEquals(buttons.length, 2, 'Should have 2 tabs after registerTab');
+
+    const pluginBtn = container.querySelector('[data-tab-id="plugin-tab"]');
+    assertTrue(pluginBtn !== null, 'Plugin tab button should exist');
+    assertEquals(pluginBtn.textContent, 'Plugin', 'Plugin tab label');
+
+    pluginBtn.click();
+    assertEquals(tabs.getActiveTab(), 'plugin-tab', 'Active tab should be plugin-tab after click');
+    const content = container.querySelector('.xt-tabs__content');
+    assertTrue(content.textContent.includes('Plugin content'), 'Plugin content visible after click');
+
+    tabs.destroy();
+  });
+
+  it('registerTab() ignora duplicados (mismo id)', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'dup', label: 'Dup', content: () => 'D' },
+      ],
+    });
+    tabs.render();
+
+    tabs.registerTab({ id: 'dup', label: 'Dup2', content: () => 'D2' });
+
+    const buttons = container.querySelectorAll('.xt-tabs__btn');
+    assertEquals(buttons.length, 1, 'Duplicate tab should be ignored');
+
+    tabs.destroy();
+  });
+
+  it('destroy() elimina el DOM del componente', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'x', label: 'X', content: () => 'X content' },
+      ],
+    });
+    tabs.render();
+    assertTrue(container.querySelector('.xt-tabs') !== null, 'DOM should exist before destroy');
+
+    tabs.destroy();
+    assertTrue(container.querySelector('.xt-tabs') === null, 'DOM should be removed after destroy');
+    assertEquals(tabs.getActiveTab(), null, 'Active tab should be null after destroy');
+  });
+
+  log('----------------------------------------');
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+
+  out.innerHTML = out.textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+</script>
+</body>
+</html>

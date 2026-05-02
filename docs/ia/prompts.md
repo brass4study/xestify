@@ -727,3 +727,17 @@ Revisa toda la documentación, analízala y actualízala allí donde sea necesar
 **Iteraciones:** 1
 **Lección:** Tener un agente que mantiene consistencia entre múltiples archivos de documentación simultáneamente es donde la IA aporta más valor en fases de planning.
 
+---
+
+## EPIC 6 — Plugins tipo Extension
+
+### STORY 6.1 — Frontend - Crear módulo DynamicTabs.js
+
+**Prompt:**
+```
+arranca el story 6.1
+```
+**Resultado:** `DynamicTabs.js` con API completa (`registerTab`, `render`, `setActiveTab`, `getActiveTab`, `destroy`), hash persistence, deduplicación. `DynamicTabsTest.html` con 6 tests en estilo del proyecto. Estilos `.xt-tabs` en `main.css`. Fix en `frontend-router.php` para servir `/tests/` y `/src/` (bloqueante de módulos JS).
+**Iteraciones:** 3 (MIME type error, estilo tests incorrecto, router incompleto)
+**Lección:** El router de desarrollo no cubría las rutas de tests — es una infraestructura que hay que verificar al añadir nuevas carpetas servidas. El estilo de los tests debe compararse visualmente antes de dar por bueno.
+

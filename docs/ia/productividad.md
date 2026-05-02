@@ -687,3 +687,20 @@
 - **Iteraciones:** 1
 - **Decisión manual:** ninguna
 
+---
+
+## EPIC 6 — Plugins tipo Extension
+
+### STORY 6.1: Frontend - Crear módulo DynamicTabs.js
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 2h (clase + CSS + tests)
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Generó la clase `DynamicTabs` con API completa: `registerTab()`, `render()`, `setActiveTab()`, `getActiveTab()`, `destroy()`, persistencia de tab activa en URL hash, deduplicación por id
+  - Generó 6 tests completos con el estilo del proyecto (✅/❌, separadores, `.pass`/`.fail`)
+  - Añadió estilos `.xt-tabs` a `main.css` (barra, botones, estado activo, responsive)
+  - Corrigió `tools/dev/frontend-router.php` para servir rutas `/tests/` y `/src/` (fix bloqueante: módulos JS no se cargaban)
+- **Iteraciones:** 3 (MIME type error en servidor, ajuste estilo tests, refactoring router)
+- **Decisión manual:** La corrección del router fue identificada por el usuario; la API plugin-first de `DynamicTabs` se mantuvo sin cambios del diseño inicial
+

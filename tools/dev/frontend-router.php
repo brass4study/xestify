@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $frontendRoot = realpath(__DIR__ . '/../../frontend/src');
+$testsRoot    = realpath(__DIR__ . '/../../frontend/tests');
 $backendBaseUrl = 'http://localhost:8080';
 
 if ($frontendRoot === false) {
@@ -17,6 +18,19 @@ $path = is_string($path) ? $path : '/';
 
 if (str_starts_with($path, '/api/')) {
     proxyApiRequest($backendBaseUrl, $requestUri);
+    return;
+}
+
+if ($testsRoot !== false && str_starts_with($path, '/tests/')) {
+    $assetPath = substr($path, strlen('/tests'));
+    serveFrontendAsset($testsRoot, $assetPath);
+    return;
+}
+
+// Imports desde /tests/ resuelven a /src/js/... — mapear al frontendRoot sin prefijo /src
+if (str_starts_with($path, '/src/')) {
+    $assetPath = substr($path, strlen('/src'));
+    serveFrontendAsset($frontendRoot, $assetPath);
     return;
 }
 
