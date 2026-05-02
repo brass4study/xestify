@@ -6,6 +6,7 @@ import { Login } from './pages/Login.js';
 import { Navbar } from './modules/Navbar.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
+const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
 const API_BASE = '/api/v1';
 
 const app = document.getElementById('app');
@@ -16,6 +17,11 @@ if (app instanceof HTMLElement) {
 
 function bootstrap(container) {
   const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+  const storedEmail = localStorage.getItem(STORAGE_USER_EMAIL_KEY);
+
+  if (storedEmail !== null && storedEmail !== '') {
+    AppState.setUser({ email: storedEmail });
+  }
 
   if (token !== null && token !== '') {
     setAuthToken(token);
@@ -36,6 +42,9 @@ function renderLogin(container) {
       setAuthToken(accessToken);
       if (typeof email === 'string') {
         AppState.setUser({ email });
+        localStorage.setItem(STORAGE_USER_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
       }
       renderDashboard(container);
     },
@@ -62,11 +71,16 @@ async function renderDashboard(container) {
 
   const dashboardApi = new Api(API_BASE);
   dashboardApi.setToken(AppState.getToken());
+  const entitiesForNav = await loadEntitiesForNav(dashboardApi);
+  const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
+  const initialPage = firstEntitySlug === '' ? 'plugins' : `entity:${firstEntitySlug}`;
 
   const userEmail = AppState.getUserEmail();
 
   const navbar = new Navbar(navbarEl, {
     userEmail,
+    entities: entitiesForNav,
+    currentPage: initialPage,
     onLogout: () => {
       clearAuth();
       renderLogin(container);
@@ -75,18 +89,17 @@ async function renderDashboard(container) {
       navigateTo(page, content, dashboardApi);
     },
   });
+  navbar.setUserEmail(userEmail);
 
-  // Suppress unused-variable warning — navbar manages its own DOM
-  void navbar;
-
-  await navigateTo('entities', content, dashboardApi);
+  await navigateTo(initialPage, content, dashboardApi);
 }
 
 async function navigateTo(page, content, api) {
   content.innerHTML = '';
 
-  if (page === 'entities') {
-    await showEntityList(content, api, null);
+  if (typeof page === 'string' && page.startsWith('entity:')) {
+    const slug = page.slice('entity:'.length);
+    await showEntityList(content, api, slug === '' ? null : slug);
     return;
   }
 
@@ -99,6 +112,17 @@ async function navigateTo(page, content, api) {
   }
 
   content.innerHTML = '<p>Página no encontrada.</p>';
+}
+
+async function loadEntitiesForNav(api) {
+  try {
+    const { data } = await api.get('/entities');
+    const entities = Array.isArray(data) ? data.filter((entity) => typeof entity?.slug === 'string') : [];
+    AppState.setEntities(entities);
+    return entities;
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -116,10 +140,10 @@ async function showEntityList(content, api, preloadSlug) {
   entityListPage = new EntityList(content, {
     api,
     onCreateNew: (slug) => {
-      showEntityEdit(content, api, slug, entityListPage, null, {});
+      showEntityEdit(content, api, slug, null, {});
     },
     onEdit: (slug, recordId, record) => {
-      showEntityEdit(content, api, slug, entityListPage, recordId, record);
+      showEntityEdit(content, api, slug, recordId, record);
     },
   });
 
@@ -140,17 +164,16 @@ async function showEntityList(content, api, preloadSlug) {
  * @param {HTMLElement} content
  * @param {Api} api
  * @param {string} slug
- * @param {EntityList} entityListPage  Current list instance (not used directly)
  * @param {string|null} recordId       null = create, string = edit existing
  * @param {object} initialData         Pre-fill values for edit mode
  */
-function showEntityEdit(content, api, slug, entityListPage, recordId, initialData) {
+function showEntityEdit(content, api, slug, recordId, initialData) {
   const entities = AppState.getEntities();
   const schema = entities.find((e) => e.slug === slug) ?? { slug, fields: [] };
 
   content.innerHTML = '';
 
-  void new EntityEdit(content, slug, schema, {
+  const entityEdit = new EntityEdit(content, slug, schema, {
     api,
     recordId: recordId ?? null,
     initialData: initialData ?? {},
@@ -162,8 +185,7 @@ function showEntityEdit(content, api, slug, entityListPage, recordId, initialDat
     },
   });
 
-  // Suppress unused reference to entityListPage; kept for API consistency
-  void entityListPage;
+  return entityEdit;
 }
 
 function setAuthToken(token) {
@@ -173,4 +195,5 @@ function setAuthToken(token) {
 function clearAuth() {
   AppState.reset();
   localStorage.removeItem(STORAGE_TOKEN_KEY);
+  localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
 }

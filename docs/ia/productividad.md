@@ -622,3 +622,18 @@
 - **Iteraciones:** 1
 - **Decisión manual:** Mantener API mínima de story y añadir `setTitle()`/`isOpen()` como extras no disruptivos.
 
+### STORY 5.5: Frontend - Mejoras responsive + refinamiento UX navbar/tabla
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** ~55 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Reestructuró navbar para navegación por entidad (enlaces dinámicos) y mantuvo usuario + logout en bloque derecho
+  - Eliminó selector duplicado de entidades en el contenido principal y dejó navegación solo en navbar
+  - Corrigió título de tabla para usar `label` de entidad y añadió botón "Crear {label_singular}" con icono
+  - Migró iconografía a Font Awesome y homogeneizó iconos en acciones y paginación
+  - Ajustó estilos: botones sin borde, estados disabled consistentes, hover por color de texto y transiciones
+  - Mejoró backend para exponer `label_singular` en `GET /entities` y actualizó seeder para versionar schema con ese campo
+- **Iteraciones:** 6 (layout cross-browser, singular label por definición, iconos y estados hover/disabled)
+- **Decisión manual:** Singular de entidad se define explícitamente en schema (`label_singular`), evitando heurísticas de texto.
+

@@ -3,7 +3,6 @@
  *
  * Responsibilities:
  *   - Load available entity list from GET /entities
- *   - Render entity buttons for selection
  *   - On entity click, load its records from GET /entities/:slug/records
  *   - Render records using DynamicTable
  *   - Expose a "Crear nuevo registro" button that invokes an optional callback
@@ -49,19 +48,26 @@ export class EntityList {
   }
 
   /**
-   * Load entities and render the entity selector.
+   * Load entities and store them in AppState.
    *
    * @returns {Promise<void>}
    */
   async init() {
     this.#setLoading(true);
     this.#clearError();
+    this.#container.innerHTML = '';
 
     try {
       const { data } = await this.#api.get('/entities');
       const entities = Array.isArray(data) ? data : [];
       AppState.setEntities(entities);
-      this.#renderEntitySelector(entities);
+
+      if (entities.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'xt-placeholder';
+        empty.textContent = 'No hay entidades disponibles.';
+        this.#container.appendChild(empty);
+      }
     } catch (err) {
       this.#handleError(err);
     } finally {
@@ -99,54 +105,6 @@ export class EntityList {
   // ---------------------------------------------------------------------------
 
   /**
-   * @param {Array<object>} entities
-   */
-  #renderEntitySelector(entities) {
-    this.#container.innerHTML = '';
-
-    const nav = document.createElement('nav');
-    nav.className = 'xt-entity-nav';
-
-    const title = document.createElement('h2');
-    title.className = 'xt-entity-nav__title';
-    title.textContent = 'Entidades disponibles';
-    nav.appendChild(title);
-
-    if (entities.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'xt-entity-nav__empty';
-      empty.textContent = 'No hay entidades disponibles.';
-      nav.appendChild(empty);
-      this.#container.appendChild(nav);
-      return;
-    }
-
-    const list = document.createElement('ul');
-    list.className = 'xt-entity-nav__list';
-
-    for (const entity of entities) {
-      const item = document.createElement('li');
-      item.className = 'xt-entity-nav__item';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'xt-entity-nav__btn';
-      btn.textContent = entity.label ?? entity.slug ?? 'Sin nombre';
-      btn.dataset.slug = entity.slug;
-
-      btn.addEventListener('click', () => {
-        this.loadEntity(entity.slug);
-      });
-
-      item.appendChild(btn);
-      list.appendChild(item);
-    }
-
-    nav.appendChild(list);
-    this.#container.appendChild(nav);
-  }
-
-  /**
    * @param {Array<object>} records
    * @param {object} schema
    * @param {string} slug
@@ -167,13 +125,20 @@ export class EntityList {
 
     const heading = document.createElement('h3');
     heading.className = 'xt-records-section__title';
-    heading.textContent = `Registros: ${slug}`;
+    const entityLabel = this.#entityLabelForSlug(slug);
+    heading.textContent = entityLabel;
     header.appendChild(heading);
 
     const createBtn = document.createElement('button');
     createBtn.type = 'button';
-    createBtn.className = 'xt-btn xt-btn--primary';
-    createBtn.textContent = 'Crear nuevo registro';
+    createBtn.className = 'xt-btn xt-btn--primary xt-create-btn';
+    const createIcon = document.createElement('i');
+    createIcon.className = 'fa-solid fa-circle-plus xt-create-btn__icon';
+    createIcon.setAttribute('aria-hidden', 'true');
+    const createLabel = document.createElement('span');
+    createLabel.textContent = this.#createLabelForSlug(slug);
+    createBtn.appendChild(createIcon);
+    createBtn.appendChild(createLabel);
     createBtn.addEventListener('click', () => {
       if (this.#onCreateNew !== null) {
         this.#onCreateNew(slug);
@@ -227,8 +192,14 @@ export class EntityList {
       const td = document.createElement('td');
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = 'xt-btn xt-btn--secondary xt-btn--sm';
-      editBtn.textContent = 'Editar';
+      editBtn.className = 'xt-btn xt-btn--sm xt-row-edit-btn';
+      const editIcon = document.createElement('i');
+      editIcon.className = 'fa-solid fa-pencil xt-row-edit-btn__icon';
+      editIcon.setAttribute('aria-hidden', 'true');
+      const editLabel = document.createElement('span');
+      editLabel.textContent = 'Editar';
+      editBtn.appendChild(editIcon);
+      editBtn.appendChild(editLabel);
       editBtn.addEventListener('click', () => {
         if (this.#onEdit !== null) {
           this.#onEdit(slug, record.id ?? null, record);
@@ -253,6 +224,35 @@ export class EntityList {
     const entities = AppState.getEntities();
     const found = entities.find((e) => e.slug === slug);
     return found ?? { slug, fields: [] };
+  }
+
+  /**
+   * @param {string} slug
+   * @returns {string}
+   */
+  #entityLabelForSlug(slug) {
+    const entities = AppState.getEntities();
+    const found = entities.find((e) => e.slug === slug);
+
+    if (found !== undefined && typeof found.label === 'string' && found.label.trim() !== '') {
+      return found.label;
+    }
+
+    return slug;
+  }
+
+  /**
+   * @param {string} slug
+   * @returns {string}
+   */
+  #createLabelForSlug(slug) {
+    const entities = AppState.getEntities();
+    const found = entities.find((e) => e.slug === slug);
+    const singular = found !== undefined && typeof found.label_singular === 'string' && found.label_singular !== ''
+      ? found.label_singular
+      : slug;
+
+    return `Crear ${singular.toLowerCase()}`;
   }
 
   /**

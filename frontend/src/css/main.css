@@ -68,7 +68,7 @@ body {
 }
 
 .xt-btn:disabled {
-  cursor: not-allowed;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -114,6 +114,8 @@ body {
   background: #0f766e;
   color: #fff;
   display: flex;
+  direction: ltr;
+  flex-direction: row;
   gap: 1rem;
   padding: 0.6rem 1.25rem;
 }
@@ -122,12 +124,14 @@ body {
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  order: 1;
 }
 
 .xt-navbar__links {
   display: flex;
   gap: 0.25rem;
   list-style: none;
+  order: 2;
 }
 
 .xt-navbar__link {
@@ -140,7 +144,7 @@ body {
 
 .xt-navbar__link:hover,
 .xt-navbar__link--active {
-  background: rgba(255, 255, 255, 0.18);
+  background: #0b5f58;
   color: #fff;
 }
 
@@ -149,10 +153,11 @@ body {
   display: flex;
   gap: 0.75rem;
   margin-left: auto;
+  order: 3;
 }
 
 .xt-navbar__user {
-  color: rgba(255, 255, 255, 0.8);
+  color: #ecfeff;
   font-size: 0.875rem;
   max-width: 180px;
   overflow: hidden;
@@ -161,8 +166,20 @@ body {
 }
 
 .xt-navbar__logout {
+  background: #0b5f58;
+  border: 1px solid #34d399;
+  border-radius: 999px;
+  color: #ecfeff;
+  cursor: pointer;
   font-size: 0.875rem;
-  padding: 0.3rem 0.65rem;
+  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.xt-navbar__logout:hover {
+  background: #115e59;
+  border-color: #6ee7b7;
 }
 
 .xt-placeholder {
@@ -220,8 +237,116 @@ body {
   font-size: 1rem;
 }
 
+.xt-create-btn {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.xt-create-btn__icon {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  display: inline-flex;
+  font-size: 1.05em;
+  font-weight: 900;
+  height: auto;
+  justify-content: center;
+  line-height: inherit;
+  margin-top: 0;
+  width: auto;
+}
+
+.xt-row-edit-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #0f766e;
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.22rem 0.35rem;
+  transition: color 0.2s ease;
+}
+
+.xt-row-edit-btn:hover {
+  color: #0d9488;
+}
+
+.xt-row-edit-btn__icon {
+  font-size: 1.1em;
+}
+
 .xt-records-section__table {
   padding: 0.5rem 0.75rem 0.85rem;
+}
+
+.xt-edit-wrapper {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.xt-edit-wrapper__title {
+  color: #0f172a;
+  font-size: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.xt-edit-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 0.45rem;
+  color: #991b1b;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.xt-edit-form form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.xf-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.xf-field > label {
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.xf-field > input,
+.xf-field > select {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.45rem;
+  color: #111827;
+  font-size: 0.95rem;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+}
+
+.xf-field > input[type='checkbox'] {
+  min-height: auto;
+  width: auto;
+}
+
+.xt-field-errors {
+  color: #b91c1c;
+  font-size: 0.88rem;
+  list-style-position: inside;
+}
+
+.xt-edit-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
 }
 
 .xt-table-wrapper {
@@ -232,7 +357,7 @@ body {
 .xt-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 680px;
+  min-width: 620px;
 }
 
 .xt-table th,
@@ -261,33 +386,157 @@ body {
 .xt-pagination {
   align-items: center;
   display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
+  gap: 0.75rem;
+  justify-content: center;
   padding: 0.6rem 0.1rem 0;
 }
 
-.xt-pagination button {
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 0.35rem;
+.xt-pagination__btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #0f766e;
   cursor: pointer;
+  display: inline-flex;
   font-size: 0.85rem;
-  padding: 0.3rem 0.55rem;
+  font-weight: 600;
+  gap: 0.35rem;
+  padding: 0.25rem 0.35rem;
+  transition: color 0.2s ease;
 }
 
-.xt-pagination span {
+.xt-pagination__btn:hover:not(:disabled) {
+  color: #0d9488;
+}
+
+.xt-pagination__btn:disabled {
+  color: #9ca3af;
+  cursor: default;
+}
+
+.xt-pagination__btn:disabled:hover {
+  color: #9ca3af;
+}
+
+.xt-pagination__btn i {
+  font-size: 0.9em;
+}
+
+.xt-row-edit-btn:focus-visible,
+.xt-pagination__btn:focus-visible {
+  color: #0d9488;
+  outline: none;
+}
+
+.xt-pagination__info {
   color: #4b5563;
   font-size: 0.85rem;
 }
 
 @media (max-width: 768px) {
+  .xt-shell__navbar {
+    position: static;
+  }
+
   .xt-shell__content {
     padding: 0.85rem;
+  }
+
+  .xt-login {
+    margin: 1.4rem auto;
+    padding: 1rem;
+    width: min(100%, 560px);
+  }
+
+  .xt-navbar {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .xt-navbar__links {
+    order: 2;
+    flex-wrap: wrap;
+    width: auto;
+  }
+
+  .xt-navbar__right {
+    margin-left: auto;
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .xt-navbar__user {
+    max-width: 40vw;
+  }
+
+  .xt-records-section__table {
+    padding: 0.45rem;
+  }
+
+  .xt-table {
+    min-width: 540px;
+  }
+
+  .xt-table th,
+  .xt-table td {
+    padding: 0.5rem 0.5rem;
+  }
+
+  .xt-edit-wrapper {
+    padding: 0.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .xt-navbar__links {
+    order: 3;
+    width: 100%;
+  }
+
+  .xt-navbar__right {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .xt-navbar__user {
+    max-width: 66vw;
   }
 
   .xt-records-section__header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .xt-edit-actions {
+    flex-direction: column;
+    justify-content: stretch;
+  }
+
+  .xt-edit-actions .xt-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 15px;
+  }
+
+  .xt-navbar__brand {
+    font-size: 1rem;
+  }
+
+  .xt-navbar__link,
+  .xt-btn,
+  .xt-entity-nav__btn {
+    font-size: 0.88rem;
+  }
+
+  .xt-table {
+    min-width: 480px;
   }
 }
 
@@ -353,5 +602,17 @@ body {
   color: #1f2937;
   font-size: 0.95rem;
   padding: 1rem;
+}
+
+@media (max-width: 480px) {
+  .xt-modal {
+    padding: 0.55rem;
+  }
+
+  .xt-modal__header,
+  .xt-modal__content {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 }
 

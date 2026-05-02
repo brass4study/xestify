@@ -13,11 +13,12 @@ use Xestify\core\Database;
  */
 class EntitySeeder
 {
-    /** @var array<array{slug:string,name:string,fields:array<mixed>}> */
+    /** @var array<array{slug:string,name:string,label_singular:string,fields:array<mixed>}> */
     private const ENTITIES = [
         [
             'slug'   => 'client',
             'name'   => 'Clientes',
+            'label_singular' => 'cliente',
             'fields' => [
                 ['name' => 'name',    'label' => 'Nombre',   'type' => 'string', 'required' => true],
                 ['name' => 'email',   'label' => 'Email',    'type' => 'email',  'required' => true],
@@ -27,6 +28,7 @@ class EntitySeeder
         [
             'slug'   => 'product',
             'name'   => 'Productos',
+            'label_singular' => 'producto',
             'fields' => [
                 ['name' => 'name',        'label' => 'Nombre',      'type' => 'string',  'required' => true],
                 ['name' => 'price',       'label' => 'Precio',      'type' => 'number',  'required' => true],
@@ -46,11 +48,15 @@ class EntitySeeder
 
         $count = (int) $stmt->fetchColumn();
         if ($count > 0) {
+            self::ensureSingularLabels($pdo);
             return;
         }
 
         foreach (self::ENTITIES as $entity) {
-            $schemaJson = json_encode(['fields' => $entity['fields']]);
+            $schemaJson = json_encode([
+                'label_singular' => $entity['label_singular'],
+                'fields' => $entity['fields'],
+            ]);
             if ($schemaJson === false) {
                 continue;
             }
@@ -72,6 +78,63 @@ class EntitySeeder
             );
             $stmtM->execute([
                 ':slug'   => $entity['slug'],
+                ':schema' => $schemaJson,
+            ]);
+        }
+
+        self::ensureSingularLabels($pdo);
+    }
+
+    private static function ensureSingularLabels(PDO $pdo): void
+    {
+        foreach (self::ENTITIES as $entity) {
+            $schemaJson = json_encode([
+                'label_singular' => $entity['label_singular'],
+                'fields' => $entity['fields'],
+            ]);
+            if ($schemaJson === false) {
+                continue;
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT schema_json, schema_version
+                 FROM entity_metadata
+                 WHERE entity_slug = :slug
+                 ORDER BY schema_version DESC
+                 LIMIT 1'
+            );
+            $stmt->execute([':slug' => $entity['slug']]);
+            $row = $stmt->fetch();
+
+            if ($row === false) {
+                $insert = $pdo->prepare(
+                    'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
+                     VALUES (:slug, 1, :schema)'
+                );
+                $insert->execute([
+                    ':slug' => $entity['slug'],
+                    ':schema' => $schemaJson,
+                ]);
+                continue;
+            }
+
+            $current = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+            $currentSingular = is_array($current) && isset($current['label_singular'])
+                ? (string) $current['label_singular']
+                : '';
+
+            if ($currentSingular === $entity['label_singular']) {
+                continue;
+            }
+
+            $nextVersion = (int) ($row['schema_version'] ?? 1) + 1;
+            $insert = $pdo->prepare(
+                'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
+                 VALUES (:slug, :version, :schema)'
+            );
+            $insert->execute([
+                ':slug' => $entity['slug'],
+                ':version' => $nextVersion,
                 ':schema' => $schemaJson,
             ]);
         }

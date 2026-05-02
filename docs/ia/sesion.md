@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 5 — Frontend Dinámico Base (🔄 EN PROGRESO)  
-**Próxima story:** STORY 5.5 — Frontend - Mejorar estilos CSS para mobile/desktop
+**Próxima story:** STORY 6.1 — Extensión avanzada (pendiente de priorización)
 
 ---
 
@@ -131,7 +131,8 @@
 | 5.3 ✅ | Frontend - Integración E2E EntityList + EntityEdit | `3258257` | 11/11 ✅ |
 | 5.3b ✅ | Fix: GET /api/v1/entities + EntitySeeder + UTF-8 | `722990c` | — |
 | 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
-| 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | pendiente commit | 5/5 ✅ |
+| 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | `041ba40` | 5/5 ✅ |
+| 5.5 ✅ | Frontend - Mejorar estilos CSS para mobile/desktop + refinamiento navbar/tabla | pendiente commit | — |
 
 ---
 

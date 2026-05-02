@@ -52,6 +52,11 @@
     container.remove();
   }
 
+  const ENTITIES = [
+    { slug: 'client', label: 'Clientes' },
+    { slug: 'product', label: 'Productos' },
+  ];
+
   // ── Tests ──────────────────────────────────────────────────────────────────
 
   it('throws TypeError when container selector does not match', (_container) => {
@@ -65,7 +70,8 @@
   });
 
   it('renders nav element with brand text', (container) => {
-    new Navbar(container);
+    const navbar = new Navbar(container);
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const nav = container.querySelector('.xt-navbar');
     assertTrue(nav !== null, 'Expected .xt-navbar element');
     const brand = container.querySelector('.xt-navbar__brand');
@@ -73,17 +79,20 @@
     assertEquals(brand.textContent, 'Xestify', 'Brand text should be Xestify');
   });
 
-  it('renders Entidades and Plugins nav links', (container) => {
-    new Navbar(container);
+  it('renders one nav link per entity and Plugins', (container) => {
+    const navbar = new Navbar(container, { entities: ENTITIES });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const links = container.querySelectorAll('.xt-navbar__link');
-    assertEquals(links.length, 2, 'Expected 2 nav links');
-    const pages = Array.from(links).map((l) => l.dataset.page);
-    assertTrue(pages.includes('entities'), 'Missing entities link');
-    assertTrue(pages.includes('plugins'), 'Missing plugins link');
+    assertEquals(links.length, 3, 'Expected 3 nav links');
+    const pages = new Set(Array.from(links).map((l) => l.dataset.page));
+    assertTrue(pages.has('entity:client'), 'Missing client entity link');
+    assertTrue(pages.has('entity:product'), 'Missing product entity link');
+    assertTrue(pages.has('plugins'), 'Missing plugins link');
   });
 
   it('shows user email when provided', (container) => {
-    new Navbar(container, { userEmail: 'admin@xestify.local' });
+    const navbar = new Navbar(container, { userEmail: 'admin@xestify.local' });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const userEl = container.querySelector('.xt-navbar__user');
     assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
     assertEquals(userEl.textContent, 'admin@xestify.local', 'User email not shown');
@@ -91,7 +100,8 @@
   });
 
   it('hides user element when no email provided', (container) => {
-    new Navbar(container);
+    const navbar = new Navbar(container);
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const userEl = container.querySelector('.xt-navbar__user');
     assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
     assertTrue(userEl.hidden, 'User element should be hidden when no email');
@@ -99,7 +109,8 @@
 
   it('calls onLogout when logout button is clicked', (container) => {
     let called = false;
-    new Navbar(container, { onLogout: () => { called = true; } });
+    const navbar = new Navbar(container, { onLogout: () => { called = true; } });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const logoutBtn = container.querySelector('.xt-navbar__logout');
     assertTrue(logoutBtn !== null, 'Expected logout button');
     logoutBtn.click();
@@ -108,12 +119,13 @@
 
   it('calls onNavigate with correct page when link is clicked', (container) => {
     let navigatedTo = null;
-    new Navbar(container, { onNavigate: (page) => { navigatedTo = page; } });
+    const navbar = new Navbar(container, { entities: ENTITIES, onNavigate: (page) => { navigatedTo = page; } });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
 
-    const entitiesLink = container.querySelector('[data-page="entities"]');
-    assertTrue(entitiesLink !== null, 'Expected entities link');
-    entitiesLink.click();
-    assertEquals(navigatedTo, 'entities', 'onNavigate should receive "entities"');
+    const clientLink = container.querySelector('[data-page="entity:client"]');
+    assertTrue(clientLink !== null, 'Expected client entity link');
+    clientLink.click();
+    assertEquals(navigatedTo, 'entity:client', 'onNavigate should receive "entity:client"');
 
     const pluginsLink = container.querySelector('[data-page="plugins"]');
     pluginsLink.click();
@@ -121,16 +133,17 @@
   });
 
   it('marks clicked link as active', (container) => {
-    new Navbar(container, { onNavigate: () => { return; } });
-    const entitiesLink = container.querySelector('[data-page="entities"]');
-    entitiesLink.click();
-    assertTrue(entitiesLink.classList.contains('xt-navbar__link--active'), 'Entities link should be active');
-    assertEquals(entitiesLink.getAttribute('aria-current'), 'page', 'aria-current should be "page"');
+    const navbar = new Navbar(container, { entities: ENTITIES, onNavigate: () => { return; } });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
+    const clientLink = container.querySelector('[data-page="entity:client"]');
+    clientLink.click();
+    assertTrue(clientLink.classList.contains('xt-navbar__link--active'), 'Client link should be active');
+    assertEquals(clientLink.getAttribute('aria-current'), 'page', 'aria-current should be "page"');
 
     const pluginsLink = container.querySelector('[data-page="plugins"]');
     pluginsLink.click();
     assertTrue(pluginsLink.classList.contains('xt-navbar__link--active'), 'Plugins link should be active');
-    assertTrue(!entitiesLink.classList.contains('xt-navbar__link--active'), 'Entities link should not be active after plugins clicked');
+    assertTrue(!clientLink.classList.contains('xt-navbar__link--active'), 'Client link should not be active after plugins clicked');
   });
 
   it('setUserEmail updates displayed email', (container) => {

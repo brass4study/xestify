@@ -64,9 +64,15 @@ class EntityController
         foreach ($rows as $row) {
             $schema = json_decode((string) ($row['schema_json'] ?? '{}'), true);
             $fields = is_array($schema) && isset($schema['fields']) ? $schema['fields'] : [];
+            $singularLabel = null;
+            if (is_array($schema) && isset($schema['label_singular']) && is_string($schema['label_singular'])) {
+                $singularLabel = $schema['label_singular'];
+            }
+
             $entities[] = [
                 'slug'           => $row['slug'],
                 'label'          => $row['label'],
+                'label_singular' => $singularLabel,
                 'schema_version' => (int) ($row['schema_version'] ?? 1),
                 'fields'         => $fields,
             ];

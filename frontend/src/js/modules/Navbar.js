@@ -21,13 +21,27 @@ export class Navbar {
   /** @type {Function|null} */
   #onNavigate;
 
+  /** @type {Array<object>} */
+  #entities;
+
+  /** @type {string} */
+  #activePage;
+
   /**
    * @param {string|HTMLElement} container
-   * @param {{ userEmail?: string|null, onLogout?: Function, onNavigate?: Function }} options
+   * @param {{
+   *   userEmail?: string|null,
+   *   entities?: Array<object>,
+   *   currentPage?: string,
+   *   onLogout?: Function,
+   *   onNavigate?: Function
+   * }} options
    */
   constructor(container, options = {}) {
     this.#container = this.#resolveContainer(container);
     this.#userEmail = typeof options.userEmail === 'string' ? options.userEmail : null;
+    this.#entities = Array.isArray(options.entities) ? [...options.entities] : [];
+    this.#activePage = typeof options.currentPage === 'string' ? options.currentPage : '';
     this.#onLogout = typeof options.onLogout === 'function' ? options.onLogout : null;
     this.#onNavigate = typeof options.onNavigate === 'function' ? options.onNavigate : null;
 
@@ -48,6 +62,14 @@ export class Navbar {
     }
   }
 
+  /**
+   * @param {Array<object>} entities
+   */
+  setEntities(entities) {
+    this.#entities = Array.isArray(entities) ? [...entities] : [];
+    this.#render();
+  }
+
   #render() {
     this.#container.innerHTML = '';
 
@@ -63,7 +85,15 @@ export class Navbar {
     const links = document.createElement('ul');
     links.className = 'xt-navbar__links';
 
-    links.appendChild(this.#makeNavItem('entities', 'Entidades'));
+    for (const entity of this.#entities) {
+      const slug = typeof entity?.slug === 'string' ? entity.slug : '';
+      if (slug === '') {
+        continue;
+      }
+      const label = typeof entity?.label === 'string' ? entity.label : slug;
+      links.appendChild(this.#makeNavItem(`entity:${slug}`, label));
+    }
+
     links.appendChild(this.#makeNavItem('plugins', 'Plugins'));
 
     nav.appendChild(links);
@@ -79,7 +109,7 @@ export class Navbar {
 
     const logoutBtn = document.createElement('button');
     logoutBtn.type = 'button';
-    logoutBtn.className = 'xt-btn xt-btn--secondary xt-navbar__logout';
+    logoutBtn.className = 'xt-navbar__logout';
     logoutBtn.textContent = 'Salir';
     logoutBtn.addEventListener('click', () => {
       if (this.#onLogout !== null) {
@@ -90,6 +120,10 @@ export class Navbar {
 
     nav.appendChild(right);
     this.#container.appendChild(nav);
+
+    if (this.#activePage !== '') {
+      this.#setActive(this.#activePage);
+    }
   }
 
   /**
@@ -121,6 +155,7 @@ export class Navbar {
    * @param {string} page
    */
   #setActive(page) {
+    this.#activePage = page;
     const links = this.#container.querySelectorAll('.xt-navbar__link');
     for (const link of links) {
       if (link instanceof HTMLElement) {

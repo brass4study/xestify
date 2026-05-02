@@ -662,3 +662,17 @@ métodos show(), close(), setContent() y estilos básicos.
 **Resultado:** Se creó `Modal.js` con API reutilizable, comportamiento de cierre (botón, backdrop y Escape), estilos base en `main.css` y `ModalTest.html` con 5 pruebas.
 **Iteraciones:** 1
 
+### STORY 5.5 — Frontend - Mejoras responsive + refinamiento navbar/tabla
+
+**Prompt:**
+```
+Continuemos con la siguiente story y ajustemos UX del frontend:
+- Navbar sin sección "Entidades" y con enlaces por entidad
+- Usuario + salir a la derecha
+- Correcciones visuales de tabla, botones (crear/editar), iconos Font Awesome y paginación
+- Estados hover/disabled consistentes y layout igual entre Chrome y navegador integrado
+- Crear {singular} usando propiedad de entidad en lugar de heurística
+```
+**Resultado:** Navbar dinámico por entidad, bloque derecho consistente, selector de entidades eliminado del contenido, botón crear con icono y `label_singular`, acciones/paginación iconificadas con estilos unificados, backend actualizado para exponer `label_singular` y seeder versionado.
+**Iteraciones:** 6
+

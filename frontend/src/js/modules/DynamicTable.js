@@ -167,15 +167,32 @@ export class DynamicTable {
 
     const prevBtn = document.createElement('button');
     prevBtn.type = 'button';
-    prevBtn.textContent = 'Prev';
+    prevBtn.className = 'xt-pagination__btn xt-pagination__btn--prev';
+    prevBtn.setAttribute('aria-label', 'Página anterior');
+    const prevIcon = document.createElement('i');
+    prevIcon.className = 'fa-solid fa-chevron-left';
+    prevIcon.setAttribute('aria-hidden', 'true');
+    const prevLabel = document.createElement('span');
+    prevLabel.textContent = 'Anterior';
+    prevBtn.appendChild(prevIcon);
+    prevBtn.appendChild(prevLabel);
     prevBtn.disabled = this.#currentPage <= 1;
 
     const info = document.createElement('span');
+    info.className = 'xt-pagination__info';
     info.textContent = `Page ${this.#currentPage} / ${this.getTotalPages()}`;
 
     const nextBtn = document.createElement('button');
     nextBtn.type = 'button';
-    nextBtn.textContent = 'Next';
+    nextBtn.className = 'xt-pagination__btn xt-pagination__btn--next';
+    nextBtn.setAttribute('aria-label', 'Página siguiente');
+    const nextLabel = document.createElement('span');
+    nextLabel.textContent = 'Siguiente';
+    const nextIcon = document.createElement('i');
+    nextIcon.className = 'fa-solid fa-chevron-right';
+    nextIcon.setAttribute('aria-hidden', 'true');
+    nextBtn.appendChild(nextLabel);
+    nextBtn.appendChild(nextIcon);
     nextBtn.disabled = this.#currentPage >= this.getTotalPages();
 
     prevBtn.addEventListener('click', () => {
