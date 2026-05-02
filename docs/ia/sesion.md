@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 5 — Frontend Dinámico Base (🔄 EN PROGRESO)  
-**Próxima story:** STORY 5.4 — Frontend - Crear Modal/Dialog reutilizable
+**Próxima story:** STORY 5.5 — Frontend - Mejorar estilos CSS para mobile/desktop
 
 ---
 
@@ -129,8 +129,9 @@
 | 5.1 ✅ | Frontend - Crear página Login | `66c7747` | 5/5 ✅ |
 | 5.2 ✅ | Frontend - Crear navbar/sidebar de navegación | `a60a3b3` | 9/9 ✅ |
 | 5.3 ✅ | Frontend - Integración E2E EntityList + EntityEdit | `3258257` | 11/11 ✅ |
-| 5.3b ✅ | Fix: GET /api/v1/entities + EntitySeeder + UTF-8 | pendiente commit | — |
-| 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | pendiente commit | — |
+| 5.3b ✅ | Fix: GET /api/v1/entities + EntitySeeder + UTF-8 | `722990c` | — |
+| 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
+| 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | pendiente commit | 5/5 ✅ |
 
 ---
 

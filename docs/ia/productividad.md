@@ -608,3 +608,17 @@
 - **Iteraciones:** 2 (fix funcional + ajuste lint)
 - **Decisión manual:** Mantener compatibilidad dual de rutas (`{param}` y `:param`) en el router.
 
+### STORY 5.4: Frontend - Crear Modal/Dialog reutilizable
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~88% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/Modal.js` como componente reutilizable
+  - Implementó métodos requeridos `show()`, `close()`, `setContent()` y soporte de título
+  - Añadió cierre por backdrop y tecla Escape para usabilidad básica
+  - Añadió estilos base del modal en `frontend/src/css/main.css`
+  - Creó `frontend/tests/ModalTest.html` con 5 tests (show, close, contenido string, contenido HTMLElement, cierre por backdrop)
+- **Iteraciones:** 1
+- **Decisión manual:** Mantener API mínima de story y añadir `setTitle()`/`isOpen()` como extras no disruptivos.
+

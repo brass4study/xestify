@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ModalTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+<h2>ModalTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { Modal } from '../src/js/modules/Modal.js';
+
+  let passed = 0;
+  let failed = 0;
+  const output = document.getElementById('output');
+
+  function log(line) {
+    output.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(actual, expected, msg = 'assertEquals failed') {
+    if (actual !== expected) {
+      throw new Error(`${msg}: expected "${String(expected)}", got "${String(actual)}"`);
+    }
+  }
+
+  function it(name, fn) {
+    const container = document.createElement('div');
+    document.getElementById('sandbox').appendChild(container);
+
+    try {
+      fn(container);
+      log(`  ✓ ${name}`);
+      passed++;
+    } catch (error) {
+      log(`  ✗ ${name}: ${error.message}`);
+      failed++;
+    }
+
+    container.remove();
+  }
+
+  it('show() displays the modal', (container) => {
+    const modal = new Modal(container, { title: 'Confirmar', content: 'Texto inicial' });
+    modal.show();
+
+    const overlay = container.querySelector('.xt-modal');
+    assertTrue(overlay !== null, 'Expected .xt-modal to exist');
+    assertTrue(!overlay.hidden, 'Modal should be visible after show()');
+    assertTrue(modal.isOpen(), 'Modal state should be open');
+  });
+
+  it('close() hides the modal', (container) => {
+    const modal = new Modal(container);
+    modal.show();
+    modal.close();
+
+    const overlay = container.querySelector('.xt-modal');
+    assertTrue(overlay !== null, 'Expected .xt-modal to exist');
+    assertTrue(overlay.hidden, 'Modal should be hidden after close()');
+    assertTrue(!modal.isOpen(), 'Modal state should be closed');
+  });
+
+  it('setContent(string) replaces content text', (container) => {
+    const modal = new Modal(container, { content: 'A' });
+    modal.setContent('Nuevo contenido');
+    modal.show();
+
+    const content = container.querySelector('.xt-modal__content');
+    assertEquals(content.textContent, 'Nuevo contenido', 'Unexpected text content');
+  });
+
+  it('setContent(HTMLElement) appends custom node', (container) => {
+    const modal = new Modal(container);
+    const node = document.createElement('strong');
+    node.textContent = 'Error crítico';
+
+    modal.setContent(node);
+    modal.show();
+
+    const strong = container.querySelector('.xt-modal__content strong');
+    assertTrue(strong !== null, 'Expected strong element in modal content');
+    assertEquals(strong.textContent, 'Error crítico', 'Unexpected element content');
+  });
+
+  it('backdrop click closes the modal', (container) => {
+    const modal = new Modal(container);
+    modal.show();
+
+    const overlay = container.querySelector('.xt-modal');
+    overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    assertTrue(overlay.hidden, 'Modal should close on backdrop click');
+    assertTrue(!modal.isOpen(), 'Modal state should be closed');
+  });
+
+  log('');
+  log(`${passed} passed, ${failed} failed`);
+
+  if (failed > 0) {
+    document.body.style.borderTop = '4px solid #f87171';
+  } else {
+    document.body.style.borderTop = '4px solid #4ade80';
+  }
+</script>
+</body>
+</html>

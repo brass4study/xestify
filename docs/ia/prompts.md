@@ -651,3 +651,14 @@ los registros.
 **Resultado:** Se corrigió el router para soportar `{slug}` y evitar 404 en records; se normalizaron filas `content` JSONB en `EntityList` para mostrar datos reales; y se mejoró el CSS de tabla para tamaño/legibilidad.
 **Iteraciones:** 2
 
+### STORY 5.4 — Frontend - Crear Modal/Dialog reutilizable
+
+**Prompt:**
+```
+Continuemos con el siguiente story.
+Implementa STORY 5.4: crear Modal/Dialog reutilizable con clase Modal,
+métodos show(), close(), setContent() y estilos básicos.
+```
+**Resultado:** Se creó `Modal.js` con API reutilizable, comportamiento de cierre (botón, backdrop y Escape), estilos base en `main.css` y `ModalTest.html` con 5 pruebas.
+**Iteraciones:** 1
+
