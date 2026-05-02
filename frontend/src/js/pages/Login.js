@@ -69,6 +69,7 @@ export class Login {
     try {
       const { data } = await this.#api.post('/auth/login', { email, password });
       const accessToken = typeof data?.access_token === 'string' ? data.access_token : '';
+      const userEmail = typeof data?.email === 'string' ? data.email : null;
 
       if (accessToken === '') {
         this.#showGlobalError('Respuesta de autenticacion invalida.');
@@ -76,7 +77,7 @@ export class Login {
       }
 
       if (this.#onSuccess !== null) {
-        this.#onSuccess({ accessToken });
+        this.#onSuccess({ accessToken, email: userEmail });
       }
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.details).length > 0) {

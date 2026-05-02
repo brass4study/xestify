@@ -58,6 +58,9 @@ class AuthController
             'roles' => is_array($roles) ? $roles : [],
         ]);
 
-        Response::make()->json(['access_token' => $token]);
+        Response::make()->json([
+            'access_token' => $token,
+            'email'        => (string) $user['email'],
+        ]);
     }
 }

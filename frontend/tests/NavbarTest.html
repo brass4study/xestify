@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>NavbarTest - Xestify Frontend</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
+    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+  </style>
+</head>
+<body>
+<h2>NavbarTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { Navbar } from '../src/js/modules/Navbar.js';
+
+  let passed = 0;
+  let failed = 0;
+  const out = document.getElementById('output');
+
+  function log(line) {
+    out.textContent += line + '\n';
+  }
+
+  function assertTrue(value, msg = 'assertTrue failed') {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function assertEquals(a, b, msg) {
+    if (a !== b) {
+      throw new Error(msg ?? `Expected "${String(b)}" but got "${String(a)}"`);
+    }
+  }
+
+  function it(name, fn) {
+    const container = document.createElement('div');
+    document.getElementById('sandbox').appendChild(container);
+    try {
+      fn(container);
+      log(`  ✓ ${name}`);
+      passed++;
+    } catch (err) {
+      log(`  ✗ ${name}: ${err.message}`);
+      failed++;
+    }
+    container.remove();
+  }
+
+  // ── Tests ──────────────────────────────────────────────────────────────────
+
+  it('throws TypeError when container selector does not match', (_container) => {
+    let threw = false;
+    try {
+      new Navbar('#non-existent-element-xyz');
+    } catch (err) {
+      threw = err instanceof TypeError;
+    }
+    assertTrue(threw, 'Expected TypeError for missing container');
+  });
+
+  it('renders nav element with brand text', (container) => {
+    new Navbar(container);
+    const nav = container.querySelector('.xt-navbar');
+    assertTrue(nav !== null, 'Expected .xt-navbar element');
+    const brand = container.querySelector('.xt-navbar__brand');
+    assertTrue(brand !== null, 'Expected .xt-navbar__brand');
+    assertEquals(brand.textContent, 'Xestify', 'Brand text should be Xestify');
+  });
+
+  it('renders Entidades and Plugins nav links', (container) => {
+    new Navbar(container);
+    const links = container.querySelectorAll('.xt-navbar__link');
+    assertEquals(links.length, 2, 'Expected 2 nav links');
+    const pages = Array.from(links).map((l) => l.dataset.page);
+    assertTrue(pages.includes('entities'), 'Missing entities link');
+    assertTrue(pages.includes('plugins'), 'Missing plugins link');
+  });
+
+  it('shows user email when provided', (container) => {
+    new Navbar(container, { userEmail: 'admin@xestify.local' });
+    const userEl = container.querySelector('.xt-navbar__user');
+    assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
+    assertEquals(userEl.textContent, 'admin@xestify.local', 'User email not shown');
+    assertTrue(!userEl.hidden, 'User element should not be hidden');
+  });
+
+  it('hides user element when no email provided', (container) => {
+    new Navbar(container);
+    const userEl = container.querySelector('.xt-navbar__user');
+    assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
+    assertTrue(userEl.hidden, 'User element should be hidden when no email');
+  });
+
+  it('calls onLogout when logout button is clicked', (container) => {
+    let called = false;
+    new Navbar(container, { onLogout: () => { called = true; } });
+    const logoutBtn = container.querySelector('.xt-navbar__logout');
+    assertTrue(logoutBtn !== null, 'Expected logout button');
+    logoutBtn.click();
+    assertTrue(called, 'onLogout was not called');
+  });
+
+  it('calls onNavigate with correct page when link is clicked', (container) => {
+    let navigatedTo = null;
+    new Navbar(container, { onNavigate: (page) => { navigatedTo = page; } });
+
+    const entitiesLink = container.querySelector('[data-page="entities"]');
+    assertTrue(entitiesLink !== null, 'Expected entities link');
+    entitiesLink.click();
+    assertEquals(navigatedTo, 'entities', 'onNavigate should receive "entities"');
+
+    const pluginsLink = container.querySelector('[data-page="plugins"]');
+    pluginsLink.click();
+    assertEquals(navigatedTo, 'plugins', 'onNavigate should receive "plugins"');
+  });
+
+  it('marks clicked link as active', (container) => {
+    new Navbar(container, { onNavigate: () => { return; } });
+    const entitiesLink = container.querySelector('[data-page="entities"]');
+    entitiesLink.click();
+    assertTrue(entitiesLink.classList.contains('xt-navbar__link--active'), 'Entities link should be active');
+    assertEquals(entitiesLink.getAttribute('aria-current'), 'page', 'aria-current should be "page"');
+
+    const pluginsLink = container.querySelector('[data-page="plugins"]');
+    pluginsLink.click();
+    assertTrue(pluginsLink.classList.contains('xt-navbar__link--active'), 'Plugins link should be active');
+    assertTrue(!entitiesLink.classList.contains('xt-navbar__link--active'), 'Entities link should not be active after plugins clicked');
+  });
+
+  it('setUserEmail updates displayed email', (container) => {
+    const navbar = new Navbar(container, { userEmail: 'foo@bar.com' });
+    navbar.setUserEmail('new@user.com');
+    const userEl = container.querySelector('.xt-navbar__user');
+    assertEquals(userEl.textContent, 'new@user.com', 'Email not updated');
+    assertTrue(!userEl.hidden, 'User element should not be hidden after email set');
+  });
+
+  it('setUserEmail with null hides user element', (container) => {
+    const navbar = new Navbar(container, { userEmail: 'foo@bar.com' });
+    navbar.setUserEmail(null);
+    const userEl = container.querySelector('.xt-navbar__user');
+    assertTrue(userEl.hidden, 'User element should be hidden after null email');
+  });
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+
+  log('');
+  log(`${passed} passed, ${failed} failed`);
+
+  if (failed > 0) {
+    document.body.style.borderTop = '4px solid #f87171';
+  } else {
+    document.body.style.borderTop = '4px solid #4ade80';
+  }
+</script>
+</body>
+</html>

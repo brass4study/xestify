@@ -80,6 +80,13 @@ export const AppState = {
     return this.token;
   },
 
+  getUserEmail() {
+    if (this.user !== null && typeof this.user === 'object' && typeof this.user.email === 'string') {
+      return this.user.email;
+    }
+    return null;
+  },
+
   setLoading(isLoading) {
     this.loading = Boolean(isLoading);
   },

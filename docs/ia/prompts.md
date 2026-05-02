@@ -601,3 +601,18 @@ Implementa STORY 5.1 completa en frontend:
 **Resultado:** Login funcional integrado en el entrypoint, token persistido en `localStorage`, logout operativo, test `LoginTest.html` en verde (5/5) y helper `tools/dev/frontend-router.php` para prueba local same-origin sin tocar `API_BASE`.
 **Iteraciones:** 3 (ajuste anti-warning Sonar en `main.js`, fallback MIME por ausencia de `mime_content_type`, limpieza de conflicto de servidor local en 8081)
 
+### STORY 5.2 — Frontend - Crear navbar/sidebar de navegación
+
+**Prompt:**
+```
+Implementa STORY 5.2 completa:
+- Crear módulo Navbar (frontend/src/js/modules/Navbar.js) con brand, links a entities y plugins, email del usuario, botón logout
+- Usar callbacks onLogout y onNavigate para comunicación con main.js
+- Actualizar main.js para que renderDashboard use Navbar + función navigateTo que renderice EntityList o placeholder de plugins
+- Añadir email del usuario al response del AuthController y propagarlo hasta AppState
+- Estilos completos en main.css
+- NavbarTest.html con tests de constructor, render, links, email, logout, navigate y active state
+```
+**Resultado:** Navbar operativa con routing básico entre Entidades y Plugins, email del usuario visible, sesión `docs/ia` actualizada y commit listo.
+**Iteraciones:** 1
+

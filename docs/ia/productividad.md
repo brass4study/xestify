@@ -555,4 +555,17 @@
 - **Iteraciones:** 3 (ajuste de warnings Sonar + compatibilidad PHP 8.5 + corrección de conflicto de servidor local en puerto 8081)
 - **Decisión manual:** Mantener `API_BASE = '/api/v1'` en frontend y resolver localmente con router-proxy para no introducir diferencias entre entorno local y despliegue real.
 
+### STORY 5.2: Frontend - Crear navbar/sidebar de navegación
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~89% ⚡
+- **Qué hizo IA:**
+  - Creó `frontend/src/js/modules/Navbar.js` con brand, links de navegación (entities/plugins), email de usuario y botón logout
+  - Actualizó `frontend/src/js/main.js` para usar `Navbar` en el dashboard y añadir función `navigateTo` para routing entre páginas
+  - Añadió email del usuario al response de `AuthController` (`backend/src/controllers/AuthController.php`) y lo propagó por `Login.js` → `main.js` → `AppState`
+  - Amplió `frontend/src/css/main.css` con estilos completos de navbar y shell reestructurado
+  - Creó `frontend/tests/NavbarTest.html` con 9 casos de test (constructor, render, links, email, logout, navigate, active state, setUserEmail)
+- **Iteraciones:** 1
+- **Decisión manual:** Email devuelto directamente en la respuesta de login (sin decodificar JWT en el cliente), para simplificar el frontend.
 

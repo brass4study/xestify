@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 5 — Frontend Dinámico Base (🔄 EN PROGRESO)  
-**Próxima story:** STORY 5.2 — Frontend - Integrar navegación básica
+**Próxima story:** STORY 5.3 — Frontend - Integración E2E EntityList + EntityEdit
 
 ---
 
@@ -126,7 +126,8 @@
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
-| 5.1 ✅ | Frontend - Crear página Login | pendiente (este commit) | 5/5 ✅ |
+| 5.1 ✅ | Frontend - Crear página Login | `66c7747` | 5/5 ✅ |
+| 5.2 ✅ | Frontend - Crear navbar/sidebar de navegación | `d64c760` | 9/9 ✅ |
 
 ---
 
