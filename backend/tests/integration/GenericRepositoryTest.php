@@ -63,7 +63,7 @@ const TEST_SLUG = 'test_generic_repo';
 function cleanTestRows(): void
 {
     Database::connection()->exec(
-        "DELETE FROM entity_data WHERE entity_slug = '" . TEST_SLUG . "'"
+        "DELETE FROM plugin_entity_data WHERE entity_slug = '" . TEST_SLUG . "'"
     );
 }
 

@@ -3,8 +3,8 @@
 /**
  * PluginHookRegistryTableTest — Integration tests.
  *
- * Verifies that the plugin_hook_registry table was created correctly by
- * migration 002_core.sql. Requires a live PostgreSQL connection.
+ * Verifies that the plugin_hooks table was created correctly by migration
+ * 006_plugin_hooks.sql. Requires a live PostgreSQL connection.
  *
  * Run:
  *   php backend/tests/integration/PluginHookRegistryTableTest.php
@@ -47,7 +47,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all PluginHookRegistryTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001–008).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -57,40 +57,40 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('plugin_hook_registry table exists after migration', function (): void {
+TestSuite::run('plugin_hooks table exists after migration', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT EXISTS (
             SELECT 1 FROM information_schema.tables
             WHERE table_schema = 'public'
-            AND   table_name   = 'plugin_hook_registry'
+            AND   table_name   = 'plugin_hooks'
         ) AS exists"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue($row !== false && $row['exists'] === true, 'plugin_hook_registry table must exist');
+    assertTrue($row !== false && $row['exists'] === true, 'plugin_hooks table must exist');
 });
 
-TestSuite::run('plugin_hook_registry has expected columns', function (): void {
+TestSuite::run('plugin_hooks has expected columns', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_name FROM information_schema.columns
-         WHERE table_schema = 'public' AND table_name = 'plugin_hook_registry'
+         WHERE table_schema = 'public' AND table_name = 'plugin_hooks'
          ORDER BY ordinal_position"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
-    foreach (['id', 'plugin_slug', 'target_entity_slug', 'hook_name', 'priority', 'enabled'] as $col) {
+    foreach (['id', 'slug', 'target_entity_slug', 'hook_name', 'priority', 'enabled'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
     }
 });
 
-TestSuite::run('plugin_hook_registry priority defaults to 10', function (): void {
+TestSuite::run('plugin_hooks priority defaults to 10', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_default FROM information_schema.columns
          WHERE table_schema = 'public'
-           AND table_name   = 'plugin_hook_registry'
+           AND table_name   = 'plugin_hooks'
            AND column_name  = 'priority'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
@@ -99,12 +99,12 @@ TestSuite::run('plugin_hook_registry priority defaults to 10', function (): void
     assertTrue($row['column_default'] === '10', "priority default must be 10, got: {$row['column_default']}");
 });
 
-TestSuite::run('plugin_hook_registry enabled defaults to true', function (): void {
+TestSuite::run('plugin_hooks enabled defaults to true', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_default FROM information_schema.columns
          WHERE table_schema = 'public'
-           AND table_name   = 'plugin_hook_registry'
+           AND table_name   = 'plugin_hooks'
            AND column_name  = 'enabled'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
@@ -113,16 +113,16 @@ TestSuite::run('plugin_hook_registry enabled defaults to true', function (): voi
     assertTrue($row['column_default'] === 'true', "enabled default must be true, got: {$row['column_default']}");
 });
 
-TestSuite::run('plugin_hook_registry has composite index on (target_entity_slug, hook_name)', function (): void {
+TestSuite::run('plugin_hooks has composite index on (target_entity_slug, hook_name)', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
          FROM pg_indexes
          WHERE schemaname = 'public'
-           AND tablename  = 'plugin_hook_registry'
-           AND indexname  = 'idx_plugin_hook_registry_target_hook'"
+           AND tablename  = 'plugin_hooks'
+           AND indexname  = 'idx_plugin_hooks_target_hook'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_plugin_hook_registry_target_hook');
+    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_plugin_hooks_target_hook');
 });

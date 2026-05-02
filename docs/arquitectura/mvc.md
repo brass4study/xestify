@@ -10,7 +10,7 @@ Aplicar MVC en backend PHP sin acoplar la UI del negocio al servidor.
 
 Representa datos core y metadata.
 
-- SystemEntity
+- SystemEntity — facade de lectura sobre `plugins WHERE plugin_type='entity'` (no usa system_entities)
 - EntityMetadata
 - EntityData
 - PluginRegistry

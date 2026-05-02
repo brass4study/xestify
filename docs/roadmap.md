@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-05-02  
-> **Estado del proyecto:** EPIC 5 en progreso — EPIC 0-4 completados
+> **Estado del proyecto:** EPIC 6 en progreso — EPIC 0-5 completados, Release B aplicado
 
 ---
 
@@ -98,8 +98,10 @@ Todas las decisiones de stack están resueltas. No hay bloqueantes técnicos pen
 **Objetivo:** Tablas PostgreSQL estables con JSONB.
 
 **Completado:**
-- Migraciones idempotentes: `system_entities`, `entity_metadata`, `entity_data`, `plugins_registry`, `plugin_hook_registry`.
+- Migraciones idempotentes: `entity_metadata`, `entity_data`, `plugins` (catálogo de entidades + extensiones), `plugin_hooks`, `plugin_extension_data`.
 - `GenericRepository` (find, all, create, update, soft-delete, restore).
+
+> **Nota:** La tabla `system_entities` fue creada en esta fase pero eliminada en EPIC 6 / Release B (`010_drop_system_entities.sql`). El catálogo de entidades vive ahora en `plugins WHERE plugin_type = 'entity'`.
 
 ---
 
@@ -145,15 +147,18 @@ Todas las decisiones de stack están resueltas. No hay bloqueantes técnicos pen
 
 ---
 
-### ⏭ Fase 6 — Plugins tipo Extension (PENDIENTE)
+### 🔄 Fase 6 — Plugins tipo Extension (EN PROGRESO)
 
 **Objetivo:** Soporte para plugins que inyectan tabs y acciones en entidades existentes.
 
-**Entregables:**
+**Completado:**
 - `DynamicTabs.js` (frontend, tabs registrables desde plugins).
 - Hook `registerTabs` y `registerActions` en `HookDispatcher`.
-- Plugin de ejemplo `comments` (tipo `extension`, target cualquier entidad).
-- Página `PluginManager` (listar, activar, desactivar plugins).
+- **STORY 6.3** — Release B: eliminación de `system_entities`; migración `010_drop_system_entities.sql`; `plugins` como única fuente de verdad.
+- **STORY 6.4** — Plugin `comments` (tipo `extension`, target cualquier entidad).
+
+**Pendiente:**
+- **STORY 6.5** — Página `PluginManager` (listar, activar, desactivar plugins).
 
 **Criterios de salida:**
 - Al abrir un registro, se muestran tabs de extensiones activas.

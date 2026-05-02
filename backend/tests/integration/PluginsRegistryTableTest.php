@@ -3,8 +3,8 @@
 /**
  * PluginsRegistryTableTest — Integration tests.
  *
- * Verifies that the plugins_registry table was created correctly by migration
- * 002_core.sql. Requires a live PostgreSQL connection.
+ * Verifies that the plugins table was created correctly by migration
+ * 005_plugins.sql. Requires a live PostgreSQL connection.
  *
  * Run:
  *   php backend/tests/integration/PluginsRegistryTableTest.php
@@ -20,6 +20,8 @@ require_once BASE_PATH . '/src/core/Database.php';
 
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
+
+const QUERY_EXECUTE_MSG = 'Query should execute';
 
 // ---------------------------------------------------------------------------
 // Load .env
@@ -45,7 +47,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all PluginsRegistryTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001–009).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -55,35 +57,49 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('plugins_registry table exists after migration', function (): void {
+TestSuite::run('plugins table exists after migration', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT EXISTS (
             SELECT 1 FROM information_schema.tables
             WHERE table_schema = 'public'
-            AND   table_name   = 'plugins_registry'
+            AND   table_name   = 'plugins'
         ) AS exists"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue($row !== false && $row['exists'] === true, 'plugins_registry table must exist');
+    assertTrue($row !== false && $row['exists'] === true, 'plugins table must exist');
 });
 
-TestSuite::run('plugins_registry has expected columns', function (): void {
+TestSuite::run('plugins has expected columns', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_name FROM information_schema.columns
-         WHERE table_schema = 'public' AND table_name = 'plugins_registry'
+         WHERE table_schema = 'public' AND table_name = 'plugins'
          ORDER BY ordinal_position"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
-    foreach (['id', 'plugin_slug', 'plugin_type', 'version', 'status', 'installed_at', 'updated_at'] as $col) {
+    foreach (['id', 'slug', 'name', 'plugin_type', 'version', 'status', 'schema_version', 'schema_json', 'installed_at', 'updated_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
     }
 });
 
-TestSuite::run('plugins_registry plugin_slug has unique constraint', function (): void {
+TestSuite::run('plugins has idx_plugins_type_status index', function (): void {
+    $pdo  = Database::connection();
+    $stmt = $pdo->query(
+        "SELECT COUNT(*) AS cnt
+         FROM pg_indexes
+         WHERE schemaname = 'public'
+           AND tablename  = 'plugins'
+           AND indexname  = 'idx_plugins_type_status'"
+    );
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
+    $row = $stmt->fetch();
+    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_plugins_type_status');
+});
+
+TestSuite::run('plugins slug has unique constraint', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
@@ -93,15 +109,15 @@ TestSuite::run('plugins_registry plugin_slug has unique constraint', function ()
           AND tc.table_schema    = ccu.table_schema
          WHERE tc.constraint_type = 'UNIQUE'
            AND tc.table_schema    = 'public'
-           AND tc.table_name      = 'plugins_registry'
-           AND ccu.column_name    = 'plugin_slug'"
+           AND tc.table_name      = 'plugins'
+           AND ccu.column_name    = 'slug'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'plugin_slug must have a UNIQUE constraint');
+    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'slug must have a UNIQUE constraint');
 });
 
-TestSuite::run('plugins_registry plugin_type has CHECK constraint (entity|extension)', function (): void {
+TestSuite::run('plugins plugin_type has CHECK constraint (entity|extension)', function (): void {
     $pdo = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
@@ -110,16 +126,16 @@ TestSuite::run('plugins_registry plugin_type has CHECK constraint (entity|extens
            ON cc.constraint_name   = tc.constraint_name
           AND cc.constraint_schema = tc.table_schema
          WHERE tc.table_schema = 'public'
-           AND tc.table_name   = 'plugins_registry'
+           AND tc.table_name   = 'plugins'
            AND cc.check_clause LIKE '%entity%'
            AND cc.check_clause LIKE '%extension%'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'plugin_type must have a CHECK constraint with entity/extension');
 });
 
-TestSuite::run('plugins_registry status has CHECK constraint (active|inactive|error)', function (): void {
+TestSuite::run('plugins status has CHECK constraint (active|inactive|error)', function (): void {
     $pdo = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
@@ -128,11 +144,11 @@ TestSuite::run('plugins_registry status has CHECK constraint (active|inactive|er
            ON cc.constraint_name   = tc.constraint_name
           AND cc.constraint_schema = tc.table_schema
          WHERE tc.table_schema = 'public'
-           AND tc.table_name   = 'plugins_registry'
+           AND tc.table_name   = 'plugins'
            AND cc.check_clause LIKE '%active%'
            AND cc.check_clause LIKE '%error%'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'status must have a CHECK constraint with active/inactive/error');
 });

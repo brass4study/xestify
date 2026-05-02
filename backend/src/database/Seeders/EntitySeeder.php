@@ -8,8 +8,8 @@ use PDO;
 use Xestify\core\Database;
 
 /**
- * Seeds system_entities and entity_metadata with demo entity types.
- * Auto-runs on server boot only when system_entities is empty.
+ * Seeds entity plugins with demo entity types.
+ * Auto-runs on server boot only when no entity plugins exist.
  */
 class EntitySeeder
 {
@@ -41,7 +41,7 @@ class EntitySeeder
     {
         $pdo = Database::connection();
 
-        $stmt = $pdo->query('SELECT COUNT(*) FROM system_entities');
+        $stmt = $pdo->query("SELECT COUNT(*) FROM plugins WHERE plugin_type = 'entity'");
         if ($stmt === false) {
             return;
         }
@@ -61,23 +61,19 @@ class EntitySeeder
                 continue;
             }
 
-            $stmtE = $pdo->prepare(
-                'INSERT INTO system_entities (slug, name, is_active)
-                 VALUES (:slug, :name, true)
-                 ON CONFLICT (slug) DO NOTHING'
-            );
-            $stmtE->execute([
-                ':slug' => $entity['slug'],
-                ':name' => $entity['name'],
-            ]);
-
             $stmtM = $pdo->prepare(
-                'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-                 VALUES (:slug, 1, :schema)
-                 ON CONFLICT DO NOTHING'
+                "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+                 VALUES (:slug, :name, 'entity', '1.0.0', 'active', 1, :schema)
+                 ON CONFLICT (slug) DO UPDATE
+                 SET name = EXCLUDED.name,
+                     schema_json = EXCLUDED.schema_json,
+                     schema_version = 1,
+                     status = 'active',
+                     updated_at = NOW()"
             );
             $stmtM->execute([
                 ':slug'   => $entity['slug'],
+                ':name'   => $entity['name'],
                 ':schema' => $schemaJson,
             ]);
         }
@@ -96,45 +92,20 @@ class EntitySeeder
                 continue;
             }
 
-            $stmt = $pdo->prepare(
-                'SELECT schema_json, schema_version
-                 FROM entity_metadata
-                 WHERE entity_slug = :slug
-                 ORDER BY schema_version DESC
-                 LIMIT 1'
-            );
-            $stmt->execute([':slug' => $entity['slug']]);
-            $row = $stmt->fetch();
-
-            if ($row === false) {
-                $insert = $pdo->prepare(
-                    'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-                     VALUES (:slug, 1, :schema)'
-                );
-                $insert->execute([
-                    ':slug' => $entity['slug'],
-                    ':schema' => $schemaJson,
-                ]);
-                continue;
-            }
-
-            $current = json_decode((string) ($row['schema_json'] ?? '{}'), true);
-            $currentSingular = is_array($current) && isset($current['label_singular'])
-                ? (string) $current['label_singular']
-                : '';
-
-            if ($currentSingular === $entity['label_singular']) {
-                continue;
-            }
-
-            $nextVersion = (int) ($row['schema_version'] ?? 1) + 1;
-            $insert = $pdo->prepare(
-                'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-                 VALUES (:slug, :version, :schema)'
-            );
-            $insert->execute([
-                ':slug' => $entity['slug'],
-                ':version' => $nextVersion,
+            $pdo->prepare(
+                "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+                 VALUES (:slug, :name, 'entity', '1.0.0', 'active', 1, :schema)
+                 ON CONFLICT (slug) DO UPDATE
+                 SET schema_json = EXCLUDED.schema_json,
+                     schema_version = CASE
+                         WHEN plugins.schema_json IS DISTINCT FROM EXCLUDED.schema_json THEN plugins.schema_version + 1
+                         ELSE plugins.schema_version
+                     END,
+                     status = 'active',
+                     updated_at = NOW()"
+            )->execute([
+                ':slug'   => $entity['slug'],
+                ':name'   => $entity['name'],
                 ':schema' => $schemaJson,
             ]);
         }

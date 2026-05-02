@@ -65,7 +65,7 @@ function removeDepFixture(string $baseDir, string $slug): void
 
 function cleanupDepPlugin(PDO $pdo, string $slug): void
 {
-    $pdo->prepare('DELETE FROM plugins_registry WHERE plugin_slug = :slug')
+    $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')
         ->execute([':slug' => $slug]);
 }
 

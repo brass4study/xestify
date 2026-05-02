@@ -8,9 +8,10 @@ use PDO;
 use Xestify\exceptions\EntityServiceException;
 
 /**
- * SystemEntity — read model for the system_entities table.
+ * SystemEntity — read model for the entity plugin catalog.
  *
- * Provides cache-backed access to registered entity types.
+ * Provides cache-backed access to registered entity types stored in the
+ * plugins table (plugin_type = 'entity').
  *
  * Methods:
  *   getActive(): array          — all active entities (cached)
@@ -20,15 +21,17 @@ use Xestify\exceptions\EntityServiceException;
 final class SystemEntity
 {
     private const QUERY_ALL_ACTIVE =
-        'SELECT id, slug, name, source_plugin_slug, is_active, created_at, updated_at
-         FROM system_entities
-         WHERE is_active = true
+        'SELECT slug, name, plugin_type, status,
+                installed_at AS created_at, updated_at
+         FROM plugins
+         WHERE plugin_type = \'entity\' AND status = \'active\'
          ORDER BY slug ASC';
 
     private const QUERY_BY_SLUG =
-        'SELECT id, slug, name, source_plugin_slug, is_active, created_at, updated_at
-         FROM system_entities
-         WHERE slug = :slug
+        'SELECT slug, name, plugin_type, status,
+                installed_at AS created_at, updated_at
+         FROM plugins
+         WHERE slug = :slug AND plugin_type = \'entity\'
          LIMIT 1';
 
     /** @var array<string, array<string, mixed>>|null  keyed by slug */
@@ -89,7 +92,7 @@ final class SystemEntity
 
         if ($entity === null) {
             throw new EntityServiceException(
-                "Entity type '{$slug}' is not registered in system_entities."
+                "Entity type '{$slug}' is not a registered active entity plugin."
             );
         }
 

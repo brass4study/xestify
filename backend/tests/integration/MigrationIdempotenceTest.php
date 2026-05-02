@@ -1,10 +1,10 @@
 <?php
 
 /**
- * MigrationIdempotenceTest — Verifies 002_core.sql is idempotent.
+ * MigrationIdempotenceTest — Verifies all migrations are idempotent.
  *
- * Tests that running the migration twice does not cause errors and does not
- * alter existing data. This is critical for deployment safety.
+ * Tests that running each migration file twice does not cause errors and does
+ * not alter existing data. This is critical for deployment safety.
  *
  * Run:
  *   php backend/tests/integration/MigrationIdempotenceTest.php
@@ -45,7 +45,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all MigrationIdempotenceTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-005).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -55,11 +55,16 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('migration 002_core.sql succeeds on first execution', function (): void {
+TestSuite::run('all migration tables exist after running 001-005', function (): void {
     $pdo = Database::connection();
 
-    // Verify all tables exist (they should from earlier tests).
-    $tables = ['system_entities', 'entity_metadata', 'entity_data', 'plugins_registry', 'plugin_hook_registry'];
+    $tables = [
+        'users',
+        'plugin_entity_data',
+        'plugins',
+        'plugin_hooks',
+        'plugin_extension_data',
+    ];
     foreach ($tables as $table) {
         $stmt = $pdo->query(
             "SELECT EXISTS (
@@ -72,55 +77,69 @@ TestSuite::run('migration 002_core.sql succeeds on first execution', function ()
     }
 });
 
-TestSuite::run('running 002_core.sql again does not cause errors', function (): void {
+TestSuite::run('re-running all migrations does not cause errors', function (): void {
     $psqlPath = 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
-    $migrationFile = BASE_PATH . '/database/migrations/002_core.sql';
+    $migrations = [
+        '001_users.sql',
+        '002_plugin_entity_data.sql',
+        '003_plugins.sql',
+        '004_plugin_hooks.sql',
+        '005_plugin_extension_data.sql',
+    ];
 
-    // Execute psql with the migration file a second time.
-    $cmd = "\"$psqlPath\" -v client_min_messages=warning -U postgres -d xestify_dev -f \"$migrationFile\" 2>&1";
-    exec($cmd, $output, $exitCode);
-
-    // psql should exit with 0 (idempotent IF NOT EXISTS clauses).
-    assertTrue(
-        $exitCode === 0,
-        'Migration should be idempotent; psql exited with code: ' . $exitCode .
-        "\nOutput: " . implode("\n", $output)
-    );
+    foreach ($migrations as $file) {
+        $migrationFile = BASE_PATH . '/database/migrations/' . $file;
+        $cmd = "\"$psqlPath\" -v client_min_messages=warning -U postgres -d xestify_dev -f \"$migrationFile\" 2>&1";
+        exec($cmd, $output, $exitCode);
+        assertTrue(
+            $exitCode === 0,
+            "$file should be idempotent; psql exited with code: $exitCode\nOutput: " . implode("\n", $output)
+        );
+    }
 });
 
 TestSuite::run('idempotent re-run preserves existing data', function (): void {
     $pdo = Database::connection();
 
-    // Insert a test row into system_entities.
+    // Insert a test plugin row into plugins (entity type).
     $testSlug = 'idempotence_test_' . uniqid();
     $pdo->prepare(
-        'INSERT INTO system_entities (slug, name, is_active)
-         VALUES (:slug, :name, :active)'
+        'INSERT INTO plugins (slug, name, plugin_type, version, status)
+         VALUES (:slug, :name, :type, :version, :status)
+         ON CONFLICT (slug) DO NOTHING'
     )->execute([
-        ':slug' => $testSlug,
-        ':name' => 'Idempotence Test Entity',
-        ':active' => true,
+        ':slug'    => $testSlug,
+        ':name'    => 'Idempotence Test Entity',
+        ':type'    => 'entity',
+        ':version' => '1.0.0',
+        ':status'  => 'active',
     ]);
 
-    // Retrieve row count before re-running migration.
-    $stmt = $pdo->query("SELECT COUNT(*) AS cnt FROM system_entities WHERE slug = '$testSlug'");
+    // Retrieve row count before re-running migrations.
+    $stmt = $pdo->query("SELECT COUNT(*) AS cnt FROM plugins WHERE slug = '$testSlug'");
     $rowBefore = $stmt->fetch();
     $countBefore = (int) ($rowBefore['cnt'] ?? 0);
     assertTrue($countBefore === 1, 'Test row must be inserted');
 
-    // Re-run migration (via psql).
+    // Re-run 005_plugins.sql (idempotent, CREATE TABLE IF NOT EXISTS).
     $psqlPath = 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
-    $migrationFile = BASE_PATH . '/database/migrations/002_core.sql';
+    $migrationFile = BASE_PATH . '/database/migrations/003_plugins.sql';
     $cmd = "\"$psqlPath\" -v client_min_messages=warning -U postgres -d xestify_dev -f \"$migrationFile\" 2>&1";
     exec($cmd, $output, $exitCode);
     assertTrue($exitCode === 0, 'Migration re-run must succeed');
 
     // Verify row count after migration.
-    $stmt = $pdo->query("SELECT COUNT(*) AS cnt FROM system_entities WHERE slug = '$testSlug'");
+    $stmt = $pdo->query("SELECT COUNT(*) AS cnt FROM plugins WHERE slug = '$testSlug'");
     $rowAfter = $stmt->fetch();
     $countAfter = (int) ($rowAfter['cnt'] ?? 0);
     assertTrue($countAfter === 1, 'Test row must still be present; no duplicates should exist');
 
     // Clean up.
-    $pdo->exec("DELETE FROM system_entities WHERE slug = '$testSlug'");
+    $pdo->exec("DELETE FROM plugins WHERE slug = '$testSlug'");
 });
+
+// ---------------------------------------------------------------------------
+
+TestSuite::summary();
+exit(TestSuite::exitCode());
+

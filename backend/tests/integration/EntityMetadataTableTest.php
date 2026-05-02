@@ -3,8 +3,9 @@
 /**
  * EntityMetadataTableTest — Integration tests.
  *
- * Verifies that the entity_metadata table was created correctly by migration
- * 002_core.sql. Requires a live PostgreSQL connection.
+ * Verifies that plugin_entity_metadata no longer exists (merged into plugins)
+ * and that the plugins table has the schema_json and schema_version columns.
+ * Requires a live PostgreSQL connection.
  *
  * Run:
  *   php backend/tests/integration/EntityMetadataTableTest.php
@@ -47,7 +48,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all EntityMetadataTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001–008).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -57,76 +58,51 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('entity_metadata table exists after migration', function (): void {
+TestSuite::run('plugin_entity_metadata table does not exist after refactor migration', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT EXISTS (
             SELECT 1 FROM information_schema.tables
             WHERE table_schema = 'public'
-            AND   table_name   = 'entity_metadata'
+            AND   table_name   = 'plugin_entity_metadata'
         ) AS exists"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue($row !== false && $row['exists'] === true, 'entity_metadata table must exist');
+    assertTrue($row !== false && $row['exists'] === false, 'plugin_entity_metadata must not exist after merge into plugins');
 });
 
-TestSuite::run('entity_metadata has expected columns', function (): void {
+TestSuite::run('plugins table has schema_json column', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_name FROM information_schema.columns
-         WHERE table_schema = 'public' AND table_name = 'entity_metadata'
-         ORDER BY ordinal_position"
-    );
-    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
-    $columns = array_column($stmt->fetchAll(), 'column_name');
-    foreach (['id', 'entity_slug', 'schema_version', 'schema_json', 'created_at'] as $col) {
-        assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
-    }
-});
-
-TestSuite::run('entity_metadata has index on (entity_slug, schema_version)', function (): void {
-    $pdo  = Database::connection();
-    $stmt = $pdo->query(
-        "SELECT COUNT(*) AS cnt
-         FROM pg_indexes
-         WHERE schemaname = 'public'
-           AND tablename = 'entity_metadata'
-           AND indexname = 'idx_entity_metadata_slug_version'"
+         WHERE table_schema = 'public' AND table_name = 'plugins' AND column_name = 'schema_json'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_entity_metadata_slug_version');
+    assertTrue($row !== false, 'plugins.schema_json column must exist');
 });
 
-TestSuite::run('entity_metadata schema_json check constraint rejects missing fields key', function (): void {
+TestSuite::run('plugins table has schema_version column', function (): void {
+    $pdo  = Database::connection();
+    $stmt = $pdo->query(
+        "SELECT column_name FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'plugins' AND column_name = 'schema_version'"
+    );
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
+    $row = $stmt->fetch();
+    assertTrue($row !== false, 'plugins.schema_version column must exist');
+});
+
+TestSuite::run('plugins schema_json accepts null (extension plugins without schema)', function (): void {
     $pdo = Database::connection();
-
-    $inserted = false;
-    $failedByConstraint = false;
-    $errorMessage = '';
-    $pdo->exec('BEGIN');
-    try {
-        $stmt = $pdo->prepare(
-            'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-             VALUES (:slug, :version, :schema_json)'
-        );
-        $stmt->execute([
-            ':slug' => 'clientes',
-            ':version' => 1,
-            ':schema_json' => '{"title":"Schema sin fields"}',
-        ]);
-        $inserted = true;
-    } catch (\PDOException $e) {
-        $inserted = false;
-        $errorMessage = strtolower($e->getMessage());
-        $failedByConstraint = str_contains($errorMessage, 'entity_metadata_schema_json_check')
-            || str_contains($errorMessage, 'check constraint');
-    }
-    $pdo->exec('ROLLBACK');
-
-    assertFalse($inserted, 'Insert should fail when schema_json has no fields key');
-    assertTrue($failedByConstraint, 'Insert must fail due to CHECK constraint, not another error');
+    $stmt = $pdo->query(
+        "SELECT is_nullable FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'plugins' AND column_name = 'schema_json'"
+    );
+    assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
+    $row = $stmt->fetch();
+    assertTrue($row !== false && $row['is_nullable'] === 'YES', 'schema_json must be nullable');
 });
 
 // ---------------------------------------------------------------------------

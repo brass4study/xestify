@@ -4,8 +4,8 @@
  * SystemEntityTest — Integration tests for SystemEntity model.
  *
  * Exercises getActive(), getBySlug(), and findOrFail() against a live
- * PostgreSQL database. A test entity is inserted before the suite and
- * cleaned up afterwards.
+ * PostgreSQL database. A test entity plugin is inserted before the suite
+ * and cleaned up afterwards.
  *
  * Run:
  *   php backend/tests/integration/SystemEntityTest.php
@@ -50,7 +50,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all SystemEntityTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -64,15 +64,17 @@ $pdo      = Database::connection();
 $testSlug = 'test_system_entity_' . bin2hex(random_bytes(4));
 
 $pdo->prepare(
-    'INSERT INTO system_entities (slug, name, is_active)
-     VALUES (:slug, :name, true)'
+    'INSERT INTO plugins (slug, name, plugin_type, version, status)
+     VALUES (:slug, :name, \'entity\', \'1.0.0\', \'active\')
+     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, status = \'active\''
 )->execute([':slug' => $testSlug, ':name' => 'Test Entity']);
 
 // Inactive entity to verify getActive() filtering
 $inactiveSlug = $testSlug . '_inactive';
 $pdo->prepare(
-    'INSERT INTO system_entities (slug, name, is_active)
-     VALUES (:slug, :name, false)'
+    'INSERT INTO plugins (slug, name, plugin_type, version, status)
+     VALUES (:slug, :name, \'entity\', \'1.0.0\', \'inactive\')
+     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, status = \'inactive\''
 )->execute([':slug' => $inactiveSlug, ':name' => 'Inactive Test Entity']);
 
 // ---------------------------------------------------------------------------
@@ -142,8 +144,8 @@ TestSuite::run('getActive() usa cache: segunda llamada no relanza query', functi
 // Cleanup
 // ---------------------------------------------------------------------------
 
-$pdo->prepare('DELETE FROM system_entities WHERE slug = :slug')->execute([':slug' => $testSlug]);
-$pdo->prepare('DELETE FROM system_entities WHERE slug = :slug')->execute([':slug' => $inactiveSlug]);
+$pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $testSlug]);
+$pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $inactiveSlug]);
 
 // ---------------------------------------------------------------------------
 // Resumen

@@ -177,3 +177,19 @@ Interpretación de este ejemplo:
 - Hooks declarados
 - Migraciones incluidas
 - Pruebas minimas del CRUD
+
+## Registro en base de datos
+
+Al instalarse, el plugin escribe en la tabla `plugins` (unica fuente de verdad del catalogo):
+
+```php
+// En Installer.php del plugin
+$pdo->prepare(
+    'INSERT INTO plugins (slug, name, plugin_type, version, status)
+     VALUES (:slug, :name, \'entity\', :version, \'active\')
+     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, status = \'active\''
+)->execute([':slug' => $slug, ':name' => $name, ':version' => $version]);
+```
+
+**No escribir en `system_entities`** — esa tabla fue eliminada en Release B.
+Toda consulta al catalogo de entidades usa: `SELECT * FROM plugins WHERE plugin_type = 'entity' AND status = 'active'`.

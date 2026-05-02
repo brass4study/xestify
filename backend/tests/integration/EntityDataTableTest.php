@@ -3,7 +3,7 @@
 /**
  * EntityDataTableTest — Integration tests.
  *
- * Verifies that the entity_data table was created correctly by migration
+ * Verifies that the plugin_entity_data table was created correctly by migration
  * 002_core.sql. Requires a live PostgreSQL connection.
  *
  * Run:
@@ -57,25 +57,25 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('entity_data table exists after migration', function (): void {
+TestSuite::run('plugin_entity_data table exists after migration', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT EXISTS (
             SELECT 1 FROM information_schema.tables
             WHERE table_schema = 'public'
-            AND   table_name   = 'entity_data'
+            AND   table_name   = 'plugin_entity_data'
         ) AS exists"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue($row !== false && $row['exists'] === true, 'entity_data table must exist');
+    assertTrue($row !== false && $row['exists'] === true, 'plugin_entity_data table must exist');
 });
 
-TestSuite::run('entity_data has expected columns', function (): void {
+TestSuite::run('plugin_entity_data has expected columns', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_name FROM information_schema.columns
-         WHERE table_schema = 'public' AND table_name = 'entity_data'
+         WHERE table_schema = 'public' AND table_name = 'plugin_entity_data'
          ORDER BY ordinal_position"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
@@ -85,12 +85,12 @@ TestSuite::run('entity_data has expected columns', function (): void {
     }
 });
 
-TestSuite::run('entity_data deleted_at column is nullable (soft delete)', function (): void {
+TestSuite::run('plugin_entity_data deleted_at column is nullable (soft delete)', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT is_nullable FROM information_schema.columns
          WHERE table_schema = 'public'
-           AND table_name   = 'entity_data'
+           AND table_name   = 'plugin_entity_data'
            AND column_name  = 'deleted_at'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
@@ -99,30 +99,30 @@ TestSuite::run('entity_data deleted_at column is nullable (soft delete)', functi
     assertTrue($row['is_nullable'] === 'YES', 'deleted_at must be nullable for soft delete');
 });
 
-TestSuite::run('entity_data has GIN index on content', function (): void {
+TestSuite::run('plugin_entity_data has GIN index on content', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
          FROM pg_indexes
          WHERE schemaname = 'public'
-           AND tablename  = 'entity_data'
-           AND indexname  = 'idx_entity_data_content_gin'"
+           AND tablename  = 'plugin_entity_data'
+           AND indexname  = 'idx_plugin_entity_data_content_gin'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected GIN index idx_entity_data_content_gin');
+    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected GIN index idx_plugin_entity_data_content_gin');
 });
 
-TestSuite::run('entity_data has btree index on entity_slug', function (): void {
+TestSuite::run('plugin_entity_data has btree index on entity_slug', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt
          FROM pg_indexes
          WHERE schemaname = 'public'
-           AND tablename  = 'entity_data'
-           AND indexname  = 'idx_entity_data_slug'"
+           AND tablename  = 'plugin_entity_data'
+           AND indexname  = 'idx_plugin_entity_data_slug'"
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_entity_data_slug');
+    assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'Expected index idx_plugin_entity_data_slug');
 });

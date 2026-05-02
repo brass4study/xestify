@@ -367,3 +367,40 @@ Si la complejidad de relaciones crece, se puede añadir una tabla `entity_relati
 Ver [historial-decisiones.md](historial-decisiones.md) para contexto completo de opciones consideradas.
 
 Ver [consideraciones-iniciales.md](consideraciones-iniciales.md) para guía de implementación rápida.
+
+---
+
+## DECISION 6: Catalogo de entidades — `plugins` como unica fuente de verdad
+
+**Seleccionado:** Tabla `plugins` con `plugin_type = 'entity'` como catalogo unico  
+**Alternativa descartada:** Tabla `system_entities` separada (existia en EPIC 2, eliminada en EPIC 6)  
+**Fecha:** Mayo 2, 2026
+
+### Problema detectado
+
+La tabla `system_entities` era un duplicado parcial de `plugins`:
+cada entidad instalada requeria una fila en `plugins` (para ciclo de vida y schema) Y
+una fila en `system_entities` (para el catalogo). Dos tablas, mismos datos.
+
+### Decision
+
+Eliminar `system_entities` completamente. El filtro `WHERE plugin_type = 'entity' AND status = 'active'`
+sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
+
+### Migraciones
+
+- **Release A** (`009_unify_entities_into_plugins.sql`): Añade columna `name` a `plugins`, backfill desde `system_entities`, crea indice `idx_plugins_type_status`. Codigo actualizado para leer de `plugins` sin romper compatibilidad.
+- **Release B** (`010_drop_system_entities.sql`): `DROP TABLE IF EXISTS system_entities`. Codigo y tests finalmente limpios.
+
+### Implicaciones
+
+- `PluginLoader::registerPlugin()` persiste `name` desde el manifest.
+- `EntitySeeder` hace UPSERT solo en `plugins`.
+- `Installer.php` de cada plugin de entidad escribe solo en `plugins`.
+- `SystemEntity.php` consulta `plugins WHERE plugin_type='entity'` (sin cambio de interfaz publica).
+- `EntityController::listEntities()` consulta `plugins` directamente.
+
+### Invariante arquitectonico
+
+> Todo tipo de entidad es un plugin. Todo plugin de tipo `entity` es una entidad.
+> No existen entidades fuera de `plugins`.

@@ -6,19 +6,39 @@ Combinar integridad relacional con flexibilidad para campos variables por entida
 
 ## Tablas Core
 
-## system_entities
+## plugins
 
-Catalogo de entidades instaladas.
+Catalogo unificado de plugins instalados. Incluye tanto plugins de tipo `entity`
+(que definen entidades del negocio) como de tipo `extension` (que añaden tabs/acciones).
 
-Columnas:
+**Esta tabla es la unica fuente de verdad para el catalogo de entidades.**
+La antigua tabla `system_entities` fue eliminada en Release B (migracion `010_drop_system_entities.sql`).
+
+Columnas principales:
 
 - id (uuid)
-- slug (text unique)
-- name (text)
-- source_plugin_slug (text)
-- is_active (boolean)
-- created_at (timestamp)
+- slug (text unique) — identificador del plugin/entidad
+- name (text) — nombre legible (ej. "Clientes")
+- plugin_type (text) — 'entity' | 'extension'
+- version (text)
+- status (text) — 'active' | 'inactive' | 'error'
+- schema_json (jsonb) — schema vivo del plugin (para tipo entity)
+- schema_version (text)
+- installed_at (timestamp)
 - updated_at (timestamp)
+
+Indices:
+- `idx_plugins_type_status` en (plugin_type, status)
+- UNIQUE en slug
+
+Para listar entidades activas:
+
+```sql
+SELECT slug, name, schema_json, schema_version
+FROM plugins
+WHERE plugin_type = 'entity' AND status = 'active' AND schema_json IS NOT NULL
+ORDER BY name ASC;
+```
 
 ## entity_metadata
 

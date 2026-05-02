@@ -342,3 +342,61 @@ Cambio es viable si:
 Ver [decisiones-tecnicas.md](decisiones-tecnicas.md) para resumen ejecutivo.
 
 Ver [consideraciones-iniciales.md](consideraciones-iniciales.md) para guía de implementación rápida.
+
+---
+
+## DECISION 6: Catalogo de entidades — unificacion en tabla `plugins`
+
+**Fecha resuelta:** Mayo 2, 2026
+
+### Contexto
+
+Durante EPIC 6, al revisar el codigo, se detecto que `system_entities` y `plugins`
+contenian exactamente la misma informacion para los plugins de tipo `entity`:
+
+- `system_entities.slug` = `plugins.slug`
+- `system_entities.name` = (sin equivalente en plugins, añadido en Release A)
+- `system_entities.source_plugin_slug` = `plugins.slug` (el propio plugin)
+- `system_entities.is_active` = `plugins.status = 'active'`
+
+Toda insercion/actualizacion requeria escribir en ambas tablas. Todo acceso de lectura
+requeria decidir cual de las dos era la "verdad".
+
+### Opciones consideradas
+
+#### Opcion A: Mantener ambas tablas con sincronizacion automatica
+**Pros:**
+- Sin cambio de interfaz para consumidores actuales.
+**Contras:**
+- Duplicacion permanente de datos.
+- Riesgo de desincronizacion.
+- Dos puntos de escritura = dos fuentes de bugs.
+
+#### Opcion B: Hacer `system_entities` la fuente de verdad, desacoplar de plugins
+**Pros:**
+- Mantiene separacion conceptual.
+**Contras:**
+- Aumenta la complejidad relacional.
+- Crea dependencia ciclos: plugins dependen de system_entities y viceversa.
+
+#### Opcion C: Usar `plugins` como unica fuente, eliminar `system_entities`
+**Pros:**
+- Cero duplicacion.
+- Un solo punto de escritura (PluginLoader + Installer).
+- Modelo mental claro: "toda entidad es un plugin de tipo entity".
+- Menos tablas = menos migraciones = menos tests de esquema.
+**Contras:**
+- Requiere añadir columna `name` a `plugins` (migracion Release A).
+- Requiere actualizar ~5 archivos PHP y ~4 test files.
+
+### Seleccion: Opcion C
+
+**Razon principal:** La duplicacion era un defecto de diseno, no una feature.
+El invariante "toda entidad es un plugin" es mas limpio y facil de razonar.
+
+**Plan de dos releases:**
+- Release A (compatible): añadir `name` a `plugins`, actualizar codigo de escritura/lectura,
+  mantener `system_entities` existente para no romper tests.
+- Release B (limpieza): `DROP TABLE IF EXISTS system_entities`, actualizar tests finales.
+
+**Resultado:** 7 archivos PHP modificados, 10 migraciones idempotentes, 0 tests en rojo.

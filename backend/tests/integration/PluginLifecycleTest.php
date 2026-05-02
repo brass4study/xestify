@@ -13,7 +13,7 @@ use Xestify\plugins\PluginLoader;
 use Xestify\core\Database;
 
 define('LC_TEST_VERSION', '1.0.0');
-define('LC_STATUS_QUERY', 'SELECT status FROM plugins_registry WHERE plugin_slug = :slug');
+define('LC_STATUS_QUERY', 'SELECT status FROM plugins WHERE slug = :slug');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,7 +81,7 @@ function removeLifecycleFixture(string $baseDir, string $slug): void
 
 function cleanupLifecyclePlugin(PDO $pdo, string $slug): void
 {
-    $pdo->prepare('DELETE FROM plugins_registry WHERE plugin_slug = :slug')
+    $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')
         ->execute([':slug' => $slug]);
 }
 
@@ -113,7 +113,7 @@ TestSuite::run('onInstall NO llamado en cargas posteriores (plugin ya registrado
     assert($GLOBALS['lc_install'] === 0, 'onInstall must not be called when plugin already exists');
 });
 
-TestSuite::run('activate() actualiza status a active en plugins_registry', function () use ($pdo, $tmpDir, $slug): void {
+TestSuite::run('activate() actualiza status a active en plugins', function () use ($pdo, $tmpDir, $slug): void {
     $loader = new PluginLoader($tmpDir, $pdo);
     $loader->activate($slug);
 
@@ -132,7 +132,7 @@ TestSuite::run('activate() llama a onActivate()', function () use ($pdo, $tmpDir
     assert($GLOBALS['lc_activate'] === 1, 'onActivate must be called once');
 });
 
-TestSuite::run('deactivate() actualiza status a inactive en plugins_registry', function () use ($pdo, $tmpDir, $slug): void {
+TestSuite::run('deactivate() actualiza status a inactive en plugins', function () use ($pdo, $tmpDir, $slug): void {
     $loader = new PluginLoader($tmpDir, $pdo);
     $loader->deactivate($slug);
 
