@@ -181,12 +181,61 @@ Generate a comprehensive .gitignore that includes:
 
 - [ ] STORY 5.2: Navbar
 - [ ] STORY 5.3: E2E integration
+- [ ] STORY 5.4: Modal/Dialog reutilizable
+- [ ] STORY 5.5: Estilos CSS mobile/desktop
 - [ ] CSS/UX improvements (si aplica)
 - [ ] Documentación final
 
+### EPIC 6: Plugins tipo Extension
+
+- [ ] STORY 6.1: Frontend - DynamicTabs.js
+- [ ] STORY 6.2: Backend - hooks registerTabs y registerActions
+- [ ] STORY 6.3: Plugin de ejemplo tipo extension (comments)
+- [ ] STORY 6.4: Frontend - Página PluginManager
+
+### EPIC 7: Actualizaciones de Plugins y Rollback
+
+- [ ] STORY 7.1: Detección de actualizaciones disponibles
+- [ ] STORY 7.2: Proceso de actualización con migración de schema
+- [ ] STORY 7.3: Rollback manual a versión anterior
+- [ ] STORY 7.4: Frontend - UI de actualización y rollback
+- [ ] STORY 7.5: Frontend - Página de configuración de plugin activado (custom fields)
+
+### EPIC 8: Operación Técnica y Observabilidad
+
+- [ ] STORY 8.1: Endpoint health técnico del sistema
+- [ ] STORY 8.2: Backup automático de base de datos
+- [ ] STORY 8.3: Docker Compose para deployment en RPi5
+- [ ] STORY 8.4: Hardening básico de seguridad (headers + rate limiting)
+
+### EPIC 9: Marketplace de Plugins
+
+- [ ] STORY 9.1: Schema y modelo de datos del marketplace
+- [ ] STORY 9.2: API de marketplace (browse, search, install)
+- [ ] STORY 9.3: Frontend - UI de marketplace en PluginManager
+- [ ] STORY 9.4: Publicación de plugin al marketplace
+
+### EPIC 10: QA y Calidad
+
+- [ ] STORY 10.1: Suite de tests de integración E2E backend
+- [ ] STORY 10.2: Coverage mínimo 80% en servicios core
+- [ ] STORY 10.3: GitHub Actions CI pipeline
+- [ ] STORY 10.4: Tests de rendimiento básicos (API response times)
+
+### Adiciones MVP: A1 + A2
+
+- [ ] STORY A1.1: Crear tabla `audit_logs` y migración
+- [ ] STORY A1.2: Crear AuditService y helper de registro
+- [ ] STORY A1.3: Auditar acciones de usuarios y configuración
+- [ ] STORY A1.4: Endpoint y vista básica de auditoría (solo admin)
+- [ ] STORY A2.1: Modelo de permisos granular en base de datos
+- [ ] STORY A2.2: AuthorizationService con permisos por acción
+- [ ] STORY A2.3: Enforcement en endpoints críticos
+- [ ] STORY A2.4: UI condicional por permisos
+
 ---
 
-## Resumen Final (Llenar en Semana 4)
+## Resumen Final (Llenar al concluir)
 
 ```markdown
 ## Análisis de Aceleración Global
@@ -240,8 +289,9 @@ Generate a comprehensive .gitignore that includes:
 ## Instrucciones Finales
 
 1. **Semana 1:** Completa primeras 10 tareas, calcula aceleración por semana.
-2. **Semana 2-3:** Actualiza conforme terminas historias.
-3. **Semana 4:** Completa sección "Resumen Final" para defensa.
-4. **Presentation:** Usa datos reales (no especules) para defenderse académicamente.
+2. **Semana 2-3:** Actualiza conforme terminas historias de EPIC 2-5.
+3. **EPIC 6-10 y A1-A2:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
+4. **Fase final:** Completa sección "Resumen Final" para defensa.
+5. **Presentation:** Usa datos reales (no especules) para defenderse académicamente.
 
 **Recuerda:** El que documenta BIEN el proceso con IA = mejor nota. No solo entrega código.

@@ -637,3 +637,53 @@
 - **Iteraciones:** 6 (layout cross-browser, singular label por definición, iconos y estados hover/disabled)
 - **Decisión manual:** Singular de entidad se define explícitamente en schema (`label_singular`), evitando heurísticas de texto.
 
+---
+
+## Sesión Planning — Backlog y Roadmap (2026-05-02)
+
+### Planning: Nuevos EPIC A1 + A2 (Auditoría y Permisos)
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 3h (diseño, escritura, discusión de alcance)
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~89% ⚡
+- **Qué hizo IA:**
+  - Propuso estructura de EPIC A1 (Auditoría) con 4 stories: tabla, servicio, hooks en acciones, endpoint+vista
+  - Propuso estructura de EPIC A2 (Permisos) con 4 stories: modelo, AuthorizationService, enforcement, UI condicional
+  - Alineó criterios de aceptación con el estilo y granularidad del backlog existente
+- **Iteraciones:** 2 (corrección de scope: A3/A4/A5 pasan a post-MVP)
+- **Decisión manual:** Alcance final definido por usuario: A1/A2 en MVP, A3/A4/A5 post-MVP
+
+---
+
+### Planning: Desglose EPIC 6-10 en backlog
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 5h (diseño de 5 EPICs con stories, criterios y dependencias)
+- **Tiempo real con IA:** ~30 min
+- **Aceleración:** ~90% ⚡
+- **Qué hizo IA:**
+  - EPIC 6: 4 stories para plugins tipo extension (DynamicTabs, hooks registerTabs/Actions, plugin comments, PluginManager UI)
+  - EPIC 7: 5 stories para actualizaciones/rollback + configuración de custom_fields desde UI (STORY 7.5)
+  - EPIC 8: 4 stories para operación técnica (health, backup, Docker RPi5, hardening)
+  - EPIC 9: 4 stories para marketplace (schema, API, UI, publicación)
+  - EPIC 10: 4 stories para QA (E2E, coverage 80%, CI, benchmarks)
+  - Renombró EPIC 6 de "Extensiones complejas" a "Plugins tipo extension" (corrección conceptual)
+  - Movió EPIC 6-10 de OUT OF SCOPE a IN SCOPE tras decisión del usuario
+- **Iteraciones:** 3 (ajuste scope 9-10, añadir STORY 7.5, renombrado EPIC 6)
+- **Decisión manual:** STORY 7.5 (configuración de plugin con custom_fields desde UI) propuesta por usuario
+
+---
+
+### Planning: Actualización de roadmap y documentación
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~87% ⚡
+- **Qué hizo IA:**
+  - Reescribió `docs/roadmap.md` completo con estado real (Fases 0-4 completadas, Fase 5 completada, Fases 6-10+A1/A2 pendientes)
+  - Eliminó sección de decisiones técnicas pendientes (ya resueltas)
+  - Añadió tabla de corte MVP, hitos actualizados y métricas de seguimiento
+  - Actualizó `ia-productivity-template.md` con los nuevos EPIC 6-10 y A1/A2
+  - Actualizó `MASTER-brief.md` con scope real, timeline completado y demo actualizada
+- **Iteraciones:** 1
+- **Decisión manual:** ninguna
+

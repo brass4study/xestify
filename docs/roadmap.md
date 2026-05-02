@@ -1,6 +1,330 @@
-# Roadmap de Implementacion - Xestify
+# Roadmap de Implementación - Xestify
+
+> **Última actualización:** 2026-05-02  
+> **Estado del proyecto:** EPIC 5 en progreso — EPIC 0-4 completados
+
+---
 
 ## 1. Objetivo del roadmap
+
+Este documento traduce las funcionalidades definidas en el backlog a un plan de implementación ejecutable, incremental y con control de riesgo.
+
+El enfoque prioriza:
+
+- Entrega temprana de valor funcional (MVP operable).
+- Base técnica estable para evolución por plugins.
+- Seguridad y mantenibilidad desde el inicio.
+- Compatibilidad con despliegue local en Raspberry Pi 5.
+
+---
+
+## 2. Decisiones técnicas tomadas
+
+Todas las decisiones de stack están resueltas. No hay bloqueantes técnicos pendientes.
+
+| Decisión | Elegido | Razón |
+|----------|---------|-------|
+| Backend | PHP 8.1+ nativo | Máximo control, sin overhead de framework |
+| DI Container | Casero (`Xestify\Core\Container`) | Cero magia, control total del ciclo de vida |
+| Frontend | Vanilla JS ES2020+ | Sin build step, sin dependencias externas |
+| Autenticación | JWT HS256 | Simple, sin sesiones de servidor |
+| Base de datos | PostgreSQL + JSONB | Schemas dinámicos sin migraciones por entidad |
+| Autoload | Manual (`spl_autoload_register`) | Sin Composer, sin PSR-4 externo |
+| Entorno dev | PHP nativo + PostgreSQL local | Sin Docker en desarrollo |
+| Despliegue prod | Docker Compose (RPi5) | Definido en STORY 8.3 |
+
+---
+
+## 3. Funcionalidades por área
+
+### Core
+- Autenticación y autorización local con roles granulares.
+- API REST para entidades dinámicas.
+- Motor metadata-driven para schema y validación.
+- Persistencia en PostgreSQL con JSONB.
+- Cargador de plugins y registro de hooks.
+- CRUD genérico de entidades.
+
+### Extensibilidad
+- Plugins de tipo `entity` (definen entidades con su schema).
+- Plugins de tipo `extension` (inyectan tabs/acciones en entidades existentes).
+- Hooks de backend (`beforeSave`, `afterSave`, `registerTabs`, `registerActions`).
+- Ciclo de vida completo: install → activate → configure → update → rollback → deactivate.
+- Configuración de `custom_fields` por plugin activo desde UI.
+
+### Seguridad y auditoría
+- Matriz de permisos granular por recurso+acción.
+- Auditoría de acciones críticas (login, cambios de config, plugins).
+- Rate limiting en endpoints de auth.
+- Headers de seguridad HTTP.
+
+### Operativa
+- Health check técnico del sistema.
+- Backup automatizado de base de datos.
+- Despliegue reproducible con Docker Compose en RPi5.
+- Marketplace de plugins (browse, install, publicar).
+- CI pipeline con GitHub Actions.
+
+---
+
+## 4. Estado de fases
+
+### ✅ Fase 0 — Preparación técnica (COMPLETADO)
+
+**Objetivo:** Entorno dev reproducible y baseline de arquitectura.
+
+**Completado:**
+- Estructura `backend/`, `frontend/`, `docs/`, `tools/`.
+- Container DI + Router HTTP + Request/Response helpers.
+- Frontend skeleton (index.html, main.js, CSS base).
+- Entorno local PHP + PostgreSQL + proxy de desarrollo.
+
+---
+
+### ✅ Fase 1 — Core de autenticación y seguridad (COMPLETADO)
+
+**Objetivo:** Acceso seguro por JWT antes del CRUD dinámico.
+
+**Completado:**
+- Tabla `users` + seeder admin.
+- `JwtService` (HS256 puro PHP).
+- `AuthController` (POST `/api/auth/login`).
+- `AuthMiddleware` (valida Bearer token, inyecta `$request->user()`).
+
+---
+
+### ✅ Fase 2 — Modelo de datos Core (COMPLETADO)
+
+**Objetivo:** Tablas PostgreSQL estables con JSONB.
+
+**Completado:**
+- Migraciones idempotentes: `system_entities`, `entity_metadata`, `entity_data`, `plugins_registry`, `plugin_hook_registry`.
+- `GenericRepository` (find, all, create, update, soft-delete, restore).
+
+---
+
+### ✅ Fase 3 — Motor de entidades dinámicas (COMPLETADO)
+
+**Objetivo:** CRUD genérico con validación por schema.
+
+**Completado:**
+- `ValidationService` (valida contra schema JSONB, soporte `identities`/`fields`/`custom_fields`/`relations`).
+- `EntityService` (orquestación CRUD con hooks).
+- `EntityController` (endpoints REST `/api/v1/entities`).
+- Frontend: `Api.js`, `State.js`, `DynamicForm.js`, `DynamicTable.js`, páginas `EntityList` y `EntityEdit`.
+
+---
+
+### ✅ Fase 4 — Sistema de plugins y hooks backend (COMPLETADO)
+
+**Objetivo:** Extensibilidad sin modificar el Core.
+
+**Completado:**
+- `PluginLoader` (descubre, valida, registra plugins desde disco).
+- `HookDispatcher` (hooks con prioridades, `action` y `filter`).
+- Hooks `beforeSave`/`afterSave` en `EntityService`.
+- Ciclo de vida completo: `onInstall`, `onActivate`, `onDeactivate`.
+- Schema extendido: `identities` + `fields` + `custom_fields` + `relations` opcionales.
+- Plugin `clients` de ejemplo (tipo `entity`).
+
+---
+
+### 🔄 Fase 5 — Frontend dinámico base (EN PROGRESO)
+
+**Objetivo:** UI funcional para entidades dinámicas.
+
+**Completado:**
+- Página Login.
+- Navbar dinámica con entidades desde API + sección plugins.
+- Integración E2E EntityList + EntityEdit.
+- Modal/Dialog reutilizable.
+- Estilos CSS responsive + refinamientos de UX (iconos FA, paginación, botones).
+
+**Pendiente:**
+- Validar cobertura de tests frontend antes de cerrar EPIC.
+
+---
+
+### ⏭ Fase 6 — Plugins tipo Extension (PENDIENTE)
+
+**Objetivo:** Soporte para plugins que inyectan tabs y acciones en entidades existentes.
+
+**Entregables:**
+- `DynamicTabs.js` (frontend, tabs registrables desde plugins).
+- Hook `registerTabs` y `registerActions` en `HookDispatcher`.
+- Plugin de ejemplo `comments` (tipo `extension`, target cualquier entidad).
+- Página `PluginManager` (listar, activar, desactivar plugins).
+
+**Criterios de salida:**
+- Al abrir un registro, se muestran tabs de extensiones activas.
+- `PluginManager` muestra estado de cada plugin.
+
+**Dependencias:** Fase 4 + Fase 5.
+
+---
+
+### ⏭ Fase 7 — Actualizaciones, rollback y configuración de plugins (PENDIENTE)
+
+**Objetivo:** Ciclo de vida completo de plugins con versionado, actualización controlada y configuración de campos por admin.
+
+**Entregables:**
+- Detección de plugins desactualizados (versión disco vs. registry).
+- Proceso de actualización atómico con migración de schema.
+- Rollback manual a versión anterior.
+- UI de actualización/rollback en `PluginManager`.
+- **Página de configuración de plugin** (`/plugins/{slug}/config`): activar/desactivar `custom_fields` sugeridos y añadir campos libres → genera nueva versión en `entity_metadata`.
+
+**Criterios de salida:**
+- Actualización de plugin N→N+1 con registro en DB.
+- Rollback funcional si `onUpdate` lanza excepción.
+- Admin puede configurar campos del plugin desde UI sin tocar código.
+
+**Dependencias:** Fase 4 + Fase 6.
+
+---
+
+### ⏭ Fase 8 — Operación técnica y observabilidad (PENDIENTE)
+
+**Objetivo:** Sistema observable, desplegable en RPi5 y con hardening básico de seguridad.
+
+**Entregables:**
+- GET `/api/v1/system/health` (DB, plugins activos, hooks, uptime, versión).
+- Script `tools/backup.php` + endpoint trigger backup (solo admin).
+- `docker-compose.yml` con `app-php` + `db-postgres` + `nginx` para RPi5 (arm64).
+- Middleware de headers de seguridad + rate limiting en auth (429 ante abuso).
+
+**Criterios de salida:**
+- Instalación limpia en RPi5 documentada y repetible.
+- Restore de backup exitoso en entorno de prueba.
+
+**Dependencias:** Fases 1-7.
+
+---
+
+### ⏭ Fase A1 — Auditoría funcional (PENDIENTE)
+
+**Objetivo:** Trazabilidad de acciones críticas sobre configuración, usuarios y plugins.
+
+**Entregables:**
+- Tabla `audit_logs` + migración.
+- `AuditService::log()` con sanitización de payload sensible.
+- Hooks de auditoría en acciones críticas (usuarios, config, plugins).
+- Endpoint + vista de auditoría para admin.
+
+**Criterios de salida:**
+- Cada acción crítica genera registro con `who`, `what`, `when`, `where`.
+- Vista de auditoría filtrable por fecha/usuario/recurso.
+
+**Dependencias:** Fase 1 + Fase 7 + Fase 6.
+
+---
+
+### ⏭ Fase A2 — Matriz de permisos fina (PENDIENTE)
+
+**Objetivo:** Permisos granulares por recurso+acción, más allá de admin/no-admin.
+
+**Entregables:**
+- Tablas `roles`, `permissions`, `role_permissions` con seed base (admin/operador/lectura).
+- `AuthorizationService::can(user, permission)` con cache por request.
+- Enforcement en endpoints críticos (403 consistente + log de denegación).
+- UI condicional: ocultar acciones según permisos del usuario activo.
+
+**Criterios de salida:**
+- Operador no puede gestionar plugins ni usuarios.
+- Rol lectura solo puede listar registros.
+
+**Dependencias:** Fase 1 + Fase A1.
+
+---
+
+### ⏭ Fase 9 — Marketplace de plugins (PENDIENTE)
+
+**Objetivo:** Repositorio central de plugins browseable e instalable desde la UI.
+
+**Entregables:**
+- Tablas `marketplace_plugins` + `marketplace_plugin_versions`.
+- API: browse, search, detalle, install, publicación con checksum.
+- UI tab "Marketplace" en `PluginManager` con cards, buscador y feedback de instalación.
+
+**Criterios de salida:**
+- Plugin listado en marketplace instalable desde UI en un clic.
+- Incompatibilidad de versión rechazada antes de instalar.
+
+**Dependencias:** Fase 7 + Fase 6.
+
+---
+
+### ⏭ Fase 10 — QA y calidad (PENDIENTE)
+
+**Objetivo:** Suite de tests completa, CI automatizado y coverage mínimo establecido.
+
+**Entregables:**
+- Tests E2E de integración backend (flujo completo en DB de test).
+- Coverage ≥ 80% en servicios core (`ValidationService`, `EntityService`, `JwtService`, `HookDispatcher`, `AuditService`).
+- GitHub Actions CI pipeline (PHP 8.1 + PostgreSQL + run tests).
+- Script de benchmarks con umbrales p95 por endpoint.
+
+**Criterios de salida:**
+- CI verde en cada push/PR.
+- p95 login < 200ms, list < 300ms, create < 400ms en entorno local.
+
+**Dependencias:** Fases 1-9 + A1-A2.
+
+---
+
+## 5. Corte MVP — mínimo para producir valor
+
+El MVP funcional incluye Fases 0-7 + A1 + A2. El valor académico y demostrativo no requiere Marketplace ni QA exhaustivo para ser convincente.
+
+| Fase | Estado | Prioridad MVP |
+|------|--------|---------------|
+| 0-4 | ✅ Completado | MUST |
+| 5 | 🔄 En progreso | MUST |
+| 6 | ⏭ Pendiente | MUST |
+| 7 | ⏭ Pendiente | MUST |
+| 8 | ⏭ Pendiente | MUST |
+| A1 | ⏭ Pendiente | MUST |
+| A2 | ⏭ Pendiente | MUST |
+| 9 | ⏭ Pendiente | SHOULD |
+| 10 | ⏭ Pendiente | SHOULD |
+
+---
+
+## 6. Hitos
+
+| Hito | Semana | Descripción | Estado |
+|------|--------|-------------|--------|
+| A | 7 | CRUD dinámico E2E funcional | ✅ |
+| B | 10 | Plugins y hooks backend operativos | ✅ |
+| C | 14 | Extensions con tabs visibles en UI + PluginManager | ⏭ |
+| D | 16 | Update/rollback + configuración de campos desde UI | ⏭ |
+| E | 18 | Operación en RPi5 + auditoría + permisos finos | ⏭ |
+| F | 20 | Marketplace instalable desde UI | ⏭ |
+| G | 24 | CI verde + coverage 80% + beta lista | ⏭ |
+
+---
+
+## 7. Métricas de seguimiento
+
+- Tiempo de alta de nueva entidad sin tocar código de dominio.
+- Cantidad de errores de validación por release.
+- Tiempo medio de instalación/actualización de plugin.
+- Tasa de rollback por fallos de actualización.
+- Latencia p95 de endpoints CRUD en RPi5.
+- Coverage de tests en servicios core.
+
+---
+
+## 8. Definición de listo por fase (DoD)
+
+Una fase se considera completa cuando:
+
+- Tiene funcionalidad demostrable en entorno local.
+- Tiene tests mínimos automatizados del flujo agregado.
+- Tiene documentación actualizada en `docs/`.
+- No introduce deuda crítica de seguridad o integridad de datos.
+- `docs/ia/sesion.md` refleja el estado actualizado.
+
 
 Este documento traduce las funcionalidades definidas en la documentacion actual a un plan de implementacion ejecutable, incremental y con control de riesgo.
 

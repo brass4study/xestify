@@ -23,11 +23,12 @@ Construir UI de entidades sin hardcodear formularios por negocio.
 
 - string -> input text
 - number -> input number
-- boolean -> checkbox
+- boolean -> switch box
 - date -> date picker
 - select -> select
 - object -> subform
 - array -> repeater
+- timestamp -> date time picker
 
 ## Estructura de schema (ejemplo)
 

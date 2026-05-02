@@ -18,56 +18,68 @@ Demostrar que:
 
 ## Alcance Reducido: MVP "Proof of Concept"
 
-### ✅ IN SCOPE (40 puntos MUST)
+### ✅ IN SCOPE (MVP completo)
 
-**EPIC 0 - Preparación técnica (2 semanas)**
+**EPIC 0 - Preparación técnica**
 - ✅ Setup Git + estructura carpetas
 - ✅ Entorno local: PHP 8.1+ nativo + PostgreSQL (sin Docker)
 - ✅ Container DI casero + Router
 - ✅ Frontend skeleton
 
-> **Nota:** Docker queda fuera del scope MVP académico (decisión 2026-05-01).
-> Se añade `docker-compose.yml` documental solo si sobra tiempo (Semana 4, COULD).
-
-**EPIC 1 - Autenticación (1 semana)**
+**EPIC 1 - Autenticación**
 - ✅ JWT + tabla users
 - ✅ AuthController (login)
 - ✅ AuthMiddleware
 
-**EPIC 2 - Datos (3-4 días)**
-- ✅ Tablas core: system_entities, entity_metadata, entity_data
-- ✅ GenericRepository básico
+**EPIC 2 - Datos**
+- ✅ Tablas core: system_entities, entity_metadata, entity_data, plugins_registry, plugin_hook_registry
+- ✅ GenericRepository JSONB
 
-**EPIC 3 - CRUD Dinámico (1 semana)**
-- ✅ ValidationService (schema custom)
-- ✅ EntityService (CRUD)
-- ✅ EntityController (API REST)
-- ✅ DynamicForm + DynamicTable (frontend)
+**EPIC 3 - CRUD Dinámico**
+- ✅ ValidationService (schema custom con identities/fields/custom_fields/relations)
+- ✅ EntityService (CRUD + hooks)
+- ✅ EntityController (API REST + GET /api/v1/entities con label_singular)
+- ✅ DynamicForm + DynamicTable + State.js + Api.js (frontend)
 
-**EPIC 4 - Plugins Backend (3-4 días)**
-- ✅ PluginLoader minimo
-- ✅ HookDispatcher básico
-- ✅ Plugin clients de ejemplo
+**EPIC 4 - Plugins Backend**
+- ✅ PluginLoader + HookDispatcher
+- ✅ Plugin `clients` de ejemplo (tipo entity)
 - ✅ Hooks beforeSave/afterSave
+- ✅ Ciclo de vida completo (onInstall, onActivate, onDeactivate)
+- ✅ Schema extendido: identities + fields + custom_fields + relations
 
-**EPIC 5 - Frontend Dinámico (1 semana)**
+**EPIC 5 - Frontend Dinámico Base**
 - ✅ Login página
-- ✅ EntityList + EntityEdit
-- ✅ Flujo E2E funcional
+- ✅ Navbar dinámica por entidades + PluginManager link
+- ✅ EntityList + EntityEdit con datos reales
+- ✅ Modal/Dialog reutilizable
+- ✅ Estilos responsive + iconografía Font Awesome
 
-**BONUS (si sobra tiempo):**
-- Frontend mejorado (CSS, UX)
-- Tests de EPIC 3
+**EPIC 6 - Plugins tipo Extension**
+- ⏭ DynamicTabs.js + hooks registerTabs/registerActions
+- ⏭ Plugin de ejemplo tipo extension (comments)
+- ⏭ Página PluginManager (listar, activar, desactivar)
 
-### ❌ OUT OF SCOPE (para thesis posterior/futuro)
+**EPIC 7 - Actualizaciones, Rollback y Configuración**
+- ⏭ Actualización atómica de plugins + migración de schema
+- ⏭ Rollback manual a versión anterior
+- ⏭ Página de configuración de plugin (custom_fields desde UI)
 
-- ❌ EPIC 6: Extensiones complejas (tabs inyectadas dinámicas)
-- ❌ EPIC 7: Actualizaciones automáticas + rollback avanzado
-- ❌ EPIC 8: RPi5 hardening + backups automáticos
-- ❌ EPIC 9: Marketplace central completo
-- ❌ EPIC 10: QA exhaustivo (solo tests clave)
+**EPIC 8 - Operación Técnica**
+- ⏭ Health endpoint + backup automático
+- ⏭ Docker Compose para RPi5
+- ⏭ Hardening seguridad (headers + rate limiting)
 
-**Razón:** 70% de valor académico está en EPIC 0-5. Extensiones avanzan poco el learning.
+**A1 - Auditoría funcional** (⏭ pendiente)
+**A2 - Matriz de permisos fina** (⏭ pendiente)
+**EPIC 9 - Marketplace** (⏭ pendiente)
+**EPIC 10 - QA y Calidad** (⏭ pendiente)
+
+### ❌ OUT OF SCOPE (thesis posterior)
+
+- A3: Hardening de sesiones (expiración, refresh tokens)
+- A4: Panel de health técnico visual
+- A5: Exportación/importación de configuración entre entornos
 
 ---
 
@@ -92,65 +104,19 @@ Demostrar que:
 
 ---
 
-## Timeline de 1 mes (4-5 semanas)
+## Timeline actualizado
 
-### Semana 1: EPIC 0 + EPIC 1 (Fundamentos)
-**Tareas:**
-- Setup Git, Docker, estructura
-- Container DI + Router
-- JWT + AuthController
-- Frontend skeleton + Login
+### ✅ Semana 1-2: EPIC 0 + EPIC 1 + EPIC 2 (COMPLETADO)
+**Entregable logrado:** Proyecto arranca, login funciona, modelo de datos estable.
 
-**IA Usage:**
-- Generar boilerplate HTML/CSS
-- Generar JWT helpers
-- Generar tests para auth
+### ✅ Semana 3-4: EPIC 3 + EPIC 4 (COMPLETADO)
+**Entregable logrado:** CRUD dinámico, plugins con hooks, schema extendido con relations.
 
-**Entregable:** Proyecto arranca, puedo hacer login
+### ✅ Semana 4-5: EPIC 5 (COMPLETADO)
+**Entregable logrado:** Frontend completo: login → entidades → registros → iconos → responsive.
 
-### Semana 2: EPIC 2 + EPIC 3 (Core CRUD)
-**Tareas:**
-- Migraciones SQL
-- ValidationService (todos los tipos)
-- EntityService full CRUD
-- EntityController REST
-- DynamicForm + DynamicTable
-
-**IA Usage:**
-- Generar validadores por tipo
-- Generar CRUD SQL parametrizado
-- Generar componentes frontend dinámicos
-- Generar casos de test
-
-**Entregable:** CRUD funcional sin IA en backend + interfaz
-
-### Semana 3: EPIC 4 + EPIC 5 (Plugins + UI)
-**Tareas:**
-- PluginLoader
-- HookDispatcher
-- Plugin clients
-- Frontend E2E integration
-
-**IA Usage:**
-- Generar esqueleto de plugin
-- Generar listeners de hooks
-- Integrar API con frontend
-
-**Entregable:** Flujo completo: login → crear cliente → datos guardados
-
-### Semana 4: Polish + Documentación Académica
-**Tareas:**
-- Mejorar CSS/UX si aplica
-- Escribir análisis de productividad
-- Compilar prompts + análisis
-- Escribir README y guía académica
-
-**Entregable:** Código limpio + documentación lista para defensa
-
-### Semana 5: Contingencia / Bonus
-- Tests adicionales
-- Performance optimization en RPi5 (opcional)
-- Preparación de demo en vivo
+### ⏭ Próximas fases: EPIC 6-10 + A1 + A2
+**Objetivo:** Extensions de plugins, actualizaciones, configuración UI, operación, permisos, auditoría, marketplace, QA.
 
 ---
 
@@ -180,12 +146,12 @@ xestify/
 
 ### 🎬 Package 3: Demo
 - Video de 10-15min mostrando:
-  1. Loginear
-  2. Crear entidad "Cliente"
-  3. Crear registro de cliente
-  4. Instalar plugin "Optometría"
-  5. Crear revisión optométrica
-  6. Ver que datos se guardaron
+  1. Login
+  2. Crear registro de cliente desde EntityList
+  3. Ver que datos se guardan en JSONB
+  4. Gestionar plugin desde PluginManager
+  5. Mostrar tabs de extensión inyectadas por plugin (EPIC 6)
+  6. Actualizar plugin con migración de schema (EPIC 7)
 
 ---
 

@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-05-02  
-**EPIC activo:** EPIC 5 — Frontend Dinámico Base (🔄 EN PROGRESO)  
-**Próxima story:** STORY 6.1 — Extensión avanzada (pendiente de priorización)
+**EPIC activo:** EPIC 6 — Plugins tipo Extension (⏭ SIGUIENTE)  
+**Próxima story:** STORY 6.1 — Frontend - Crear módulo DynamicTabs.js
 
 ---
 
@@ -122,7 +122,7 @@
 | 4.6 ✅ | Metadatos de plugin (compatibilidad, dependencias entre plugins) | 441be1c | 6/6 ✅ |
 | 4.7 ✅ | Extender schema con identidades, campos obligatorios y relaciones opcionales | 7c794a6 | 14/14 ✅ |
 
-### 🔄 EPIC 5 — Frontend Dinámico Base (EN PROGRESO)
+### ✅ EPIC 5 — Frontend Dinámico Base (COMPLETADO)
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
@@ -132,7 +132,7 @@
 | 5.3b ✅ | Fix: GET /api/v1/entities + EntitySeeder + UTF-8 | `722990c` | — |
 | 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
 | 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | `041ba40` | 5/5 ✅ |
-| 5.5 ✅ | Frontend - Mejorar estilos CSS para mobile/desktop + refinamiento navbar/tabla | pendiente commit | — |
+| 5.5 ✅ | Frontend - Mejoras responsive + refinamiento UX navbar/tabla | `84d0b70` | — |
 
 ---
 
@@ -160,50 +160,71 @@ backend/
 │       └── 002_core.sql         ✅ system_entities + entity_metadata + entity_data + plugins_registry
 ├── src/
 │   ├── bootstrap.php             ← Autoloader + env loader
-│   ├── app.php                   ← Wiring Container + Router
+│   ├── app.php                   ← Wiring Container + Router + Seeders
 │   ├── Core/
 │   │   ├── Container.php         ✅ DI container
-│   │   ├── Router.php            ✅ HTTP router
+│   │   ├── Router.php            ✅ HTTP router (soporta {param} y :param)
 │   │   ├── Request.php           ✅ + setUser/user (STORY 1.4)
-│   │   ├── Response.php          ✅ Response helper (envelope JSON)
-│   │   └── Database.php          ✅ PDO singleton
+│   │   ├── Response.php          ✅ + apiSuccess/apiError + charset UTF-8
+│   │   └── Database.php          ✅ PDO singleton + client_encoding UTF8
 │   ├── Controllers/
 │   │   ├── HealthController.php  ✅ GET /health
-│   │   └── AuthController.php    ✅ POST /api/auth/login
+│   │   ├── AuthController.php    ✅ POST /api/auth/login
+│   │   └── EntityController.php  ✅ CRUD + GET /api/v1/entities (con label_singular)
 │   ├── Database/
 │   │   └── Seeders/
-│   │       └── UserSeeder.php    ✅ Seed admin on boot
+│   │       ├── UserSeeder.php    ✅ Seed admin on boot
+│   │       └── EntitySeeder.php  ✅ Seed entidades demo (client, product) con label_singular
 │   ├── Exceptions/
-│   │   ├── AuthException.php     ✅ Dominio: auth errors
-│   │   ├── DatabaseException.php ✅ Dominio: db errors
-│   │   └── RepositoryException.php ✅ Dominio: repository errors
+│   │   ├── AuthException.php          ✅ Dominio: auth errors
+│   │   ├── DatabaseException.php      ✅ Dominio: db errors
+│   │   ├── RepositoryException.php    ✅ Dominio: repository errors
+│   │   ├── EntityServiceException.php ✅ Dominio: entity errors
+│   │   └── ValidationException.php    ✅ Dominio: validation errors
 │   ├── Repositories/
-│   │   └── GenericRepository.php ✅ find, all, create, update, delete, restore
+│   │   └── GenericRepository.php ✅ find, all, create, update (JSONB ||), delete (soft), restore
 │   ├── Middleware/
 │   │   └── AuthMiddleware.php    ✅ Valida JWT en rutas protegidas
+│   ├── Models/
+│   │   └── SystemEntity.php      ✅ getActive, getBySlug, findOrFail (+ caché en memoria)
 │   ├── Services/
-│   │   └── JwtService.php        ✅ HS256 puro PHP
+│   │   ├── JwtService.php        ✅ HS256 puro PHP
+│   │   ├── ValidationService.php ✅ valida contra schema JSONB (6 tipos + identities/fields/custom_fields/relations)
+│   │   └── EntityService.php     ✅ CRUD orquestado + hooks beforeSave/afterSave
 │   └── config/
-│       ├── app.php               ✅ Registra Database, JwtService, AuthController
-│       └── routes.php            ✅ /health + /api/auth/login
+│       ├── app.php               ✅ Registra todos los servicios + Seeders en boot
+│       └── routes.php            ✅ /health + /api/auth/login + /api/v1/entities/*
+├── plugins/
+│   └── clients/                  ✅ Plugin entity tipo 'entity' (manifest, schema, Hooks, Installer)
 └── tests/
     ├── unit/
-    │   ├── helpers.php            ← TestSuite + assertion helpers
-    │   ├── ContainerTest.php      ✅ 8 tests
-    │   ├── RouterTest.php         ✅ 10 tests
-    │   ├── RequestResponseTest.php✅ 20 tests
-    │   ├── JwtServiceTest.php     ✅ 8 tests
-    │   └── AuthMiddlewareTest.php ✅ 6 tests
+    │   ├── helpers.php                    ← TestSuite + assertion helpers
+    │   ├── ContainerTest.php              ✅ 8 tests
+    │   ├── RouterTest.php                 ✅ 10 tests
+    │   ├── RequestResponseTest.php        ✅ 24 tests
+    │   ├── JwtServiceTest.php             ✅ 8 tests
+    │   ├── AuthMiddlewareTest.php         ✅ 6 tests
+    │   └── ValidationServiceTest.php      ✅ 8 tests
     └── integration/
-        ├── DatabaseTest.php                    ✅ 8 tests
-        ├── AuthControllerTest.php              ✅ 8 tests
-        ├── SystemEntitiesTableTest.php         ✅ 3 tests (STORY 2.1)
-        ├── EntityMetadataTableTest.php         ✅ 4 tests (STORY 2.2)
-        ├── EntityDataTableTest.php             ✅ 5 tests (STORY 2.3)
-        ├── PluginsRegistryTableTest.php        ✅ 5 tests (STORY 2.4)
-        ├── PluginHookRegistryTableTest.php     ✅ 5 tests (STORY 2.5)
-        ├── GenericRepositoryTest.php           ✅ 7 tests (STORY 2.6)
-        └── MigrationIdempotenceTest.php        ✅ 3 tests (STORY 2.7)
+        ├── DatabaseTest.php               ✅ 8 tests
+        ├── AuthControllerTest.php         ✅ 8 tests
+        ├── SystemEntitiesTableTest.php    ✅ 3 tests (STORY 2.1)
+        ├── EntityMetadataTableTest.php    ✅ 4 tests (STORY 2.2)
+        ├── EntityDataTableTest.php        ✅ 5 tests (STORY 2.3)
+        ├── PluginsRegistryTableTest.php   ✅ 5 tests (STORY 2.4)
+        ├── PluginHookRegistryTableTest.php✅ 5 tests (STORY 2.5)
+        ├── GenericRepositoryTest.php      ✅ 7 tests (STORY 2.6)
+        ├── MigrationIdempotenceTest.php   ✅ 3 tests (STORY 2.7)
+        ├── EntityServiceTest.php          ✅ 6 tests (STORY 3.2)
+        ├── EntityControllerTest.php       ✅ 9 tests (STORY 3.3)
+        ├── SystemEntityTest.php           ✅ 7 tests (STORY 3.5)
+        ├── PluginLoaderTest.php           ✅ 8 tests (STORY 4.1)
+        ├── HookDispatcherTest.php         ✅ 11 tests (STORY 4.2)
+        ├── HookIntegrationTest.php        ✅ 10 tests (STORY 4.3)
+        ├── PluginClientTest.php           ✅ 13 tests (STORY 4.4)
+        ├── PluginLifecycleTest.php        ✅ 8 tests (STORY 4.5)
+        ├── PluginMetadataTest.php         ✅ 6 tests (STORY 4.6)
+        └── SchemaExtensionTest.php        ✅ 14 tests (STORY 4.7)
 ```
 
 ---
@@ -212,12 +233,16 @@ backend/
 
 - **Namespace raíz:** `Xestify\`
 - **Autoload:** `Xestify\Core\Container` → `backend/src/Core/Container.php`
-- **Tests:** PHP scripts standalone (sin PHPUnit) en `backend/tests/unit/`
+- **Tests:** PHP scripts standalone (sin PHPUnit) en `backend/tests/unit/` e `integration/`
 - **Ejecutar tests:** `php backend/tests/unit/NombreTest.php`
-- **Ejecutar todos:** _(ver STORY 0.7 cuando se implemente)_
 - **Response envelope éxito:** `{ ok: true, data: {...}, meta?: {...} }`
 - **Response envelope error:** `{ ok: false, error: { code, message, details? } }`
-- **Rutas dinámicas:** `:param` → extraído como named capture group
+- **Rutas dinámicas:** soporta tanto `:param` como `{param}` (Router normaliza ambos)
+- **Schema de entidad:** estructura `identities` + `fields` + `custom_fields` + `relations`
+- **`label_singular`:** definido explícitamente en schema metadata, nunca inferido por heurística
+- **Frontend routing:** rutas tipo `entity:{slug}` para entidades dinámicas, `plugins` para gestor
+- **Font Awesome:** cargado vía CDN en `frontend/src/index.html` para iconografía
+- **Servidor dev:** `php -S localhost:8081 -t frontend/src tools/dev/frontend-router.php`
 - **Handler de ruta:** `[Controller::class, 'method']` o `callable`
 
 ---

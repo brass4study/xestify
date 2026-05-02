@@ -17,18 +17,29 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 
 ## Scope Académico
 
-### ✅ IN SCOPE (40 puntos MUST)
+### ✅ IN SCOPE (MVP)
 - EPIC 0: Setup técnico
 - EPIC 1: Autenticación
 - EPIC 2: Modelo de datos
 - EPIC 3: CRUD dinámico
 - EPIC 4: Plugins backend (básico)
 - EPIC 5: Frontend base
+- EPIC 6: Plugins tipo extension
+- EPIC 7: Actualizaciones de plugins y rollback
+- EPIC 8: Operación técnica y observabilidad
+- EPIC 9: Marketplace de plugins
+- EPIC 10: QA y calidad
+- Adición MVP A1: Auditoría funcional (cambios en configuración, usuarios y plugins)
+- Adición MVP A2: Matriz de permisos fina (más granular que admin/no-admin)
 
 ### ❌ OUT OF SCOPE (para futuro/thesis)
-- EPIC 6: Extensiones complejas
-- EPIC 7: Actualizaciones avanzadas
-- EPIC 8-10: Operación, marketplace, QA exhaustivo
+- Adición post-MVP A3: Hardening de sesiones (expiración, revocación, refresh)
+- Adición post-MVP A4: Panel de health técnico (DB, hooks, plugins activos)
+- Adición post-MVP A5: Exportación/importación de configuración entre entornos
+
+### 📌 Decisiones de Alcance (2026-05-02)
+- **IN SCOPE MVP:** EPIC 0-10 + A1 (Auditoría funcional) + A2 (Matriz de permisos fina)
+- **POSTERIOR A MVP:** A3 (Hardening de sesiones) + A4 (Panel health técnico) + A5 (Export/import configuración)
 
 ---
 
@@ -669,11 +680,431 @@ Objetivo: UI funcional para entidades dinámicas.
 
 ---
 
+## EPIC 6: Plugins tipo Extension (Fase 6)
+
+Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañas, vistas y comportamientos adicionales en entidades existentes, sin modificar su código base.
+
+### STORY 6.1: Frontend - Crear módulo DynamicTabs.js
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Clase `DynamicTabs` que renderiza tabs a partir de definición de array
+  - ✅ Tabs pueden ser registradas desde plugins vía API JS
+  - ✅ Tab activa persiste en URL hash o estado local
+  - ✅ Tests: render básico, cambio de tab, tab activa por defecto
+- **IA Usage:** Boilerplate clase + tests + CSS tab styles
+- **Dependencias:** STORY 5.2, STORY 0.6
+- **Blockers:** Ninguno
+
+### STORY 6.2: Backend - Hook `registerTabs` y `registerActions` en HookDispatcher
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ HookDispatcher soporta hooks de tipo `filter` (retornan valor acumulado)
+  - ✅ Hook `registerTabs` permite que plugins añadan tabs a una entidad
+  - ✅ Hook `registerActions` permite que plugins añadan acciones (botones) a filas de tabla
+  - ✅ Tests: plugin registra tab y aparece en respuesta de API
+- **IA Usage:** Extensión HookDispatcher + test de filtros acumulados
+- **Dependencias:** STORY 4.2, STORY 4.3
+- **Blockers:** Ninguno
+
+### STORY 6.3: Plugin de ejemplo tipo extension (`comments`)
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Plugin `comments` con `manifest.json`, tipo `extension`, `target_entity: *`
+  - ✅ Registra hook `registerTabs` → añade tab "Comentarios" a cualquier entidad
+  - ✅ Tab muestra listado de comentarios del registro activo (GET `/api/v1/plugins/comments/{entity}/{id}`)
+  - ✅ Formulario para añadir comentario (POST)
+  - ✅ Tests de instalación, hook y endpoints
+- **IA Usage:** Scaffolding plugin completo + endpoints + frontend tab content
+- **Dependencias:** STORY 6.1, STORY 6.2, STORY 4.4
+- **Blockers:** Ninguno
+
+### STORY 6.4: Frontend - Página PluginManager (listar, activar, desactivar)
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Página `PluginManager` lista plugins instalados con estado (activo/inactivo/error)
+  - ✅ Botones activar/desactivar llaman a API y actualizan estado
+  - ✅ Badge con tipo de plugin (`entity` / `extension`)
+  - ✅ Acceso restringido a admin
+  - ✅ Tests: render lista, click activar/desactivar
+- **IA Usage:** Scaffolding página + estilos + tests
+- **Dependencias:** STORY 5.2, STORY 4.5
 - **Blockers:** Ninguno
 
 ---
 
-## 📊 Resumen del Backlog Académico (EPIC 0-5 Only)
+## EPIC 7: Actualizaciones de Plugins y Rollback (Fase 7)
+
+Objetivo: Ciclo de vida completo de plugins con versionado, actualización controlada y rollback ante fallos.
+
+### STORY 7.1: Detección de actualizaciones disponibles en PluginLoader
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ PluginLoader compara versión instalada (plugins_registry) vs versión en disco (manifest.json)
+  - ✅ Método `getOutdated()` devuelve lista de plugins con actualización disponible
+  - ✅ Endpoint GET `/api/v1/plugins/updates` expone lista
+  - ✅ Tests: versión igual, mayor y menor detectados correctamente
+- **IA Usage:** Lógica comparación semver + tests de casos límite
+- **Dependencias:** STORY 4.1, STORY 4.6
+- **Blockers:** Ninguno
+
+### STORY 7.2: Proceso de actualización con migración de schema
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Endpoint POST `/api/v1/plugins/{slug}/update` ejecuta actualización
+  - ✅ Si el plugin tiene `onUpdate()` en Hooks.php, se ejecuta antes de activar nueva versión
+  - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `entity_metadata` con versión incrementada
+  - ✅ Actualización falla atómicamente (transacción) si onUpdate lanza excepción
+  - ✅ Tests: actualización exitosa, fallo con rollback automático
+- **IA Usage:** Lógica de diff + transacción + tests de error
+- **Dependencias:** STORY 7.1, STORY 4.5, STORY 2.2
+- **Blockers:** Definir estructura de `onUpdate()` en contrato de plugin
+
+### STORY 7.3: Rollback manual de plugin a versión anterior
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Endpoint POST `/api/v1/plugins/{slug}/rollback` restaura versión anterior
+  - ✅ Requiere que exista snapshot del schema anterior en `entity_metadata`
+  - ✅ Ejecuta `onRollback()` del plugin si existe
+  - ✅ Estado plugin vuelve a versión registrada antes del update
+  - ✅ Tests: rollback exitoso, error si no hay snapshot previo
+- **IA Usage:** Lógica de restauración + tests de rollback
+- **Dependencias:** STORY 7.2
+- **Blockers:** Ninguno
+
+### STORY 7.4: Frontend - UI de actualización y rollback en PluginManager
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Badge "Actualización disponible" en plugin con versión desactualizada
+  - ✅ Botón "Actualizar" llama a endpoint y muestra feedback
+  - ✅ Botón "Rollback" disponible si hay versión anterior
+  - ✅ Modal de confirmación antes de actualizar/rollback
+- **IA Usage:** UI badges + modal confirmación + feedback estados
+- **Dependencias:** STORY 6.4, STORY 7.2, STORY 7.3
+- **Blockers:** Ninguno
+
+### STORY 7.5: Frontend - Página de configuración de plugin activado
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Descripción:**
+  Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
+  para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
+  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
+- **Criteria:**
+  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
+  - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
+  - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
+  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
+  - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
+  - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
+  - ✅ Tests backend: update schema + versión incrementada + campos base intocables
+  - ✅ Tests frontend: render custom_fields, toggle, añadir campo libre, guardar
+- **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
+- **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
+- **Blockers:** Ninguno
+
+---
+
+## EPIC 8: Operación Técnica y Observabilidad (Fase 8)
+
+Objetivo: Sistema observable con health checks, preparado para deployment en RPi5 con backup automatizado y hardening básico de seguridad.
+
+### STORY 8.1: Endpoint de health técnico del sistema
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ GET `/api/v1/system/health` devuelve: DB status, plugins activos, hooks registrados, uptime
+  - ✅ Respuesta incluye version del core y timestamp
+  - ✅ Sin autenticación para monitoreo externo (o token de lectura separado)
+  - ✅ Tests: health cuando DB está up, degradado cuando DB falla
+- **IA Usage:** Boilerplate endpoint + checks de subsistemas
+- **Dependencias:** STORY 0.5, STORY 4.1
+- **Blockers:** Ninguno
+
+### STORY 8.2: Backup automático de base de datos
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Infrastructure
+- **Criteria:**
+  - ✅ Script `tools/backup.php` genera dump PostgreSQL con timestamp
+  - ✅ Retención configurable (N últimos backups)
+  - ✅ Endpoint POST `/api/v1/system/backup` para trigger manual (solo admin)
+  - ✅ Log de backups en tabla o fichero
+- **IA Usage:** Script pg_dump wrapper + rotación de backups
+- **Dependencias:** STORY 0.5, STORY 1.4
+- **Blockers:** `pg_dump` disponible en entorno
+
+### STORY 8.3: Docker Compose para deployment en RPi5
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Infrastructure
+- **Criteria:**
+  - ✅ `docker-compose.yml` con servicios: `app-php`, `db-postgres`, `nginx`
+  - ✅ Variables de entorno externalizadas vía `.env`
+  - ✅ Volúmenes para persistencia de DB y backups
+  - ✅ README con instrucciones de despliegue en RPi5 (arm64)
+- **IA Usage:** Compose file completo + nginx.conf + instrucciones ARM
+- **Dependencias:** STORY 0.5b
+- **Blockers:** Acceso a RPi5 para validación (puede validarse en local x86)
+
+### STORY 8.4: Hardening básico de seguridad (headers + rate limiting)
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Headers de seguridad en todas las respuestas: `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy` básico
+  - ✅ Rate limiting por IP en endpoints de auth (máx. 10 intentos/minuto)
+  - ✅ Tests: headers presentes, rate limit dispara 429
+- **IA Usage:** Middleware de headers + implementación rate limit en memoria/Redis
+- **Dependencias:** STORY 0.4, STORY 1.3
+- **Blockers:** Decidir almacenamiento rate limit (APCu vs Redis vs tabla DB)
+
+---
+
+## EPIC 9: Marketplace de Plugins (Fase 9)
+
+Objetivo: Repositorio central de plugins publicados, browseable e instalable desde la UI de Xestify.
+
+### STORY 9.1: Schema y modelo de datos del marketplace
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Database
+- **Criteria:**
+  - ✅ Tabla `marketplace_plugins` (id, slug, name, description, version, author, download_url, compatible_from, published_at)
+  - ✅ Tabla `marketplace_plugin_versions` (plugin_slug, version, changelog, published_at)
+  - ✅ Migración idempotente + seed con plugins de ejemplo
+- **IA Usage:** SQL + seeds
+- **Dependencias:** STORY 2.4
+- **Blockers:** Definir si marketplace es local (mismo repo) o remoto (URL externa)
+
+### STORY 9.2: API de marketplace (browse, search, detalle)
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ GET `/api/v1/marketplace` — lista plugins publicados con filtros (tipo, compatible, search)
+  - ✅ GET `/api/v1/marketplace/{slug}` — detalle + versiones disponibles
+  - ✅ POST `/api/v1/marketplace/{slug}/install` — descarga y registra plugin (solo admin)
+  - ✅ Validación de compatibilidad de versión antes de instalar
+  - ✅ Tests: listado, filtros, instalación, incompatibilidad rechazada
+- **IA Usage:** Controlador + lógica de descarga + tests
+- **Dependencias:** STORY 9.1, STORY 4.1, STORY 4.5
+- **Blockers:** Ninguno
+
+### STORY 9.3: Frontend - UI de marketplace en PluginManager
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Tab "Marketplace" en PluginManager muestra catálogo de plugins disponibles
+  - ✅ Cards con nombre, descripción, tipo, versión y botón "Instalar"
+  - ✅ Buscador en tiempo real por nombre/descripción
+  - ✅ Feedback visual durante instalación (loading, éxito, error)
+  - ✅ Plugin instalado muestra estado "Instalado" en lugar de botón
+- **IA Usage:** UI cards + buscador + feedback de estado
+- **Dependencias:** STORY 9.2, STORY 6.4
+- **Blockers:** Ninguno
+
+### STORY 9.4: Publicación de plugin al marketplace
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Backend
+- **Criteria:**
+  - ✅ POST `/api/v1/marketplace/publish` — registra plugin desde zip o directorio local (solo admin)
+  - ✅ Valida estructura de plugin (manifest.json, Hooks.php)
+  - ✅ Calcula checksum del paquete para verificación de integridad
+  - ✅ Tests: publicación válida, inválida por manifest incorrecto
+- **IA Usage:** Lógica de validación + checksum + tests
+- **Dependencias:** STORY 9.1, STORY 4.6
+- **Blockers:** Ninguno
+
+---
+
+## EPIC 10: QA y Calidad (Fase 10)
+
+Objetivo: Suite de tests completa, automatización CI y coverage mínimo establecido para el proyecto.
+
+### STORY 10.1: Suite de tests de integración E2E backend
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Testing
+- **Criteria:**
+  - ✅ Flujo completo: login → crear entidad → guardar registro → instalar plugin → activar
+  - ✅ Tests que usan DB real (test database separada)
+  - ✅ Setup/teardown limpio entre tests
+  - ✅ Scripts ejecutables vía `php backend/tests/integration/RunAll.php`
+- **IA Usage:** Generación masiva de fixtures + helpers de test
+- **Dependencias:** STORY 1.x, STORY 3.x, STORY 4.x
+- **Blockers:** Base de datos de test configurada
+
+### STORY 10.2: Coverage mínimo 80% en servicios core
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Testing
+- **Criteria:**
+  - ✅ Tests unitarios para: `ValidationService`, `EntityService`, `JwtService`, `HookDispatcher`, `AuditService`
+  - ✅ Coverage medido con script de conteo de casos (sin PHPUnit, compatible con setup actual)
+  - ✅ Cada servicio tiene al menos: happy path, edge case, error case
+  - ✅ Tabla de coverage documentada en `docs/ia/sesion.md`
+- **IA Usage:** Generación de casos de test por método
+- **Dependencias:** STORY 3.1, STORY 3.2, STORY 4.2, STORY A1.2
+- **Blockers:** Ninguno
+
+### STORY 10.3: GitHub Actions CI pipeline
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** DevOps
+- **Criteria:**
+  - ✅ Workflow `.github/workflows/ci.yml` ejecuta tests en cada push/PR
+  - ✅ Steps: checkout, setup PHP 8.1, setup PostgreSQL, run migrations, run tests
+  - ✅ Falla el pipeline si algún test falla
+  - ✅ Badge de CI en README
+- **IA Usage:** Workflow YAML completo + setup actions
+- **Dependencias:** STORY 10.1
+- **Blockers:** Acceso a secrets de PostgreSQL en GitHub Actions
+
+### STORY 10.4: Tests de rendimiento básicos (API response times)
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Testing
+- **Criteria:**
+  - ✅ Script `tools/perf/benchmark.php` mide tiempos de respuesta de endpoints clave
+  - ✅ Umbrales definidos: login < 200ms, list < 300ms, create < 400ms
+  - ✅ Genera informe CSV con percentiles p50/p95
+  - ✅ Tests fallidos si p95 supera umbral
+- **IA Usage:** Script de benchmark + parser CSV + thresholds
+- **Dependencias:** STORY 3.3, STORY 1.3
+- **Blockers:** Ninguno
+
+---
+
+## EPIC A1: Auditoría Funcional (Adición MVP)
+
+Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y plugins.
+
+### STORY A1.1: Crear tabla `audit_logs` y migración
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Database
+- **Criteria:**
+  - ✅ Tabla `audit_logs` con campos: id, user_id, action, resource, resource_id, payload_json, ip, user_agent, created_at
+  - ✅ Índices por `user_id`, `resource` y `created_at`
+  - ✅ Migración idempotente
+- **IA Usage:** Generar SQL + índices + script de verificación
+- **Dependencias:** STORY 0.1, STORY 0.5
+- **Blockers:** Ninguno
+
+### STORY A1.2: Crear AuditService y helper de registro
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Servicio `AuditService::log()` reutilizable
+  - ✅ Registro de payload seguro (sin secretos/sin password_hash)
+  - ✅ Tipado estricto y tests unitarios de inserción
+- **IA Usage:** Boilerplate de servicio + tests + sanitización base de payload
+- **Dependencias:** STORY A1.1, STORY 0.2
+- **Blockers:** Definir lista de campos sensibles a excluir
+
+### STORY A1.3: Auditar acciones de usuarios y configuración
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Se audita crear/editar/desactivar usuario
+  - ✅ Se audita cambios de configuración global
+  - ✅ Se audita activar/desactivar plugin
+  - ✅ Cada registro incluye `who`, `what`, `when`, `where`
+- **IA Usage:** Inyección de hooks de auditoría en controladores/servicios
+- **Dependencias:** STORY A1.2, STORY 7.1, STORY 6.2, STORY 9.2 (o equivalentes)
+- **Blockers:** Disponibilidad de endpoints de gestión
+
+### STORY A1.4: Endpoint y vista básica de auditoría (solo admin)
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ GET `/api/v1/audit-logs` con filtros (fecha, usuario, recurso)
+  - ✅ Tabla frontend de auditoría con paginación
+  - ✅ Solo visible para rol admin
+- **IA Usage:** Query con filtros + página frontend de lectura
+- **Dependencias:** STORY A1.3, STORY 5.3
+- **Blockers:** Ninguno
+
+---
+
+## EPIC A2: Matriz de Permisos Fina (Adición MVP)
+
+Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
+
+### STORY A2.1: Modelo de permisos granular en base de datos
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Database
+- **Criteria:**
+  - ✅ Tablas `roles`, `permissions`, `role_permissions` (si no existen)
+  - ✅ Permisos por recurso + acción (`users.read`, `users.update`, `plugins.toggle`, etc.)
+  - ✅ Seed inicial para roles base (admin, operador, lectura)
+- **IA Usage:** SQL + seeds + tests de idempotencia
+- **Dependencias:** STORY 1.x (auth base)
+- **Blockers:** Catálogo inicial de permisos
+
+### STORY A2.2: AuthorizationService con permisos por acción
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Método `can(user, permission)` con verificación real contra DB
+  - ✅ Cache opcional en request para reducir queries repetidas
+  - ✅ Tests allow/deny por rol
+- **IA Usage:** Implementación del servicio + tests de matriz
+- **Dependencias:** STORY A2.1, STORY 1.4
+- **Blockers:** Ninguno
+
+### STORY A2.3: Enforcement en endpoints críticos
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Endpoints de usuarios/config/plugins validan permisos finos
+  - ✅ Respuesta `403` consistente en denegación
+  - ✅ Logs de denegación integrados con auditoría (A1)
+- **IA Usage:** Inserción de guardas de autorización + tests de integración
+- **Dependencias:** STORY A2.2, STORY A1.2
+- **Blockers:** Mapa endpoint → permiso
+
+### STORY A2.4: UI condicional por permisos
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Ocultar acciones no permitidas (botones/links/secciones)
+  - ✅ Mostrar mensaje informativo cuando falte permiso
+  - ✅ Sin romper navegación existente
+- **IA Usage:** Guards en renderizado frontend
+- **Dependencias:** STORY A2.3, STORY 5.x
+- **Blockers:** Endpoint/mechanismo para exponer permisos efectivos al frontend
+
+---
+
+## 📊 Resumen del Backlog Académico (EPIC 0-10 + A1/A2)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 
@@ -754,7 +1185,7 @@ Objetivo: UI funcional para entidades dinámicas.
 - **Puntos son relativos:** Si una historia toma más de lo previsto, ajusta estimación en tiempo real.
 - **IA va a acelerar:** Usa CodeVibe para generar boilerplate, tests, documentación.
 - **Foco en flujo E2E:** Semana 4 debe tener el flujo completo: login → crear entidad → guardar funcionando end-to-end.
-- **OUT OF SCOPE para Master:** EPIC 6-10 (extensiones avanzadas, marketplace, operación RPi5 real, QA exhaustivo).
+- **OUT OF SCOPE para Master:** A3 (Hardening sesiones), A4 (Panel health técnico), A5 (Export/import config).
 
 ---
 

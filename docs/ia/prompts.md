@@ -676,3 +676,54 @@ Continuemos con la siguiente story y ajustemos UX del frontend:
 **Resultado:** Navbar dinámico por entidad, bloque derecho consistente, selector de entidades eliminado del contenido, botón crear con icono y `label_singular`, acciones/paginación iconificadas con estilos unificados, backend actualizado para exponer `label_singular` y seeder versionado.
 **Iteraciones:** 6
 
+---
+
+## Sesión Planning — Backlog y Roadmap (2026-05-02)
+
+### Planning A1/A2 — Desglose en EPIC/STORY
+
+**Prompt:**
+```
+Ok, desglosa A1 y A2 en EPIC/STORY
+```
+**Resultado:** EPIC A1 con 4 stories (tabla audit_logs, AuditService, hooks en acciones críticas, endpoint+vista admin) y EPIC A2 con 4 stories (modelo roles/permissions, AuthorizationService, enforcement en endpoints, UI condicional). Cada story con Points, Priority, Type, Criteria, IA Usage y Dependencias.
+**Iteraciones:** 1
+**Lección:** Dar contexto previo de backlog al agente produce stories alineadas con el estilo existente sin fricción.
+
+---
+
+### Planning EPIC 6-10 — Desglose completo
+
+**Prompt:**
+```
+El EPIC 6 no son "extensiones complejas" son plugins del tipo extension, tal y como habíamos documentado.
+Y veo que has añadido EPIC 6, 7 y 8 como OUT OF SCOPE deben estar IN SCOPE y antes de los adicionales
+```
+**Resultado:** EPIC 6-10 movidos a IN SCOPE, EPIC 6 renombrado a "Plugins tipo extension", 5 EPICs documentados con 4 stories cada uno antes de A1/A2. STORY 7.5 añadida por petición explícita para configuración de plugins.
+**Iteraciones:** 3 (ajuste scope 9-10, STORY 7.5, renombrado)
+**Lección:** Las correcciones conceptuales de nomenclatura hay que hacerlas desde el primer momento; "extensiones complejas" vs "plugins tipo extension" cambia el entendimiento del sistema.
+
+---
+
+### Planning — Actualizar roadmap
+
+**Prompt:**
+```
+Actualiza el roadmap
+```
+**Resultado:** `docs/roadmap.md` reescrito con: decisiones técnicas resueltas en tabla, estado real de 10 fases + A1/A2, tabla de corte MVP, hitos actualizados A-G, métricas de seguimiento y DoD por fase. Eliminado contenido obsoleto (decisiones pendientes, comparativa frameworks).
+**Iteraciones:** 1
+**Lección:** Un roadmap desactualizado es más confuso que no tenerlo. Reescribir desde cero con estado real es más rápido que parchear.
+
+---
+
+### Planning — Revisión y actualización de toda la documentación
+
+**Prompt:**
+```
+Revisa toda la documentación, analízala y actualízala allí donde sea necesaria según todas las consideraciones y pasos que ya hemos realizado
+```
+**Resultado:** Actualizados en una sola pasada: `sesion.md` (EPIC 5 completado, estructura de archivos real, convenciones actualizadas), `MASTER-brief.md` (scope corregido EPIC 0-10 in scope, timeline con estado real, demo actualizada), `productividad.md` (entradas de sesión planning), `prompts.md` (esta entrada).
+**Iteraciones:** 1
+**Lección:** Tener un agente que mantiene consistencia entre múltiples archivos de documentación simultáneamente es donde la IA aporta más valor en fases de planning.
+
