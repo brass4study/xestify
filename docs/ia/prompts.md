@@ -751,3 +751,26 @@ Sigamos
 **Iteraciones:** 2 (primera sin endpoint API, segunda tras corrección del criterio "aparece en respuesta de API")
 **Lección:** `applyFilter` es mejor nombre que `filter` para evitar confusión con built-ins de PHP. El criterio "plugin registra tab y aparece en respuesta de API" implica un test de integración con endpoint real, no solo unitario — leer los criterios con más detalle antes de implementar.
 
+### STORY 6.4 — Plugin `comments` (tipo extension)
+
+**Prompt:**
+```
+Sigamos con STORY 6.3
+```
+**Resultado:** Plugin `comments` completo: `manifest.json` (type=extension, target_entity=*), `schema.json` (campos body/author_id), `Hooks.php` (registra `registerTabs`), `Lifecycle.php` (onInstall inserta en `plugin_hook_registry`, sin tabla propia). `CommentsController.php` usa tabla genérica `plugin_extension_data` con content JSONB. Migración `003_plugin_extension_data.sql` como tabla compartida por todos los plugins extension. 9 tests de integración pasando.
+**Iteraciones:** 3 (primera con tabla `plugin_comments` propia — incorrecto; segunda corrigiendo a tabla genérica y añadiendo schema.json; tercera corrigiendo duplicación de código en CommentsController)
+**Lección:** Los plugins de tipo `extension` NO crean tablas propias — usan `plugin_extension_data` igual que los de tipo `entity` usan `entity_data`. Verificar siempre que el patrón genérico se mantiene consistente antes de implementar.
+
+### STORY 6.3 — Release B: Eliminar system_entities (plugins como única fuente de verdad)
+
+**Prompt:**
+```
+Si analizamos la tabla 'system_entities' pasa lo mismo que con todo lo que acabamos de hacer, son tablas con los mismos registros, ¿por que estan separadas?
+[...discusión arquitectónica...]
+Si
+```
+**Resultado:** Eliminación completa de `system_entities`. Migración `010_drop_system_entities.sql` (DROP TABLE IF EXISTS). `SystemEntity.php` redirigido a consultar `plugins WHERE plugin_type='entity'`. `SystemEntitiesTableTest.php` reescrito para verificar que la tabla ya NO existe + 2 tests sobre el catalog en plugins. `MigrationIdempotenceTest.php` actualizado: system_entities eliminado de lista esperada, test de datos redirigido a plugins, migración 010 añadida. `SystemEntityTest.php` fixtures redirigidos a plugins (INSERT ON CONFLICT, DELETE). Migración aplicada a xestify_dev. Suite completa: 11 suites, 0 fallos.
+**Iteraciones:** 2 (un test fallaba por filas de test sin `name` en plugins — corregido filtrando a `status='active'`)
+**Lección:** Al filtrar filas de catálogo en tests, siempre filtrar por el estado esperado en producción (`status='active'`) para evitar que filas de test sucias interfieran.
+
+

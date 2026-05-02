@@ -14,7 +14,7 @@ use Xestify\repositories\GenericRepository;
 /**
  * EntityService — orchestrates CRUD operations on dynamic entities.
  *
- * Fetches the current schema from entity_metadata, validates incoming data
+ * Fetches the current schema from plugin_entity_metadata, validates incoming data
  * with ValidationService, persists records via GenericRepository, and
  * dispatches beforeSave/afterSave hooks via HookDispatcher.
  *
@@ -28,8 +28,8 @@ use Xestify\repositories\GenericRepository;
 final class EntityService
 {
     private const SCHEMA_QUERY =
-        'SELECT schema_json FROM entity_metadata
-         WHERE entity_slug = :slug
+        'SELECT schema_json FROM plugins
+         WHERE slug = :slug
          ORDER BY schema_version DESC
          LIMIT 1';
 

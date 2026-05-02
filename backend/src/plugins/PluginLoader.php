@@ -243,7 +243,7 @@ class PluginLoader
             $minVersion = isset($dep['version']) && is_string($dep['version']) ? $dep['version'] : '0.0.0';
 
             $stmt = $this->pdo->prepare(
-                'SELECT version FROM plugins_registry WHERE plugin_slug = :slug'
+                'SELECT version FROM plugins WHERE slug = :slug'
             );
             $stmt->execute([':slug' => $depSlug]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -273,26 +273,31 @@ class PluginLoader
         $slug = $manifest['slug'];
 
         $stmt = $this->pdo->prepare(
-            'SELECT id FROM plugins_registry WHERE plugin_slug = :slug'
+            'SELECT id FROM plugins WHERE slug = :slug'
         );
         $stmt->execute([':slug' => $slug]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($existing !== false) {
             $this->pdo->prepare(
-                'UPDATE plugins_registry
-                    SET version = :version, updated_at = NOW()
-                  WHERE plugin_slug = :slug'
-            )->execute([':version' => $manifest['version'], ':slug' => $slug]);
+                'UPDATE plugins
+                    SET name = :name, version = :version, updated_at = NOW()
+                  WHERE slug = :slug'
+            )->execute([
+                ':name' => $manifest['name'],
+                ':version' => $manifest['version'],
+                ':slug' => $slug,
+            ]);
 
             return false;
         }
 
         $this->pdo->prepare(
-            'INSERT INTO plugins_registry (plugin_slug, plugin_type, version, status)
-             VALUES (:slug, :type, :version, :status)'
+            'INSERT INTO plugins (slug, name, plugin_type, version, status)
+             VALUES (:slug, :name, :type, :version, :status)'
         )->execute([
             ':slug'    => $slug,
+            ':name'    => $manifest['name'],
             ':type'    => $manifest['type'],
             ':version' => $manifest['version'],
             ':status'  => 'inactive',
@@ -304,7 +309,7 @@ class PluginLoader
     private function updateStatus(string $slug, string $status): void
     {
         $this->pdo->prepare(
-            'UPDATE plugins_registry SET status = :status, updated_at = NOW() WHERE plugin_slug = :slug'
+            'UPDATE plugins SET status = :status, updated_at = NOW() WHERE slug = :slug'
         )->execute([':status' => $status, ':slug' => $slug]);
     }
 

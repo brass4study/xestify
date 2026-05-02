@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xestify\controllers;
 
 use PDO;
+
 use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\core\Response;
@@ -48,20 +49,14 @@ class EntityController
         $request ??= Request::fromGlobals($params);
 
         $stmt = $this->pdo->prepare(
-            'SELECT se.slug, se.name AS label,
-                    em.schema_json, em.schema_version
-             FROM system_entities se
-             LEFT JOIN LATERAL (
-                 SELECT schema_json, schema_version
-                 FROM entity_metadata
-                 WHERE entity_slug = se.slug
-                 ORDER BY schema_version DESC
-                 LIMIT 1
-             ) em ON true
-             WHERE se.is_active = true
-             ORDER BY se.name ASC'
+                        'SELECT p.slug, p.name AS label, p.schema_json, p.schema_version
+                         FROM plugins p
+                         WHERE p.plugin_type = :plugin_type
+                             AND p.status = :status
+                             AND p.schema_json IS NOT NULL
+                         ORDER BY p.name ASC'
         );
-        $stmt->execute();
+                $stmt->execute([':plugin_type' => 'entity', ':status' => 'active']);
         $rows = $stmt->fetchAll();
 
         $entities = [];
@@ -100,9 +95,8 @@ class EntityController
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT schema_json, schema_version FROM entity_metadata
-             WHERE entity_slug = :slug
-             ORDER BY schema_version DESC
+            'SELECT schema_json, schema_version FROM plugins
+             WHERE slug = :slug
              LIMIT 1'
         );
         $stmt->execute([':slug' => $slug]);
@@ -254,6 +248,7 @@ class EntityController
      */
     public function tabs(array $params, ?Request $request = null): void
     {
+        $request ??= Request::fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
@@ -273,6 +268,7 @@ class EntityController
      */
     public function actions(array $params, ?Request $request = null): void
     {
+        $request ??= Request::fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {

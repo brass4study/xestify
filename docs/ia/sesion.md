@@ -10,7 +10,25 @@
 
 **Fecha:** 2026-05-02  
 **EPIC activo:** EPIC 6 — Plugins tipo Extension (🔄 EN PROGRESO)  
-**Próxima story:** STORY 6.3 — Plugin `comments` (tipo extension)
+**Próxima story:** STORY 6.5 — Frontend - Página PluginManager
+
+---
+
+### ✅ Release B completado: consolidación de migraciones y fixes
+
+| Paso | Descripción | Estado |
+|------|-------------|--------|
+| Migración 010 | `010_drop_system_entities.sql` — DROP TABLE IF EXISTS | ✅ aplicado |
+| SystemEntity.php | Redirigido a `plugins WHERE plugin_type='entity'` | ✅ |
+| SystemEntitiesTableTest | Reescrito para verificar que la tabla NO existe | ✅ 3/3 |
+| MigrationIdempotenceTest | Actualizado a migraciones 001-005 | ✅ 3/3 |
+| SystemEntityTest | Fixtures redirigidos a plugins (INSERT + DELETE) | ✅ 7/7 |
+| Migraciones consolidadas | Eliminados 002/008/009/010; renombrados a 001-005 | ✅ |
+| `003_plugins.sql` | Añadida columna `name` + índice desde el inicio | ✅ |
+| `Response.php` | Añadida cabecera `Cache-Control: no-store` | ✅ |
+| `EntitySeeder.php` | `ensureSingularLabels` ya no sobreescribe `name` en BD | ✅ |
+
+**Suite completa post-Release B:** EntityControllerTest 9/9, EntityServiceTest 6/6, ClientsPluginTest 14/14, PluginLifecycleTest 8/8, PluginDependenciesTest 6/6, HookFilterApiTest 10/10, CommentsPluginTest 9/9, PluginsRegistryTableTest 6/6, MigrationIdempotenceTest 3/3, SystemEntitiesTableTest 3/3, SystemEntityTest 7/7 ✅
 
 ---
 
@@ -65,16 +83,20 @@
 
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
-| 2.1 ✅ | Tabla `system_entities` + migración 002_core.sql | `2c88d64` | 3/3 ✅ |
+| 2.1 ✅ | Tabla `system_entities` + migración (consolidada en 003_plugins.sql) | `2c88d64` | 3/3 ✅ |
 | 2.2 ✅ | Tabla `entity_metadata` (schema versionado) | `0445672` | 4/4 ✅ |
 | 2.3 ✅ | Tabla `entity_data` (registros de negocio) | `195db58` | 5/5 ✅ |
-| 2.4 ✅ | Tabla `plugins_registry` (plugins instalados) | `17fa5df` | 5/5 ✅ |
-| 2.5 ✅ | Tabla `plugin_hook_registry` (hooks registrados) | `3352b4a` | 5/5 ✅ |
+| 2.4 ✅ | Tabla `plugins` (antes `plugins_registry`) | `17fa5df` | 5/5 ✅ |
+| 2.5 ✅ | Tabla `plugin_hooks` (antes `plugin_hook_registry`) | `3352b4a` | 5/5 ✅ |
 | 2.6 ✅ | GenericRepository (CRUD JSONB) | `58a2670` | 7/7 ✅ |
-| 2.7 ✅ | Verificar idempotencia 002_core.sql | `906b595` | 3/3 ✅ |
+| 2.7 ✅ | Verificar idempotencia migraciones 001-005 | `906b595` | 3/3 ✅ |
 
 **Archivos creados (EPIC 2 hasta ahora):**
-- `backend/database/migrations/002_core.sql` — tablas system_entities + entity_metadata + entity_data + plugins_registry + plugin_hook_registry
+- `backend/database/migrations/001_users.sql` — tabla users
+- `backend/database/migrations/002_plugin_entity_data.sql` — tabla plugin_entity_data (antes 004)
+- `backend/database/migrations/003_plugins.sql` — tabla plugins con name, schema (antes 005)
+- `backend/database/migrations/004_plugin_hooks.sql` — tabla plugin_hooks (antes 006)
+- `backend/database/migrations/005_plugin_extension_data.sql` — tabla plugin_extension_data (antes 007)
 - `backend/tests/integration/SystemEntitiesTableTest.php` — 3 tests
 - `backend/tests/integration/EntityMetadataTableTest.php` — 4 tests
 - `backend/tests/integration/EntityDataTableTest.php` — 5 tests
@@ -83,7 +105,7 @@
 - `backend/src/Exceptions/RepositoryException.php`
 - `backend/src/Repositories/GenericRepository.php` — find, all, create, update, delete (soft), restore
 - `backend/tests/integration/GenericRepositoryTest.php` — 7 tests
-- `backend/tests/integration/MigrationIdempotenceTest.php` — 3 tests (idempotencia 002_core.sql)
+- `backend/tests/integration/MigrationIdempotenceTest.php` — 3 tests (idempotencia 001-005)
 
 ### ⏭ EPIC 3-5 — Pendiente
 
@@ -138,7 +160,9 @@
 | Story | Descripción | Commit | Tests |
 |-------|-------------|--------|-------|
 | 6.1 ✅ | Frontend - Crear módulo DynamicTabs.js | `f16d2c5` | 6/6 ✅ |
-| 6.2 ✅ | Backend - Hook `registerTabs` y `registerActions` en HookDispatcher | pendiente commit | 7+10/17 ✅ |
+| 6.2 ✅ | Backend - Hook `registerTabs` y `registerActions` en HookDispatcher | `d91aef8` | 7+10/17 ✅ |
+| 6.3 ✅ | Release B: `plugins` como única fuente de verdad (eliminar system_entities) | `pending` | 11 suites ✅ |
+| 6.4 ✅ | Plugin `comments` (tipo extension) | `pending` | 9/9 ✅ |
 ---
 
 ## Stack decidido
@@ -161,8 +185,11 @@ backend/
 ├── public/index.php              ← Entry point
 ├── database/
 │   └── migrations/
-│       ├── 001_users.sql         ✅ Tabla users
-│       └── 002_core.sql         ✅ system_entities + entity_metadata + entity_data + plugins_registry
+│       ├── 001_users.sql                  ✅ Tabla users
+│       ├── 002_plugin_entity_data.sql     ✅ Tabla plugin_entity_data
+│       ├── 003_plugins.sql                ✅ Tabla plugins (name, slug, type, status, schema)
+│       ├── 004_plugin_hooks.sql           ✅ Tabla plugin_hooks
+│       └── 005_plugin_extension_data.sql  ✅ Tabla plugin_extension_data
 ├── src/
 │   ├── bootstrap.php             ← Autoloader + env loader
 │   ├── app.php                   ← Wiring Container + Router + Seeders

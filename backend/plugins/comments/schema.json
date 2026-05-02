@@ -1,0 +1,17 @@
+{
+    "plugin": "comments",
+    "version": "1.0.0",
+    "fields": {
+        "body": {
+            "type": "text",
+            "required": true,
+            "label": "Comentario"
+        },
+        "author_id": {
+            "type": "uuid",
+            "required": false,
+            "label": "Autor",
+            "auto_populated": true
+        }
+    }
+}

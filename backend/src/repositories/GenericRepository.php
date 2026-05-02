@@ -10,7 +10,7 @@ use Xestify\core\Database;
 use Xestify\exceptions\RepositoryException;
 
 /**
- * GenericRepository ÔÇö CRUD operations on the entity_data table.
+ * GenericRepository — CRUD operations on the plugin_entity_data table.
  *
  * All queries use prepared statements (PDO). Soft delete is implemented via
  * the deleted_at column; hard deletes are not exposed.
@@ -25,7 +25,7 @@ use Xestify\exceptions\RepositoryException;
  */
 class GenericRepository
 {
-    private const TABLE = 'entity_data';
+    private const TABLE = 'plugin_entity_data';
 
     private PDO $pdo;
 

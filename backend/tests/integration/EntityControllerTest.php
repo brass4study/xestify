@@ -29,6 +29,8 @@ require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 require_once BASE_PATH . '/src/services/ValidationService.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
+require_once BASE_PATH . '/src/exceptions/HookException.php';
+require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 
 use Xestify\controllers\EntityController;
@@ -104,18 +106,21 @@ function callController(EntityController $ctrl, string $method, array $params, a
 function seedCtrlSchema(): void
 {
     Database::connection()->prepare(
-        'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-         VALUES (:slug, 1, :schema)
-         ON CONFLICT DO NOTHING'
+        "INSERT INTO plugins (slug, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'entity', '1.0.0', 'inactive', 1, :schema)
+         ON CONFLICT (slug) DO UPDATE
+         SET schema_json = EXCLUDED.schema_json,
+             schema_version = EXCLUDED.schema_version,
+             updated_at = NOW()"
     )->execute([':slug' => CTRL_ENTITY_SLUG, ':schema' => CTRL_SCHEMA_JSON]);
 }
 
 function cleanCtrlData(): void
 {
     $pdo = Database::connection();
-    $pdo->prepare('DELETE FROM entity_data WHERE entity_slug = :slug')
+    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
         ->execute([':slug' => CTRL_ENTITY_SLUG]);
-    $pdo->prepare('DELETE FROM entity_metadata WHERE entity_slug = :slug')
+    $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
         ->execute([':slug' => CTRL_ENTITY_SLUG]);
 }
 

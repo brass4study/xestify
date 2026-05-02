@@ -719,4 +719,35 @@
 - **Iteraciones:** 2 (primera iteración sin endpoint API, segunda iteración con corrección del criterio de tests de integración)
 - **Decisión manual:** Nombre del método `applyFilter` (vs `filter`) para evitar colisión con built-ins de PHP
 
+### STORY 6.4: Plugin `comments` (tipo extension)
+- **Fecha:** 2026-05-02
+- **Estimado sin IA:** 60 min (controller, lifecycle, hooks, migración, schema, tests)
+- **Tiempo real con IA:** ~15 min
+- **Aceleración:** ~75% ⚡
+- **Qué hizo IA:**
+  - Creó `backend/plugins/comments/manifest.json` (tipo `extension`, `target_entity: *`)
+  - Creó `backend/plugins/comments/schema.json` (campos `body` y `author_id`)
+  - Creó `backend/plugins/comments/Hooks.php` — registra hook `registerTabs` que añade tab "Comentarios"
+  - Creó `backend/plugins/comments/Lifecycle.php` — `onInstall()` inserta en `plugin_hook_registry` (sin crear tabla propia)
+  - Creó `backend/src/controllers/CommentsController.php` — usa tabla genérica `plugin_extension_data` con content JSONB
+  - Creó `backend/database/migrations/003_plugin_extension_data.sql` — tabla genérica compartida por todos los plugins extension
+  - Añadió rutas GET/POST `/api/v1/plugins/comments/{entity}/{id}` en `routes.php` y singleton en `app.php`
+  - Creó `backend/tests/integration/CommentsPluginTest.php` con 9 tests
+- **Iteraciones:** 3 (primera con tabla `plugin_comments` propia → corrección a tabla genérica `plugin_extension_data` → corrección sintaxis archivo duplicado)
+- **Decisión manual:** Arquitectura: extensiones usan tabla genérica `plugin_extension_data` con JSONB, no tablas propias; parejo con el patrón `entity_data`
+
+### STORY 6.3: Release B — Eliminar system_entities (plugins como única fuente de verdad)
+- **Fecha:** 2026-05-03
+- **Estimado sin IA:** 90 min (7 archivos, SQL, tests)
+- **Tiempo real con IA:** ~20 min
+- **Aceleración:** ~78% ⚡
+- **Qué hizo IA:**
+  - Creó `backend/database/migrations/010_drop_system_entities.sql` (DROP TABLE IF EXISTS idempotente)
+  - Modificó `SystemEntity.php` — queries redirigidas a `plugins WHERE plugin_type='entity'`
+  - Reescribió `SystemEntitiesTableTest.php` — ahora verifica que la tabla NO existe + 2 tests de catalog en plugins
+  - Actualizó `MigrationIdempotenceTest.php` — eliminó system_entities de tablas esperadas, añadió migración 010, redirigió test de datos a plugins
+  - Actualizó `SystemEntityTest.php` — fixtures INSERT/DELETE en plugins (entity, inactive status)
+  - Aplicó migración 010 a xestify_dev (DROP TABLE devuelta)
+- **Iteraciones:** 2 (test "plugins entity rows have required fields" fallaba por filas de test sin name → filtrado a status='active')
+- **Decisión manual:** Ninguna — arquitectura ya decidida en Release A; solo ejecución técnica
 

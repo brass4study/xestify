@@ -55,7 +55,7 @@ final class Hooks
 
         $recordId = (string) ($ctx['data']['id'] ?? '');
 
-        $sql = 'SELECT COUNT(*) FROM entity_data
+        $sql = 'SELECT COUNT(*) FROM plugin_entity_data
                 WHERE entity_slug = :slug
                   AND content->>\'email\' = :email
                   AND deleted_at IS NULL'

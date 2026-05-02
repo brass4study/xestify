@@ -1,0 +1,9 @@
+{
+    "slug": "comments",
+    "name": "Comentarios",
+    "version": "1.0.0",
+    "type": "extension",
+    "core_version": "1.0.0",
+    "target_entity": "*",
+    "description": "Añade una pestaña de comentarios a cualquier entidad. Plugin tipo extension."
+}

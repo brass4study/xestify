@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
+use Xestify\controllers\CommentsController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 
@@ -23,3 +24,7 @@ $router->post('/api/v1/entities/{slug}/records',      [EntityController::class, 
 $router->get(ROUTE_ENTITY_RECORD,    [EntityController::class, 'show']);
 $router->put(ROUTE_ENTITY_RECORD,    [EntityController::class, 'update']);
 $router->delete(ROUTE_ENTITY_RECORD, [EntityController::class, 'destroy']);
+
+// Comments plugin endpoints
+$router->get('/api/v1/plugins/comments/{entity}/{id}',  [CommentsController::class, 'index']);
+$router->post('/api/v1/plugins/comments/{entity}/{id}', [CommentsController::class, 'create']);

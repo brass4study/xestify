@@ -268,7 +268,7 @@ Objetivo: Acceso seguro por JWT, roles base, permisos.
 
 Objetivo: Tablas PostgreSQL estables con JSONB.
 
-### STORY 2.1: Crear tabla `system_entities` (registro de entidades)
+### STORY 2.1: Crear tabla `system_entities` (registro de entidades) ~~SUPERSEDED~~
 - **Points:** 2
 - **Priority:** MUST
 - **Type:** Database
@@ -276,6 +276,7 @@ Objetivo: Tablas PostgreSQL estables con JSONB.
   - ✅ Campos: id (UUID), slug, name, source_plugin_slug, is_active, created_at, updated_at
   - ✅ Índice en slug (unique)
   - ✅ Migración idempotente
+- **Nota:** Esta tabla fue **eliminada en EPIC 6 / Release B** (`010_drop_system_entities.sql`). El catalogo de entidades vive ahora en `plugins WHERE plugin_type='entity'`. Ver DECISION 6.
 - **Dependencias:** STORY 0.1
 - **Blockers:** Ninguno
 
@@ -710,7 +711,22 @@ Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañ
 - **Dependencias:** STORY 4.2, STORY 4.3
 - **Blockers:** Ninguno
 
-### STORY 6.3: Plugin de ejemplo tipo extension (`comments`)
+### STORY 6.3: Release B — `plugins` como unica fuente de verdad (eliminar system_entities)
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Refactor / Database
+- **Criteria:**
+  - ✅ Migración `010_drop_system_entities.sql` — `DROP TABLE IF EXISTS system_entities`
+  - ✅ `SystemEntity.php` consulta `plugins WHERE plugin_type='entity'` (no system_entities)
+  - ✅ `SystemEntitiesTableTest.php` verifica que la tabla ya NO existe + catálogo en plugins
+  - ✅ `MigrationIdempotenceTest.php` actualizado (sin system_entities, con migración 010)
+  - ✅ `SystemEntityTest.php` fixtures redirigidos a tabla plugins
+  - ✅ Suite completa verde: 11 suites, 0 fallos
+- **Decisión técnica:** DECISION 6 — ver docs/mvp/decisiones-tecnicas.md
+- **Dependencias:** STORY 6.2, Release A (migración 009)
+- **Blockers:** Ninguno
+
+### STORY 6.4: Plugin de ejemplo tipo extension (`comments`)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Fullstack
@@ -724,7 +740,7 @@ Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañ
 - **Dependencias:** STORY 6.1, STORY 6.2, STORY 4.4
 - **Blockers:** Ninguno
 
-### STORY 6.4: Frontend - Página PluginManager (listar, activar, desactivar)
+### STORY 6.5: Frontend - Página PluginManager (listar, activar, desactivar)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -736,6 +752,27 @@ Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañ
   - ✅ Tests: render lista, click activar/desactivar
 - **IA Usage:** Scaffolding página + estilos + tests
 - **Dependencias:** STORY 5.2, STORY 4.5
+- **Blockers:** Ninguno
+
+### STORY 6.6: Frontend - Página de configuración de plugin activado
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Descripción:**
+  Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
+  para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
+  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
+- **Criteria:**
+  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
+  - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
+  - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
+  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
+  - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
+  - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
+  - ✅ Tests backend: update schema + versión incrementada + campos base intocables
+  - ✅ Tests frontend: render custom_fields, toggle, añadir campo libre, guardar
+- **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
+- **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
 - **Blockers:** Ninguno
 
 ---
@@ -795,28 +832,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
   - ✅ Botón "Rollback" disponible si hay versión anterior
   - ✅ Modal de confirmación antes de actualizar/rollback
 - **IA Usage:** UI badges + modal confirmación + feedback estados
-- **Dependencias:** STORY 6.4, STORY 7.2, STORY 7.3
-- **Blockers:** Ninguno
-
-### STORY 7.5: Frontend - Página de configuración de plugin activado
-- **Points:** 5
-- **Priority:** MUST
-- **Type:** Fullstack
-- **Descripción:**
-  Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
-  para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
-  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
-- **Criteria:**
-  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
-  - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
-  - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
-  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
-  - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
-  - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
-  - ✅ Tests backend: update schema + versión incrementada + campos base intocables
-  - ✅ Tests frontend: render custom_fields, toggle, añadir campo libre, guardar
-- **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
-- **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
+- **Dependencias:** STORY 6.5, STORY 7.2, STORY 7.3
 - **Blockers:** Ninguno
 
 ---

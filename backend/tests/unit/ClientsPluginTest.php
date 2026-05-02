@@ -238,14 +238,14 @@ TestSuite::run('Installer - instancia sin errores', function (): void {
     assert($installer instanceof Installer, 'Installer must instantiate correctly');
 });
 
-TestSuite::run('Installer - install() ejecuta INSERT en system_entities y entity_metadata', function (): void {
+TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', function (): void {
     $pdo       = new ClientsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
     $sqls = implode(' ', $pdo->executedSqls);
-    assert(str_contains($sqls, 'system_entities'), 'must INSERT into system_entities');
-    assert(str_contains($sqls, 'entity_metadata'), 'must INSERT into entity_metadata');
+    assert(!str_contains($sqls, 'system_entities'), 'must not depend on system_entities');
+    assert(str_contains($sqls, 'plugins'), 'must UPDATE plugins');
     assert(count($pdo->executedSqls) === 2, 'must execute exactly 2 statements');
 });
 
@@ -258,7 +258,7 @@ TestSuite::run('Installer - install() pasa slug correcto', function (): void {
     assert(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
 });
 
-TestSuite::run('Installer - schema sembrado en entity_metadata contiene solo fields', function (): void {
+TestSuite::run('Installer - schema sembrado en plugins contiene solo fields', function (): void {
     $pdo       = new ClientsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();

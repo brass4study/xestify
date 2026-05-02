@@ -4,8 +4,8 @@
  * EntityServiceTest — Integration tests for EntityService.
  *
  * Exercises create/update/delete/get/list against a live PostgreSQL database.
- * A test schema is seeded into entity_metadata before each test and cleaned up
- * afterwards. All entity_data rows for the test slug are also removed.
+ * A test schema is seeded into plugin_entity_metadata before each test and cleaned up
+ * afterwards. All plugin_entity_data rows for the test slug are also removed.
  *
  * Run:
  *   php backend/tests/integration/EntityServiceTest.php
@@ -85,18 +85,21 @@ function buildService(): EntityService
 function seedSchema(): void
 {
     Database::connection()->prepare(
-        'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-         VALUES (:slug, 1, :schema)
-         ON CONFLICT DO NOTHING'
+        "INSERT INTO plugins (slug, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'entity', '1.0.0', 'inactive', 1, :schema)
+         ON CONFLICT (slug) DO UPDATE
+         SET schema_json = EXCLUDED.schema_json,
+             schema_version = EXCLUDED.schema_version,
+             updated_at = NOW()"
     )->execute([':slug' => TEST_ENTITY_SLUG, ':schema' => TEST_SCHEMA_JSON]);
 }
 
 function cleanTestData(): void
 {
     $pdo = Database::connection();
-    $pdo->prepare('DELETE FROM entity_data WHERE entity_slug = :slug')
+    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
         ->execute([':slug' => TEST_ENTITY_SLUG]);
-    $pdo->prepare('DELETE FROM entity_metadata WHERE entity_slug = :slug')
+    $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
         ->execute([':slug' => TEST_ENTITY_SLUG]);
 }
 

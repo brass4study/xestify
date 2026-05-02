@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
+use Xestify\controllers\CommentsController;
 use Xestify\controllers\EntityController;
 use Xestify\core\Container;
 use Xestify\core\Database;
@@ -66,4 +67,8 @@ $container->singleton(EntityController::class, fn() => new EntityController(
     $container->get(EntityService::class),
     $container->get(Database::class),
     $container->get(HookDispatcher::class)
+));
+
+$container->singleton(CommentsController::class, fn() => new CommentsController(
+    $container->get(Database::class)
 ));

@@ -11,8 +11,7 @@ use Xestify\exceptions\PluginException;
 /**
  * Installer for the clients plugin.
  *
- * Registers the "clients" entity in system_entities and seeds its
- * schema definition into entity_metadata.
+ * Registers metadata for the "clients" entity plugin and seeds its schema.
  *
  * Idempotent: safe to run multiple times (uses INSERT … ON CONFLICT DO NOTHING).
  */
@@ -20,7 +19,6 @@ final class Installer
 {
     private const ENTITY_SLUG  = 'clients';
     private const ENTITY_NAME  = 'Clientes';
-    private const PLUGIN_SLUG  = 'clients';
     private const SCHEMA_VERSION = 1;
 
     public function __construct(private PDO $pdo)
@@ -49,16 +47,15 @@ final class Installer
     private function registerEntity(): void
     {
         $this->pdo->prepare(
-            'INSERT INTO system_entities (slug, name, source_plugin_slug, is_active)
-             VALUES (:slug, :name, :plugin, true)
+            "INSERT INTO plugins (slug, name, plugin_type, version, status)
+             VALUES (:slug, :name, 'entity', '1.0.0', 'active')
              ON CONFLICT (slug) DO UPDATE
-               SET name              = EXCLUDED.name,
-                   source_plugin_slug = EXCLUDED.source_plugin_slug,
-                   updated_at        = NOW()'
+               SET name       = EXCLUDED.name,
+                   status     = 'active',
+                   updated_at = NOW()"
         )->execute([
-            ':slug'   => self::ENTITY_SLUG,
-            ':name'   => self::ENTITY_NAME,
-            ':plugin' => self::PLUGIN_SLUG,
+            ':slug' => self::ENTITY_SLUG,
+            ':name' => self::ENTITY_NAME,
         ]);
     }
 
@@ -84,9 +81,9 @@ final class Installer
         }
 
         $this->pdo->prepare(
-            'INSERT INTO entity_metadata (entity_slug, schema_version, schema_json)
-             VALUES (:slug, :version, :schema)
-             ON CONFLICT DO NOTHING'
+            'UPDATE plugins
+             SET schema_json = :schema, schema_version = :version, updated_at = NOW()
+             WHERE slug = :slug'
         )->execute([
             ':slug'    => self::ENTITY_SLUG,
             ':version' => self::SCHEMA_VERSION,
