@@ -317,3 +317,14 @@ git log --oneline
 4. Crear seeder: `backend/database/seeders/UserSeeder.php`
 5. Registrar `Database` como singleton en `backend/src/config/app.php`
 6. Tests: migración idempotente + seeder crea admin
+# Sesion 2026-05-03 - Cierre tecnico MVP hasta STORY 6.4
+
+Correcciones implementadas tras auditoria:
+
+- `Router -> AuthMiddleware -> Controller` como pipeline real para `/api/v1/entities/*` y `/api/v1/plugins/*`.
+- `EntityService` recibe el `HookDispatcher` compartido del contenedor.
+- `PluginLoader` exige y persiste `schema.json` en plugins de tipo `entity`.
+- `clients` queda como slug canonico; datos legacy `client` migran a `clients`.
+- `PluginExtensionController` valida plugin extension activo y registro padre existente.
+- Nuevo `AppWiringTest.php` cubre seguridad y wiring real.
+- Nuevo runner agrupado: `php backend/tests/run.php unit|integration-db|integration-plugins|all`.

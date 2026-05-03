@@ -1,5 +1,15 @@
 # Brief Académico - Xestify MVP en 1 Mes
 
+## Estado actual auditado (2026-05-03)
+
+El MVP defendible queda cerrado hasta **STORY 6.4 incluida**. El sistema ya tiene
+pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`,
+catalogo de entidades desde plugins `entity`, `clients` como slug canonico y
+extension `comments` validada contra plugin activo y registro padre existente.
+
+**STORY 6.5+ permanece pendiente:** PluginManager, configuracion de plugins,
+updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+
 ## Contexto: Proyecto de Master en Desarrollo con IA
 
 Este documento define alcance, entregables y estrategia para completar Xestify como proyecto demostrativo de un **Master en Desarrollo Asistido por IA** en **4-5 semanas**.

@@ -16,6 +16,12 @@ Header recomendado:
 
 `Authorization: Bearer <token>`
 
+Desde el cierre de STORY 6.4, las rutas bajo `/api/v1/entities` y
+`/api/v1/plugins` requieren este header. Permanecen publicas:
+
+- GET `/health`
+- POST `/api/v1/auth/login`
+
 ## Endpoints disponibles actualmente
 
 ## Salud
@@ -46,6 +52,8 @@ Header recomendado:
 - DELETE `/api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}`
 
 Nota: la API de extensiones la atiende `PluginExtensionController` y discrimina por `plugin_slug`.
+El plugin debe existir, ser de tipo `extension` y estar `active`; el registro
+padre `{entity}/{id}` tambien debe existir para evitar datos huerfanos.
 
 ## Respuesta de exito (ejemplo)
 

@@ -48,6 +48,17 @@ Xestify usa arquitectura micro-kernel local-first:
 4. Backend valida payload segun schema
 5. Backend persiste en entity_data y dispara hooks
 
+## Pipeline HTTP protegido
+
+El flujo runtime de una peticion API protegida es:
+
+`Router -> AuthMiddleware -> Controller`
+
+Las rutas bajo `/api/v1/entities` y `/api/v1/plugins` requieren JWT. El
+`Router` construye una unica instancia `Request`, `AuthMiddleware` valida el
+token y adjunta `Request::user()`, y el controller recibe esa misma request.
+`/health` y `/api/v1/auth/login` permanecen publicas.
+
 ## Paradigma de registro de entidades
 
 Todo tipo de entidad es un plugin de tipo `entity` instalado en la tabla `plugins`.

@@ -228,7 +228,7 @@ Plugin define contrato schema.json        Admin configura la entidad
 }
 ```
 
-### Estructura de schema vivo en entity_metadata (tras configuración del admin)
+### Estructura de schema vivo en `plugins.schema_json` (tras configuración del admin)
 
 El schema vivo refleja la configuración final del admin para validación y persistencia de negocio.
 Las identidades técnicas se mantienen como contrato de sistema y la CHECK actual sigue validando `fields`.
@@ -273,8 +273,8 @@ sin romper el contrato base del plugin.
 
 ### Implicaciones
 - `schema.json` del plugin define el contrato inicial de entidad y configuración.
-- El schema que usa `ValidationService` siempre viene de `entity_metadata` (schema vivo).
-- `entity_metadata.schema_json` CHECK constraint solo valida `fields` → retrocompatible.
+- En el repo actual, el schema vivo que usa `ValidationService` viene de `plugins.schema_json`.
+- `entity_metadata` queda como referencia historica del diseño anterior; el catalogo runtime es `plugins`.
 - El panel de administración debe combinar `fields` obligatorios + `custom_fields` opcionales.
 - Las relaciones se configuran por metadatos en `relations`, no por definición duplicada de campo.
 

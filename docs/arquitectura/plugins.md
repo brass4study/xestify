@@ -69,12 +69,17 @@ En boot de aplicacion, se registran hooks de plugins activos en el `HookDispatch
 ## Registro en base de datos
 
 Cuando `PluginLoader` descubre un plugin, escribe en la tabla `plugins`.
+Para plugins de tipo `entity`, `schema.json` es obligatorio y se persiste en
+`plugins.schema_json`; si falta o no contiene `fields`, la carga se rechaza.
 
 Para plugins de tipo `entity`, el filtro:
 
 `plugins WHERE plugin_type = 'entity' AND status = 'active'`
 
 es el catalogo completo de entidades del sistema. No hay otra fuente.
+
+El slug canonico de cliente en el MVP es `clients`. Los registros legacy con
+`entity_slug = 'client'` se migran a `clients` durante el arranque.
 
 ## Integracion frontend de plugins
 
@@ -111,6 +116,9 @@ El router de desarrollo sirve `/plugins/*` desde la carpeta raiz `plugins`, perm
 - `onDeactivate`
 
 Nota: `onUpdate` y `onUninstall` no forman parte del contrato actual de `PluginLifecycleInterface`.
+
+Hasta STORY 6.4, la extension `comments` se muestra dentro de `EntityEdit`.
+Una vista de detalle dedicada y la pagina PluginManager quedan para STORY 6.5+.
 
 ## Reglas
 

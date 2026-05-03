@@ -108,7 +108,16 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-Proyecto en fase de base documental y definicion de arquitectura para iniciar implementacion tecnica del Core y del ecosistema de plugins.
+MVP implementado hasta **STORY 6.4 incluida**:
+
+- Login JWT y rutas API protegidas por `AuthMiddleware`.
+- CRUD dinamico de entidades sobre `plugin_entity_data`.
+- Catalogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
+- Plugin `clients` como entidad base canonica.
+- Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
+- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
+
+Pendiente desde STORY 6.5: pagina PluginManager, activacion/desactivacion desde UI, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
 
 ## Documentacion del proyecto
 

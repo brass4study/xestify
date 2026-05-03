@@ -1,5 +1,13 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
+## Estado implementado auditado (2026-05-03)
+
+El corte funcional actual queda fijado en **STORY 6.4 incluida**.
+
+- Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, `PluginLoader` cargando `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
+- Pendiente a partir de **STORY 6.5**: PluginManager, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+- Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
+
 ## Objetivo
 
 Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de Master en Desarrollo con IA.
