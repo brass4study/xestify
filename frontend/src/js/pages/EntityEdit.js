@@ -226,7 +226,7 @@ export class EntityEdit {
           return {
             id: tab.id,
             label: tab.label,
-            content: () => (panel !== null ? panel.element : this.#buildFallbackPanel(tab.label)),
+            content: () => (panel === null ? this.#buildFallbackPanel(tab.label) : panel.element),
           };
         }),
       ];

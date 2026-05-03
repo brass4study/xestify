@@ -212,8 +212,8 @@ export class DynamicTabs {
     if (this.#tabs.length === 0) {
       return null;
     }
-    const hash = typeof location !== 'undefined' ? location.hash : '';
-    const match = hash.match(/^#tab-(.+)$/);
+    const hash = typeof location === 'undefined' ? '' : location.hash;
+    const match = /^#tab-(.+)$/.exec(hash);
     if (match) {
       const fromHash = match[1];
       const found = this.#tabs.find((t) => t.id === fromHash);
@@ -235,7 +235,7 @@ export class DynamicTabs {
       throw new Error('DynamicTabs: tab must have a non-empty string label');
     }
     if (typeof tab.content !== 'function') {
-      throw new Error('DynamicTabs: tab.content must be a function');
+      throw new TypeError('DynamicTabs: tab.content must be a function');
     }
   }
 }

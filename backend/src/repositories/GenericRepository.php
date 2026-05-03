@@ -26,6 +26,7 @@ use Xestify\exceptions\RepositoryException;
 class GenericRepository
 {
     private const TABLE = 'plugin_entity_data';
+    private const SQL_UPDATE = 'UPDATE plugin_entity_data';
 
     private PDO $pdo;
 
@@ -110,7 +111,7 @@ class GenericRepository
     public function update(string $id, array $content): array
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ' . self::TABLE .
+            self::SQL_UPDATE .
             ' SET content    = content || :content,
                   updated_at = NOW()
              WHERE id = :id AND deleted_at IS NULL
@@ -137,7 +138,7 @@ class GenericRepository
     public function delete(string $id): void
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ' . self::TABLE .
+            self::SQL_UPDATE .
             ' SET deleted_at = NOW()
              WHERE id = :id AND deleted_at IS NULL'
         );
@@ -156,7 +157,7 @@ class GenericRepository
     public function restore(string $id): void
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ' . self::TABLE .
+            self::SQL_UPDATE .
             ' SET deleted_at = NULL,
                   updated_at = NOW()
              WHERE id = :id AND deleted_at IS NOT NULL'

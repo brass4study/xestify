@@ -145,6 +145,6 @@ export class Modal {
       }
     }
 
-    throw new TypeError(`Modal container \"${String(container)}\" not found`);
+    throw new TypeError(`Modal container "${String(container)}" not found`);
   }
 }

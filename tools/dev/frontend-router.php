@@ -49,16 +49,7 @@ function proxyApiRequest(string $backendBaseUrl, string $requestUri): void
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $body = file_get_contents('php://input');
 
-    $headers = collectRequestHeaders();
-    $filteredHeaders = [];
-
-    foreach ($headers as $name => $value) {
-        $lower = strtolower($name);
-        if ($lower === 'host' || $lower === 'content-length' || $lower === 'connection') {
-            continue;
-        }
-        $filteredHeaders[] = $name . ': ' . $value;
-    }
+    $filteredHeaders = filterRequestHeaders(collectRequestHeaders());
 
     $context = stream_context_create([
         'http' => [
@@ -71,36 +62,60 @@ function proxyApiRequest(string $backendBaseUrl, string $requestUri): void
     ]);
 
     $responseBody = file_get_contents($targetUrl, false, $context);
-    $responseHeaders = [];
+    $responseHeaders = collectResponseHeaders();
+
+    applyStatusCode($responseHeaders);
+    applyResponseHeaders($responseHeaders);
+
+    echo $responseBody === false ? '' : $responseBody;
+}
+
+function filterRequestHeaders(array $headers): array
+{
+    $filtered = [];
+    foreach ($headers as $name => $value) {
+        $lower = strtolower((string) $name);
+        if ($lower === 'host' || $lower === 'content-length' || $lower === 'connection') {
+            continue;
+        }
+        $filtered[] = $name . ': ' . $value;
+    }
+    return $filtered;
+}
+
+function collectResponseHeaders(): array
+{
     if (function_exists('http_get_last_response_headers')) {
         $headers = http_get_last_response_headers();
         if (is_array($headers)) {
-            $responseHeaders = $headers;
+            return $headers;
         }
     }
+    return [];
+}
 
+function applyStatusCode(array $responseHeaders): void
+{
     if (isset($responseHeaders[0]) && preg_match('/\s(\d{3})\s?/', $responseHeaders[0], $matches) === 1) {
         http_response_code((int) $matches[1]);
     }
+}
 
+function applyResponseHeaders(array $responseHeaders): void
+{
     foreach ($responseHeaders as $headerLine) {
         if (strpos($headerLine, ':') === false) {
             continue;
         }
-
         [$headerName, $headerValue] = explode(':', $headerLine, 2);
-        $headerName = trim($headerName);
-        $headerValue = trim($headerValue);
-
+        $headerName = trim((string) $headerName);
+        $headerValue = trim((string) $headerValue);
         $lower = strtolower($headerName);
         if ($lower === 'transfer-encoding' || $lower === 'connection' || $lower === 'content-length') {
             continue;
         }
-
         header($headerName . ': ' . $headerValue, true);
     }
-
-    echo $responseBody === false ? '' : $responseBody;
 }
 
 function serveFrontendAsset(string $frontendRoot, string $path): void

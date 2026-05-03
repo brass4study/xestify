@@ -8,8 +8,8 @@
  *   - flush(resolvedId): Promise   Persists pending POST/PUT/DELETE to the API.
  */
 
-import { AppState } from '/js/modules/State.js';
-import { PluginPanelRegistry } from '/js/modules/PluginPanelRegistry.js';
+import { AppState } from '../../js/modules/State.js';
+import { PluginPanelRegistry } from '../../js/modules/PluginPanelRegistry.js';
 
 export class CommentsPanel {
   /** @type {HTMLElement} */

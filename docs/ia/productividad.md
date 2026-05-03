@@ -780,3 +780,24 @@
 - **Iteraciones:** 5
 - **Decisión manual:** Tratar esta entrega como fix general transversal (no story nueva), priorizando coherencia arquitectónica y reducción de acoplamiento del core
 
+---
+
+### Fix SonarQube — 44 hallazgos de calidad
+- **Fecha:** 2026-05-03
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~30 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - `HookFilterTest.php` + `HookFilterApiTest.php`: añadió `// NOSONAR` en firmas fijas de closures, sustituyó `\RuntimeException` por `\AssertionError`, añadió comentario en constructor vacío de stub PDO
+  - `GenericRepository.php`: extrajo constante `SQL_UPDATE` para eliminar literal `'UPDATE '` duplicado ×3
+  - `SystemEntitiesTableTest.php`: extrajo constante `MSG_QUERY_EXECUTE` para literal duplicado ×3
+  - `frontend-router.php`: redujo complejidad cognitiva de 17 a <10 extrayendo 4 helpers (`filterRequestHeaders`, `collectResponseHeaders`, `applyStatusCode`, `applyResponseHeaders`)
+  - `Modal.js`: eliminó escapes innecesarios `\"` en template literal
+  - `DynamicTabs.js`: corrigió condición negada, `String#match()` → `RegExp#exec()`, `Error` → `TypeError`
+  - `EntityEdit.js`: corrigió condición negada en ternario
+  - `StateTest.html`: `replace(/regex/g)` → `replaceAll()`
+  - `plugin.js` (comments): rutas de import absolutas → relativas
+  - `.vscode/settings.json`: desactivó regla `javascript:S1848` (falso positivo en tests con side-effects de render)
+- **Iteraciones:** 2 (primera iteración: aplicar fixes; segunda: gestionar S1848 en tests HTML con `settings.json`)
+- **Decisión manual:** Regla S1848 desactivada en lugar de reescribir los tests — instanciar sin asignar es idioma válido cuando el constructor tiene side-effects de renderizado DOM
+

@@ -21,6 +21,8 @@ require_once BASE_PATH . '/src/core/Database.php';
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 
+const MSG_QUERY_EXECUTE = 'Query should execute';
+
 // ---------------------------------------------------------------------------
 // Load .env
 // ---------------------------------------------------------------------------
@@ -64,7 +66,7 @@ TestSuite::run('system_entities table does not exist after migration 010', funct
             AND   table_name   = 'system_entities'
         ) AS exists"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, MSG_QUERY_EXECUTE);
     $row = $stmt->fetch();
     assertTrue($row !== false && $row['exists'] === false, 'system_entities table must not exist after migration 010');
 });
@@ -74,7 +76,7 @@ TestSuite::run('plugins table has entity-type rows as catalog', function (): voi
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt FROM plugins WHERE plugin_type = 'entity'"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, MSG_QUERY_EXECUTE);
     $row = $stmt->fetch();
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'plugins must contain at least one entity-type row');
 });
@@ -85,7 +87,7 @@ TestSuite::run('plugins entity rows have required fields', function (): void {
         "SELECT slug, name, plugin_type, status FROM plugins
          WHERE plugin_type = 'entity' AND status = 'active' LIMIT 1"
     );
-    assertTrue($stmt !== false, 'Query should execute');
+    assertTrue($stmt !== false, MSG_QUERY_EXECUTE);
     $row = $stmt->fetch();
     assertTrue($row !== false, 'At least one entity plugin row must exist');
     assertTrue(!empty($row['slug']), 'slug must not be empty');

@@ -135,8 +135,8 @@
   log(`Resultado: ${passed} passed, ${failed} failed`);
 
   out.innerHTML = out.textContent
-    .replace(/✅/g, '<span class="pass">✅</span>')
-    .replace(/❌/g, '<span class="fail">❌</span>')
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
     .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
 </script>
 </body>

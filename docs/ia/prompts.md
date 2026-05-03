@@ -797,4 +797,17 @@ No, haz un repaso de toda la documentacion para actualizar todo aquello que haya
 **Iteraciones:** 5
 **Lección:** Cuando una corrección cruza arquitectura, runtime y documentación, conviene tratarla como fix general de coherencia del sistema y no como scope de una única story.
 
+---
+
+### Fix SonarQube — 44 hallazgos de calidad
+
+**Prompt:**
+```
+Revisa los findings de sonarqube, tenemos 44 hallazgos
+```
+
+**Resultado:** 44 hallazgos resueltos en 11 archivos: constantes para literales duplicados, complejidad reducida extrayendo helpers, tipos de excepción corregidos (`TypeError` vs `Error`, `\AssertionError` vs `\RuntimeException`), condiciones negadas invertidas, imports absolutos → relativos, `String#replace(/g)` → `replaceAll()`, `RegExp#exec()` en lugar de `String#match()`, escapes innecesarios eliminados, y regla `S1848` desactivada vía `.vscode/settings.json` para falsos positivos en tests HTML con side-effects de render.
+**Iteraciones:** 2
+**Lección:** En tests HTML con vanilla JS, `new Component(container)` sin asignación es idioma legítimo cuando el constructor renderiza en el DOM. SonarLint S1848 es un falso positivo en este contexto; desactivar la regla localmente es la solución correcta.
+
 

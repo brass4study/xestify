@@ -31,7 +31,7 @@ TestSuite::run('applyFilter() returns empty array when no callbacks registered',
 
 TestSuite::run('applyFilter() accumulates items from a single callback', function (): void {
     $d = new HookDispatcher();
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'info', 'label' => 'Info'];
         return $tabs;
     });
@@ -44,12 +44,12 @@ TestSuite::run('applyFilter() accumulates items from a single callback', functio
 TestSuite::run('applyFilter() accumulates items from multiple callbacks in priority order', function (): void {
     $d = new HookDispatcher();
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'second', 'label' => 'Second'];
         return $tabs;
     }, 20);
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'first', 'label' => 'First'];
         return $tabs;
     }, 5);
@@ -78,12 +78,12 @@ TestSuite::run('applyFilter() passes args as read-only context to callbacks', fu
 TestSuite::run('applyFilter() registerActions accumulates action buttons', function (): void {
     $d = new HookDispatcher();
 
-    $d->register('registerActions', static function (array $actions, array $args): array {
+    $d->register('registerActions', static function (array $actions, array $args): array { // NOSONAR
         $actions[] = ['id' => 'view', 'label' => 'Ver', 'icon' => 'fa-eye'];
         return $actions;
     });
 
-    $d->register('registerActions', static function (array $actions, array $args): array {
+    $d->register('registerActions', static function (array $actions, array $args): array { // NOSONAR
         $actions[] = ['id' => 'archive', 'label' => 'Archivar', 'icon' => 'fa-archive'];
         return $actions;
     });
@@ -97,16 +97,16 @@ TestSuite::run('applyFilter() registerActions accumulates action buttons', funct
 TestSuite::run('applyFilter() skips failing callbacks and continues accumulating', function (): void {
     $d = new HookDispatcher();
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'ok', 'label' => 'OK'];
         return $tabs;
     }, 5);
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
-        throw new \RuntimeException('Plugin failure');
+    $d->register('registerTabs', static function (array $tabs, array $_args): array { // NOSONAR
+        throw new \AssertionError('Plugin failure');
     }, 10);
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'also-ok', 'label' => 'Also OK'];
         return $tabs;
     }, 15);
@@ -125,7 +125,7 @@ TestSuite::run('execute() and applyFilter() coexist independently on same hook n
         return $ctx;
     });
 
-    $d->register('registerTabs', static function (array $tabs, array $args): array {
+    $d->register('registerTabs', static function (array $tabs, array $args): array { // NOSONAR
         $tabs[] = ['id' => 'x', 'label' => 'X'];
         return $tabs;
     });

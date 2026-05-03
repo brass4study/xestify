@@ -311,7 +311,6 @@
 
   await test('full flow: list → select entity → create record → list reloads', async () => {
     const container = makeSandbox();
-    let postCalled = false;
 
     mockFetch([
       { url: '/entities', data: ENTITIES },
@@ -321,13 +320,12 @@
 
     // Simulate the flow wired in main.js: EntityList with onCreateNew → EntityEdit
     let entityListPage;
-    let entityEditPage;
     const reloadSlug = await new Promise((resolve) => {
       entityListPage = new EntityList(container, {
         onCreateNew: (slug) => {
           const schema = AppState.getEntities().find((e) => e.slug === slug) ?? { slug, fields: [] };
           container.innerHTML = '';
-          entityEditPage = new EntityEdit(container, slug, schema, {
+          new EntityEdit(container, slug, schema, { // NOSONAR
             onSaved: () => { resolve(slug); },
           });
         },
@@ -337,9 +335,8 @@
 
     // After save, simulate going back to EntityList and reloading
     container.innerHTML = '';
-    let reloadedList;
-    reloadedList = new EntityList(container, {
-      onCreateNew: (s) => { void s; },
+    const reloadedList = new EntityList(container, {
+      onCreateNew: (_s) => { /* no-op */ },
     });
     await reloadedList.init();
     await reloadedList.loadEntity(reloadSlug);
