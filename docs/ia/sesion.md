@@ -165,7 +165,7 @@
 | 6.4 ✅ | Plugin `comments` (tipo extension) | `d61ef09` | 9/9 ✅ |
 | 6.5-fix ✅ | Fix: PluginLoader wiring — `registerActiveHooks()` en boot | `e97b3bf` | 3/3 ✅ |
 | 6.5-fix-b ✅ | Fix general: arquitectura plana de plugins + UI comments + documentación | `e97b3bf` | 9/9 + 3/3 ✅ |
-| sonar-fix ✅ | Fix SonarQube: 44 hallazgos (complejidad, literales, tipos, imports, parámetros) | `pending` | 9/9 + 3/3 ✅ |
+| sonar-fix ✅ | Fix SonarQube: 44 hallazgos (complejidad, literales, tipos, imports, parámetros) | `01e6041` | 9/9 + 3/3 ✅ |
 ---
 
 ## Stack decidido
