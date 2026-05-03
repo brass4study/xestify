@@ -78,6 +78,17 @@ function createPluginFixture(array $manifest, bool $withHooks = false, bool $inv
     $jsonContent = $invalidJson ? '{bad json' : (string) json_encode($manifest, JSON_PRETTY_PRINT);
     file_put_contents($pluginDir . '/manifest.json', $jsonContent);
 
+    if (($manifest['type'] ?? '') === 'entity' && !$invalidJson) {
+        file_put_contents($pluginDir . '/schema.json', json_encode([
+            'entity' => $slug,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_PRETTY_PRINT));
+    }
+
     if ($withHooks) {
         file_put_contents($pluginDir . '/Hooks.php', "<?php\n// Hooks loaded for test\n");
     }
@@ -222,7 +233,7 @@ TestSuite::run('load() registers new plugin in plugins', function () use ($pdo):
 
         assertEquals($slug, $loaded['slug'], 'Returned manifest slug should match');
 
-        $stmt = $pdo->prepare('SELECT slug, version, status FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare('SELECT slug, version, status, schema_json FROM plugins WHERE slug = :slug');
         $stmt->execute([SLUG_BIND_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -230,6 +241,36 @@ TestSuite::run('load() registers new plugin in plugins', function () use ($pdo):
         assertEquals($slug, (string) $row['slug'], 'slug should match');
         assertEquals(SEMVER_1_0, (string) $row['version'], 'version should match');
         assertEquals('inactive', (string) $row['status'], 'status should default to inactive');
+        assertTrue($row['schema_json'] !== null, 'entity schema_json should be persisted');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('load() throws PluginException when entity plugin lacks schema.json', function () use ($pdo): void {
+    $slug = 'test_no_schema_' . bin2hex(random_bytes(3));
+    $root = sys_get_temp_dir() . '/xestify_plugin_test_' . bin2hex(random_bytes(4));
+    $pluginDir = $root . '/' . $slug;
+    mkdir($pluginDir, 0777, true);
+    file_put_contents($pluginDir . '/manifest.json', (string) json_encode([
+        'slug' => $slug,
+        'name' => 'No Schema',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ]));
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $threw = false;
+        try {
+            $loader->load($slug);
+        } catch (PluginException) {
+            $threw = true;
+        }
+
+        assertTrue($threw, 'Entity plugins without schema.json must be rejected');
     } finally {
         cleanupPlugin($pdo, $slug);
         removeFixture($root);

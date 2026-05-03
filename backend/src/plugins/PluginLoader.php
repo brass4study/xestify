@@ -274,6 +274,7 @@ class PluginLoader
     private function registerPlugin(array $manifest): bool
     {
         $slug = $manifest['slug'];
+        $schema = $this->readEntitySchema($manifest);
 
         $stmt = $this->pdo->prepare(
             'SELECT id FROM plugins WHERE slug = :slug'
@@ -284,11 +285,25 @@ class PluginLoader
         if ($existing !== false) {
             $this->pdo->prepare(
                 'UPDATE plugins
-                    SET name = :name, version = :version, updated_at = NOW()
+                    SET name = :name,
+                        plugin_type = :type,
+                        version = :version,
+                        schema_json = COALESCE(:schema_json::jsonb, schema_json),
+                        schema_version = CASE
+                            WHEN :schema_check::jsonb IS NOT NULL
+                             AND schema_json IS DISTINCT FROM :schema_compare::jsonb
+                            THEN schema_version + 1
+                            ELSE schema_version
+                        END,
+                        updated_at = NOW()
                   WHERE slug = :slug'
             )->execute([
                 ':name' => $manifest['name'],
+                ':type' => $manifest['type'],
                 ':version' => $manifest['version'],
+                ':schema_json' => $schema,
+                ':schema_check' => $schema,
+                ':schema_compare' => $schema,
                 ':slug' => $slug,
             ]);
 
@@ -296,17 +311,56 @@ class PluginLoader
         }
 
         $this->pdo->prepare(
-            'INSERT INTO plugins (slug, name, plugin_type, version, status)
-             VALUES (:slug, :name, :type, :version, :status)'
+            'INSERT INTO plugins (slug, name, plugin_type, version, status, schema_json, schema_version)
+             VALUES (:slug, :name, :type, :version, :status, :schema::jsonb, 1)'
         )->execute([
             ':slug'    => $slug,
             ':name'    => $manifest['name'],
             ':type'    => $manifest['type'],
             ':version' => $manifest['version'],
             ':status'  => 'inactive',
+            ':schema'  => $schema,
         ]);
 
         return true;
+    }
+
+    /**
+     * Entity plugins must carry their runtime schema beside the manifest.
+     * Extension plugins may omit schema.json.
+     *
+     * @return string|null JSON encoded schema for DB insertion.
+     * @throws PluginException
+     */
+    private function readEntitySchema(array $manifest): ?string
+    {
+        if (($manifest['type'] ?? '') !== 'entity') {
+            return null;
+        }
+
+        $slug = (string) $manifest['slug'];
+        $path = $this->pluginsDir . '/' . $slug . '/schema.json';
+
+        if (!file_exists($path)) {
+            throw new PluginException("schema.json not found for entity plugin: {$slug}");
+        }
+
+        $raw = file_get_contents($path);
+        if ($raw === false) {
+            throw new PluginException("Cannot read schema.json for entity plugin: {$slug}");
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || !isset($decoded['fields']) || !is_array($decoded['fields'])) {
+            throw new PluginException("Invalid schema.json for entity plugin '{$slug}': missing fields");
+        }
+
+        $schema = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($schema === false) {
+            throw new PluginException("Cannot encode schema.json for entity plugin: {$slug}");
+        }
+
+        return $schema;
     }
 
     private function updateStatus(string $slug, string $status): void

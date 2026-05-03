@@ -6,14 +6,34 @@ declare(strict_types=1);
 // Bootstrap
 // ---------------------------------------------------------------------------
 define('BASE_PATH', dirname(__DIR__, 2));
-require_once BASE_PATH . '/src/bootstrap.php';
 require_once __DIR__ . '/../unit/helpers.php';
+require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
+require_once BASE_PATH . '/src/exceptions/PluginException.php';
+require_once BASE_PATH . '/src/core/Database.php';
+require_once BASE_PATH . '/src/plugins/PluginLifecycleInterface.php';
+require_once BASE_PATH . '/src/plugins/PluginLoader.php';
 
 use Xestify\plugins\PluginLoader;
 use Xestify\core\Database;
 
 define('LC_TEST_VERSION', '1.0.0');
 define('LC_STATUS_QUERY', 'SELECT status FROM plugins WHERE slug = :slug');
+
+// ---------------------------------------------------------------------------
+// Load .env
+// ---------------------------------------------------------------------------
+
+$envFile = BASE_PATH . '/.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    foreach ($lines as $line) {
+        if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = explode('=', $line, 2);
+        $_ENV[trim($key)] = trim($value);
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -39,6 +59,14 @@ function createLifecycleFixture(string $baseDir, string $slug): void
         'version'      => LC_TEST_VERSION,
         'type'         => 'entity',
         'core_version' => LC_TEST_VERSION,
+    ]));
+    file_put_contents($dir . '/schema.json', json_encode([
+        'entity' => $slug,
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]));
 
     // Write a Lifecycle.php whose methods increment $GLOBALS counters
@@ -161,6 +189,14 @@ TestSuite::run('load() funciona sin Lifecycle.php (plugin sin ciclo de vida)', f
         'version'      => LC_TEST_VERSION,
         'type'         => 'entity',
         'core_version' => LC_TEST_VERSION,
+    ]));
+    file_put_contents($dir . '/schema.json', json_encode([
+        'entity' => $noLcSlug,
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]));
 
     try {

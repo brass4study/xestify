@@ -5,12 +5,15 @@ declare(strict_types=1);
 // ---------------------------------------------------------------------------
 // Bootstrap
 // ---------------------------------------------------------------------------
-define('BASE_PATH', dirname(__DIR__, 2));
-require_once BASE_PATH . '/src/bootstrap.php';
+define('BACKEND_PATH', dirname(__DIR__, 2));
+define('BASE_PATH', dirname(BACKEND_PATH));
 
 // Explicitly require plugin files (not in autoload path)
 require_once BASE_PATH . '/plugins/clients/Hooks.php';
 require_once BASE_PATH . '/plugins/clients/Installer.php';
+require_once BACKEND_PATH . '/src/exceptions/HookException.php';
+require_once BACKEND_PATH . '/src/exceptions/PluginException.php';
+require_once BACKEND_PATH . '/src/plugins/HookDispatcher.php';
 
 require_once __DIR__ . '/helpers.php';
 
@@ -258,7 +261,7 @@ TestSuite::run('Installer - install() pasa slug correcto', function (): void {
     assert(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
 });
 
-TestSuite::run('Installer - schema sembrado en plugins contiene solo fields', function (): void {
+TestSuite::run('Installer - schema sembrado en plugins conserva contrato completo', function (): void {
     $pdo       = new ClientsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
@@ -270,9 +273,9 @@ TestSuite::run('Installer - schema sembrado en plugins contiene solo fields', fu
     $decoded = json_decode($schemaJson, true);
     assert(is_array($decoded), 'seeded schema must be valid JSON object');
     assert(isset($decoded['fields']) && is_array($decoded['fields']), 'seeded schema must include fields');
-    assert(!isset($decoded['identities']), 'seeded schema must not include identities');
-    assert(!isset($decoded['custom_fields']), 'seeded schema must not include custom_fields');
-    assert(!isset($decoded['relations']), 'seeded schema must not include relations');
+    assert(isset($decoded['identities']) && is_array($decoded['identities']), 'seeded schema must include identities');
+    assert(isset($decoded['custom_fields']) && is_array($decoded['custom_fields']), 'seeded schema must include custom_fields');
+    assert(isset($decoded['relations']) && is_array($decoded['relations']), 'seeded schema must include relations');
 });
 
 // ---------------------------------------------------------------------------

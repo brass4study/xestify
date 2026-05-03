@@ -74,7 +74,7 @@ final class Installer
             throw new PluginException('clients: schema.json is invalid or missing "fields" key');
         }
 
-        $schemaJson = json_encode(['fields' => $decoded['fields']]);
+        $schemaJson = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         if ($schemaJson === false) {
             throw new PluginException('clients: failed to re-encode schema JSON');

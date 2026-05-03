@@ -66,6 +66,10 @@ try {
 
 echo str_repeat('-', 40) . "\n";
 
+$bootLoader = new PluginLoader(dirname(BASE_PATH) . '/plugins', Database::connection());
+$bootLoader->load('comments');
+$bootLoader->activate('comments');
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
