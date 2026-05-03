@@ -34,12 +34,13 @@ Construir UI de entidades sin hardcodear formularios por negocio.
 
 ```json
 {
-  "entity": "client",
+  "entity": "clients",
   "version": "1.0.0",
   "fields": [
-    {"name": "nombre", "type": "string", "required": true},
-    {"name": "telefono", "type": "string", "required": true},
-    {"name": "activo", "type": "boolean", "required": false}
+    {"name": "name", "type": "string", "required": true},
+    {"name": "email", "type": "email", "required": true},
+    {"name": "phone", "type": "string", "required": false},
+    {"name": "is_active", "type": "boolean", "required": false}
   ]
 }
 ```

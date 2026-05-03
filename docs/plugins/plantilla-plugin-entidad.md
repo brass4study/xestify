@@ -35,9 +35,9 @@ Notas:
 
 ## schema.json base
 El `schema.json` define el contrato fijo del plugin:
-- `identities`: campos técnicos de identidad del sistema (autogenerados, no editables).
+- `identities`: campos tecnicos de identidad del sistema (autogenerados, no editables).
 - `fields`: campos funcionales del dominio definidos por el plugin.
-- `custom_fields`: catálogo de sugerencias opcionales que el frontend ofrece durante la configuración.
+- `custom_fields`: catalogo de sugerencias opcionales que el frontend ofrece durante la configuracion.
 - `relations`: metadatos de relaciones entre entidades.
 
 ### Contrato base
@@ -55,7 +55,7 @@ El `schema.json` define el contrato fijo del plugin:
     }
   },
   "fields": {
-    "nombre": {
+    "name": {
       "type": "string",
       "required": true,
       "label": "Nombre"
@@ -81,29 +81,37 @@ El `schema.json` define el contrato fijo del plugin:
     }
   },
   "fields": {
-    "nombre": {
+    "name": {
       "type": "string",
       "required": true,
       "label": "Nombre"
     },
-    "apellidos": {
-      "type": "string",
+    "email": {
+      "type": "email",
       "required": true,
-      "label": "Apellidos"
+      "label": "Email"
     }
   },
   "custom_fields": [
     {
-      "key": "address",
+      "key": "phone",
       "type": "string",
       "required": false,
-      "label": "Dirección"
+      "label": "Telefono"
     },
     {
-      "key": "mobile",
-      "type": "string",
+      "key": "creation_stamp",
+      "type": "timestamp",
       "required": false,
-      "label": "Teléfono"
+      "default": "now",
+      "label": "Fecha de alta"
+    },
+    {
+      "key": "is_active",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "label": "Activo"
     }
   ],
   "relations": []
@@ -112,17 +120,17 @@ El `schema.json` define el contrato fijo del plugin:
 
 Comportamiento esperado:
 - El admin ve `id` como identidad fija de sistema (no editable).
-- `nombre` y `apellidos` son obligatorios y no se pueden eliminar.
+- `name` y `email` son obligatorios y no se pueden eliminar.
 - `custom_fields` se presenta como sugerencias opcionales en frontend.
 - El admin puede seleccionar sugerencias o crear campos manuales adicionales.
 
-### Ejemplo con relación `belongs_to`
+### Ejemplo con relacion `belongs_to`
 
 Las relaciones definidas en `relations` pueden ser opcionales (`required: false`).
-No es necesario declarar una `custom_field` para la FK: la relación se define en `relations`
+No es necesario declarar una `custom_field` para la FK: la relacion se define en `relations`
 y el tipo/propiedades se infieren de la entidad destino mediante `target_field`.
 
-Ejemplo: un pedido puede estar enlazado a un cliente, pero también puede ser anónimo.
+Ejemplo: un pedido puede estar enlazado a un cliente, pero tambien puede ser anonimo.
 
 ```json
 {
@@ -157,10 +165,10 @@ Ejemplo: un pedido puede estar enlazado a un cliente, pero también puede ser an
 }
 ```
 
-Interpretación de este ejemplo:
+Interpretacion de este ejemplo:
 - Si `id_cliente` viene informado, el pedido queda relacionado con ese cliente.
-- Si `id_cliente` viene vacío o `null`, el pedido es válido y se considera anónimo.
-- `target_field: "id"` apunta al campo de identidad de `clients`, por lo que el tipo se infiere de esa definición.
+- Si `id_cliente` viene vacio o `null`, el pedido es valido y se considera anonimo.
+- `target_field: "id"` apunta al campo de identidad de `clients`, por lo que el tipo se infiere de esa definicion.
 
 ## Checklist
 
@@ -187,5 +195,5 @@ $pdo->prepare(
 )->execute([':slug' => $slug, ':name' => $name, ':version' => $version]);
 ```
 
-**No escribir en `system_entities`** — esa tabla fue eliminada en Release B.
+**No escribir en `system_entities`** - esa tabla fue eliminada en Release B.
 Toda consulta al catalogo de entidades usa: `SELECT * FROM plugins WHERE plugin_type = 'entity' AND status = 'active'`.

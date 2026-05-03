@@ -1,4 +1,4 @@
-import { Api } from './modules/Api.js';
+import { Api, ApiError } from './modules/Api.js';
 import { AppState } from './modules/State.js';
 import { EntityEdit } from './pages/EntityEdit.js';
 import { EntityList } from './pages/EntityList.js';
@@ -71,7 +71,10 @@ async function renderDashboard(container) {
 
   const dashboardApi = new Api(API_BASE);
   dashboardApi.setToken(AppState.getToken());
-  const entitiesForNav = await loadEntitiesForNav(dashboardApi);
+  const entitiesForNav = await loadEntitiesForNav(dashboardApi, container);
+  if (entitiesForNav === null) {
+    return;
+  }
   const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
   const initialPage = firstEntitySlug === '' ? 'plugins' : `entity:${firstEntitySlug}`;
 
@@ -114,13 +117,18 @@ async function navigateTo(page, content, api) {
   content.innerHTML = '<p>Página no encontrada.</p>';
 }
 
-async function loadEntitiesForNav(api) {
+async function loadEntitiesForNav(api, container) {
   try {
     const { data } = await api.get('/entities');
     const entities = Array.isArray(data) ? data.filter((entity) => typeof entity?.slug === 'string') : [];
     AppState.setEntities(entities);
     return entities;
-  } catch {
+  } catch (err) {
+    if (err instanceof ApiError && err.code === 401) {
+      clearAuth();
+      renderLogin(container);
+      return null;
+    }
     return [];
   }
 }

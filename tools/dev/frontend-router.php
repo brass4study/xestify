@@ -5,7 +5,7 @@ declare(strict_types=1);
 $frontendRoot = realpath(__DIR__ . '/../../frontend/src');
 $testsRoot    = realpath(__DIR__ . '/../../frontend/tests');
 $pluginsRoot  = realpath(__DIR__ . '/../../plugins');
-$backendBaseUrl = 'http://localhost:8080';
+$backendBaseUrl = 'http://127.0.0.1:8080';
 
 if ($frontendRoot === false) {
     http_response_code(500);

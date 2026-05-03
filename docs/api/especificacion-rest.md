@@ -62,9 +62,10 @@ padre `{entity}/{id}` tambien debe existir para evitar datos huerfanos.
   "ok": true,
   "data": {
     "id": "8d1a0b2f-90f0-49d8-a09f-03f09f5ab770",
-    "entity_slug": "client",
+    "entity_slug": "clients",
     "content": {
-      "nombre": "Ana Ruiz"
+      "name": "Ana Ruiz",
+      "email": "ana@example.com"
     }
   },
   "meta": {
@@ -83,7 +84,7 @@ padre `{entity}/{id}` tambien debe existir para evitar datos huerfanos.
     "message": "Payload invalido",
     "details": [
       {
-        "field": "telefono",
+        "field": "email",
         "reason": "required"
       }
     ]

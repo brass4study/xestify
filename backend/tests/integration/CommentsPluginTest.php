@@ -147,7 +147,7 @@ function seedParentRecord(): void
              updated_at = NOW()"
     )->execute([
         ':slug' => TEST_ENTITY,
-        ':schema' => '{"fields":{"nombre":{"type":"string","required":true}}}',
+        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
     ]);
 
     Database::connection()->prepare(
@@ -161,7 +161,7 @@ function seedParentRecord(): void
     )->execute([
         ':id' => TEST_RECORD,
         ':entity' => TEST_ENTITY,
-        ':content' => '{"nombre":"Cliente test"}',
+        ':content' => '{"name":"Cliente test"}',
     ]);
 }
 

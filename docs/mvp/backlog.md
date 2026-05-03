@@ -550,7 +550,7 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Type:** Plugin
 - **Criteria:**
   - ✅ Estructura: manifest.json, schema.json, Hooks.php
-  - ✅ Schema define campos: nombre, email, teléfono, activo
+  - ✅ Schema define claves tecnicas `name`, `email`, `phone`, `is_active` con labels en castellano
   - ✅ Hook de validación personalizada (ej. email único)
   - ✅ Installer registra entidad en plugins
 - **Dependencias:** STORY 4.1

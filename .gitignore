@@ -32,3 +32,4 @@ desktop.ini
 /backend/storage/logs/
 /backend/storage/cache/
 /plugins/*.zip
+/var/logs/

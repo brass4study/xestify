@@ -280,19 +280,38 @@ export class EntityEdit {
    * @returns {object}
    */
   #applyInitialData(schema, initialData) {
-    if (!Array.isArray(schema.fields) || Object.keys(initialData).length === 0) {
+    if (Object.keys(initialData).length === 0) {
       return schema;
     }
 
-    return {
-      ...schema,
-      fields: schema.fields.map((field) => {
-        if (Object.hasOwn(initialData, field.name)) {
-          return { ...field, default: initialData[field.name] };
-        }
-        return field;
-      }),
-    };
+    if (Array.isArray(schema.fields)) {
+      return {
+        ...schema,
+        fields: schema.fields.map((field) => {
+          if (Object.hasOwn(initialData, field.name)) {
+            return { ...field, default: initialData[field.name] };
+          }
+          return field;
+        }),
+      };
+    }
+
+    if (schema.fields !== null && typeof schema.fields === 'object') {
+      const fieldsWithDefaults = {};
+      for (const [name, config] of Object.entries(schema.fields)) {
+        const fieldConfig = config !== null && typeof config === 'object' ? config : {};
+        fieldsWithDefaults[name] = Object.hasOwn(initialData, name)
+          ? { ...fieldConfig, default: initialData[name] }
+          : fieldConfig;
+      }
+
+      return {
+        ...schema,
+        fields: fieldsWithDefaults,
+      };
+    }
+
+    return { ...schema };
   }
 
   // ---------------------------------------------------------------------------

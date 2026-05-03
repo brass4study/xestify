@@ -11,29 +11,23 @@
         }
     },
     "fields": {
-        "nombre": {
+        "name": {
             "type": "string",
             "required": true,
             "label": "Nombre"
         },
-        "apellidos": {
-            "type": "string",
+        "email": {
+            "type": "email",
             "required": true,
-            "label": "Apellidos"
+            "label": "Email"
         }
     },
     "custom_fields": [
         {
-            "key": "email",
+            "key": "phone",
             "type": "string",
             "required": false,
-            "label": "Email"
-        },
-        {
-            "key": "telefono",
-            "type": "string",
-            "required": false,
-            "label": "Teléfono"
+            "label": "Telefono"
         },
         {
             "key": "creation_stamp",
@@ -41,9 +35,9 @@
             "required": false,
             "default": "now",
             "label": "Fecha de alta"
-        },        
+        },
         {
-            "key": "activo",
+            "key": "is_active",
             "type": "boolean",
             "required": false,
             "default": true,

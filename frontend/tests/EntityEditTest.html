@@ -143,6 +143,25 @@
     assertEquals(emailInput.value, 'info@acme.com', 'email input should be pre-filled');
   });
 
+  await test('pre-fills form when schema.fields is an object map', async () => {
+    const container = makeSandbox();
+    const schema = {
+      fields: {
+        name: { label: 'Nombre', type: 'string', required: true },
+        email: { label: 'Email', type: 'email', required: true },
+      },
+    };
+
+    new EntityEdit(container, 'clients', schema, {
+      initialData: { name: 'Cliente test', email: 'cliente.test@example.com' },
+    });
+
+    const nameInput = container.querySelector('[name="name"]');
+    const emailInput = container.querySelector('[name="email"]');
+    assertEquals(nameInput.value, 'Cliente test', 'name input should be pre-filled from object schema');
+    assertEquals(emailInput.value, 'cliente.test@example.com', 'email input should be pre-filled from object schema');
+  });
+
   await test('submit() POST to /entities/:slug/records on create', async () => {
     const container = makeSandbox();
     let capturedUrl = null;

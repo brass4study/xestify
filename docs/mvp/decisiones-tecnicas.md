@@ -205,20 +205,20 @@ Plugin define contrato schema.json        Admin configura la entidad
         }
     },
     "fields": {
-        "nombre": {
+        "name": {
             "type": "string",
             "required": true,
             "label": "Nombre"
         },
-        "apellidos": {
-            "type": "string",
+        "email": {
+            "type": "email",
             "required": true,
-            "label": "Apellidos"
+            "label": "Email"
         }
     },
     "custom_fields": [
         {
-            "key": "telefono",
+            "key": "phone",
             "type": "string",
             "required": false,
             "label": "Teléfono"
@@ -236,17 +236,17 @@ Las identidades técnicas se mantienen como contrato de sistema y la CHECK actua
 ```json
 {
     "fields": {
-        "nombre": {
+        "name": {
             "type": "string",
             "required": true,
             "label": "Nombre"
         },
-        "apellidos": {
-            "type": "string",
+        "email": {
+            "type": "email",
             "required": true,
-            "label": "Apellidos"
+            "label": "Email"
         },
-        "telefono": {
+        "phone": {
             "type": "string",
             "required": false,
             "label": "Teléfono"

@@ -120,7 +120,7 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
     assert(($data['identities']['id']['editable'] ?? true) === false, 'identity id must be non-editable');
 
     $fieldKeys = array_keys($data['fields']);
-    foreach (['nombre', 'apellidos'] as $requiredField) {
+    foreach (['name', 'email'] as $requiredField) {
         assert(in_array($requiredField, $fieldKeys, true), "schema.json missing field: {$requiredField}");
         assert(($data['fields'][$requiredField]['required'] ?? false) === true, "{$requiredField} must be required");
     }
@@ -135,17 +135,14 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
         $customFieldsByKey[$customField['key']] = $customField;
     }
 
-    $expectedCustomKeys = ['email', 'telefono', 'creation_stamp', 'activo'];
+    $expectedCustomKeys = ['phone', 'creation_stamp', 'is_active'];
     $actualCustomKeys = array_keys($customFieldsByKey);
     sort($expectedCustomKeys);
     sort($actualCustomKeys);
     assert($actualCustomKeys === $expectedCustomKeys, 'custom_fields keys must match expected set exactly');
 
-    assert(($customFieldsByKey['email']['type'] ?? '') === 'string', 'email custom_field must be string');
-    assert(($customFieldsByKey['email']['required'] ?? true) === false, 'email custom_field must be optional');
-
-    assert(($customFieldsByKey['telefono']['type'] ?? '') === 'string', 'telefono custom_field must be string');
-    assert(($customFieldsByKey['telefono']['required'] ?? true) === false, 'telefono custom_field must be optional');
+    assert(($customFieldsByKey['phone']['type'] ?? '') === 'string', 'phone custom_field must be string');
+    assert(($customFieldsByKey['phone']['required'] ?? true) === false, 'phone custom_field must be optional');
 
     assert(($customFieldsByKey['creation_stamp']['type'] ?? '') === 'timestamp', 'creation_stamp must be timestamp');
     assert(
@@ -153,8 +150,8 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
         'creation_stamp default must be "now"'
     );
 
-    assert(($customFieldsByKey['activo']['type'] ?? '') === 'boolean', 'activo custom_field must be boolean');
-    assert(($customFieldsByKey['activo']['default'] ?? null) === true, 'activo default must be true');
+    assert(($customFieldsByKey['is_active']['type'] ?? '') === 'boolean', 'is_active custom_field must be boolean');
+    assert(($customFieldsByKey['is_active']['default'] ?? null) === true, 'is_active default must be true');
 });
 
 TestSuite::run('Plugin clients - Hooks.php existe', function (): void {
@@ -177,7 +174,7 @@ TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
 TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
     $pdo   = new ClientsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['nombre' => 'Test', 'email' => '']];
+    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => '']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -191,7 +188,7 @@ TestSuite::run('Hooks - email único permite guardar', function (): void {
     $pdo = new ClientsPdoStub();
     $pdo->setFetchColumnReturn(0); // no duplicates
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['nombre' => 'Test', 'email' => 'nuevo@test.com']];
+    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'nuevo@test.com']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -205,7 +202,7 @@ TestSuite::run('Hooks - email duplicado lanza HookException', function (): void 
     $pdo = new ClientsPdoStub();
     $pdo->setFetchColumnReturn(1); // duplicate found
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['nombre' => 'Test', 'email' => 'dup@test.com']];
+    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'dup@test.com']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
