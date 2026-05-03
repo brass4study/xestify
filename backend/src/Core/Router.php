@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Xestify\core;
 
+use ReflectionMethod;
+use Xestify\middleware\AuthMiddleware;
+
 /**
  * Router HTTP minimalista.
  * Soporta rutas est├íticas y par├ímetros din├ímicos (:param).
@@ -15,6 +18,9 @@ class Router
     private array $routes = [];
 
     private Container $container;
+
+    /** @var string[] */
+    private array $protectedPrefixes = ['/api/v1/entities', '/api/v1/plugins'];
 
     public function __construct(Container $container)
     {
@@ -72,7 +78,8 @@ class Router
         foreach ($this->routes[$method] ?? [] as $route) {
             $params = $this->matchRoute($route['pattern'], $uri);
             if ($params !== null) {
-                $this->callHandler($route['handler'], $params);
+                $request = Request::fromGlobals($params);
+                $this->dispatchWithMiddleware($route['handler'], $params, $request, $uri);
                 return true;
             }
         }
@@ -125,13 +132,43 @@ class Router
      *   - [ControllerClass::class, 'method']  ÔåÆ instancia via Container si est├í registrado, sino new
      *   - callable
      */
-    private function callHandler(callable|array $handler, array $params): void
+    private function dispatchWithMiddleware(callable|array $handler, array $params, Request $request, string $uri): void
+    {
+        if (!$this->requiresAuth($uri)) {
+            $this->callHandler($handler, $params, $request);
+            return;
+        }
+
+        if (!$this->container->has(AuthMiddleware::class)) {
+            Response::make()->serverError('Auth middleware is not configured.');
+            return;
+        }
+
+        /** @var AuthMiddleware $middleware */
+        $middleware = $this->container->get(AuthMiddleware::class);
+        $middleware->handle($request, function (Request $authenticatedRequest) use ($handler, $params): void {
+            $this->callHandler($handler, $params, $authenticatedRequest);
+        });
+    }
+
+    private function requiresAuth(string $uri): bool
+    {
+        foreach ($this->protectedPrefixes as $prefix) {
+            if ($uri === $prefix || str_starts_with($uri, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function callHandler(callable|array $handler, array $params, ?Request $request = null): void
     {
         if (is_array($handler) && count($handler) === 2) {
             [$target, $method] = $handler;
 
             if (is_object($target)) {
-                $target->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
+                $this->invokeController($target, (string) $method, $params, $request);
                 return;
             }
 
@@ -139,10 +176,22 @@ class Router
                 ? $this->container->get($target)
                 : new $target(); // NOSONAR S5992 - clase conocida al registrar la ruta
 
-            $instance->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
+            $this->invokeController($instance, (string) $method, $params, $request);
             return;
         }
 
         ($handler)($params, $this->container);
+    }
+
+    private function invokeController(object $instance, string $method, array $params, ?Request $request): void
+    {
+        $ref = new ReflectionMethod($instance, $method);
+
+        if ($request !== null && $ref->getNumberOfParameters() >= 2) {
+            $instance->$method($params, $request); // NOSONAR S5992 - metodo conocido al registrar la ruta
+            return;
+        }
+
+        $instance->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
     }
 }

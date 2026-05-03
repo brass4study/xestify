@@ -7,7 +7,16 @@ use Xestify\core\Router;
 
 require_once __DIR__ . '/helpers.php';
 require_once dirname(__DIR__, 2) . '/src/core/Container.php';
+require_once dirname(__DIR__, 2) . '/src/core/Request.php';
+require_once dirname(__DIR__, 2) . '/src/core/Response.php';
 require_once dirname(__DIR__, 2) . '/src/core/Router.php';
+require_once dirname(__DIR__, 2) . '/src/exceptions/AuthException.php';
+require_once dirname(__DIR__, 2) . '/src/services/JwtService.php';
+require_once dirname(__DIR__, 2) . '/src/middleware/AuthMiddleware.php';
+
+use Xestify\core\Request;
+use Xestify\middleware\AuthMiddleware;
+use Xestify\services\JwtService;
 
 const ROUTE_HEALTH = '/health';
 const ROUTE_ENTITY_1 = '/entities/1';
@@ -150,6 +159,51 @@ TestSuite::run('Handler [Controller::class, method] se instancia y llama', funct
 
     dispatchCapture($router, 'GET', '/test');
     assertTrue($controllerClass->wasCalled, 'Controller::handle no fue invocado');
+});
+
+TestSuite::run('Ruta protegida requiere token bearer', function () {
+    $container = new Container();
+    $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware(new JwtService('router-secret')));
+    $router = new Router($container);
+    $called = false;
+
+    $router->get('/api/v1/entities', function () use (&$called) {
+        $called = true;
+    });
+
+    [$result, $output] = dispatchCapture($router, 'GET', '/api/v1/entities');
+    $decoded = json_decode($output, true);
+
+    assertTrue($result === true, 'dispatch debe retornar true');
+    assertFalse($called, 'handler protegido no debe ejecutarse sin token');
+    assertEquals(401, $decoded['error']['code'] ?? null, 'debe devolver 401');
+});
+
+TestSuite::run('Ruta protegida entrega Request autenticada al controller', function () {
+    $jwt = new JwtService('router-secret');
+    $token = $jwt->encode(['sub' => 'user-1', 'email' => 'admin@test.local']);
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token;
+
+    $controller = new class {
+        public ?array $user = null;
+        public function index(array $params, Request $request): void
+        {
+            $this->user = $request->user();
+        }
+    };
+
+    $container = new Container();
+    $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware($jwt));
+    $container->singleton(get_class($controller), fn() => $controller);
+    $router = new Router($container);
+    $router->get('/api/v1/entities', [get_class($controller), 'index']);
+
+    try {
+        dispatchCapture($router, 'GET', '/api/v1/entities');
+        assertEquals('user-1', $controller->user['sub'] ?? null, 'Request::user debe llegar al controller');
+    } finally {
+        unset($_SERVER['HTTP_AUTHORIZATION']);
+    }
 });
 
 // ---------------------------------------------------------------------------

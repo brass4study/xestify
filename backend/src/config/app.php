@@ -9,6 +9,7 @@ use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\database\Seeders\EntitySeeder;
 use Xestify\database\Seeders\UserSeeder;
+use Xestify\middleware\AuthMiddleware;
 use Xestify\plugins\HookDispatcher;
 use Xestify\plugins\PluginLoader;
 use Xestify\repositories\GenericRepository;
@@ -30,9 +31,6 @@ $container->singleton(Database::class, fn() => Database::connection());
 // Auto-seed on boot: inserts default admin only if users table is empty
 UserSeeder::seedIfEmpty();
 
-// Auto-seed on boot: inserts demo entity types if system_entities is empty
-EntitySeeder::seedIfEmpty();
-
 // --- JWT ----------------------------------------------------------------------
 
 $container->singleton(JwtService::class, fn() => new JwtService(
@@ -40,7 +38,13 @@ $container->singleton(JwtService::class, fn() => new JwtService(
     (int) ($_ENV['JWT_EXPIRY'] ?? 3600)
 ));
 
+$container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware(
+    $container->get(JwtService::class)
+));
+
 // --- Entity layer -------------------------------------------------------------
+
+$container->singleton(HookDispatcher::class, fn() => new HookDispatcher());
 
 $container->singleton(ValidationService::class, fn() => new ValidationService());
 
@@ -51,21 +55,28 @@ $container->singleton(GenericRepository::class, fn() => new GenericRepository(
 $container->singleton(EntityService::class, fn() => new EntityService(
     $container->get(GenericRepository::class),
     $container->get(ValidationService::class),
-    $container->get(Database::class)
+    $container->get(Database::class),
+    $container->get(HookDispatcher::class)
 ));
 
 // --- Plugins ------------------------------------------------------------------
-
-$container->singleton(HookDispatcher::class, fn() => new HookDispatcher());
 
 $container->singleton(PluginLoader::class, fn() => new PluginLoader(
     dirname(BASE_PATH) . '/plugins',
     $container->get(Database::class)
 ));
 
-// Register active plugin hooks at boot
+// Discover local plugins before registering hooks. This keeps plugins as the
+// entity catalog source of truth while preserving existing activation state.
 /** @var PluginLoader $pluginLoader */
 $pluginLoader = $container->get(PluginLoader::class);
+$pluginLoader->loadAll();
+
+// Backward-compatible transition: move old singular demo records to the
+// canonical clients entity slug.
+EntitySeeder::migrateLegacyClientRecords();
+
+// Register active plugin hooks at boot.
 $pluginLoader->registerActiveHooks($container->get(HookDispatcher::class));
 
 // --- Controllers --------------------------------------------------------------

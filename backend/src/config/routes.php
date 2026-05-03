@@ -7,7 +7,9 @@ use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
 
-define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
+if (!defined('ROUTE_ENTITY_RECORD')) {
+    define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
+}
 
 $router->get('/health', [HealthController::class, 'index']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
@@ -26,7 +28,9 @@ $router->put(ROUTE_ENTITY_RECORD,    [EntityController::class, 'update']);
 $router->delete(ROUTE_ENTITY_RECORD, [EntityController::class, 'destroy']);
 
 // Extension plugin endpoints (generic — plugin_slug discriminates between extension types)
-define('ROUTE_PLUGIN_ITEM', '/api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}');
+if (!defined('ROUTE_PLUGIN_ITEM')) {
+    define('ROUTE_PLUGIN_ITEM', '/api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}');
+}
 $router->get('/api/v1/plugins/{plugin_slug}/{entity}/{id}',    [PluginExtensionController::class, 'index']);
 $router->post('/api/v1/plugins/{plugin_slug}/{entity}/{id}',   [PluginExtensionController::class, 'create']);
 $router->put(ROUTE_PLUGIN_ITEM,                                [PluginExtensionController::class, 'update']);

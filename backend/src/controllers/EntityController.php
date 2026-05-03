@@ -10,6 +10,7 @@ use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\core\Response;
 use Xestify\exceptions\EntityServiceException;
+use Xestify\exceptions\HookException;
 use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
 use Xestify\plugins\HookDispatcher;
@@ -156,6 +157,9 @@ class EntityController
         } catch (ValidationException $e) {
             Response::make()->unprocessable('Validation failed.', $e->getErrors());
             return;
+        } catch (HookException $e) {
+            Response::make()->unprocessable($e->getMessage());
+            return;
         } catch (EntityServiceException $e) {
             Response::make()->notFound($e->getMessage());
             return;
@@ -208,6 +212,9 @@ class EntityController
             $record = $this->service->updateRecord($id, $slug, $data);
         } catch (ValidationException $e) {
             Response::make()->unprocessable('Validation failed.', $e->getErrors());
+            return;
+        } catch (HookException $e) {
+            Response::make()->unprocessable($e->getMessage());
             return;
             } catch (EntityServiceException | RepositoryException $e) {
             Response::make()->notFound($e->getMessage());
