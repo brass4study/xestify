@@ -29,6 +29,8 @@ class PluginExtensionController
     private const MSG_CONTENT_REQUIRED = 'Content is required.';
     private const MSG_ITEM_REQUIRED    = 'Item id is required.';
     private const MSG_ITEM_NOT_FOUND   = 'Item not found.';
+    private const MSG_PLUGIN_NOT_ACTIVE = 'Extension plugin is not active.';
+    private const MSG_PARENT_NOT_FOUND = 'Parent entity record not found.';
 
     public function __construct(private PDO $pdo)
     {
@@ -49,6 +51,10 @@ class PluginExtensionController
             || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
             || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED);
         if ($hasError) {
+            return;
+        }
+
+        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
             return;
         }
 
@@ -88,6 +94,10 @@ class PluginExtensionController
             || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
             || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED);
         if ($hasError) {
+            return;
+        }
+
+        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
             return;
         }
 
@@ -132,6 +142,10 @@ class PluginExtensionController
             || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED)
             || $this->respondNotFoundIfEmpty($itemId, self::MSG_ITEM_REQUIRED);
         if ($hasError) {
+            return;
+        }
+
+        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
             return;
         }
 
@@ -188,6 +202,10 @@ class PluginExtensionController
             return;
         }
 
+        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
+            return;
+        }
+
         $stmt = $this->pdo->prepare(
             'DELETE FROM plugin_extension_data
               WHERE id          = :item_id
@@ -232,6 +250,49 @@ class PluginExtensionController
         }
         Response::make()->notFound($message);
         return true;
+    }
+
+    private function guardExtensionRequest(string $pluginSlug, string $entity, string $recordId): bool
+    {
+        if (!$this->isActiveExtensionPlugin($pluginSlug)) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_ACTIVE);
+            return false;
+        }
+
+        if (!$this->parentRecordExists($entity, $recordId)) {
+            Response::make()->notFound(self::MSG_PARENT_NOT_FOUND);
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isActiveExtensionPlugin(string $pluginSlug): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM plugins
+              WHERE slug = :slug
+                AND plugin_type = 'extension'
+                AND status = 'active'
+              LIMIT 1"
+        );
+        $stmt->execute([':slug' => $pluginSlug]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private function parentRecordExists(string $entity, string $recordId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM plugin_entity_data
+              WHERE id = :id
+                AND entity_slug = :entity
+                AND deleted_at IS NULL
+              LIMIT 1'
+        );
+        $stmt->execute([':id' => $recordId, ':entity' => $entity]);
+
+        return $stmt->fetchColumn() !== false;
     }
 }
 

@@ -128,7 +128,46 @@ function cleanComments(): void
         ->execute([':entity' => TEST_ENTITY, ':id' => TEST_RECORD]);
 }
 
+function ensureCommentsPluginActive(): void
+{
+    $loader = new PluginLoader(PLUGINS_PATH, Database::connection());
+    $loader->load('comments');
+    $loader->activate('comments');
+}
+
+function seedParentRecord(): void
+{
+    Database::connection()->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Clientes', 'entity', '1.0.0', 'active', 1, :schema)
+         ON CONFLICT (slug) DO UPDATE
+         SET name = EXCLUDED.name,
+             status = 'active',
+             schema_json = EXCLUDED.schema_json,
+             updated_at = NOW()"
+    )->execute([
+        ':slug' => TEST_ENTITY,
+        ':schema' => '{"fields":{"nombre":{"type":"string","required":true}}}',
+    ]);
+
+    Database::connection()->prepare(
+        "INSERT INTO plugin_entity_data (id, entity_slug, content)
+         VALUES (:id, :entity, :content::jsonb)
+         ON CONFLICT (id) DO UPDATE
+         SET entity_slug = EXCLUDED.entity_slug,
+             content = EXCLUDED.content,
+             deleted_at = NULL,
+             updated_at = NOW()"
+    )->execute([
+        ':id' => TEST_RECORD,
+        ':entity' => TEST_ENTITY,
+        ':content' => '{"nombre":"Cliente test"}',
+    ]);
+}
+
 echo str_repeat('-', 40) . "\n";
+ensureCommentsPluginActive();
+seedParentRecord();
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -145,6 +184,32 @@ TestSuite::run('plugin installation creates plugin_extension_data table (generic
     );
     $result = $stmt !== false ? $stmt->fetchColumn() : null;
     assertTrue($result === 'plugin_extension_data', 'plugin_extension_data table must exist');
+});
+
+TestSuite::run('GET returns 404 when extension plugin is inactive', function (): void {
+    Database::connection()
+        ->prepare("UPDATE plugins SET status = 'inactive' WHERE slug = 'comments'")
+        ->execute();
+
+    $ctrl = new PluginExtensionController(Database::connection());
+    $result = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
+
+    assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
+    assertEquals(404, $result['error']['code'] ?? 0, 'inactive plugin must return 404');
+
+    ensureCommentsPluginActive();
+});
+
+TestSuite::run('GET returns 404 when parent record does not exist', function (): void {
+    $ctrl = new PluginExtensionController(Database::connection());
+    $result = callComments(
+        $ctrl,
+        'index',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => '00000000-0000-0000-0000-000000000099']
+    );
+
+    assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
+    assertEquals(404, $result['error']['code'] ?? 0, 'missing parent record must return 404');
 });
 
 TestSuite::run('plugin installation registers registerTabs hook in plugin_hooks', function (): void {
