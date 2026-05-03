@@ -503,7 +503,7 @@ Objetivo: Extensibilidad sin modificar Core.
 - **Priority:** MUST
 - **Type:** Feature
 - **Criteria:**
-  - ✅ Explora `backend/plugins/` y lee manifest.json
+  - ✅ Explora `plugins/` y lee manifest.json
   - ✅ Valida compatibilidad (core version)
   - ✅ Registra en BD si nueva
   - ✅ Carga Hooks.php del plugin
@@ -544,7 +544,7 @@ Objetivo: Extensibilidad sin modificar Core.
   - ✅ Estructura: manifest.json, schema.json, Hooks.php
   - ✅ Schema define campos: nombre, email, teléfono, activo
   - ✅ Hook de validación personalizada (ej. email único)
-  - ✅ Installer registra entidad en system_entities
+  - ✅ Installer registra entidad en plugins
 - **Dependencias:** STORY 4.1
 - **Blockers:** Plantilla de plugin finalizada
 
@@ -800,7 +800,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Type:** Backend
 - **Criteria:**
   - ✅ Endpoint POST `/api/v1/plugins/{slug}/update` ejecuta actualización
-  - ✅ Si el plugin tiene `onUpdate()` en Hooks.php, se ejecuta antes de activar nueva versión
+  - ✅ Si el plugin tiene `onUpdate()` en Lifecycle.php, se ejecuta antes de activar nueva versión
   - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `entity_metadata` con versión incrementada
   - ✅ Actualización falla atómicamente (transacción) si onUpdate lanza excepción
   - ✅ Tests: actualización exitosa, fallo con rollback automático

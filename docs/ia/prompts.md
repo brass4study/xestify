@@ -773,4 +773,28 @@ Si
 **Iteraciones:** 2 (un test fallaba por filas de test sin `name` en plugins — corregido filtrando a `status='active'`)
 **Lección:** Al filtrar filas de catálogo en tests, siempre filtrar por el estado esperado en producción (`status='active'`) para evitar que filas de test sucias interfieran.
 
+### Fix 6.5-pre — PluginLoader wiring: `registerActiveHooks()` en boot
+
+**Prompt:**
+```
+Ok, ejecuta esas correcciones
+```
+*(Tras análisis que detectó que HookDispatcher siempre estaba vacío al arrancar porque PluginLoader nunca se instanciaba en app.php)*
+
+**Resultado:** `PluginLoader::registerActiveHooks(HookDispatcher $dispatcher)` añadido — consulta `plugins WHERE status='active'`, llama `loadHooks()` + `instantiateHooks()` por cada slug activo. `instantiateHooks()` usa `ReflectionClass` para detectar si el constructor necesita `PDO` o no. `app.php` registra `PluginLoader` como singleton y llama `registerActiveHooks()` al boot. `PluginBootTest.php` con 3 tests verificando boot real. Tab "Comentarios" confirmada en `GET /api/v1/entities/client/tabs` desde servidor en vivo.
+**Iteraciones:** 1
+**Lección:** El wiring de boot debe incluir NO solo registrar singletons en el container, sino también ejecutar las operaciones de inicialización (como registrar hooks). Un singleton registrado pero nunca instanciado ni invocado no tiene efecto. Usar Reflection para instanciar plugins con dependencias variables es más robusto que un switch/mapa hardcodeado.
+
+### Fix general — arquitectura plana de plugins y desacoplamiento frontend/backend
+
+**Prompt:**
+```
+No, haz un repaso de toda la documentacion para actualizar todo aquello que hayamos cambiado
+```
+*(y posteriores iteraciones para cerrar commit/push como fix general, no asociado a story específica)*
+
+**Resultado:** Refactor transversal completado: plugins migrados a `/plugins/{slug}` en estructura plana, rutas y loader adaptados, `PluginExtensionController` genérico sustituyendo `CommentsController`, `EntityEdit` desacoplado vía `PluginPanelRegistry` e import dinámico de `plugin.js`, UI comments encapsulada en plugin con corrección de botones en edición, `frontend-router.php` sirviendo `/plugins/*`, tests clave actualizados y documentación mayor revisada/alineada.
+**Iteraciones:** 5
+**Lección:** Cuando una corrección cruza arquitectura, runtime y documentación, conviene tratarla como fix general de coherencia del sistema y no como scope de una única story.
+
 

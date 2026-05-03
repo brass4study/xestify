@@ -7,30 +7,29 @@ Definir plugins que se acoplan a una entidad existente sin modificar su plugin b
 ## Estructura
 
 ```text
-plugins/extension_<slug>/
+plugins/<slug>/
   manifest.json
   schema.json
   Hooks.php
-  api/
-  ui/
-    tabs/
-    actions/
-  migrations/
+  Lifecycle.php
+  plugin.js
 ```
+
+Notas:
+- `manifest.json` es obligatorio.
+- `Hooks.php`, `Lifecycle.php` y `plugin.js` son opcionales segun el plugin.
+- La carpeta es plana por plugin (sin `backend/` ni `frontend/` internos).
 
 ## manifest.json base
 
 ```json
 {
-  "slug": "extension_optometria",
+  "slug": "optometria",
   "name": "Optometrias",
   "version": "1.0.0",
   "type": "extension",
-  "owner_entity": "clients",
-  "compatibility": {
-    "core": ">=1.0.0"
-  },
-  "requires": ["clients>=1.0.0"]
+  "core_version": "1.0.0",
+  "target_entity": "clients"
 }
 ```
 
@@ -38,14 +37,13 @@ plugins/extension_<slug>/
 
 ```json
 {
-  "entity": "optometria",
-  "owner_entity": "clients",
+  "plugin": "optometria",
   "version": "1.0.0",
-  "fields": [
-    {"name": "fecha_revision", "type": "date", "required": true},
-    {"name": "ojo_izquierdo", "type": "string", "required": false},
-    {"name": "ojo_derecho", "type": "string", "required": false}
-  ]
+  "fields": {
+    "fecha_revision": {"type": "date", "required": true, "label": "Fecha revision"},
+    "ojo_izquierdo": {"type": "string", "required": false, "label": "Ojo izquierdo"},
+    "ojo_derecho": {"type": "string", "required": false, "label": "Ojo derecho"}
+  }
 }
 ```
 
@@ -57,8 +55,8 @@ plugins/extension_<slug>/
 
 ## Checklist
 
-- owner_entity obligatorio
-- Dependencias declaradas
+- `target_entity` definido (`clients` o `*`)
+- Dependencias declaradas (si aplica)
 - Tab UI desacoplada del Core
 - Integridad referencial logica con owner_id
 - Pruebas sobre alta, edicion y baja del owner

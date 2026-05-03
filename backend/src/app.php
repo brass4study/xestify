@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Xestify\core\Container;
 use Xestify\core\Router;
+use Xestify\plugins\PluginLoader;
 
 $container = new Container();
 

@@ -71,17 +71,27 @@ Registros de negocio.
 - updated_at (timestamp)
 - deleted_at (timestamp null)
 
-## plugins_registry
+## plugin_hooks
 
-Plugins instalados localmente.
+Registro de hooks activos por plugin.
 
 - id (uuid)
-- plugin_slug (text unique)
-- plugin_type (text)
-- version (text)
-- status (text)
-- installed_at (timestamp)
-- updated_at (timestamp)
+- slug (text)
+- target_entity_slug (text)
+- hook_name (text)
+- priority (integer)
+- enabled (boolean)
+
+## plugin_extension_data
+
+Tabla generica para datos de plugins tipo extension.
+
+- id (uuid)
+- plugin_slug (text)
+- entity_slug (text)
+- record_id (uuid)
+- content (jsonb)
+- created_at (timestamp)
 
 ## Indices recomendados
 

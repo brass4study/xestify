@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $frontendRoot = realpath(__DIR__ . '/../../frontend/src');
 $testsRoot    = realpath(__DIR__ . '/../../frontend/tests');
+$pluginsRoot  = realpath(__DIR__ . '/../../plugins');
 $backendBaseUrl = 'http://localhost:8080';
 
 if ($frontendRoot === false) {
@@ -18,6 +19,12 @@ $path = is_string($path) ? $path : '/';
 
 if (str_starts_with($path, '/api/')) {
     proxyApiRequest($backendBaseUrl, $requestUri);
+    return;
+}
+
+if ($pluginsRoot !== false && str_starts_with($path, '/plugins/')) {
+    $assetPath = substr($path, strlen('/plugins'));
+    serveFrontendAsset($pluginsRoot, $assetPath);
     return;
 }
 

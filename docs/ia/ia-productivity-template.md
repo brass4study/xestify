@@ -158,7 +158,7 @@ Generate a comprehensive .gitignore that includes:
 
 ### Semana 2: EPIC 2-3 parte 1
 
-- [ ] STORY 2.1: system_entities table
+- [ ] STORY 2.1: catalogo de entidades en plugins
 - [ ] STORY 2.2: entity_metadata table
 - [ ] STORY 2.3: entity_data table
 - [ ] STORY 3.1: ValidationService
@@ -174,7 +174,7 @@ Generate a comprehensive .gitignore that includes:
 - [ ] STORY 3.9: DynamicTable
 - [ ] STORY 4.1: PluginLoader
 - [ ] STORY 4.2: HookDispatcher
-- [ ] STORY 4.4: Plugin entity_client
+- [ ] STORY 4.4: Plugin clients
 - [ ] STORY 5.1: Frontend Login
 
 ### Semana 4: EPIC 5 + Polish + Docs

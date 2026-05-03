@@ -421,7 +421,7 @@ Objetivo: implementar base relacional + JSONB estable.
 
 Entregables:
 
-- Migraciones para system_entities, entity_metadata, entity_data, plugins_registry y plugin_hook_registry.
+- Migraciones para entity_metadata, entity_data, plugins, plugin_hooks y plugin_extension_data.
 - Repositorios/modelos para operaciones base.
 - Indices JSONB y de consulta frecuente.
 

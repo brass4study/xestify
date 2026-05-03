@@ -331,7 +331,7 @@ Cuando el usuario abre un Cliente, el backend hace dos cosas:
 
 Trae los datos del Cliente de entity_data.
 
-Busca en plugin_hooks si hay extensiones. Como encuentra "Optometría", hace una consulta a la tabla de ese plugin: SELECT * FROM plugin_optometria WHERE client_id = X.
+Busca en plugin_hooks si hay extensiones. Como encuentra "Optometría", consulta la tabla genérica `plugin_extension_data` filtrando por `plugin_slug`, `entity_slug` y `record_id`.
 
 3. Frontend: Renderizado por Inyección
 Aquí es donde JS brilla. Tu vista de "Ficha de Cliente" no debe tener código de óptica. Debe ser un contenedor vacío que pregunte al sistema: "¿Alguien tiene algo que mostrar para este cliente?".
@@ -350,7 +350,7 @@ Para que esto sea fluido, los plugins deben seguir una interfaz de programación
 
 onInstall(): El plugin crea sus tablas de datos en la PostgreSQL local.
 
-onUpdate(): Modifica sus propias tablas si hay campos nuevos en la versión de la tienda.
+onUpdate(): reservado para evolución futura del contrato de ciclo de vida (no forma parte del interfaz actual).
 
 renderTab(): Devuelve el HTML/JS para la pestaña en la ficha de cliente.
 

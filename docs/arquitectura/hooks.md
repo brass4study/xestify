@@ -10,8 +10,8 @@ Permitir que plugins amplien comportamiento del Core sin modificar codigo centra
 - onInstall
 - onActivate
 - onDeactivate
-- onUpdate
-- onUninstall
+
+Nota: `onUpdate` y `onUninstall` no forman parte del contrato actual `PluginLifecycleInterface`.
 
 2. Hooks de entidad
 - beforeValidate
@@ -57,10 +57,10 @@ Contexto minimo recomendado:
 
 ## Registro en base de datos
 
-Tabla plugin_hook_registry (referencial):
+Tabla `plugin_hooks`:
 
 - id
-- plugin_slug
+- slug
 - target_entity_slug
 - hook_name
 - priority

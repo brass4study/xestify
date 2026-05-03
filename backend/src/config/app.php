@@ -3,13 +3,14 @@
 declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
-use Xestify\controllers\CommentsController;
 use Xestify\controllers\EntityController;
+use Xestify\controllers\PluginExtensionController;
 use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\database\Seeders\EntitySeeder;
 use Xestify\database\Seeders\UserSeeder;
 use Xestify\plugins\HookDispatcher;
+use Xestify\plugins\PluginLoader;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
@@ -57,6 +58,16 @@ $container->singleton(EntityService::class, fn() => new EntityService(
 
 $container->singleton(HookDispatcher::class, fn() => new HookDispatcher());
 
+$container->singleton(PluginLoader::class, fn() => new PluginLoader(
+    dirname(BASE_PATH) . '/plugins',
+    $container->get(Database::class)
+));
+
+// Register active plugin hooks at boot
+/** @var PluginLoader $pluginLoader */
+$pluginLoader = $container->get(PluginLoader::class);
+$pluginLoader->registerActiveHooks($container->get(HookDispatcher::class));
+
 // --- Controllers --------------------------------------------------------------
 
 $container->singleton(AuthController::class, fn() => new AuthController(
@@ -69,6 +80,6 @@ $container->singleton(EntityController::class, fn() => new EntityController(
     $container->get(HookDispatcher::class)
 ));
 
-$container->singleton(CommentsController::class, fn() => new CommentsController(
+$container->singleton(PluginExtensionController::class, fn() => new PluginExtensionController(
     $container->get(Database::class)
 ));

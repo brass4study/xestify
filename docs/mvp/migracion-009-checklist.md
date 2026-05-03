@@ -26,7 +26,7 @@ Consolidar el catalogo funcional de entidades sobre `plugins` (filtro `plugin_ty
 - Mantener UPSERT en `plugins` incluyendo `name`.
 
 4. Clients Installer (y futuros entity installers)
-- Archivo: [backend/plugins/clients/Installer.php](backend/plugins/clients/Installer.php)
+- Archivo: [plugins/clients/Installer.php](plugins/clients/Installer.php)
 - Quitar dependencia de `system_entities`.
 - Mantener solo ajustes de schema en `plugins`.
 

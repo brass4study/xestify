@@ -2,7 +2,7 @@
 
 ## Base URL local
 
-/api/v1
+`/api/v1`
 
 ## Convenciones
 
@@ -14,34 +14,38 @@
 
 Header recomendado:
 
-Authorization: Bearer <token>
+`Authorization: Bearer <token>`
 
-## Endpoints Core
+## Endpoints disponibles actualmente
+
+## Salud
+
+- GET `/health`
+
+## Auth
+
+- POST `/api/v1/auth/login`
 
 ## Entidades
 
-- GET /entities
-- GET /entities/{entity_slug}/schema
-- GET /entities/{entity_slug}/records
-- POST /entities/{entity_slug}/records
-- GET /entities/{entity_slug}/records/{id}
-- PUT /entities/{entity_slug}/records/{id}
-- DELETE /entities/{entity_slug}/records/{id}
+- GET `/api/v1/entities`
+- GET `/api/v1/entities/{slug}/schema`
+- GET `/api/v1/entities/{slug}/tabs`
+- GET `/api/v1/entities/{slug}/actions`
+- GET `/api/v1/entities/{slug}/records`
+- POST `/api/v1/entities/{slug}/records`
+- GET `/api/v1/entities/{slug}/records/{id}`
+- PUT `/api/v1/entities/{slug}/records/{id}`
+- DELETE `/api/v1/entities/{slug}/records/{id}`
 
-## Plugins
+## Plugins de extension (API generica)
 
-- GET /plugins
-- POST /plugins/install
-- POST /plugins/{plugin_slug}/activate
-- POST /plugins/{plugin_slug}/deactivate
-- POST /plugins/{plugin_slug}/update
+- GET `/api/v1/plugins/{plugin_slug}/{entity}/{id}`
+- POST `/api/v1/plugins/{plugin_slug}/{entity}/{id}`
+- PUT `/api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}`
+- DELETE `/api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}`
 
-## Actualizaciones
-
-- GET /updates/check
-- POST /updates/download/{plugin_slug}
-- POST /updates/apply/{plugin_slug}
-- POST /updates/rollback/{plugin_slug}
+Nota: la API de extensiones la atiende `PluginExtensionController` y discrimina por `plugin_slug`.
 
 ## Respuesta de exito (ejemplo)
 

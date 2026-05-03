@@ -8,7 +8,7 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-02  
+**Fecha:** 2026-05-03  
 **EPIC activo:** EPIC 6 — Plugins tipo Extension (🔄 EN PROGRESO)  
 **Próxima story:** STORY 6.5 — Frontend - Página PluginManager
 
@@ -161,8 +161,10 @@
 |-------|-------------|--------|-------|
 | 6.1 ✅ | Frontend - Crear módulo DynamicTabs.js | `f16d2c5` | 6/6 ✅ |
 | 6.2 ✅ | Backend - Hook `registerTabs` y `registerActions` en HookDispatcher | `d91aef8` | 7+10/17 ✅ |
-| 6.3 ✅ | Release B: `plugins` como única fuente de verdad (eliminar system_entities) | `pending` | 11 suites ✅ |
-| 6.4 ✅ | Plugin `comments` (tipo extension) | `pending` | 9/9 ✅ |
+| 6.3 ✅ | Release B: `plugins` como única fuente de verdad (eliminar system_entities) | `d5e7dbe` | 11 suites ✅ |
+| 6.4 ✅ | Plugin `comments` (tipo extension) | `d61ef09` | 9/9 ✅ |
+| 6.5-fix ✅ | Fix: PluginLoader wiring — `registerActiveHooks()` en boot | pending | 3/3 ✅ |
+| 6.5-fix-b ✅ | Fix general: arquitectura plana de plugins + UI comments + documentación | pending | 9/9 + 3/3 ✅ |
 ---
 
 ## Stack decidido

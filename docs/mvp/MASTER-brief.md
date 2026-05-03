@@ -32,7 +32,7 @@ Demostrar que:
 - ✅ AuthMiddleware
 
 **EPIC 2 - Datos**
-- ✅ Tablas core: system_entities, entity_metadata, entity_data, plugins_registry, plugin_hook_registry
+- ✅ Tablas core: entity_metadata, entity_data, plugins, plugin_hooks, plugin_extension_data
 - ✅ GenericRepository JSONB
 
 **EPIC 3 - CRUD Dinámico**

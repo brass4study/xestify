@@ -7,19 +7,19 @@ Definir el esqueleto minimo para crear una entidad base reusable.
 ## Estructura
 
 ```text
-plugins/entity_<slug>/
+plugins/<slug>/
   manifest.json
   schema.json
   Hooks.php
-  api/
-    routes.php
-    Controller.php
-  ui/
-    index.js
-    components/
-  migrations/
-    001_init.sql
+  Lifecycle.php
+  Installer.php
+  plugin.js
 ```
+
+Notas:
+- `manifest.json` es obligatorio.
+- `schema.json` es obligatorio para plugins `entity`.
+- `Hooks.php`, `Lifecycle.php`, `Installer.php` y `plugin.js` son opcionales segun necesidad.
 
 ## manifest.json base
 
@@ -29,11 +29,7 @@ plugins/entity_<slug>/
   "name": "Clientes",
   "version": "1.0.0",
   "type": "entity",
-  "owner_entity": null,
-  "compatibility": {
-    "core": ">=1.0.0"
-  },
-  "requires": []
+  "core_version": "1.0.0"
 }
 ```
 

@@ -20,6 +20,7 @@
 declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__, 2));
+define('PLUGINS_PATH', dirname(BASE_PATH) . '/plugins');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
@@ -31,18 +32,20 @@ require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
 require_once BASE_PATH . '/src/plugins/PluginLifecycleInterface.php';
 require_once BASE_PATH . '/src/plugins/PluginLoader.php';
-require_once BASE_PATH . '/src/controllers/CommentsController.php';
-require_once BASE_PATH . '/plugins/comments/Hooks.php';
-require_once BASE_PATH . '/plugins/comments/Lifecycle.php';
+require_once BASE_PATH . '/src/services/JwtService.php';
+require_once BASE_PATH . '/src/controllers/PluginExtensionController.php';
+require_once PLUGINS_PATH . '/comments/Hooks.php';
+require_once PLUGINS_PATH . '/comments/Lifecycle.php';
 
-use Xestify\controllers\CommentsController;
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 use Xestify\plugins\HookDispatcher;
 use Xestify\plugins\PluginLoader;
+use Xestify\controllers\PluginExtensionController;
 use Xestify\plugins\comments\Hooks;
 use Xestify\plugins\comments\Lifecycle;
 use Xestify\core\Request;
+use Xestify\services\JwtService;
 
 // ---------------------------------------------------------------------------
 // Load .env
@@ -80,15 +83,37 @@ try {
 
 const TEST_ENTITY   = 'clients';
 const TEST_RECORD   = '00000000-0000-0000-0000-000000000001';
+const TEST_COMMENT_BODY = 'Primer comentario de prueba';
+const MSG_OK_MUST_BE_FALSE = 'ok must be false';
 
-function callComments(CommentsController $ctrl, string $method, array $params, array $body = []): array
+function callComments(PluginExtensionController $ctrl, string $method, array $params, array $body = []): array
 {
-    $request = new Request([], $body, [], $params);
+    $request = new Request([], $body, authHeaders(), $params);
     ob_start();
     $ctrl->$method($params, $request);
     $output  = ob_get_clean();
     $decoded = json_decode((string) $output, true);
     return is_array($decoded) ? $decoded : [];
+}
+
+function authHeaders(): array
+{
+    static $token = null;
+    if (is_string($token) && $token !== '') {
+        return ['authorization' => 'Bearer ' . $token];
+    }
+
+    $jwt = new JwtService(
+        $_ENV['JWT_SECRET'] ?? 'changeme',
+        (int) ($_ENV['JWT_EXPIRY'] ?? 3600)
+    );
+    $token = $jwt->encode([
+        'sub' => 'test-user-id',
+        'email' => 'test@example.com',
+        'iat' => time(),
+        'exp' => time() + 3600,
+    ]);
+    return ['authorization' => 'Bearer ' . $token];
 }
 
 function cleanComments(): void
@@ -110,8 +135,7 @@ echo str_repeat('-', 40) . "\n";
 // ---------------------------------------------------------------------------
 
 TestSuite::run('plugin installation creates plugin_extension_data table (generic extension table)', function (): void {
-    $pluginsDir = BASE_PATH . '/plugins';
-    $loader     = new PluginLoader($pluginsDir, Database::connection());
+    $loader = new PluginLoader(PLUGINS_PATH, Database::connection());
 
     $loader->load('comments');
 
@@ -163,8 +187,8 @@ TestSuite::run('Comentarios tab appears in GET /entities/{slug}/tabs API respons
 
 TestSuite::run('GET comments returns empty array when no comments exist', function (): void {
     cleanComments();
-    $ctrl   = new CommentsController(Database::connection());
-    $result = callComments($ctrl, 'index', ['entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
+    $ctrl   = new PluginExtensionController(Database::connection());
+    $result = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
 
     assertTrue($result['ok'] ?? false, 'ok must be true');
     assertEquals([], $result['data'] ?? null, 'data must be empty array');
@@ -173,54 +197,60 @@ TestSuite::run('GET comments returns empty array when no comments exist', functi
 
 TestSuite::run('POST creates a comment and it appears in GET response', function (): void {
     cleanComments();
-    $ctrl = new CommentsController(Database::connection());
+    $ctrl = new PluginExtensionController(Database::connection());
 
     $createResult = callComments(
         $ctrl,
         'create',
-        ['entity' => TEST_ENTITY, 'id' => TEST_RECORD],
-        ['body' => 'Primer comentario de prueba']
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        ['body' => TEST_COMMENT_BODY, 'author_id' => 'test-user-id', 'stamp' => date('c')]
     );
 
     assertTrue($createResult['ok'] ?? false, 'POST ok must be true');
     assertTrue(isset($createResult['data']['id']), 'Created comment must have id');
-    assertEquals('Primer comentario de prueba', $createResult['data']['body'] ?? null, 'body must match');
+    $content = $createResult['data']['content'] ?? [];
+    assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, 'body must match');
+    assertEquals('test-user-id', $content['author_id'] ?? null, 'author_id must match');
+    assertTrue(isset($content['stamp']), 'Created comment must include stamp');
 
-    $listResult = callComments($ctrl, 'index', ['entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
+    $listResult = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
     $comments   = $listResult['data'] ?? [];
 
     assertEquals(1, count($comments), 'GET must return 1 comment');
-    assertEquals('Primer comentario de prueba', $comments[0]['body'] ?? null, 'body must match');
+    $c = $comments[0]['content'] ?? [];
+    assertEquals(TEST_COMMENT_BODY, $c['body'] ?? null, 'body must match');
+    assertEquals('test-user-id', $c['author_id'] ?? null, 'author_id must match');
+    assertTrue(isset($c['stamp']), 'Listed comment must include stamp');
 
     cleanComments();
 });
 
 TestSuite::run('POST with empty body returns 422', function (): void {
-    $ctrl   = new CommentsController(Database::connection());
+    $ctrl   = new PluginExtensionController(Database::connection());
     $result = callComments(
         $ctrl,
         'create',
-        ['entity' => TEST_ENTITY, 'id' => TEST_RECORD],
-        ['body' => '']
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        []
     );
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
     assertEquals(422, $result['error']['code'] ?? 0, 'code must be 422');
 });
 
 TestSuite::run('GET with empty entity slug returns 404', function (): void {
-    $ctrl   = new CommentsController(Database::connection());
-    $result = callComments($ctrl, 'index', ['entity' => '', 'id' => TEST_RECORD]);
+    $ctrl   = new PluginExtensionController(Database::connection());
+    $result = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => '', 'id' => TEST_RECORD]);
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
     assertEquals(404, $result['error']['code'] ?? 0, 'code must be 404');
 });
 
 TestSuite::run('GET with empty record id returns 404', function (): void {
-    $ctrl   = new CommentsController(Database::connection());
-    $result = callComments($ctrl, 'index', ['entity' => TEST_ENTITY, 'id' => '']);
+    $ctrl   = new PluginExtensionController(Database::connection());
+    $result = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => '']);
 
-    assertTrue(!($result['ok'] ?? true), 'ok must be false');
+    assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
     assertEquals(404, $result['error']['code'] ?? 0, 'code must be 404');
 });
 

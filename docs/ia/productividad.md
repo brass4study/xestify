@@ -751,3 +751,32 @@
 - **Iteraciones:** 2 (test "plugins entity rows have required fields" fallaba por filas de test sin name → filtrado a status='active')
 - **Decisión manual:** Ninguna — arquitectura ya decidida en Release A; solo ejecución técnica
 
+### Fix 6.5-pre: PluginLoader wiring — `registerActiveHooks()` en boot
+- **Fecha:** 2026-05-03
+- **Estimado sin IA:** 45 min
+- **Tiempo real con IA:** ~10 min
+- **Aceleración:** ~78% ⚡
+- **Qué hizo IA:**
+  - Añadió `registerActiveHooks(HookDispatcher $dispatcher): void` a `PluginLoader` — consulta plugins activos en BD y registra sus hooks en el dispatcher
+  - Añadió `instantiateHooks(string $slug): ?object` — instancia la clase `Hooks` de cada plugin usando `ReflectionClass` para detectar si el constructor necesita `PDO` o no, sin hardcoding por slug
+  - Cabló `PluginLoader` en `app.php`: singleton registrado, `registerActiveHooks()` llamado al boot
+  - Creó `backend/tests/integration/PluginBootTest.php` con 3 tests que verifican el path real de boot (sin registro manual de hooks)
+- **Iteraciones:** 1
+- **Decisión manual:** Usar Reflection en `instantiateHooks()` para detectar dependencias en lugar de un mapa explícito o convención por nombre — más robusto y extensible a futuro
+
+### Fix general: arquitectura plana de plugins + extensiones genéricas + docs
+- **Fecha:** 2026-05-03
+- **Estimado sin IA:** 180 min
+- **Tiempo real con IA:** ~55 min
+- **Aceleración:** ~69% ⚡
+- **Qué hizo IA:**
+  - Migró plugins a estructura plana en `/plugins/{slug}` y ajustó `PluginLoader`/tests a rutas finales
+  - Reemplazó `CommentsController` por `PluginExtensionController` con rutas REST genéricas por `plugin_slug`
+  - Refactorizó `EntityEdit` para carga dinámica de `plugin.js` y contrato `PluginPanelRegistry`
+  - Encapsuló toda la UI de comentarios en `plugins/comments/plugin.js` y corrigió UX de botones en edición
+  - Actualizó `frontend-router.php` para servir assets desde `/plugins/*`
+  - Ejecutó y validó tests de integración clave (`CommentsPluginTest` y `PluginBootTest`)
+  - Actualizó documentación de arquitectura/API/plantillas y roadmap al modelo vigente
+- **Iteraciones:** 5
+- **Decisión manual:** Tratar esta entrega como fix general transversal (no story nueva), priorizando coherencia arquitectónica y reducción de acoplamiento del core
+

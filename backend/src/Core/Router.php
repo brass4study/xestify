@@ -60,7 +60,7 @@ class Router
     /**
      * Resuelve la ruta y ejecuta el handler. Devuelve true si encontr├│ ruta, null si no.
      *
-     * @param string $method  M├®todo HTTP (GET, POST, ÔÇª)
+    * @param string $method  HTTP method (GET, POST, etc.)
      * @param string $uri     Path de la petici├│n
      * @return true|null
      */
@@ -128,13 +128,18 @@ class Router
     private function callHandler(callable|array $handler, array $params): void
     {
         if (is_array($handler) && count($handler) === 2) {
-            [$class, $method] = $handler;
+            [$target, $method] = $handler;
 
-            $instance = $this->container->has($class)
-                ? $this->container->get($class)
-                : new $class(); // NOSONAR S5992 ÔÇö clase siempre conocida en tiempo de registro de ruta
+            if (is_object($target)) {
+                $target->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
+                return;
+            }
 
-            $instance->$method($params); // NOSONAR S5992 ÔÇö m├®todo siempre conocido en tiempo de registro de ruta
+            $instance = $this->container->has($target)
+                ? $this->container->get($target)
+                : new $target(); // NOSONAR S5992 - clase conocida al registrar la ruta
+
+            $instance->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
             return;
         }
 

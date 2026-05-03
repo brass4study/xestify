@@ -10,9 +10,11 @@ use Xestify\exceptions\PluginException;
 /**
  * PluginLoader — discovers, validates and registers backend plugins.
  *
- * Each plugin lives in a subdirectory of $pluginsDir and must contain:
- *   - manifest.json  Required fields: slug, name, version, type, core_version
- *   - Hooks.php      Optional — loaded via require_once when present
+ * Each plugin lives in a subdirectory of $pluginsDir:
+ *   {slug}/manifest.json  Required fields: slug, name, version, type, core_version
+ *   {slug}/Hooks.php      Optional — loaded via require_once when present
+ *   {slug}/Lifecycle.php  Optional — loaded via require_once when present
+ *   {slug}/plugin.js      Optional — frontend entry point, served to the browser
  *
  * Compatibility rule: plugin's core_version must be <= current CORE_VERSION.
  *
@@ -24,6 +26,7 @@ use Xestify\exceptions\PluginException;
 class PluginLoader
 {
     public const CORE_VERSION = '1.0.0';
+    private const PLUGIN_NAMESPACE_PREFIX = 'Xestify\\plugins\\';
 
     private const MANIFEST_REQUIRED_FIELDS = ['slug', 'name', 'version', 'type', 'core_version'];
 
@@ -333,12 +336,78 @@ class PluginLoader
 
     private function instantiateLifecycle(string $slug): ?PluginLifecycleInterface
     {
-        $class = 'Xestify\\plugins\\' . $slug . '\\Lifecycle';
+        $class = self::PLUGIN_NAMESPACE_PREFIX . $slug . '\\Lifecycle';
 
         if (!class_exists($class)) {
             return null;
         }
 
         return new $class($this->pdo); // NOSONAR — convention-based plugin lifecycle class
+    }
+
+    // -------------------------------------------------------------------------
+    // Boot-time hook registration
+    // -------------------------------------------------------------------------
+
+    /**
+     * Require and register the Hooks class of every active plugin into the dispatcher.
+     * Call this once during application boot, after the container is fully wired.
+     */
+    public function registerActiveHooks(HookDispatcher $dispatcher): void
+    {
+        $stmt = $this->pdo->query("SELECT slug FROM plugins WHERE status = 'active'");
+        if ($stmt === false) {
+            return;
+        }
+
+        /** @var array<array{slug: string}> $rows */
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as $row) {
+            $slug = (string) $row['slug'];
+            $this->loadHooks($slug);
+            $hooks = $this->instantiateHooks($slug);
+            if ($hooks !== null) {
+                $hooks->register($dispatcher);
+            }
+        }
+    }
+
+    /**
+     * Instantiate the Hooks class for a plugin.
+     *
+     * Inspects the constructor via reflection: if a PDO parameter is declared,
+     * injects $this->pdo; otherwise instantiates with no arguments.
+     * Convention: every plugin's Hooks class must have either a no-arg
+     * constructor or a constructor whose first (and only) parameter is typed PDO.
+     *
+     * @return object|null  An instance with a register(HookDispatcher): void method, or null.
+     */
+    private function instantiateHooks(string $slug): ?object
+    {
+        $class = self::PLUGIN_NAMESPACE_PREFIX . $slug . '\\Hooks';
+
+        if (!class_exists($class)) {
+            return null;
+        }
+
+        return $this->instantiateWithOptionalPdo($class);
+    }
+
+    private function instantiateWithOptionalPdo(string $class): object
+    {
+        $ref         = new \ReflectionClass($class);
+        $constructor = $ref->getConstructor();
+
+        if ($constructor !== null) {
+            foreach ($constructor->getParameters() as $param) {
+                $type = $param->getType();
+                if ($type instanceof \ReflectionNamedType && $type->getName() === PDO::class) {
+                    return new $class($this->pdo); // NOSONAR - convention-based plugin class
+                }
+            }
+        }
+
+        return new $class(); // NOSONAR - convention-based plugin class
     }
 }

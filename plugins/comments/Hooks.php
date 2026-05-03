@@ -26,7 +26,7 @@ final class Hooks
                     'id'       => 'comments',
                     'label'    => 'Comentarios',
                     'icon'     => 'fa-comments',
-                    'endpoint' => '/api/v1/plugins/comments/' . ($args['entity'] ?? '') . '/{id}',
+                    'endpoint' => '/plugins/comments/' . ($args['entity'] ?? '') . '/{id}',
                 ];
                 return $tabs;
             },
