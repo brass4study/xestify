@@ -23,7 +23,7 @@ define('BASE_PATH', dirname(__DIR__, 2));
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/core/Database.php';
-require_once BASE_PATH . '/src/database/Seeders/UserSeeder.php';
+require_once BASE_PATH . '/src/database/seeders/UserSeeder.php';
 
 use Xestify\core\Database;
 use Xestify\database\seeders\UserSeeder;

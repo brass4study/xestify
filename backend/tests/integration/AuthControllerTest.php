@@ -21,7 +21,7 @@ require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/services/JwtService.php';
-require_once BASE_PATH . '/src/database/Seeders/UserSeeder.php';
+require_once BASE_PATH . '/src/database/seeders/UserSeeder.php';
 require_once BASE_PATH . '/src/controllers/AuthController.php';
 
 use Xestify\controllers\AuthController;
