@@ -1,11 +1,12 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-05-03)
+## Estado implementado auditado (2026-05-04)
 
-El corte funcional actual queda fijado en **STORY 6.4 incluida**.
+El corte funcional actual queda fijado en **STORY 6.5 incluida**.
 
 - Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, `PluginLoader` cargando `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
-- Pendiente a partir de **STORY 6.5**: PluginManager, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+- Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
+- Pendiente a partir de **STORY 7.1**: deteccion de actualizaciones, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -752,6 +753,7 @@ Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañ
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ COMPLETADO (`7d2d313`)
 - **Criteria:**
   - ✅ Página `PluginManager` lista plugins instalados con estado (activo/inactivo/error)
   - ✅ Botones activar/desactivar llaman a API y actualizan estado
@@ -760,27 +762,6 @@ Objetivo: Soporte completo para plugins de tipo `extension` que inyectan pestañ
   - ✅ Tests: render lista, click activar/desactivar
 - **IA Usage:** Scaffolding página + estilos + tests
 - **Dependencias:** STORY 5.2, STORY 4.5
-- **Blockers:** Ninguno
-
-### STORY 6.6: Frontend - Página de configuración de plugin activado
-- **Points:** 5
-- **Priority:** MUST
-- **Type:** Fullstack
-- **Descripción:**
-  Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
-  para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
-  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
-- **Criteria:**
-  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
-  - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
-  - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
-  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
-  - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
-  - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
-  - ✅ Tests backend: update schema + versión incrementada + campos base intocables
-  - ✅ Tests frontend: render custom_fields, toggle, añadir campo libre, guardar
-- **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
-- **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
 - **Blockers:** Ninguno
 
 ---
@@ -794,7 +775,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Priority:** MUST
 - **Type:** Backend
 - **Criteria:**
-  - ✅ PluginLoader compara versión instalada (plugins_registry) vs versión en disco (manifest.json)
+  - ✅ PluginLoader compara versión instalada (plugins) vs versión en disco (manifest.json)
   - ✅ Método `getOutdated()` devuelve lista de plugins con actualización disponible
   - ✅ Endpoint GET `/api/v1/plugins/updates` expone lista
   - ✅ Tests: versión igual, mayor y menor detectados correctamente
@@ -816,7 +797,29 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Dependencias:** STORY 7.1, STORY 4.5, STORY 2.2
 - **Blockers:** Definir estructura de `onUpdate()` en contrato de plugin
 
-### STORY 7.3: Rollback manual de plugin a versión anterior
+### STORY 7.3: Frontend - Página de configuración de plugin activado
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Descripción:**
+  Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
+  para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
+  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
+- **Criteria:**
+  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
+  - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
+  - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
+  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
+  - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
+  - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
+  - ✅ Tests backend: update schema + versión incrementada + campos base intocables
+  - ✅ Tests frontend: render custom_fields, toggle, añadir campo libre, guardar
+- **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
+- **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
+- **Blockers:** Ninguno
+
+
+### STORY 7.4: Rollback manual de plugin a versión anterior
 - **Points:** 5
 - **Priority:** SHOULD
 - **Type:** Backend
@@ -830,7 +833,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Dependencias:** STORY 7.2
 - **Blockers:** Ninguno
 
-### STORY 7.4: Frontend - UI de actualización y rollback en PluginManager
+### STORY 7.5: Frontend - UI de actualización y rollback en PluginManager
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Frontend
@@ -840,7 +843,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
   - ✅ Botón "Rollback" disponible si hay versión anterior
   - ✅ Modal de confirmación antes de actualizar/rollback
 - **IA Usage:** UI badges + modal confirmación + feedback estados
-- **Dependencias:** STORY 6.5, STORY 7.2, STORY 7.3
+- **Dependencias:** STORY 6.5, STORY 7.2, STORY 7.3, STORY 7.4
 - **Blockers:** Ninguno
 
 ---

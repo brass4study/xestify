@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-05-04  
 **EPIC activo:** EPIC 6 — Plugins tipo Extension (✅ COMPLETADO)  
-**Próxima story:** EPIC 7 (pendiente de definir)
+**Próxima story:** STORY 7.1 — Detección de actualizaciones disponibles en PluginLoader
 
 ---
 
@@ -166,7 +166,7 @@
 | 6.5-fix ✅ | Fix: PluginLoader wiring — `registerActiveHooks()` en boot | `e97b3bf` | 3/3 ✅ |
 | 6.5-fix-b ✅ | Fix general: arquitectura plana de plugins + UI comments + documentación | `e97b3bf` | 9/9 + 3/3 ✅ |
 | sonar-fix ✅ | Fix SonarQube: 44 hallazgos (complejidad, literales, tipos, imports, parámetros) | `01e6041` | 9/9 + 3/3 ✅ |
-| 6.5 ✅ | Frontend - Página PluginManager | pendiente | 28/28 backend + 12/12 E2E ✅ |
+| 6.5 ✅ | Frontend - Página PluginManager | `7d2d313` | 28/28 backend + 12/12 E2E ✅ |
 ---
 
 ## Stack decidido
@@ -355,3 +355,9 @@ Story completada. Archivos creados/modificados:
 **Tests finales:**
 - Backend: 28/28 archivos pasan (runner agrupado)
 - Frontend: todos los tests 100% (NavbarTest 10/10, LoginTest 5/5, EntityListTest 7/7, E2ETest 12/12, PluginManagerTest 8/8, y demás)
+
+**Cierre verificado (2026-05-04):**
+- Commit de story: `7d2d313`
+- Verificacion backend: `php backend/tests/run.php all` → 28/28 archivos pasan
+- Verificacion frontend sintaxis: `node --check frontend/src/js/pages/PluginManager.js` y `node --check frontend/src/js/main.js`
+- Backlog alineado: el siguiente punto es STORY 7.1

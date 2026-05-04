@@ -821,6 +821,8 @@ Revisa los findings de sonarqube, tenemos 44 hallazgos
 Implementa la Story 6.5: Frontend - Página PluginManager.
 Necesito una página que liste los plugins instalados y permita activar/desactivar cada uno.
 También necesito el backend: endpoints GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status.
-```**Resultado:** PluginManagerController.php + rutas + PluginManager.js + PluginManagerTest.html (8/8). Además se corrigieron regresiones en NavbarTest, LoginTest, EntityListTest y E2ETest, y se actualizó el slug de fixtures de \client\ a \clients\ (slug canónico). El test E2E integrado se completó simulando el flujo real list?create?reload.
+```
+
+**Resultado:** PluginManagerController.php + rutas + PluginManager.js + PluginManagerTest.html (8/8). Además se corrigieron regresiones en NavbarTest, LoginTest, EntityListTest y E2ETest, y se actualizó el slug de fixtures de `client` a `clients` (slug canónico). El test E2E integrado se completó simulando el flujo real list/create/reload.
 **Iteraciones:** 6
 **Lección:** Al cambiar el contrato de un componente (Navbar con canManagePlugins), hay que revisar todos los tests que lo usan. El E2E integrado con Promise requiere simular exactamente los eventos que el código real espera (click en botón Guardar, no submit del form).

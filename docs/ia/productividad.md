@@ -804,19 +804,20 @@
 
 ---
 
-### STORY 6.5 — Frontend - Página PluginManager
+### STORY 6.5 - Frontend - PÃ¡gina PluginManager
 - **Fecha:** 2026-05-04
 - **Estimado sin IA:** 5h
 - **Tiempo real con IA:** ~60 min
-- **Aceleración:** ~80% ?
-- **Qué hizo IA:**
-  - Creó \PluginManagerController.php\ con endpoints GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status
-  - Creó \PluginManagerApiTest.php\ con 8 tests usando stubs TestPdo/TestStatement sin base de datos real
-  - Creó \PluginManager.js\ (frontend) con lista de plugins, toggle activo/inactivo y estados de carga
-  - Creó \PluginManagerTest.html\ con 8 tests (8/8 ?)
-  - Integró PluginManager en \main.js\ y añadió link condicional en \Navbar.js\ (canManagePlugins)
-  - Corrigió regresiones en NavbarTest, LoginTest, EntityListTest y E2ETest causadas por los nuevos cambios
-  - Actualizó todos los fixtures de tests frontend de slug \client\ a \clients\ (slug canónico)
-  - Completó el test E2E integrado con click simulado en botón Guardar de EntityEdit
+- **AceleraciÃ³n:** ~80%
+- **QuÃ© hizo IA:**
+  - CreÃ³ `PluginManagerController.php` con endpoints GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status
+  - CreÃ³ `PluginManagerApiTest.php` con 8 tests usando stubs TestPdo/TestStatement sin base de datos real
+  - CreÃ³ `PluginManager.js` (frontend) con lista de plugins, toggle activo/inactivo y estados de carga
+  - CreÃ³ `PluginManagerTest.html` con 8 tests (8/8)
+  - IntegrÃ³ PluginManager en `main.js` y aÃ±adiÃ³ link condicional en `Navbar.js` (`canManagePlugins`)
+  - CorrigiÃ³ regresiones en NavbarTest, LoginTest, EntityListTest y E2ETest causadas por los nuevos cambios
+  - ActualizÃ³ todos los fixtures de tests frontend de slug `client` a `clients` (slug canÃ³nico)
+  - CompletÃ³ el test E2E integrado con click simulado en botÃ³n Guardar de EntityEdit
 - **Iteraciones:** 6
-- **Decisión manual:** El test E2E integrado requirió análisis manual del flujo real de EntityEdit para entender que escucha click en botón, no el evento submit del form
+- **DecisiÃ³n manual:** El test E2E integrado requiriÃ³ anÃ¡lisis manual del flujo real de EntityEdit para entender que escucha click en botÃ³n, no el evento submit del form
+- **Cierre:** Verificado contra commit `7d2d313`; backend `php backend/tests/run.php all` pasa 28/28 archivos.
