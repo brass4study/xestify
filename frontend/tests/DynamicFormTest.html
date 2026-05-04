@@ -3,43 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>DynamicFormTest - Xestify Frontend</title>
-  <style>
-    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
-    h2 { color: #7dd3fc; margin-bottom: 0.5rem; }
-    .pass { color: #4ade80; }
-    .fail { color: #f87171; }
-  </style>
+    <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
 <h2>DynamicFormTest</h2>
-<div id="sandbox"></div>
+<div id="sandbox" style="display:none"></div>
 <pre id="output"></pre>
 
 <script type="module">
   import { DynamicForm } from '../src/js/modules/DynamicForm.js';
+  import { initTestRunner, log, assertEquals, assertTrue } from './js/helpers.js';
 
-  let passed = 0;
-  let failed = 0;
-  const out = document.getElementById('output');
+  initTestRunner('output');
+
   const sandbox = document.getElementById('sandbox');
 
-  function log(line) {
-    out.textContent += line + '\n';
-  }
-
-  function assertTrue(value, msg = 'assertTrue failed') {
-    if (!value) {
-      throw new Error(msg);
-    }
-  }
-
-  function assertEquals(actual, expected, msg = '') {
-    const a = JSON.stringify(actual);
-    const e = JSON.stringify(expected);
-    if (a !== e) {
-      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
-    }
-  }
+  // Local counters for custom test() function below
+  let passed = 0;
+  let failed = 0;
 
   function setInputValue(selector, value) {
     const input = sandbox.querySelector(selector);
@@ -83,7 +64,22 @@
     }
   }
 
-  log('----------------------------------------');
+  function separator() {
+    log('────────────────────────────────────────────────────────────────────────');
+  }
+
+  function finishLocalSummary() {
+    separator();
+    const cls = failed === 0 ? 'pass' : 'fail';
+    log(`Resultado: ${passed} passed, ${failed} failed`);
+
+    document.getElementById('output').innerHTML = document.getElementById('output').textContent
+      .replaceAll('✅', '<span class="pass">✅</span>')
+      .replaceAll('❌', '<span class="fail">❌</span>')
+      .replace(/Resultado:.*/, (m) => `<span class="${cls}">${m}</span>`);
+  }
+
+  separator();
 
   await test('render() creates controls for all supported field types', async () => {
     const form = new DynamicForm(buildFullSchema(), '#form-container');
@@ -178,13 +174,14 @@
     assertTrue(sandbox.querySelector('input[name="count"]') !== null, 'count should render');
   });
 
-  log('----------------------------------------');
-  log(`Resultado: ${passed} passed, ${failed} failed`);
-
-  out.innerHTML = out.textContent
-    .replaceAll('✅', '<span class="pass">✅</span>')
-    .replaceAll('❌', '<span class="fail">❌</span>')
-    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+  finishLocalSummary();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+

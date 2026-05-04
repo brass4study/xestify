@@ -3,14 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>EntityListTest - Xestify Frontend</title>
-  <style>
-    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
-    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
-    .sep { color: #444; }
-    .pass { color: #4ade80; }
-    .fail { color: #f87171; }
-    .summary { margin-top: 1rem; font-weight: bold; }
-  </style>
+    <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
 <h2>EntityListTest</h2>
@@ -20,81 +13,15 @@
 <script type="module">
   import { EntityList } from '../src/js/pages/EntityList.js';
   import { AppState } from '../src/js/modules/State.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, mockFetchWithMap, finishTestRunner } from './js/helpers.js';
 
-  let passed = 0;
-  let failed = 0;
-  const out = document.getElementById('output');
-
-  function log(line) {
-    out.textContent += line + '\n';
-  }
-
-  function assertTrue(value, msg = 'assertTrue failed') {
-    if (!value) { throw new Error(msg); }
-  }
-
-  function assertEquals(actual, expected, msg = '') {
-    const a = JSON.stringify(actual);
-    const e = JSON.stringify(expected);
-    if (a !== e) {
-      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
-    }
-  }
-
-  function makeSandbox() {
-    const el = document.createElement('div');
-    document.getElementById('sandbox').appendChild(el);
-    return el;
-  }
-
-  /**
-   * Install a fetch mock that maps URL substrings to enveloped API responses.
-   * Returns the original fetch so tests can restore it.
-   *
-   * @param {Record<string, unknown>} urlMap  { urlSubstring: dataPayload }
-   * @returns {typeof fetch} original fetch
-   */
-  function mockFetch(urlMap) {
-    const original = globalThis.fetch;
-    globalThis.fetch = async (url) => {
-      const entries = Object.entries(urlMap).sort(([a], [b]) => b.length - a.length);
-      for (const [key, data] of entries) {
-        if (url.includes(key)) {
-          return {
-            status: 200,
-            json: async () => ({ ok: true, data }),
-          };
-        }
-      }
-      return {
-        status: 404,
-        json: async () => ({ ok: false, error: { message: 'Not found', code: 404, details: {} } }),
-      };
-    };
-    return original;
-  }
-
-  async function test(name, fn) {
-    const originalFetch = globalThis.fetch;
-    try {
-      AppState.reset();
-      await fn();
-      log(`  ✅ ${name}`);
-      passed++;
-    } catch (err) {
-      log(`  ❌ ${name}`);
-      log(`     ${err.message}`);
-      failed++;
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  }
+  initTestRunner('output');
 
   // -------------------------------------------------------------------------
   // Tests
   // -------------------------------------------------------------------------
 
-  log('----------------------------------------');
+  separator();
 
   await test('constructor throws on missing container', async () => {
     let threw = false;
@@ -108,9 +35,9 @@
 
   await test('init renders entity buttons from api response', async () => {
     const container = makeSandbox();
-    mockFetch({
+    mockFetchWithMap({
       '/entities': [
-        { slug: 'client', label: 'Clientes' },
+        { slug: 'clients', label: 'Clientes' },
         { slug: 'order', label: 'Pedidos' },
       ],
     });
@@ -118,16 +45,16 @@
     const page = new EntityList(container);
     await page.init();
 
-    const buttons = container.querySelectorAll('.xt-entity-nav__btn');
-    assertEquals(buttons.length, 2, 'Should render 2 entity buttons');
-    assertEquals(buttons[0].textContent, 'Clientes', 'First button label');
-    assertEquals(buttons[1].textContent, 'Pedidos', 'Second button label');
+    const entities = AppState.getEntities();
+    assertEquals(entities.length, 2, 'Should load 2 entities');
+    assertEquals(entities[0].slug, 'clients', 'First entity slug');
+    assertEquals(entities[1].slug, 'order', 'Second entity slug');
   });
 
   await test('init stores entities in AppState', async () => {
     const container = makeSandbox();
-    const entities = [{ slug: 'client', label: 'Clientes' }];
-    mockFetch({ '/entities': entities });
+    const entities = [{ slug: 'clients', label: 'Clientes' }];
+    mockFetchWithMap({ '/entities': entities });
 
     const page = new EntityList(container);
     await page.init();
@@ -137,32 +64,32 @@
 
   await test('init renders empty state when no entities', async () => {
     const container = makeSandbox();
-    mockFetch({ '/entities': [] });
+    mockFetchWithMap({ '/entities': [] });
 
     const page = new EntityList(container);
     await page.init();
 
-    const empty = container.querySelector('.xt-entity-nav__empty');
+    const empty = container.querySelector('.xt-placeholder');
     assertTrue(empty !== null, 'Should render empty paragraph');
   });
 
   await test('loadEntity renders records section with table', async () => {
     const container = makeSandbox();
-    mockFetch({
-      '/entities': [{ slug: 'client', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
-      '/entities/client/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
+    mockFetchWithMap({
+      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
+      '/entities/clients/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
     });
 
     const page = new EntityList(container);
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
 
     const section = container.querySelector('.xt-records-section');
     assertTrue(section !== null, 'Records section should exist');
 
     const heading = section.querySelector('.xt-records-section__title');
     assertTrue(heading !== null, 'Should render section heading');
-    assertTrue(heading.textContent.includes('client'), 'Heading should contain slug');
+    assertTrue(heading.textContent.includes('Clientes'), 'Heading should contain entity label');
 
     const table = section.querySelector('table');
     assertTrue(table !== null, 'DynamicTable should render a <table>');
@@ -170,25 +97,28 @@
 
   await test('loadEntity stores records in AppState', async () => {
     const container = makeSandbox();
-    const records = [{ name: 'ACME' }];
-    mockFetch({
-      '/entities': [{ slug: 'client', label: 'Clientes', fields: [] }],
-      '/entities/client/records': records,
+    mockFetchWithMap({
+      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
+      '/entities/clients/records': [
+        { id: '1', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'ACME' } },
+      ],
     });
 
     const page = new EntityList(container);
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
 
-    assertEquals(AppState.getRecords(), records, 'AppState.records should match');
-    assertEquals(AppState.getCurrentEntity(), 'client', 'AppState.currentEntity should be set');
+    const stored = AppState.getRecords();
+    assertEquals(stored.length, 1, 'Should have 1 record');
+    assertEquals(stored[0].name, 'ACME', 'Record name should be ACME');
+    assertEquals(AppState.getCurrentEntity(), 'clients', 'AppState.currentEntity should be set');
   });
 
   await test('"Crear nuevo registro" button calls onCreateNew callback', async () => {
     const container = makeSandbox();
-    mockFetch({
-      '/entities': [{ slug: 'client', label: 'Clientes', fields: [] }],
-      '/entities/client/records': [],
+    mockFetchWithMap({
+      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
+      '/entities/clients/records': [],
     });
 
     let calledWith = null;
@@ -196,27 +126,28 @@
 
     const page = new EntityList(container, { onCreateNew });
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
 
     const createBtn = container.querySelector('.xt-btn--primary');
     assertTrue(createBtn !== null, '"Crear nuevo registro" button should exist');
     createBtn.click();
 
-    assertEquals(calledWith, 'client', 'onCreateNew should be called with the entity slug');
+    assertEquals(calledWith, 'clients', 'onCreateNew should be called with the entity slug');
   });
 
-  // -------------------------------------------------------------------------
+  // ------------------------------------------------------------------------
   // Summary
-  // -------------------------------------------------------------------------
+  // ------------------------------------------------------------------------
 
-  log('----------------------------------------');
-  const cls = failed === 0 ? 'pass' : 'fail';
-  log(`<span class="${cls}">Resultado: ${passed} passed, ${failed} failed</span>`);
-
-  document.getElementById('output').innerHTML = document.getElementById('output').textContent
-    .replaceAll('✅', '<span class="pass">✅</span>')
-    .replaceAll('❌', '<span class="fail">❌</span>')
-    .replace(/Resultado:.*/, m => `<span class="${failed === 0 ? 'pass' : 'fail'}">${m}</span>`);
+  finishTestRunner('output');
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+

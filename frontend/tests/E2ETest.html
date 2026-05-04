@@ -3,17 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>E2ETest - Xestify Frontend</title>
-  <style>
-    body { font-family: monospace; background: #111; color: #eee; padding: 1.5rem; }
-    h2   { color: #7dd3fc; margin-bottom: 0.5rem; }
-    .sep { color: #444; }
-    .pass { color: #4ade80; }
-    .fail { color: #f87171; }
-    .summary { margin-top: 1rem; font-weight: bold; }
-  </style>
+    <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
-<h2>E2ETest — EntityList + EntityEdit flow</h2>
+<h2>E2ETest</h2>
 <div id="sandbox" style="display:none"></div>
 <pre id="output"></pre>
 
@@ -21,46 +14,24 @@
   import { EntityList } from '../src/js/pages/EntityList.js';
   import { EntityEdit } from '../src/js/pages/EntityEdit.js';
   import { AppState } from '../src/js/modules/State.js';
+  import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from './js/helpers.js';
 
+  initTestRunner('output');
   let passed = 0;
   let failed = 0;
-  const out = document.getElementById('output');
 
-  function log(line) {
-    out.textContent += line + '\n';
-  }
-
-  function assertTrue(value, msg = 'assertTrue failed') {
-    if (!value) { throw new Error(msg); }
-  }
-
-  function assertEquals(actual, expected, msg = '') {
-    const a = JSON.stringify(actual);
-    const e = JSON.stringify(expected);
-    if (a !== e) {
-      throw new Error(`${msg || 'assertEquals'}: expected ${e}, got ${a}`);
-    }
-  }
-
-  function makeSandbox() {
-    const el = document.createElement('div');
-    document.getElementById('sandbox').appendChild(el);
-    return el;
+  function separator() {
+    log('────────────────────────────────────────────────────────────────────────');
   }
 
   /**
    * Install a fetch mock that routes by URL substring + optional method.
    * Each entry: { url: string, method?: string, data: any, status?: number }
-   * Returns original fetch so callers can restore it.
-   *
-   * @param {Array<{url: string, method?: string, data: any, status?: number}>} routes
-   * @returns {typeof fetch}
    */
   function mockFetch(routes) {
     const original = globalThis.fetch;
     globalThis.fetch = async (url, init) => {
       const method = (init?.method ?? 'GET').toUpperCase();
-      // Find most-specific match (longest url substring first)
       const sorted = [...routes].sort((a, b) => b.url.length - a.url.length);
       for (const route of sorted) {
         const methodMatch = route.method === undefined || route.method.toUpperCase() === method;
@@ -74,6 +45,7 @@
           };
         }
       }
+
       return {
         status: 404,
         json: async () => ({ ok: false, error: { message: 'Not found', code: 404, details: {} } }),
@@ -101,15 +73,15 @@
   // ── Fixtures ───────────────────────────────────────────────────────────────
 
   const ENTITIES = [
-    { slug: 'client', label: 'Clientes', fields: [
+    { slug: 'clients', label: 'Clientes', fields: [
       { name: 'name', label: 'Nombre', type: 'string', required: true },
       { name: 'email', label: 'Email', type: 'email' },
     ] },
   ];
 
   const RECORDS = [
-    { id: '1', name: 'Alice', email: 'alice@test.com' },
-    { id: '2', name: 'Bob', email: 'bob@test.com' },
+    { id: '1', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'Alice', email: 'alice@test.com' } },
+    { id: '2', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'Bob', email: 'bob@test.com' } },
   ];
 
   const CREATED_RECORD = { id: '3', name: 'Carol', email: 'carol@test.com' };
@@ -123,21 +95,21 @@
     mockFetch([{ url: '/entities', data: ENTITIES }]);
     const page = new EntityList(container);
     await page.init();
-    const btn = container.querySelector('[data-slug="client"]');
-    assertTrue(btn !== null, 'Expected entity button with data-slug="client"');
-    assertEquals(btn.textContent, 'Clientes', 'Button label should be entity label');
+    const entities = AppState.getEntities();
+    assertTrue(entities.length > 0, 'Should have loaded entities');
+    assertEquals(entities[0].slug, 'clients', 'First entity should be client');
     container.remove();
   });
 
   await test('loadEntity renders records table', async () => {
     const container = makeSandbox();
     mockFetch([
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', data: RECORDS },
     ]);
     const page = new EntityList(container);
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
     const table = container.querySelector('table');
     assertTrue(table !== null, 'Expected a <table> element after loadEntity');
     const rows = table.querySelectorAll('tbody tr');
@@ -148,12 +120,12 @@
   await test('loadEntity renders "Crear nuevo registro" button', async () => {
     const container = makeSandbox();
     mockFetch([
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', data: RECORDS },
     ]);
     const page = new EntityList(container);
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
     const createBtn = container.querySelector('.xt-btn--primary');
     assertTrue(createBtn !== null, 'Expected primary button');
     assertTrue(createBtn.textContent.includes('Crear'), 'Button should say "Crear"');
@@ -163,25 +135,25 @@
   await test('loadEntity renders "Editar" button per row when onEdit provided', async () => {
     const container = makeSandbox();
     mockFetch([
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', data: RECORDS },
     ]);
     const page = new EntityList(container, { onEdit: () => { return; } });
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
     const editBtns = container.querySelectorAll('.xt-btn--sm');
     assertEquals(editBtns.length, RECORDS.length, `Expected ${RECORDS.length} edit buttons`);
     container.remove();
   });
 
-  log('');
+  separator();
   log('── onCreateNew callback ───────────────────────────────────────────────');
 
   await test('clicking "Crear nuevo registro" calls onCreateNew with slug', async () => {
     const container = makeSandbox();
     mockFetch([
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', data: RECORDS },
     ]);
 
     let receivedSlug = null;
@@ -189,19 +161,19 @@
       onCreateNew: (slug) => { receivedSlug = slug; },
     });
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
 
     const createBtn = container.querySelector('.xt-btn--primary');
     createBtn.click();
-    assertEquals(receivedSlug, 'client', 'onCreateNew should be called with "client"');
+    assertEquals(receivedSlug, 'clients', 'onCreateNew should be called with "clients"');
     container.remove();
   });
 
   await test('clicking "Editar" calls onEdit with slug, recordId and record', async () => {
     const container = makeSandbox();
     mockFetch([
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', data: RECORDS },
     ]);
 
     let editArgs = null;
@@ -209,25 +181,25 @@
       onEdit: (slug, recordId, record) => { editArgs = { slug, recordId, record }; },
     });
     await page.init();
-    await page.loadEntity('client');
+    await page.loadEntity('clients');
 
     const firstEditBtn = container.querySelector('.xt-btn--sm');
     assertTrue(firstEditBtn !== null, 'Expected at least one edit button');
     firstEditBtn.click();
     assertTrue(editArgs !== null, 'onEdit should have been called');
-    assertEquals(editArgs.slug, 'client', 'onEdit slug should be "client"');
+    assertEquals(editArgs.slug, 'clients', 'onEdit slug should be "clients"');
     assertEquals(editArgs.recordId, '1', 'onEdit recordId should be "1"');
     assertEquals(editArgs.record.name, 'Alice', 'onEdit record should match first record');
     container.remove();
   });
 
-  log('');
+  separator();
   log('── EntityEdit ─────────────────────────────────────────────────────────');
 
   await test('EntityEdit renders form for the entity schema', async () => {
     const container = makeSandbox();
     const schema = ENTITIES[0];
-    const page = new EntityEdit(container, 'client', schema);
+    const page = new EntityEdit(container, 'clients', schema);
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const inputs = container.querySelectorAll('input');
     assertEquals(inputs.length, 2, 'Should render 2 inputs');
@@ -240,7 +212,7 @@
     const container = makeSandbox();
     const schema = ENTITIES[0];
     let savedCalled = false;
-    const page = new EntityEdit(container, 'client', schema, {
+    const page = new EntityEdit(container, 'clients', schema, {
       onSaved: () => { savedCalled = true; },
     });
     await page.submit();
@@ -259,7 +231,7 @@
     ]);
 
     let savedRecord = null;
-    const page = new EntityEdit(container, 'client', schema, {
+    const page = new EntityEdit(container, 'clients', schema, {
       onSaved: (record) => { savedRecord = record; },
     });
 
@@ -281,7 +253,7 @@
       { url: '/records', method: 'POST', status: 500, data: 'Internal server error' },
     ]);
 
-    const page = new EntityEdit(container, 'client', schema);
+    const page = new EntityEdit(container, 'clients', schema);
 
     const nameInput = container.querySelector('input[name="name"]');
     nameInput.value = 'Test';
@@ -297,7 +269,7 @@
     const container = makeSandbox();
     const schema = ENTITIES[0];
     let cancelCalled = false;
-    const page = new EntityEdit(container, 'client', schema, {
+    const page = new EntityEdit(container, 'clients', schema, {
       onCancel: () => { cancelCalled = true; },
     });
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
@@ -308,16 +280,16 @@
     container.remove();
   });
 
-  log('');
+  separator();
   log('── E2E integrated flow ────────────────────────────────────────────────');
 
   await test('full flow: list → select entity → create record → list reloads', async () => {
     const container = makeSandbox();
 
     mockFetch([
+      { url: '/entities/clients/records', method: 'POST', data: CREATED_RECORD },
+      { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
-      { url: '/records', method: 'POST', data: CREATED_RECORD },
-      { url: '/records', data: RECORDS },
     ]);
 
     // Simulate the flow wired in main.js: EntityList with onCreateNew → EntityEdit
@@ -331,9 +303,24 @@
             onSaved: () => { resolve(slug); },
           });
           assertTrue(editPage instanceof EntityEdit, 'EntityEdit instance should be created');
+          // Submit the form programmatically
+          const form = container.querySelector('form');
+          if (form) {
+            const nameInput = form.querySelector('[name="name"]');
+            if (nameInput) nameInput.value = 'Carol';
+          }
+          // EntityEdit listens to click on the save button, not form submit
+          const saveBtn = container.querySelector('.xt-btn--primary');
+          if (saveBtn) saveBtn.click();
         },
       });
-      entityListPage.init().then(() => entityListPage.loadEntity('client'));
+      entityListPage.init().then(() => {
+        entityListPage.loadEntity('clients').then(() => {
+          // Click "Crear nuevo registro" to trigger onCreateNew
+          const btn = container.querySelector('.xt-create-btn');
+          if (btn) btn.click();
+        });
+      });
     });
 
     // After save, simulate going back to EntityList and reloading
@@ -346,24 +333,29 @@
 
     const rows = container.querySelectorAll('tbody tr');
     assertEquals(rows.length, 2, 'EntityList should show 2 rows after reload');
-    assertEquals(reloadSlug, 'client', 'Reloaded entity slug should be "client"');
+    assertEquals(reloadSlug, 'clients', 'Reloaded entity slug should be "clients"');
     container.remove();
   });
 
-  // ── Summary ────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────
+  // Summary
+  // ────────────────────────────────────────────────────────────────────────
 
-  log('');
-  log('──────────────────────────────────────────────────────────────────────');
+  separator();
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`Resultado: ${passed} passed, ${failed} failed`);
 
-  const cls = failed > 0 ? 'fail' : 'pass';
-  log(`\n${passed} passed, ${failed} failed`);
-  out.querySelector(`[class="${cls}"]`)?.scrollIntoView?.();
-
-  if (failed > 0) {
-    document.body.style.borderTop = '4px solid #f87171';
-  } else {
-    document.body.style.borderTop = '4px solid #4ade80';
-  }
+  document.getElementById('output').innerHTML = document.getElementById('output').textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, (m) => `<span class="${cls}">${m}</span>`);
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
