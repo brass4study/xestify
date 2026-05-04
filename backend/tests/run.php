@@ -48,6 +48,7 @@ $groups = [
         'backend/tests/integration/HookFilterApiTest.php',
         'backend/tests/integration/CommentsPluginTest.php',
         'backend/tests/integration/AppWiringTest.php',
+        'backend/tests/integration/PluginManagerApiTest.php',
     ],
 ];
 

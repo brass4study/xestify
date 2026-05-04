@@ -6,6 +6,7 @@ use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
+use Xestify\controllers\PluginManagerController;
 
 if (!defined('ROUTE_ENTITY_RECORD')) {
     define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
@@ -35,3 +36,7 @@ $router->get('/api/v1/plugins/{plugin_slug}/{entity}/{id}',    [PluginExtensionC
 $router->post('/api/v1/plugins/{plugin_slug}/{entity}/{id}',   [PluginExtensionController::class, 'create']);
 $router->put(ROUTE_PLUGIN_ITEM,                                [PluginExtensionController::class, 'update']);
 $router->delete(ROUTE_PLUGIN_ITEM,                             [PluginExtensionController::class, 'delete']);
+
+// Plugin manager endpoints
+$router->get('/api/v1/plugins',                    [PluginManagerController::class, 'listPlugins']);
+$router->put('/api/v1/plugins/{slug}/status',     [PluginManagerController::class, 'updatePluginStatus']);

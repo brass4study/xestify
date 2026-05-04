@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\PluginExtensionController;
+use Xestify\controllers\PluginManagerController;
 use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\database\Seeders\EntitySeeder;
@@ -92,5 +93,9 @@ $container->singleton(EntityController::class, fn() => new EntityController(
 ));
 
 $container->singleton(PluginExtensionController::class, fn() => new PluginExtensionController(
+    $container->get(Database::class)
+));
+
+$container->singleton(PluginManagerController::class, fn() => new PluginManagerController(
     $container->get(Database::class)
 ));

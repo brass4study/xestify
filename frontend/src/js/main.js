@@ -3,6 +3,7 @@ import { AppState } from './modules/State.js';
 import { EntityEdit } from './pages/EntityEdit.js';
 import { EntityList } from './pages/EntityList.js';
 import { Login } from './pages/Login.js';
+import { PluginManager } from './pages/PluginManager.js';
 import { Navbar } from './modules/Navbar.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
@@ -19,14 +20,26 @@ function bootstrap(container) {
   const token = localStorage.getItem(STORAGE_TOKEN_KEY);
   const storedEmail = localStorage.getItem(STORAGE_USER_EMAIL_KEY);
 
-  if (storedEmail !== null && storedEmail !== '') {
-    AppState.setUser({ email: storedEmail });
-  }
-
   if (token !== null && token !== '') {
     setAuthToken(token);
+    const payload = decodeJwtPayload(token);
+    if (storedEmail !== null && storedEmail !== '') {
+      AppState.setUser({
+        email: storedEmail,
+        roles: Array.isArray(payload?.roles) ? payload.roles : [],
+      });
+    } else if (typeof payload?.email === 'string') {
+      AppState.setUser({
+        email: payload.email,
+        roles: Array.isArray(payload?.roles) ? payload.roles : [],
+      });
+    }
     renderDashboard(container);
     return;
+  }
+
+  if (storedEmail !== null && storedEmail !== '') {
+    AppState.setUser({ email: storedEmail, roles: [] });
   }
 
   renderLogin(container);
@@ -40,8 +53,12 @@ function renderLogin(container) {
     onSuccess: ({ accessToken, email }) => {
       localStorage.setItem(STORAGE_TOKEN_KEY, accessToken);
       setAuthToken(accessToken);
+      const payload = decodeJwtPayload(accessToken);
       if (typeof email === 'string') {
-        AppState.setUser({ email });
+        AppState.setUser({
+          email,
+          roles: Array.isArray(payload?.roles) ? payload.roles : [],
+        });
         localStorage.setItem(STORAGE_USER_EMAIL_KEY, email);
       } else {
         localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
@@ -75,8 +92,14 @@ async function renderDashboard(container) {
   if (entitiesForNav === null) {
     return;
   }
+  const isAdmin = currentUserIsAdmin();
   const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
-  const initialPage = firstEntitySlug === '' ? 'plugins' : `entity:${firstEntitySlug}`;
+  let initialPage = '';
+  if (firstEntitySlug !== '') {
+    initialPage = `entity:${firstEntitySlug}`;
+  } else if (isAdmin) {
+    initialPage = 'plugins';
+  }
 
   const userEmail = AppState.getUserEmail();
 
@@ -84,6 +107,7 @@ async function renderDashboard(container) {
     userEmail,
     entities: entitiesForNav,
     currentPage: initialPage,
+    canManagePlugins: isAdmin,
     onLogout: () => {
       clearAuth();
       renderLogin(container);
@@ -107,10 +131,13 @@ async function navigateTo(page, content, api) {
   }
 
   if (page === 'plugins') {
-    const msg = document.createElement('p');
-    msg.className = 'xt-placeholder';
-    msg.textContent = 'Plugin Manager - proximamente.';
-    content.appendChild(msg);
+    if (!currentUserIsAdmin()) {
+      showPlaceholder(content, 'Acceso denegado: solo administradores.');
+      return;
+    }
+
+    const pluginManager = new PluginManager(content, api);
+    await pluginManager.init();
     return;
   }
 
@@ -211,4 +238,34 @@ function showPlaceholder(container, message) {
   msg.className = 'xt-placeholder';
   msg.textContent = message;
   container.replaceChildren(msg);
+}
+
+function decodeJwtPayload(token) {
+  if (typeof token !== 'string' || token === '') {
+    return null;
+  }
+
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const decoded = atob(padded);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
+function currentUserIsAdmin() {
+  const user = AppState.getUser();
+  if (user === null || typeof user !== 'object') {
+    return false;
+  }
+
+  const roles = user.roles;
+  return Array.isArray(roles) && roles.includes('admin');
 }

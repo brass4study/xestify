@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>PluginManagerTest - Xestify Frontend</title>
+    <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<h2>PluginManagerTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { PluginManager } from '../src/js/pages/PluginManager.js';
+
+  const out = document.getElementById('output');
+  let passed = 0;
+  let failed = 0;
+
+  // Mock Api
+  class MockApi {
+    constructor(responses = {}) {
+      this.responses = responses;
+      this.calls = [];
+    }
+
+    async get(url) {
+      this.calls.push({ method: 'GET', url });
+      return this.responses[url] ?? { ok: false, error: { message: 'Not mocked' } };
+    }
+
+    async put(url, body) {
+      this.calls.push({ method: 'PUT', url, body });
+      const key = url.split('?')[0];
+      return this.responses[key] ?? { ok: false, error: { message: 'Not mocked' } };
+    }
+  }
+
+  function log(msg) {
+    out.textContent += msg + '\n';
+  }
+
+  function separator() {
+    log('────────────────────────────────────────────────────────────────────────');
+  }
+
+  async function test(name, fn) {
+    try {
+      await fn();
+      log(`✅ ${name}`);
+      passed++;
+    } catch (error) {
+      log(`❌ ${name}: ${error.message}`);
+      failed++;
+    }
+  }
+
+  function assertEquals(actual, expected, msg) {
+    if (actual !== expected) {
+      throw new Error(`${msg} (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`);
+    }
+  }
+
+  function assertTrue(value, msg) {
+    if (!value) throw new Error(msg);
+  }
+
+  function makeSandbox() {
+    const div = document.createElement('div');
+    document.getElementById('sandbox').appendChild(div);
+    return div;
+  }
+
+  log('────────────────────────────────────────────────────────────────────────\n');
+
+  await test('renders list of plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const rows = container.querySelectorAll('.xt-plugin-manager__row');
+    assertEquals(rows.length, 2, 'Should render 2 rows');
+    assertEquals(rows[0].dataset.slug, 'clients', 'First row slug');
+    assertEquals(rows[1].dataset.slug, 'comments', 'Second row slug');
+  });
+
+  await test('renders empty state when no plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: { plugins: [] },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const empty = container.querySelector('.xt-plugin-manager__empty');
+    assertTrue(empty !== null, 'Empty state should be displayed');
+  });
+
+  await test('shows correct plugin type badges', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const badges = container.querySelectorAll('.xt-plugin-manager__type-badge');
+    assertEquals(badges.length, 2, 'Should have 2 type badges');
+    assertTrue(badges[0].textContent.includes('entity'), 'First badge is entity');
+    assertTrue(badges[1].textContent.includes('extension'), 'Second badge is extension');
+  });
+
+  await test('shows activate button for inactive plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    assertTrue(btn !== null, 'Action button should exist');
+    assertEquals(btn.dataset.action, 'activate', 'Button action should be activate');
+    assertTrue(btn.textContent.includes('Activate'), 'Button text should say Activate');
+  });
+
+  await test('shows deactivate button for active plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    assertEquals(btn.dataset.action, 'deactivate', 'Button action should be deactivate');
+    assertTrue(btn.textContent.includes('Deactivate'), 'Button text should say Deactivate');
+  });
+
+  await test('calls PUT /plugins/{slug}/status when activate clicked', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments/status': {
+        ok: true,
+        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    btn.click();
+
+    // Wait for async operation
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should be called');
+  });
+
+  await test('re-renders after activation', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments/status': {
+        ok: true,
+        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    btn.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const statusBadge = container.querySelector('.xt-plugin-manager__status-badge');
+    assertTrue(statusBadge.textContent.includes('active'), 'Status badge should show active');
+  });
+
+  await test('shows error banner on API failure', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: false,
+        error: { message: 'Server error' },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const error = container.querySelector('.xt-plugin-manager__error-banner');
+    assertTrue(error !== null, 'Error banner should be displayed');
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Summary
+  // ─────────────────────────────────────────────────────────────────────────
+
+  separator();
+  log('────────────────────────────────────────────────────────────────────────');
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+
+  out.innerHTML = out.textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, (m) => `<span class="${cls}">${m}</span>`);
+</script>
+</body>
+</html>
+
+
+
+
+
+
+

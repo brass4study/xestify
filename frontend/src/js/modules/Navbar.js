@@ -27,12 +27,16 @@ export class Navbar {
   /** @type {string} */
   #activePage;
 
+  /** @type {boolean} */
+  #canManagePlugins;
+
   /**
    * @param {string|HTMLElement} container
    * @param {{
    *   userEmail?: string|null,
    *   entities?: Array<object>,
    *   currentPage?: string,
+  *   canManagePlugins?: boolean,
    *   onLogout?: Function,
    *   onNavigate?: Function
    * }} options
@@ -42,6 +46,7 @@ export class Navbar {
     this.#userEmail = typeof options.userEmail === 'string' ? options.userEmail : null;
     this.#entities = Array.isArray(options.entities) ? [...options.entities] : [];
     this.#activePage = typeof options.currentPage === 'string' ? options.currentPage : '';
+    this.#canManagePlugins = Boolean(options.canManagePlugins);
     this.#onLogout = typeof options.onLogout === 'function' ? options.onLogout : null;
     this.#onNavigate = typeof options.onNavigate === 'function' ? options.onNavigate : null;
 
@@ -94,7 +99,9 @@ export class Navbar {
       links.appendChild(this.#makeNavItem(`entity:${slug}`, label));
     }
 
-    links.appendChild(this.#makeNavItem('plugins', 'Plugins'));
+    if (this.#canManagePlugins) {
+      links.appendChild(this.#makeNavItem('plugins', 'Plugins'));
+    }
 
     nav.appendChild(links);
 

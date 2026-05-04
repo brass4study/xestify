@@ -801,3 +801,22 @@
 - **Iteraciones:** 2 (primera iteraciÃ³n: aplicar fixes; segunda: gestionar S1848 en tests HTML con `settings.json`)
 - **DecisiÃ³n manual:** Regla S1848 desactivada en lugar de reescribir los tests â€” instanciar sin asignar es idioma vÃ¡lido cuando el constructor tiene side-effects de renderizado DOM
 
+
+---
+
+### STORY 6.5 — Frontend - Página PluginManager
+- **Fecha:** 2026-05-04
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** ~60 min
+- **Aceleración:** ~80% ?
+- **Qué hizo IA:**
+  - Creó \PluginManagerController.php\ con endpoints GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status
+  - Creó \PluginManagerApiTest.php\ con 8 tests usando stubs TestPdo/TestStatement sin base de datos real
+  - Creó \PluginManager.js\ (frontend) con lista de plugins, toggle activo/inactivo y estados de carga
+  - Creó \PluginManagerTest.html\ con 8 tests (8/8 ?)
+  - Integró PluginManager en \main.js\ y añadió link condicional en \Navbar.js\ (canManagePlugins)
+  - Corrigió regresiones en NavbarTest, LoginTest, EntityListTest y E2ETest causadas por los nuevos cambios
+  - Actualizó todos los fixtures de tests frontend de slug \client\ a \clients\ (slug canónico)
+  - Completó el test E2E integrado con click simulado en botón Guardar de EntityEdit
+- **Iteraciones:** 6
+- **Decisión manual:** El test E2E integrado requirió análisis manual del flujo real de EntityEdit para entender que escucha click en botón, no el evento submit del form

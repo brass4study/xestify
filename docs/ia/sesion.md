@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-03  
-**EPIC activo:** EPIC 6 — Plugins tipo Extension (🔄 EN PROGRESO)  
-**Próxima story:** STORY 6.5 — Frontend - Página PluginManager
+**Fecha:** 2026-05-04  
+**EPIC activo:** EPIC 6 — Plugins tipo Extension (✅ COMPLETADO)  
+**Próxima story:** EPIC 7 (pendiente de definir)
 
 ---
 
@@ -166,6 +166,7 @@
 | 6.5-fix ✅ | Fix: PluginLoader wiring — `registerActiveHooks()` en boot | `e97b3bf` | 3/3 ✅ |
 | 6.5-fix-b ✅ | Fix general: arquitectura plana de plugins + UI comments + documentación | `e97b3bf` | 9/9 + 3/3 ✅ |
 | sonar-fix ✅ | Fix SonarQube: 44 hallazgos (complejidad, literales, tipos, imports, parámetros) | `01e6041` | 9/9 + 3/3 ✅ |
+| 6.5 ✅ | Frontend - Página PluginManager | pendiente | 28/28 backend + 12/12 E2E ✅ |
 ---
 
 ## Stack decidido
@@ -328,3 +329,29 @@ Correcciones implementadas tras auditoria:
 - `PluginExtensionController` valida plugin extension activo y registro padre existente.
 - Nuevo `AppWiringTest.php` cubre seguridad y wiring real.
 - Nuevo runner agrupado: `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
+
+# Sesion 2026-05-04 - STORY 6.5 Frontend - Página PluginManager
+
+Story completada. Archivos creados/modificados:
+
+**Nuevos (backend):**
+- `backend/src/controllers/PluginManagerController.php` — GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status
+- `backend/tests/integration/PluginManagerApiTest.php` — 8 tests con stubs TestPdo/TestStatement
+
+**Nuevos (frontend):**
+- `frontend/src/js/pages/PluginManager.js` — página de gestión de plugins (lista, activa/desactiva)
+- `frontend/tests/PluginManagerTest.html` — 8/8 tests ✅
+- `frontend/tests/css/` y `frontend/tests/js/` — assets de soporte para test runner
+
+**Modificados:**
+- `backend/src/config/app.php` — registra PluginManagerController
+- `backend/src/config/routes.php` — rutas GET y PUT /api/v1/plugins
+- `backend/tests/run.php` — añade PluginManagerApiTest al grupo integration-plugins
+- `frontend/src/css/main.css` — estilos para PluginManager
+- `frontend/src/js/main.js` — integra PluginManager en el flujo de navegación
+- `frontend/src/js/modules/Navbar.js` — link Plugins condicional por `canManagePlugins`
+- Todos los tests HTML de frontend — correcciones de regresiones: slug `clients` canónico, E2E flow completo
+
+**Tests finales:**
+- Backend: 28/28 archivos pasan (runner agrupado)
+- Frontend: todos los tests 100% (NavbarTest 10/10, LoginTest 5/5, EntityListTest 7/7, E2ETest 12/12, PluginManagerTest 8/8, y demás)
