@@ -59,7 +59,7 @@ final class Hooks
                 WHERE entity_slug = :slug
                   AND content->>\'email\' = :email
                   AND deleted_at IS NULL'
-             . ($recordId !== '' ? ' AND id != :id' : '');
+             . ($recordId !== '' ? ' AND id <> :id' : '');
 
         $stmt = $this->pdo->prepare($sql);
         $params = [':slug' => self::ENTITY_SLUG, ':email' => $email];

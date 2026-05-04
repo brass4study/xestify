@@ -54,7 +54,7 @@ function renderLogin(container) {
 }
 
 async function renderDashboard(container) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   const shell = document.createElement('section');
   shell.className = 'xt-shell';
@@ -98,7 +98,7 @@ async function renderDashboard(container) {
 }
 
 async function navigateTo(page, content, api) {
-  content.innerHTML = '';
+  content.replaceChildren();
 
   if (typeof page === 'string' && page.startsWith('entity:')) {
     const slug = page.slice('entity:'.length);
@@ -109,12 +109,12 @@ async function navigateTo(page, content, api) {
   if (page === 'plugins') {
     const msg = document.createElement('p');
     msg.className = 'xt-placeholder';
-    msg.textContent = 'Plugin Manager — próximamente.';
+    msg.textContent = 'Plugin Manager - proximamente.';
     content.appendChild(msg);
     return;
   }
 
-  content.innerHTML = '<p>Página no encontrada.</p>';
+  showPlaceholder(content, 'Pagina no encontrada.');
 }
 
 async function loadEntitiesForNav(api, container) {
@@ -141,7 +141,7 @@ async function loadEntitiesForNav(api, container) {
  * @param {string|null} preloadSlug  If set, loadEntity(preloadSlug) is called after init
  */
 async function showEntityList(content, api, preloadSlug) {
-  content.innerHTML = '';
+  content.replaceChildren();
 
   let entityListPage;
 
@@ -161,7 +161,7 @@ async function showEntityList(content, api, preloadSlug) {
       await entityListPage.loadEntity(preloadSlug);
     }
   } catch {
-    content.innerHTML = '<p>No se pudo cargar la lista de entidades.</p>';
+    showPlaceholder(content, 'No se pudo cargar la lista de entidades.');
   }
 }
 
@@ -179,7 +179,7 @@ function showEntityEdit(content, api, slug, recordId, initialData) {
   const entities = AppState.getEntities();
   const schema = entities.find((e) => e.slug === slug) ?? { slug, fields: [] };
 
-  content.innerHTML = '';
+  content.replaceChildren();
 
   const entityEdit = new EntityEdit(content, slug, schema, {
     api,
@@ -204,4 +204,11 @@ function clearAuth() {
   AppState.reset();
   localStorage.removeItem(STORAGE_TOKEN_KEY);
   localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
+}
+
+function showPlaceholder(container, message) {
+  const msg = document.createElement('p');
+  msg.className = 'xt-placeholder';
+  msg.textContent = message;
+  container.replaceChildren(msg);
 }

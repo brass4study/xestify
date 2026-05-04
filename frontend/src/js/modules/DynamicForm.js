@@ -31,7 +31,7 @@ export class DynamicForm {
    */
   render() {
     this.#inputs.clear();
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
     const form = document.createElement('form');
     form.setAttribute('novalidate', 'novalidate');

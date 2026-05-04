@@ -137,20 +137,7 @@ class PluginExtensionController
         $itemId     = (string) ($params['item_id'] ?? '');
         $data       = $request->allBody();
 
-        $hasError = $this->respondNotFoundIfEmpty($pluginSlug, self::MSG_PLUGIN_REQUIRED)
-            || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
-            || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED)
-            || $this->respondNotFoundIfEmpty($itemId, self::MSG_ITEM_REQUIRED);
-        if ($hasError) {
-            return;
-        }
-
-        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
-            return;
-        }
-
-        if ($data === []) {
-            Response::make()->unprocessable(self::MSG_CONTENT_REQUIRED, ['content' => self::MSG_CONTENT_REQUIRED]);
+        if (!$this->guardExtensionWriteRequest($pluginSlug, $entity, $recordId, $itemId, $data)) {
             return;
         }
 
@@ -265,6 +252,31 @@ class PluginExtensionController
         }
 
         return true;
+    }
+
+    private function guardExtensionWriteRequest(
+        string $pluginSlug,
+        string $entity,
+        string $recordId,
+        string $itemId,
+        array $data
+    ): bool {
+        $isValid = true;
+        $hasMissingParams = $this->respondNotFoundIfEmpty($pluginSlug, self::MSG_PLUGIN_REQUIRED)
+            || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
+            || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED)
+            || $this->respondNotFoundIfEmpty($itemId, self::MSG_ITEM_REQUIRED);
+
+        if ($hasMissingParams) {
+            $isValid = false;
+        } elseif (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
+            $isValid = false;
+        } elseif ($data === []) {
+            Response::make()->unprocessable(self::MSG_CONTENT_REQUIRED, ['content' => self::MSG_CONTENT_REQUIRED]);
+            $isValid = false;
+        }
+
+        return $isValid;
     }
 
     private function isActiveExtensionPlugin(string $pluginSlug): bool

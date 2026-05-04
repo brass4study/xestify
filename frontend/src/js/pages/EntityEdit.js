@@ -116,9 +116,9 @@ export class EntityEdit {
    * @param {object} initialData
    */
   #render(initialData) {
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
-    // ── Title (outside the wrapper) ─────────────────────────────────────────
+    // Title outside the form wrapper.
     const title = document.createElement('h3');
     title.className = 'xt-edit-wrapper__title';
     title.textContent = this.#recordId === null
@@ -144,7 +144,7 @@ export class EntityEdit {
 
     this.#container.appendChild(wrapper);
 
-    // ── Actions (outside the wrapper, below) ────────────────────────────────
+    // Actions stay outside the wrapper so they remain below tabs.
     const actions = document.createElement('div');
     actions.className = 'xt-edit-actions';
 
@@ -152,7 +152,9 @@ export class EntityEdit {
     saveBtn.type = 'button';
     saveBtn.className = 'xt-btn xt-btn--primary';
     saveBtn.textContent = 'Guardar';
-    saveBtn.addEventListener('click', () => { this.submit(); });
+    saveBtn.addEventListener('click', () => {
+      this.submit();
+    });
     actions.appendChild(saveBtn);
 
     if (this.#onCancel !== null) {
@@ -160,7 +162,9 @@ export class EntityEdit {
       cancelBtn.type = 'button';
       cancelBtn.className = 'xt-btn xt-btn--secondary';
       cancelBtn.textContent = 'Cancelar';
-      cancelBtn.addEventListener('click', () => { this.#onCancel(); });
+      cancelBtn.addEventListener('click', () => {
+        this.#onCancel();
+      });
       actions.appendChild(cancelBtn);
     }
 
@@ -239,7 +243,7 @@ export class EntityEdit {
       // below the tabs (it was appended before this async call resolved).
       this.#container.appendChild(actionsEl);
     } catch {
-      // Tabs are non-critical — fail silently
+      this.#showGlobalError('No se pudieron cargar las extensiones.');
     }
   }
 
@@ -252,10 +256,7 @@ export class EntityEdit {
    */
   async #loadPluginModules(tabs) {
     await Promise.allSettled(
-      tabs.map((tab) =>
-        import(`/plugins/${tab.id}/plugin.js`)
-          .catch(() => { /* plugin has no frontend — skip silently */ })
-      )
+      tabs.map((tab) => import(`/plugins/${tab.id}/plugin.js`))
     );
   }
 
@@ -268,7 +269,10 @@ export class EntityEdit {
   #buildFallbackPanel(label) {
     const el = document.createElement('div');
     el.className = 'xt-tab-panel';
-    el.innerHTML = `<p class="xt-placeholder">Plugin "${label}" no disponible.</p>`;
+    const placeholder = document.createElement('p');
+    placeholder.className = 'xt-placeholder';
+    placeholder.textContent = `Plugin "${label}" no disponible.`;
+    el.appendChild(placeholder);
     return el;
   }
 

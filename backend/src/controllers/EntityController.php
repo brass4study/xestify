@@ -6,7 +6,6 @@ namespace Xestify\controllers;
 
 use PDO;
 
-use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\core\Response;
 use Xestify\exceptions\EntityServiceException;
@@ -14,9 +13,7 @@ use Xestify\exceptions\HookException;
 use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
 use Xestify\plugins\HookDispatcher;
-use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
-use Xestify\services\ValidationService;
 
 /**
  * EntityController — REST endpoints for dynamic entity records.
@@ -50,14 +47,14 @@ class EntityController
         $request ??= Request::fromGlobals($params);
 
         $stmt = $this->pdo->prepare(
-                        'SELECT p.slug, p.name AS label, p.schema_json, p.schema_version
-                         FROM plugins p
-                         WHERE p.plugin_type = :plugin_type
-                             AND p.status = :status
-                             AND p.schema_json IS NOT NULL
-                         ORDER BY p.name ASC'
+            'SELECT p.slug, p.name AS label, p.schema_json, p.schema_version
+             FROM plugins p
+             WHERE p.plugin_type = :plugin_type
+                 AND p.status = :status
+                 AND p.schema_json IS NOT NULL
+             ORDER BY p.name ASC'
         );
-                $stmt->execute([':plugin_type' => 'entity', ':status' => 'active']);
+        $stmt->execute([':plugin_type' => 'entity', ':status' => 'active']);
         $rows = $stmt->fetchAll();
 
         $entities = [];
@@ -91,7 +88,7 @@ class EntityController
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
-              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
@@ -127,7 +124,7 @@ class EntityController
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
-              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
@@ -148,20 +145,21 @@ class EntityController
         $ownerId = $this->resolveOwnerId($request);
 
         if ($slug === '') {
-              Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
             return;
         }
 
+        $hasError = false;
+        $record = null;
+
         try {
             $record = $this->service->createRecord($slug, $data, $ownerId);
-        } catch (ValidationException $e) {
-            Response::make()->unprocessable('Validation failed.', $e->getErrors());
-            return;
-        } catch (HookException $e) {
-            Response::make()->unprocessable($e->getMessage());
-            return;
-        } catch (EntityServiceException $e) {
-            Response::make()->notFound($e->getMessage());
+        } catch (ValidationException | HookException | EntityServiceException $e) {
+            $this->respondEntityWriteFailure($e);
+            $hasError = true;
+        }
+
+        if ($hasError) {
             return;
         }
 
@@ -178,7 +176,7 @@ class EntityController
         $id      = (string) ($params['id'] ?? '');
 
         if ($id === '') {
-              Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
+            Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 
@@ -204,20 +202,21 @@ class EntityController
         $data    = $request->allBody();
 
         if ($id === '') {
-                Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
+            Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 
+        $hasError = false;
+        $record = null;
+
         try {
             $record = $this->service->updateRecord($id, $slug, $data);
-        } catch (ValidationException $e) {
-            Response::make()->unprocessable('Validation failed.', $e->getErrors());
-            return;
-        } catch (HookException $e) {
-            Response::make()->unprocessable($e->getMessage());
-            return;
-            } catch (EntityServiceException | RepositoryException $e) {
-            Response::make()->notFound($e->getMessage());
+        } catch (ValidationException | HookException | EntityServiceException | RepositoryException $e) {
+            $this->respondEntityWriteFailure($e);
+            $hasError = true;
+        }
+
+        if ($hasError) {
             return;
         }
 
@@ -234,7 +233,7 @@ class EntityController
         $id = (string) ($params['id'] ?? '');
 
         if ($id === '') {
-              Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
+            Response::make()->notFound(self::MSG_RECORD_ID_REQUIRED);
             return;
         }
 
@@ -303,5 +302,17 @@ class EntityController
         }
         $sub = $user['sub'] ?? null;
         return is_string($sub) ? $sub : null;
+    }
+
+    private function respondEntityWriteFailure(
+        ValidationException | HookException | EntityServiceException | RepositoryException $exception
+    ): void {
+        if ($exception instanceof ValidationException) {
+            Response::make()->unprocessable('Validation failed.', $exception->getErrors());
+        } elseif ($exception instanceof HookException) {
+            Response::make()->unprocessable($exception->getMessage());
+        } else {
+            Response::make()->notFound($exception->getMessage());
+        }
     }
 }

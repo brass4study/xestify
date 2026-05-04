@@ -145,7 +145,7 @@ export class DynamicTabs {
     this.#activeId = null;
   }
 
-  // ── Private helpers ───────────────────────────────────────────────────────
+  // Private helpers.
 
   /**
    * @param {TabDef} tab
@@ -185,7 +185,7 @@ export class DynamicTabs {
    * @param {TabDef} tab
    */
   #renderContent(tab) {
-    this.#tabContent.innerHTML = '';
+    this.#tabContent.replaceChildren();
     const raw = tab.content();
     if (typeof raw === 'string') {
       const wrapper = document.createElement('div');

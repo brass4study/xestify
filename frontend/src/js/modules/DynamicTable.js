@@ -40,7 +40,7 @@ export class DynamicTable {
    * Render table and pagination controls in container.
    */
   render() {
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
     const wrapper = document.createElement('div');
     wrapper.className = 'xt-table-wrapper';

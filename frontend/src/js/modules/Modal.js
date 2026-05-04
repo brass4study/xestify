@@ -105,7 +105,7 @@ export class Modal {
    * @param {string|HTMLElement} content
    */
   setContent(content) {
-    this.#contentEl.innerHTML = '';
+    this.#contentEl.replaceChildren();
 
     if (content instanceof HTMLElement) {
       this.#contentEl.appendChild(content);

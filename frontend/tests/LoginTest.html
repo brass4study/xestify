@@ -72,8 +72,9 @@
 
   await test('renders email, password and submit', async () => {
     const container = makeSandbox();
-    new Login(container);
+    const page = new Login(container);
 
+    assertTrue(page instanceof Login, 'Login instance should be created');
     assertTrue(container.querySelector('[name="email"]') !== null, 'Email input missing');
     assertTrue(container.querySelector('[name="password"]') !== null, 'Password input missing');
     assertTrue(container.querySelector('button[type="submit"]') !== null, 'Submit button missing');

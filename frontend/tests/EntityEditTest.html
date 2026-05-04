@@ -106,8 +106,9 @@
 
   await test('renders form with schema fields', async () => {
     const container = makeSandbox();
-    new EntityEdit(container, 'client', SCHEMA);
+    const page = new EntityEdit(container, 'client', SCHEMA);
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const inputs = container.querySelectorAll('input');
     assertEquals(inputs.length, 2, 'Should render 2 inputs');
     assertEquals(inputs[0].name, 'name', 'First input should be name');
@@ -116,8 +117,9 @@
 
   await test('renders "Nuevo registro" title when no recordId', async () => {
     const container = makeSandbox();
-    new EntityEdit(container, 'client', SCHEMA);
+    const page = new EntityEdit(container, 'client', SCHEMA);
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const title = container.querySelector('.xt-edit-wrapper__title');
     assertTrue(title !== null, 'Title element should exist');
     assertTrue(title.textContent.includes('Nuevo'), 'Title should say Nuevo registro');
@@ -125,18 +127,20 @@
 
   await test('renders "Editar registro" title when recordId is provided', async () => {
     const container = makeSandbox();
-    new EntityEdit(container, 'client', SCHEMA, { recordId: '42' });
+    const page = new EntityEdit(container, 'client', SCHEMA, { recordId: '42' });
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const title = container.querySelector('.xt-edit-wrapper__title');
     assertTrue(title.textContent.includes('Editar'), 'Title should say Editar registro');
   });
 
   await test('pre-fills form with initialData', async () => {
     const container = makeSandbox();
-    new EntityEdit(container, 'client', SCHEMA, {
+    const page = new EntityEdit(container, 'client', SCHEMA, {
       initialData: { name: 'ACME', email: 'info@acme.com' },
     });
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const nameInput = container.querySelector('[name="name"]');
     const emailInput = container.querySelector('[name="email"]');
     assertEquals(nameInput.value, 'ACME', 'name input should be pre-filled');
@@ -152,10 +156,11 @@
       },
     };
 
-    new EntityEdit(container, 'clients', schema, {
+    const page = new EntityEdit(container, 'clients', schema, {
       initialData: { name: 'Cliente test', email: 'cliente.test@example.com' },
     });
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const nameInput = container.querySelector('[name="name"]');
     const emailInput = container.querySelector('[name="email"]');
     assertEquals(nameInput.value, 'Cliente test', 'name input should be pre-filled from object schema');
@@ -254,8 +259,9 @@
   await test('cancel button calls onCancel callback', async () => {
     const container = makeSandbox();
     let cancelled = false;
-    new EntityEdit(container, 'client', SCHEMA, { onCancel: () => { cancelled = true; } });
+    const page = new EntityEdit(container, 'client', SCHEMA, { onCancel: () => { cancelled = true; } });
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const cancelBtn = container.querySelector('.xt-btn--secondary');
     assertTrue(cancelBtn !== null, 'Cancel button should exist when onCancel is provided');
     cancelBtn.click();
@@ -264,8 +270,9 @@
 
   await test('cancel button is absent when no onCancel provided', async () => {
     const container = makeSandbox();
-    new EntityEdit(container, 'client', SCHEMA);
+    const page = new EntityEdit(container, 'client', SCHEMA);
 
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const cancelBtn = container.querySelector('.xt-btn--secondary');
     assertTrue(cancelBtn === null, 'Cancel button should not exist without onCancel');
   });

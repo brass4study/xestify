@@ -55,7 +55,7 @@ export class EntityList {
   async init() {
     this.#setLoading(true);
     this.#clearError();
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
     try {
       const { data } = await this.#api.get('/entities');
@@ -118,7 +118,7 @@ export class EntityList {
       this.#container.appendChild(recordsSection);
     }
 
-    recordsSection.innerHTML = '';
+    recordsSection.replaceChildren();
 
     const header = document.createElement('div');
     header.className = 'xt-records-section__header';

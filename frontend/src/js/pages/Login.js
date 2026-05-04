@@ -93,7 +93,7 @@ export class Login {
   }
 
   #render() {
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
     const wrapper = document.createElement('section');
     wrapper.className = 'xt-login';

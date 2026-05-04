@@ -1,0 +1,29 @@
+{
+  "name": "xestify-sonarlint-problems-exporter",
+  "displayName": "Xestify SonarLint Problems Exporter",
+  "description": "Exporta los diagnosticos SonarQube for IDE visibles en Problems a JSON.",
+  "version": "0.1.0",
+  "publisher": "xestify",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "xestifySonarLint.exportProblems",
+        "title": "Xestify: Export SonarLint Problems"
+      },
+      {
+        "command": "xestifySonarLint.analyzeWorkspace",
+        "title": "Xestify: Analyze Workspace with SonarLint"
+      }
+    ]
+  }
+}

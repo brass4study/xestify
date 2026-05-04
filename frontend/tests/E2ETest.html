@@ -227,7 +227,8 @@
   await test('EntityEdit renders form for the entity schema', async () => {
     const container = makeSandbox();
     const schema = ENTITIES[0];
-    new EntityEdit(container, 'client', schema);
+    const page = new EntityEdit(container, 'client', schema);
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const inputs = container.querySelectorAll('input');
     assertEquals(inputs.length, 2, 'Should render 2 inputs');
     assertEquals(inputs[0].name, 'name', 'First input: name');
@@ -296,9 +297,10 @@
     const container = makeSandbox();
     const schema = ENTITIES[0];
     let cancelCalled = false;
-    new EntityEdit(container, 'client', schema, {
+    const page = new EntityEdit(container, 'client', schema, {
       onCancel: () => { cancelCalled = true; },
     });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const cancelBtn = container.querySelector('.xt-btn--secondary');
     assertTrue(cancelBtn !== null, 'Expected cancel button');
     cancelBtn.click();
@@ -325,9 +327,10 @@
         onCreateNew: (slug) => {
           const schema = AppState.getEntities().find((e) => e.slug === slug) ?? { slug, fields: [] };
           container.innerHTML = '';
-          new EntityEdit(container, slug, schema, { // NOSONAR
+          const editPage = new EntityEdit(container, slug, schema, {
             onSaved: () => { resolve(slug); },
           });
+          assertTrue(editPage instanceof EntityEdit, 'EntityEdit instance should be created');
         },
       });
       entityListPage.init().then(() => entityListPage.loadEntity('client'));

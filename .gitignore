@@ -24,6 +24,7 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+/debug.log
 
 # Docker (para referencia futura)
 # docker-compose.override.yml
@@ -33,3 +34,4 @@ desktop.ini
 /backend/storage/cache/
 /plugins/*.zip
 /var/logs/
+/var/reports/

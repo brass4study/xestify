@@ -76,7 +76,7 @@ function createPluginFixture(array $manifest, bool $withHooks = false, bool $inv
     mkdir($pluginDir, 0777, true);
 
     $jsonContent = $invalidJson ? '{bad json' : (string) json_encode($manifest, JSON_PRETTY_PRINT);
-    file_put_contents($pluginDir . '/manifest.json', $jsonContent);
+    file_put_contents($pluginDir . MANIFEST_FILE_PATH, $jsonContent);
 
     if (($manifest['type'] ?? '') === 'entity' && !$invalidJson) {
         file_put_contents($pluginDir . '/schema.json', json_encode([
@@ -137,6 +137,7 @@ function cleanupPlugin(PDO $db, string $slug): void
 
 define('SLUG_BIND_PARAM', ':slug');
 define('SEMVER_1_0', '1.0.0');
+define('MANIFEST_FILE_PATH', '/manifest.json');
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -253,7 +254,7 @@ TestSuite::run('load() throws PluginException when entity plugin lacks schema.js
     $root = sys_get_temp_dir() . '/xestify_plugin_test_' . bin2hex(random_bytes(4));
     $pluginDir = $root . '/' . $slug;
     mkdir($pluginDir, 0777, true);
-    file_put_contents($pluginDir . '/manifest.json', (string) json_encode([
+    file_put_contents($pluginDir . MANIFEST_FILE_PATH, (string) json_encode([
         'slug' => $slug,
         'name' => 'No Schema',
         'version' => SEMVER_1_0,
@@ -314,7 +315,7 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
     foreach ([$slugA, $slugB] as $s) {
         $dir = $root . '/' . $s;
         mkdir($dir, 0777, true);
-        file_put_contents($dir . '/manifest.json', (string) json_encode([
+        file_put_contents($dir . MANIFEST_FILE_PATH, (string) json_encode([
             'slug' => $s, 'name' => $s, 'version' => SEMVER_1_0, 'type' => 'extension', 'core_version' => SEMVER_1_0,
         ]));
     }

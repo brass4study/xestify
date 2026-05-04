@@ -41,7 +41,7 @@ export class CommentsPanel {
   }
 
   // ---------------------------------------------------------------------------
-  // Private — panel builder
+  // Private panel builder.
   // ---------------------------------------------------------------------------
 
   /**
@@ -54,12 +54,12 @@ export class CommentsPanel {
     const panel = document.createElement('div');
     panel.className = 'xt-tab-panel';
 
-    // ── In-memory state ──────────────────────────────────────────────────────
-    /** @type {{ id: string, body: string, author_id?: string|null, stamp?: string|null, created_at?: string|null, pendingBody?: string }[]} */
+    // In-memory state.
+    /** @type {Array<object>} */
     let existing = [];
     /** @type {Set<string>} */
     const toDelete = new Set();
-    /** @type {{ tempId: number, body: string, author_id?: string|null, stamp?: string|null, created_at?: string|null, pendingBody?: string }[]} */
+    /** @type {Array<object>} */
     const toCreate = [];
     let tempCounter = 0;
 
@@ -68,19 +68,19 @@ export class CommentsPanel {
       toDelete.size > 0 ||
       existing.some((c) => c.pendingBody !== undefined);
 
-    // ── Lists ─────────────────────────────────────────────────────────────────
+    // Lists.
     const existingList = document.createElement('ul');
     existingList.className = 'xt-tab-panel__list';
 
     const newList = document.createElement('ul');
     newList.className = 'xt-tab-panel__pending';
 
-    // ── Render helpers ────────────────────────────────────────────────────────
+    // Render helpers.
     const renderExistingList = () => {
-      existingList.innerHTML = '';
+      existingList.replaceChildren();
       const visible = existing.filter((c) => !toDelete.has(c.id));
       if (visible.length === 0 && toCreate.length === 0) {
-        existingList.innerHTML = '<li class="xt-placeholder">Sin comentarios aún.</li>';
+        this.#setListMessage(existingList, 'Sin comentarios aun.');
         return;
       }
       for (const item of visible) {
@@ -97,7 +97,7 @@ export class CommentsPanel {
     };
 
     const renderNewList = () => {
-      newList.innerHTML = '';
+      newList.replaceChildren();
       for (const item of toCreate) {
         newList.appendChild(this.#buildItem(
           item,
@@ -117,7 +117,6 @@ export class CommentsPanel {
       }
     };
 
-    // ── Flush ─────────────────────────────────────────────────────────────────
     const flush = async (resolvedId) => {
       if (!hasPendingChanges()) {
         return;
@@ -145,7 +144,7 @@ export class CommentsPanel {
           };
           ops.push(
             api.put(`${resolved}/${item.id}`, payload).then(({ data }) => {
-              const c = (data?.content !== null && typeof data?.content === 'object') ? data.content : {};
+              const c = this.#contentObject(data?.content);
               item.body = newBody;
               item.author_id = typeof c.author_id === 'string' ? c.author_id : (item.author_id ?? null);
               item.stamp = typeof c.stamp === 'string' ? c.stamp : (item.stamp ?? null);
@@ -164,7 +163,7 @@ export class CommentsPanel {
         };
         ops.push(
           api.post(resolved, payload).then(({ data }) => {
-            const c = (data?.content !== null && typeof data?.content === 'object') ? data.content : {};
+            const c = this.#contentObject(data?.content);
             existing.push({
               id: data.id,
               body: typeof c.body === 'string' ? c.body : '',
@@ -185,14 +184,14 @@ export class CommentsPanel {
       renderNewList();
     };
 
-    // ── Add-comment form ──────────────────────────────────────────────────────
+    // Add-comment form.
     const addForm = document.createElement('form');
     addForm.className = 'xt-comment-form';
 
     const textarea = document.createElement('textarea');
     textarea.className = 'xt-comment-form__body';
     textarea.rows = 3;
-    textarea.placeholder = 'Escribe un comentario…';
+    textarea.placeholder = 'Escribe un comentario...';
     addForm.appendChild(textarea);
 
     const addErrorEl = document.createElement('p');
@@ -203,14 +202,14 @@ export class CommentsPanel {
     const addBtn = document.createElement('button');
     addBtn.type = 'submit';
     addBtn.className = 'xt-btn xt-btn--secondary';
-    addBtn.textContent = 'Añadir';
+    addBtn.textContent = 'Anadir';
     addForm.appendChild(addBtn);
 
     addForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const body = textarea.value.trim();
       if (body === '') {
-        addErrorEl.textContent = 'El comentario no puede estar vacío.';
+        addErrorEl.textContent = 'El comentario no puede estar vacio.';
         addErrorEl.hidden = false;
         return;
       }
@@ -224,20 +223,20 @@ export class CommentsPanel {
       }
     });
 
-    // ── Assembly & initial load ───────────────────────────────────────────────
+    // Assembly and initial load.
     panel.appendChild(existingList);
     panel.appendChild(newList);
     panel.appendChild(addForm);
 
     if (recordId === null) {
-      existingList.innerHTML = '<li class="xt-placeholder">Sin comentarios aún.</li>';
+      this.#setListMessage(existingList, 'Sin comentarios aun.');
     } else {
-      existingList.innerHTML = '<li class="xt-loading">Cargando…</li>';
+      this.#setListMessage(existingList, 'Cargando...', 'xt-loading');
       api.get(endpointTemplate.replace('{id}', recordId))
         .then(({ data }) => {
           existing = Array.isArray(data)
             ? data.map((d) => {
-              const c = (d.content !== null && typeof d.content === 'object') ? d.content : {};
+              const c = this.#contentObject(d.content);
               return {
                 id: d.id,
                 body: typeof c.body === 'string' ? c.body : '',
@@ -250,8 +249,7 @@ export class CommentsPanel {
           renderExistingList();
         })
         .catch(() => {
-          existingList.innerHTML =
-            '<li class="xt-placeholder">Error al cargar los comentarios.</li>';
+          this.#setListMessage(existingList, 'Error al cargar los comentarios.');
         });
     }
 
@@ -259,11 +257,11 @@ export class CommentsPanel {
   }
 
   // ---------------------------------------------------------------------------
-  // Private — item renderer
+  // Private item renderer.
   // ---------------------------------------------------------------------------
 
   /**
-   * @param {{ id: string|null, body: string, author_id?: string|null, stamp?: string|null, created_at?: string|null, pendingBody?: string }} item
+   * @param {object} item
    * @param {boolean}    isNew
    * @param {() => void} onEditApply
    * @param {() => void} onDelete
@@ -335,7 +333,7 @@ export class CommentsPanel {
     editBtn.type = 'button';
     editBtn.className = 'xt-btn xt-btn--icon';
     editBtn.title = 'Editar';
-    editBtn.innerHTML = '<i class="fa-solid fa-pencil" aria-hidden="true"></i>';
+    editBtn.appendChild(this.#buildIcon('fa-pencil'));
 
     const applyBtn = document.createElement('button');
     applyBtn.type = 'button';
@@ -355,7 +353,7 @@ export class CommentsPanel {
     deleteBtn.type = 'button';
     deleteBtn.className = 'xt-btn xt-btn--icon xt-btn--danger';
     deleteBtn.title = 'Eliminar';
-    deleteBtn.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+    deleteBtn.appendChild(this.#buildIcon('fa-trash'));
 
     editBtn.addEventListener('click', () => {
       bodyEl.hidden = true;
@@ -403,8 +401,41 @@ export class CommentsPanel {
     return li;
   }
 
+  /**
+   * @param {HTMLElement} list
+   * @param {string} message
+   * @param {string} [className]
+   */
+  #setListMessage(list, message, className = 'xt-placeholder') {
+    const item = document.createElement('li');
+    item.className = className;
+    item.textContent = message;
+    list.replaceChildren(item);
+  }
+
+  /**
+   * @param {unknown} content
+   * @returns {Record<string, unknown>}
+   */
+  #contentObject(content) {
+    return content !== null && typeof content === 'object' && !Array.isArray(content)
+      ? /** @type {Record<string, unknown>} */ (content)
+      : {};
+  }
+
+  /**
+   * @param {string} icon
+   * @returns {HTMLElement}
+   */
+  #buildIcon(icon) {
+    const el = document.createElement('i');
+    el.className = `fa-solid ${icon}`;
+    el.setAttribute('aria-hidden', 'true');
+    return el;
+  }
+
   // ---------------------------------------------------------------------------
-  // Private — formatting
+  // Private formatting.
   // ---------------------------------------------------------------------------
 
   /**

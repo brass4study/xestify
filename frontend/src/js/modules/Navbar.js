@@ -71,7 +71,7 @@ export class Navbar {
   }
 
   #render() {
-    this.#container.innerHTML = '';
+    this.#container.replaceChildren();
 
     const nav = document.createElement('nav');
     nav.className = 'xt-navbar';

@@ -68,9 +68,9 @@ try {
 
 function buildAppRouter(Container $container): Router
 {
-    require BASE_PATH . '/src/config/app.php';
+    require BASE_PATH . '/src/config/app.php'; // NOSONAR - test rebuilds a fresh container per case
     $router = new Router($container);
-    require BASE_PATH . '/src/config/routes.php';
+    require BASE_PATH . '/src/config/routes.php'; // NOSONAR - routes must be registered on each fresh router
     return $router;
 }
 

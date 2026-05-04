@@ -34,6 +34,8 @@ use Xestify\exceptions\DatabaseException;
 use Xestify\plugins\HookDispatcher;
 use Xestify\plugins\PluginLoader;
 
+const PLUGINS_ROOT_SUFFIX = '/plugins';
+
 // ---------------------------------------------------------------------------
 // Load .env
 // ---------------------------------------------------------------------------
@@ -66,7 +68,7 @@ try {
 
 echo str_repeat('-', 40) . "\n";
 
-$bootLoader = new PluginLoader(dirname(BASE_PATH) . '/plugins', Database::connection());
+$bootLoader = new PluginLoader(dirname(BASE_PATH) . PLUGINS_ROOT_SUFFIX, Database::connection());
 $bootLoader->load('comments');
 $bootLoader->activate('comments');
 
@@ -76,7 +78,7 @@ $bootLoader->activate('comments');
 
 TestSuite::run('registerActiveHooks() registers comments tab when comments is active', function (): void {
     $dispatcher = new HookDispatcher();
-    $loader     = new PluginLoader(dirname(BASE_PATH) . '/plugins', Database::connection());
+    $loader     = new PluginLoader(dirname(BASE_PATH) . PLUGINS_ROOT_SUFFIX, Database::connection());
 
     $loader->registerActiveHooks($dispatcher);
 
@@ -91,7 +93,7 @@ TestSuite::run('registerActiveHooks() registers comments tab when comments is ac
 
 TestSuite::run('registerActiveHooks() is idempotent — second call does not duplicate hooks', function (): void {
     $dispatcher = new HookDispatcher();
-    $loader     = new PluginLoader(dirname(BASE_PATH) . '/plugins', Database::connection());
+    $loader     = new PluginLoader(dirname(BASE_PATH) . PLUGINS_ROOT_SUFFIX, Database::connection());
 
     $loader->registerActiveHooks($dispatcher);
     $loader->registerActiveHooks($dispatcher);
@@ -106,14 +108,14 @@ TestSuite::run('registerActiveHooks() is idempotent — second call does not dup
 
 TestSuite::run('tab endpoint contains entity placeholder', function (): void {
     $dispatcher = new HookDispatcher();
-    $loader     = new PluginLoader(dirname(BASE_PATH) . '/plugins', Database::connection());
+    $loader     = new PluginLoader(dirname(BASE_PATH) . PLUGINS_ROOT_SUFFIX, Database::connection());
 
     $loader->registerActiveHooks($dispatcher);
 
     $tabs  = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
     $found = array_values(array_filter($tabs, static fn(array $t): bool => $t['id'] === 'comments'));
 
-    assertTrue(count($found) > 0, 'comments tab must exist');
+    assertTrue(!empty($found), 'comments tab must exist');
     assertTrue(str_contains($found[0]['endpoint'] ?? '', 'clients'), 'endpoint must contain entity slug');
     assertTrue(str_contains($found[0]['endpoint'] ?? '', '{id}'), 'endpoint must contain {id} placeholder');
     assertFalse(str_contains($found[0]['endpoint'] ?? '', '/api/v1'), 'endpoint must not include api prefix');
