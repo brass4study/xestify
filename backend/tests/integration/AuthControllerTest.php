@@ -27,7 +27,7 @@ require_once BASE_PATH . '/src/controllers/AuthController.php';
 use Xestify\controllers\AuthController;
 use Xestify\core\Database;
 use Xestify\core\Request;
-use Xestify\database\Seeders\UserSeeder;
+use Xestify\database\seeders\UserSeeder;
 use Xestify\exceptions\DatabaseException;
 use Xestify\services\JwtService;
 

@@ -26,7 +26,7 @@ require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/database/Seeders/UserSeeder.php';
 
 use Xestify\core\Database;
-use Xestify\database\Seeders\UserSeeder;
+use Xestify\database\seeders\UserSeeder;
 use Xestify\exceptions\DatabaseException;
 
 // ---------------------------------------------------------------------------

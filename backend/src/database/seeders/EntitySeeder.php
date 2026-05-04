@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xestify\Database\Seeders;
+namespace Xestify\database\seeders;
 
 use PDO;
 use Xestify\core\Database;
