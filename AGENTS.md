@@ -165,7 +165,7 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
   `docs/mvp/decisiones-tecnicas.md` y documentacion de plugins cuando cambie
   arquitectura o contrato.
 - Evitar referencias nuevas a `system_entities`, `entity_metadata` o migraciones
-  obsoletas salvo como contexto historico.
+  obsoletas salvo como contexto historico.  
 
 ## Referencias clave
 
@@ -173,3 +173,16 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 - Backlog: `docs/mvp/backlog.md`
 - Decisiones tecnicas: `docs/mvp/decisiones-tecnicas.md`
 - Calidad y contribucion: `CONTRIBUTING.md`
+
+# Errores y lecciones aprendidas
+
+## Confirmación obligatoria de commits (incidente 05/05/2026)
+
+- Se detectó un error grave: se realizó commit y push de documentación sin mostrar el mensaje ni esperar confirmación del usuario, incumpliendo la pauta del repositorio.
+- Causa: automatización excesiva ante muchos archivos pendientes y asunción incorrecta de que la confirmación previa era suficiente.
+- Remedio:
+  - Siempre mostrar al usuario el mensaje de commit propuesto y esperar confirmación explícita antes de ejecutar cualquier commit o push, sin excepción.
+  - Esta regla aplica incluso para cambios masivos, de documentación o de limpieza de árbol de trabajo.
+  - No asumir nunca que una confirmación previa cubre commits futuros, aunque sean del mismo tipo o contexto.
+  - Si hay dudas sobre la excepción de la regla, pausar y consultar al usuario antes de actuar.
+- El incumplimiento de esta pauta se considera un error grave de procedimiento y debe ser reportado y corregido.
