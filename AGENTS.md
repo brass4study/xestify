@@ -47,9 +47,9 @@ Flujo obligatorio para cada story:
 ```text
 1. Implementar codigo + tests
 2. Verificar que los tests pasan
-3. Actualizar docs/ia/sesion.md
-4. Actualizar docs/ia/productividad.md
-5. Actualizar docs/ia/prompts.md
+3. Actualizar docs/10-productivity/sesion.md
+4. Actualizar docs/10-productivity/productividad.md
+5. Actualizar docs/10-productivity/prompts.md
 6. git add -A && git commit con el formato obligatorio
 ```
 
@@ -169,7 +169,7 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Referencias clave
 
-- Estado del proyecto: `docs/ia/sesion.md`
+- Estado del proyecto: `docs/10-productivity/sesion.md`
 - Backlog: `docs/mvp/backlog.md`
 - Decisiones tecnicas: `docs/mvp/decisiones-tecnicas.md`
 - Calidad y contribucion: `CONTRIBUTING.md`

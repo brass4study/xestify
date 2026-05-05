@@ -1,10 +1,25 @@
 # Xestify
 
-Xestify es una plataforma web local-first para pequenos negocios, pensada para ejecutarse en una Raspberry Pi 5 dentro de cada empresa. Su enfoque principal es combinar seguridad y soberania de datos con flexibilidad funcional mediante un sistema de plugins.
+Xestify es una plataforma web local-first para pequeños negocios, pensada para ejecutarse en una Raspberry Pi 5 dentro de cada empresa. Su enfoque principal es combinar seguridad y soberanía de datos con flexibilidad funcional mediante un sistema de plugins.
+
+---
+
+## Estado actual del proyecto (MVP)
+
+- **Corte funcional:** STORY 6.5 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
+- **Arquitectura:** Core minimalista, extensible solo mediante plugins
+- **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
+- **Frontend:** UI dinámica basada en metadata y plugins
+- **Operación:** Despliegue local en RPi5, actualizaciones controladas
+
+Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
+
+---
 
 En lugar de desarrollar una aplicacion distinta para cada rubro, Xestify ofrece un Core estable y agnostico del negocio, que se adapta por configuracion y extensiones. Esto permite que una joyeria, una optica, un taller o una ferreteria usen la misma base de producto, pero con entidades, formularios y flujos distintos.
 
-## Vision del producto
+## Visión del producto
 
 Xestify busca resolver un problema frecuente en pequenos negocios: necesitan software personalizable, pero no quieren complejidad operativa ni depender completamente de la nube.
 
@@ -15,7 +30,8 @@ La propuesta de valor se apoya en cuatro pilares:
 - Evolucion controlada: actualizaciones periodicas de plugins y del sistema.
 - Reutilizacion transversal: entidades base reutilizables entre verticales de negocio.
 
-## Como funciona
+## ¿Cómo funciona?
+
 
 El sistema se divide en dos capas funcionales:
 
@@ -28,14 +44,14 @@ El sistema se divide en dos capas funcionales:
 
 Con este enfoque, una misma entidad base puede usarse en varios sectores con distintos campos y extensiones, sin duplicar codigo estructural.
 
-## Arquitectura tecnica (resumen)
+## Arquitectura técnica (resumen)
 
-- Backend: PHP orientado a API REST.
-- Frontend: JavaScript con renderizado dinamico por metadata.
-- Persistencia: PostgreSQL con modelo hibrido relacional + JSONB.
-- Extension: sistema de plugins y hooks por eventos.
-- Operacion: despliegue en contenedores para Raspberry Pi 5.
-- Distribucion funcional: tienda/repositorio central de plugins.
+- Backend: PHP orientado a API REST ([docs/01-architecture/overview.md](docs/01-architecture/overview.md))
+- Frontend: JavaScript con renderizado dinámico por metadata ([docs/05-frontend/README.md](docs/05-frontend/README.md))
+- Persistencia: PostgreSQL con modelo híbrido relacional + JSONB ([docs/02-entities/README.md](docs/02-entities/README.md))
+- Extensión: sistema de plugins y hooks por eventos ([docs/04-plugins/README.md](docs/04-plugins/README.md))
+- Operación: despliegue en contenedores para Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
+- Distribución funcional: tienda/repositorio central de plugins
 
 ## Modelo de datos
 
@@ -57,7 +73,25 @@ Cada plugin tiene una estructura estandar con metadatos y esquema declarativo. E
 
 El sistema soporta ciclo de vida de plugin:
 
-- Instalacion
+- Instalación
+
+---
+
+## Navegación rápida
+
+- [Visión, convenciones y glosario](docs/00-meta/README.md)
+- [Arquitectura y patrones](docs/01-architecture/README.md)
+- [Modelo de datos y entidades](docs/02-entities/README.md)
+- [API REST](docs/03-api/README.md)
+- [Plugins y extensiones](docs/04-plugins/README.md)
+- [Frontend y UI dinámica](docs/05-frontend/README.md)
+- [Seguridad](docs/07-security/README.md)
+- [Operaciones y despliegue](docs/08-operations/README.md)
+- [Historial de decisiones](docs/09-history/README.md)
+- [Productividad y flujo IA](docs/10-productivity/README.md)
+- [Backlog y roadmap](docs/11-backlog/README.md)
+
+---
 - Activacion
 - Actualizacion
 - Desactivacion

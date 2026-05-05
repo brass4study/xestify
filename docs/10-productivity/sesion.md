@@ -2,7 +2,7 @@
 
 > **Instrucciones de uso:**
 > Al iniciar una nueva conversación con Copilot, escribe:
-> _"Lee docs/ia/sesion.md y retoma el desarrollo de Xestify donde lo dejamos."_
+> _"Lee [docs/10-productivity/sesion.md](sesion.md)y retoma el desarrollo de Xestify donde lo dejamos."_
 
 ---
 

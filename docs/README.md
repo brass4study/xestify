@@ -2,6 +2,17 @@
 
 Esta carpeta centraliza toda la documentación estructurada del proyecto, organizada por flujo de lectura recomendado y numerada para facilitar el onboarding, la consulta asistida por IA y la evolución del sistema.
 
+---
+
+## Estado actual y referencias clave
+
+- **Corte funcional:** STORY 6.5 incluida ([ver backlog](11-backlog/backlog.md))
+- **Catálogo de entidades:** gestionado solo por la tabla `plugins` (`plugin_type = 'entity'`)
+- **Decisiones técnicas:** [09-history/decisiones-tecnicas.md](09-history/decisiones-tecnicas.md)
+- **Productividad y flujo IA:** [10-productivity/README.md](10-productivity/README.md)
+
+---
+
 ## Tabla de contenidos
 
 1. [00-meta](00-meta/README.md) — Visión, convenciones y glosario

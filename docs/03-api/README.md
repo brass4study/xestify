@@ -1,10 +1,19 @@
 # API REST Xestify
 
-Esta carpeta contiene la documentación de la API REST del sistema, sus contratos y ejemplos de uso.
+Documentación completa y profesional de la API RESTful de Xestify.
 
-## Contenido
-- [especificacion-rest.md](especificacion-rest.md): Especificación y endpoints principales
+## Índice
+
+- [especificacion-rest.md](especificacion-rest.md): Arquitectura y principios generales
+- [convenciones.md](convenciones.md): Convenciones de diseño y uso
+- [endpoints.md](endpoints.md): Lista completa de endpoints
+- [contratos/](contratos/): Contratos y ejemplos por recurso (OpenAPI-like)
+	- [entities.md](contratos/entities.md): Contrato de entidades
+	- [plugins.md](contratos/plugins.md): Contrato de plugins
+	- [auth.md](contratos/auth.md): Contrato de autenticación
+- [errores.md](errores.md): Catálogo de errores y respuestas
+- [autenticacion.md](autenticacion.md): Autenticación y autorización
 
 ---
 
-Consulta este documento para conocer el diseño, los recursos y las reglas de la API que conecta el frontend, backend y plugins.
+Esta estructura permite navegación modular, actualización ágil y alineación con estándares de la industria (OpenAPI/Swagger, RESTful best practices).

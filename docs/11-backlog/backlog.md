@@ -989,7 +989,7 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
   - ✅ Tests unitarios para: `ValidationService`, `EntityService`, `JwtService`, `HookDispatcher`, `AuditService`
   - ✅ Coverage medido con script de conteo de casos (sin PHPUnit, compatible con setup actual)
   - ✅ Cada servicio tiene al menos: happy path, edge case, error case
-  - ✅ Tabla de coverage documentada en `docs/ia/sesion.md`
+  - ✅ Tabla de coverage documentada en `docs/10-productivity/sesion.md`
 - **IA Usage:** Generación de casos de test por método
 - **Dependencias:** STORY 3.1, STORY 3.2, STORY 4.2, STORY A1.2
 - **Blockers:** Ninguno

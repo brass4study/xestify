@@ -328,7 +328,7 @@ Una fase se considera completa cuando:
 - Tiene tests mínimos automatizados del flujo agregado.
 - Tiene documentación actualizada en `docs/`.
 - No introduce deuda crítica de seguridad o integridad de datos.
-- `docs/ia/sesion.md` refleja el estado actualizado.
+- `docs/10-productivity/sesion.md` refleja el estado actualizado.
 
 
 Este documento traduce las funcionalidades definidas en la documentacion actual a un plan de implementacion ejecutable, incremental y con control de riesgo.
