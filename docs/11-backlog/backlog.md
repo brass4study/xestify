@@ -65,7 +65,7 @@ Objetivo: Entorno dev reproducible, baseline arquitectura, pipeline de calidad.
 - **Type:** Task
 - **Criteria:**
   - ✅ `.gitignore` generado (PHP, Node, Docker, OS)
-  - ✅ Estructura `backend/`, `frontend/`, `docker/`, `docs/`
+  - ✅ Estructura `backend/`, `frontend/`, `docker/`, `context/`
   - ✅ README.md con instrucciones
   - ✅ Repositorio inicializado
 - **IA Usage:** Generar .gitignore, estructura carpetas, README base
@@ -790,7 +790,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Criteria:**
   - ✅ Endpoint POST `/api/v1/plugins/{slug}/update` ejecuta actualización
   - ✅ Si el plugin tiene `onUpdate()` en Lifecycle.php, se ejecuta antes de activar nueva versión
-  - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `entity_metadata` con versión incrementada
+  - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `plugin` con versión incrementada
   - ✅ Actualización falla atómicamente (transacción) si onUpdate lanza excepción
   - ✅ Tests: actualización exitosa, fallo con rollback automático
 - **IA Usage:** Lógica de diff + transacción + tests de error
@@ -1185,7 +1185,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ### Instrucciones de Uso
 
-1. **Lee primero:** [MASTER-brief.md](MASTER-brief.md) - scope reducido, timeline, entregas
+1. **Lee primero:** [MASTER-brief.md](../09-history/MASTER-brief.md) - scope reducido, timeline, entregas
 2. **Copia template:** `ia-productivity-template.md` → `ia-productivity-analysis.md`
 3. **Para cada STORY:**
    - Estima horas (ver tabla "Sin IA")
@@ -1216,4 +1216,4 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ---
 
-Referencia: Ver [MASTER-brief.md](MASTER-brief.md) para scope académico completo y estrategia de demostración.
+Referencia: Ver [MASTER-brief.md](../09-history/MASTER-brief.md) para scope académico completo y estrategia de demostración.

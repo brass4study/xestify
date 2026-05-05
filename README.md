@@ -119,23 +119,23 @@ MVP implementado hasta **STORY 6.4 incluida**:
 
 Pendiente desde STORY 6.5: pagina PluginManager, activacion/desactivacion desde UI, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
 
-## Documentacion del proyecto
+## Documentación del proyecto
 
-Indice principal: [docs/README.md](docs/README.md)
+Índice principal: [context/README.md](context/README.md)
 
 Documentos clave:
 
-- [docs/roadmap.md](docs/roadmap.md)
-- [docs/arquitectura/overview.md](docs/arquitectura/overview.md)
-- [docs/arquitectura/mvc.md](docs/arquitectura/mvc.md)
-- [docs/arquitectura/plugins.md](docs/arquitectura/plugins.md)
-- [docs/arquitectura/hooks.md](docs/arquitectura/hooks.md)
-- [docs/datos/postgresql-jsonb.md](docs/datos/postgresql-jsonb.md)
-- [docs/api/especificacion-rest.md](docs/api/especificacion-rest.md)
-- [docs/frontend/renderizado-dinamico.md](docs/frontend/renderizado-dinamico.md)
-- [docs/operacion/deploy-rpi5.md](docs/operacion/deploy-rpi5.md)
-- [docs/operacion/actualizaciones.md](docs/operacion/actualizaciones.md)
-- [docs/seguridad/modelo-seguridad-local.md](docs/seguridad/modelo-seguridad-local.md)
+- [context/11-backlog/roadmap.md](context/11-backlog/roadmap.md)
+- [context/01-architecture/overview.md](context/01-architecture/overview.md)
+- [context/01-architecture/mvc.md](context/01-architecture/mvc.md)
+- [context/01-architecture/plugins.md](context/01-architecture/plugins.md)
+- [context/01-architecture/hooks.md](context/01-architecture/hooks.md)
+- [context/02-entities/postgresql-jsonb.md](context/02-entities/postgresql-jsonb.md)
+- [context/03-api/especificacion-rest.md](context/03-api/especificacion-rest.md)
+- [context/05-frontend/renderizado-dinamico.md](context/05-frontend/renderizado-dinamico.md)
+- [context/08-operations/deploy-rpi5.md](context/08-operations/deploy-rpi5.md)
+- [context/08-operations/actualizaciones.md](context/08-operations/actualizaciones.md)
+- [context/07-security/modelo-seguridad-local.md](context/07-security/modelo-seguridad-local.md)
 
 ## Roadmap resumido
 

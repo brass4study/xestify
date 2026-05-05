@@ -8,7 +8,7 @@ Guía ejecutiva para iniciar desarrollo del MVP con las decisiones ya tomadas. I
 
 ## Checklist previo a Fase 0
 
-- [ ] Decisiones técnicas aprobadas (ver [decisiones-tecnicas.md](decisiones-tecnicas.md))
+- [ ] Decisiones técnicas aprobadas (ver [decisiones-tecnicas.md](../09-history/decisiones-tecnicas.md))
 - [ ] Equipo alineado en stack: PHP nativo, Vanilla JS, JWT, Schema custom
 - [x] PHP 8.1+ instalado localmente (`php --version`)
 - [x] PostgreSQL 13+ instalado localmente (`psql --version`)
@@ -322,7 +322,7 @@ Antes de empezar cada fase, confirmar:
 
 ## Próximos pasos
 
-1. Leer [decisiones-tecnicas.md](decisiones-tecnicas.md) como referencia rápida.
-2. Leer [historial-decisiones.md](historial-decisiones.md) si necesitas cambiar alguna decisión.
+1. Leer [decisiones-tecnicas.md](../09-history/decisiones-tecnicas.md) como referencia rápida.
+2. Leer [historial-decisiones.md](../09-history/historial-decisiones.md) si necesitas cambiar alguna decisión.
 3. Empezar Fase 0: setup del repositorio.
-4. Ejecutar [roadmap.md](../../roadmap.md) fase por fase.
+4. Ejecutar [roadmap.md](../11-backlog/roadmap.md) fase por fase.

@@ -8,7 +8,7 @@ duplicar reglas.
 ## Inicio de sesion obligatorio
 
 Al comenzar cualquier conversacion sobre este proyecto, leer siempre
-`docs/ia/sesion.md` antes de responder cualquier pregunta o realizar cualquier
+`context/10-productivity/sesion.md` antes de responder cualquier pregunta o realizar cualquier
 accion. Ese archivo contiene el estado actual del proyecto, las stories
 completadas, la story en progreso y las convenciones establecidas.
 
@@ -34,13 +34,13 @@ Esta regla es mandatoria. No hay excepciones. Nunca omitirla.
 Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar
 los tres archivos siguientes en este orden:
 
-1. `docs/ia/sesion.md`: marcar la story como completada, anadir commit hash,
-   actualizar "Ultima actualizacion" y "Proxima story".
-2. `docs/ia/productividad.md`: anadir entrada de la story con fecha, estimado
-   sin IA, tiempo real con IA, aceleracion, que hizo la IA, iteraciones y
-   decision manual.
-3. `docs/ia/prompts.md`: anadir el prompt exacto que se uso para la story,
-   resultado e iteraciones.
+1. `context/10-productivity/sesion.md`: marcar la story como completada, anadir commit hash,
+  actualizar "Ultima actualizacion" y "Proxima story".
+2. `context/10-productivity/productividad.md`: anadir entrada de la story con fecha, estimado
+  sin IA, tiempo real con IA, aceleracion, que hizo la IA, iteraciones y
+  decision manual.
+3. `context/10-productivity/prompts.md`: anadir el prompt exacto que se uso para la story,
+  resultado e iteraciones.
 
 Flujo obligatorio para cada story:
 
@@ -55,7 +55,7 @@ Flujo obligatorio para cada story:
 
 Si el trabajo no corresponde a una story completada, no se deben tocar estos
 archivos automaticamente. En ese caso, explicar en la respuesta que no se
-actualiza `docs/ia` porque no se esta cerrando una story.
+actualiza `context/10-productivity` porque no se esta cerrando una story.
 
 Formato de commit obligatorio para stories y EPICs:
 

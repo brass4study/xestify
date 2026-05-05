@@ -5,4 +5,4 @@ La fuente canonica de instrucciones para agentes en este repositorio es
 
 Antes de responder o modificar el proyecto, sigue siempre las reglas de
 `../AGENTS.md`, incluyendo la lectura inicial obligatoria de
-`../docs/ia/sesion.md`.
+`../context/10-productivity/sesion.md`.

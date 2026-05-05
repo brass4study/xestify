@@ -74,7 +74,7 @@ Todas las decisiones de stack están resueltas. No hay bloqueantes técnicos pen
 **Objetivo:** Entorno dev reproducible y baseline de arquitectura.
 
 **Completado:**
-- Estructura `backend/`, `frontend/`, `docs/`, `tools/`.
+- Estructura `backend/`, `frontend/`, `context/`, `tools/`.
 - Container DI + Router HTTP + Request/Response helpers.
 - Frontend skeleton (index.html, main.js, CSS base).
 - Entorno local PHP + PostgreSQL + proxy de desarrollo.

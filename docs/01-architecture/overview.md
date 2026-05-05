@@ -62,8 +62,16 @@ token y adjunta `Request::user()`, y el controller recibe esa misma request.
 ## Paradigma de registro de entidades
 
 Todo tipo de entidad es un plugin de tipo `entity` instalado en la tabla `plugins`.
-No existe tabla separada de catalogo — el filtro `WHERE plugin_type = 'entity' AND status = 'active'`
-sobre la tabla `plugins` reemplaza completamente a la antigua `system_entities`.
+No existe tabla separada de catálogo: el filtro
+`WHERE plugin_type = 'entity' AND status = 'active'`
+sobre la tabla `plugins` reemplaza completamente a la antigua `system_entities` (eliminada en Release B).
 
-Esta decision elimina la duplicacion de datos y convierte a `PluginLoader` en el
-unico punto de registro de entidades al arranque del sistema.
+**Consulta ejemplo:**
+```sql
+SELECT slug, name AS label, schema_json, schema_version
+FROM plugins
+WHERE plugin_type = 'entity' AND status = 'active' AND schema_json IS NOT NULL;
+```
+
+Esta decisión elimina la duplicación de datos y convierte a `PluginLoader` en el
+único punto de registro de entidades al arranque del sistema. Toda la lógica de alta, consulta y validación de entidades se basa en los plugins instalados y activos.

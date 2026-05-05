@@ -1,42 +1,24 @@
-# Documentacion Xestify
+# Contexto documental Xestify
 
-Este indice organiza la documentacion tecnica para la arquitectura MVC + plugins.
+Esta carpeta centraliza toda la documentación estructurada del proyecto, organizada por flujo de lectura recomendado y numerada para facilitar el onboarding, la consulta asistida por IA y la evolución del sistema.
 
-## Documentacion MVP (EMPIEZA AQUI)
+## Tabla de contenidos
 
-Decisiones tecnicas resueltas y referencia para futuras iteraciones:
+1. [00-meta](00-meta/README.md) — Visión, convenciones y glosario
+2. [01-architecture](01-architecture/README.md) — Arquitectura, patrones y extensibilidad
+3. [02-entities](02-entities/README.md) — Modelo de datos y versionado de entidades
+4. [03-api](03-api/README.md) — Especificación y contratos de la API REST
+5. [04-plugins](04-plugins/README.md) — Plantillas y desarrollo de plugins/extensiones
+6. [05-frontend](05-frontend/README.md) — UI dinámica y componentes frontend
+7. [06-backend](06-backend/README.md) — (Reservado para documentación backend)
+8. [07-security](07-security/README.md) — Seguridad y modelo local
+9. [08-operations](08-operations/README.md) — Despliegue, actualizaciones y operación
+10. [09-history](09-history/README.md) — Historial de decisiones y migraciones
+11. [10-productivity](10-productivity/README.md) — Productividad, IA y prompts
+12. [11-backlog](11-backlog/README.md) — Backlog, roadmap y estado del MVP
 
-- **[mvp/decisiones-tecnicas.md](mvp/decisiones-tecnicas.md)** — Resumen ejecutivo de las 5 decisiones principales (PHP nativo, Container casero, Vanilla puro, JWT, Schema custom)
-- **[mvp/historial-decisiones.md](mvp/historial-decisiones.md)** — Full context de opciones consideradas por cada decision (útil si en futuro quieres cambiar algo)
-- **[mvp/consideraciones-iniciales.md](mvp/consideraciones-iniciales.md)** — Guía ejecutiva para implementación: estructura, convenciones, trampas a evitar
-- **[mvp/backlog.md](mvp/backlog.md)** — Backlog ejecutable desglosado: 100+ historias con estimaciones, criterios de aceptación, dependencias y prioridad MoSCoW
+---
 
-## Orden de lectura recomendado (después de MVP)
+Cada subcarpeta contiene un README/index con índice y guía de navegación propia.
 
-1. [inicial.md](inicial.md)
-2. [arquitectura/overview.md](arquitectura/overview.md)
-3. [arquitectura/mvc.md](arquitectura/mvc.md)
-4. [arquitectura/plugins.md](arquitectura/plugins.md)
-5. [arquitectura/hooks.md](arquitectura/hooks.md)
-6. [datos/postgresql-jsonb.md](datos/postgresql-jsonb.md)
-7. [datos/versionado-esquemas.md](datos/versionado-esquemas.md)
-8. [api/especificacion-rest.md](api/especificacion-rest.md)
-9. [frontend/renderizado-dinamico.md](frontend/renderizado-dinamico.md)
-10. [operacion/deploy-rpi5.md](operacion/deploy-rpi5.md)
-11. [operacion/actualizaciones.md](operacion/actualizaciones.md)
-12. [seguridad/modelo-seguridad-local.md](seguridad/modelo-seguridad-local.md)
-13. [plugins/plantilla-plugin-entidad.md](plugins/plantilla-plugin-entidad.md)
-14. [plugins/plantilla-plugin-extension.md](plugins/plantilla-plugin-extension.md)
-
-## Objetivo de esta capa documental
-
-- Definir arquitectura tecnica sin ambiguedades
-- Separar responsabilidades por capas
-- Estandarizar desarrollo de plugins
-- Definir reglas de operacion y seguridad
-
-## Convenciones
-
-- Slugs en minusculas con guion bajo
-- Versionado semantico para plugins
-- Cambios estructurales guiados por metadata y migraciones
+> Sigue este orden para comprender el proyecto de forma progresiva y estructurada.

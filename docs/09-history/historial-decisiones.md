@@ -354,15 +354,17 @@ Ver [consideraciones-iniciales.md](consideraciones-iniciales.md) para guía de i
 Durante EPIC 6, al revisar el codigo, se detecto que `system_entities` y `plugins`
 contenian exactamente la misma informacion para los plugins de tipo `entity`:
 
-- `system_entities.slug` = `plugins.slug`
-- `system_entities.name` = (sin equivalente en plugins, añadido en Release A)
-- `system_entities.source_plugin_slug` = `plugins.slug` (el propio plugin)
-- `system_entities.is_active` = `plugins.status = 'active'`
 
 Toda insercion/actualizacion requeria escribir en ambas tablas. Todo acceso de lectura
 requeria decidir cual de las dos era la "verdad".
 
 ### Opciones consideradas
+
+---
+
+**Rollout histórico:**
+En la migración 009 se aplicó la consolidación del catálogo de entidades en la tabla `plugins` (`plugin_type = 'entity'`).
+Se eliminó toda referencia a `system_entities` en código y tests, y se validó la idempotencia y la suite completa tras la limpieza. El cambio es definitivo y no reversible.
 
 #### Opcion A: Mantener ambas tablas con sincronizacion automatica
 **Pros:**

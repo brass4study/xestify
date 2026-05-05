@@ -42,6 +42,11 @@ Notas:
 - Namespace PHP por plugin:
   - `Xestify\plugins\<slug>\`
 
+**Catálogo y tests:**
+- Los tests de catálogo de entidades, validación y CRUD deben operar siempre sobre la tabla `plugins` y nunca sobre tablas legacy.
+- Los seeders y fixtures deben poblar la tabla `plugins` para entidades base.
+- El modelo `SystemEntity` fue eliminado o convertido en facade sobre `plugins` (según refactor).
+
 ## manifest.json (minimo)
 
 ```json

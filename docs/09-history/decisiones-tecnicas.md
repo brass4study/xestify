@@ -2,7 +2,19 @@
 
 ## Resumen ejecutivo
 
-Documento que consolida las 5 decisiones tecnicas tomadas para el MVP. Cada decision incluye justificacion, implicaciones y referencias al historial completo.
+
+---
+
+### Nota histórica sobre el catálogo de entidades
+
+A partir de la migración 009, el catálogo funcional de entidades se consolidó exclusivamente sobre la tabla `plugins` (`plugin_type = 'entity'`). Se eliminó la dependencia de la tabla legacy `system_entities` en código y tests, y todos los procesos de alta, consulta y validación de entidades pasan por el registro de plugins.
+
+Esta decisión implicó:
+- Refactor de controladores, seeders y modelos para operar solo sobre `plugins`.
+- Limpieza de código y tests para eliminar referencias a `system_entities`.
+- Validación de idempotencia y migración de datos.
+
+El cambio es definitivo y no reversible: el catálogo de entidades siempre se obtiene de los plugins activos.
 
 **Fecha de resolucion:** Mayo 1, 2026  
 **Responsable de decisiones:** [Usuario]  
