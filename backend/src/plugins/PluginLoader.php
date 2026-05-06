@@ -287,7 +287,6 @@ class PluginLoader
                 'UPDATE plugins
                     SET name = :name,
                         plugin_type = :type,
-                        version = :version,
                         schema_json = COALESCE(:schema_json::jsonb, schema_json),
                         schema_version = CASE
                             WHEN :schema_check::jsonb IS NOT NULL
@@ -300,7 +299,6 @@ class PluginLoader
             )->execute([
                 ':name' => $manifest['name'],
                 ':type' => $manifest['type'],
-                ':version' => $manifest['version'],
                 ':schema_json' => $schema,
                 ':schema_check' => $schema,
                 ':schema_compare' => $schema,
@@ -463,5 +461,54 @@ class PluginLoader
         }
 
         return new $class(); // NOSONAR - convention-based plugin class
+    }
+
+    /**
+     * Return installed plugins whose manifest version is greater than the installed version.
+     *
+     * @return array<int, array{
+     *     slug: string,
+     *     name: string,
+     *     plugin_type: string,
+     *     installed_version: string,
+     *     available_version: string
+     * }>
+     */
+    public function getOutdated(): array
+    {
+        $stmt = $this->pdo->query('SELECT slug, name, plugin_type, version FROM plugins');
+        $dbPlugins = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        $dbBySlug = [];
+        foreach ($dbPlugins as $row) {
+            $dbBySlug[$row['slug']] = $row;
+        }
+
+        $outdated = [];
+        foreach ($this->discover() as $slug) {
+            $manifest = $this->readManifest($slug);
+            $diskVersion = $manifest['version'] ?? null;
+            $type = $manifest['type'] ?? null;
+            $name = $manifest['name'] ?? $slug;
+            if (!isset($dbBySlug[$slug])) {
+                continue;
+            }
+
+            $dbVersion = $dbBySlug[$slug]['version'] ?? null;
+            if ($dbVersion === null || $diskVersion === null) {
+                continue;
+            }
+
+            if (version_compare($diskVersion, $dbVersion, '>')) {
+                $outdated[] = [
+                    'slug' => $slug,
+                    'name' => $name,
+                    'plugin_type' => $type,
+                    'installed_version' => $dbVersion,
+                    'available_version' => $diskVersion,
+                ];
+            }
+        }
+
+        return $outdated;
     }
 }

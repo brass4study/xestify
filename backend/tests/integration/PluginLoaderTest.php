@@ -278,7 +278,7 @@ TestSuite::run('load() throws PluginException when entity plugin lacks schema.js
     }
 });
 
-TestSuite::run('load() updates version when plugin already registered', function () use ($pdo): void {
+TestSuite::run('load() preserves installed version when plugin already registered', function () use ($pdo): void {
     $slug = 'test_upd_' . bin2hex(random_bytes(3));
 
     $stmt = $pdo->prepare(
@@ -298,7 +298,7 @@ TestSuite::run('load() updates version when plugin already registered', function
         $check->execute([SLUG_BIND_PARAM => $slug]);
         $row = $check->fetch(PDO::FETCH_ASSOC);
 
-        assertEquals('1.1.0', (string) ($row['version'] ?? ''), 'Version should be updated to 1.1.0');
+        assertEquals('0.9.0', (string) ($row['version'] ?? ''), 'Installed version should be preserved');
     } finally {
         cleanupPlugin($pdo, $slug);
         removeFixture($root);
@@ -330,6 +330,98 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
     } finally {
         cleanupPlugin($pdo, $slugA);
         cleanupPlugin($pdo, $slugB);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('getOutdated() returns plugin when disk version is greater', function () use ($pdo): void {
+    $slug = 'test_outdated_' . bin2hex(random_bytes(3));
+    $stmt = $pdo->prepare(
+        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '1.0.0', 'inactive')"
+    );
+    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Test Outdated',
+        'version' => '2.0.0',
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $outdated = $loader->getOutdated();
+
+        $found = false;
+        foreach ($outdated as $item) {
+            if ($item['slug'] === $slug) {
+                $found = true;
+            }
+        }
+
+        assertTrue($found, 'Should report plugin when disk version is greater');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('getOutdated() ignores plugin when disk version is equal', function () use ($pdo): void {
+    $slug = 'test_equal_' . bin2hex(random_bytes(3));
+    $stmt = $pdo->prepare(
+        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '1.0.0', 'inactive')"
+    );
+    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Test Equal',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $outdated = $loader->getOutdated();
+
+        foreach ($outdated as $item) {
+            assertTrue($item['slug'] !== $slug, 'Should not report plugin when disk version is equal');
+        }
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('getOutdated() ignores plugin when disk version is lower', function () use ($pdo): void {
+    $slug = 'test_lower_' . bin2hex(random_bytes(3));
+    $stmt = $pdo->prepare(
+        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '2.0.0', 'inactive')"
+    );
+    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Test Lower',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $outdated = $loader->getOutdated();
+
+        foreach ($outdated as $item) {
+            assertTrue($item['slug'] !== $slug, 'Should not report plugin when disk version is lower');
+        }
+    } finally {
+        cleanupPlugin($pdo, $slug);
         removeFixture($root);
     }
 });

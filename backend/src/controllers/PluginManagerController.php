@@ -10,6 +10,7 @@ use PDO;
 use PDOException;
 use Xestify\core\Request;
 use Xestify\core\Response;
+use Xestify\plugins\PluginLoader;
 
 /**
  * PluginManagerController — Management endpoints for plugins.
@@ -20,7 +21,7 @@ use Xestify\core\Response;
  */
 class PluginManagerController
 {
-    public function __construct(private PDO $pdo)
+    public function __construct(private PDO $pdo, private ?PluginLoader $pluginLoader = null)
     {
     }
 
@@ -144,5 +145,32 @@ class PluginManagerController
 
         $roles = $user['roles'] ?? [];
         return is_array($roles) && in_array('admin', $roles, true);
+    }
+
+    public function listPluginUpdates(array $params, ?Request $request = null): void
+    {
+        $request ??= Request::fromGlobals($params);
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        try {
+            $outdated = $this->loader()->getOutdated();
+            Response::make()->json(['updates' => $outdated]);
+        } catch (\Throwable $e) {
+            Response::make()->serverError('Error: ' . $e->getMessage());
+        }
+    }
+
+    private function loader(): PluginLoader
+    {
+        if ($this->pluginLoader === null) {
+            $pluginsDir = defined('PLUGINS_PATH') ? PLUGINS_PATH : dirname(BASE_PATH) . '/plugins';
+            $this->pluginLoader = new PluginLoader($pluginsDir, $this->pdo);
+        }
+
+        return $this->pluginLoader;
     }
 }

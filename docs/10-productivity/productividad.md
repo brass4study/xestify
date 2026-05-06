@@ -821,3 +821,23 @@
 - **Iteraciones:** 6
 - **Decisión manual:** El test E2E integrado requirió análisis manual del flujo real de EntityEdit para entender que escucha click en botón, no el evento submit del form
 - **Cierre:** Verificado contra commit `7d2d313`; backend `php backend/tests/run.php all` pasa 28/28 archivos.
+
+---
+
+## EPIC 7 - Actualizaciones de Plugins y Rollback
+
+### STORY 7.1 - Detección de actualizaciones disponibles en PluginLoader
+- **Fecha:** 2026-05-06
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~75%
+- **Qué hizo IA:**
+  - Auditó la implementación inicial generada con GitHub Copilot y detectó que el boot consumía las actualizaciones al sobrescribir `plugins.version`.
+  - Corrigió `PluginLoader::load()` para preservar la versión instalada cuando el plugin ya existe.
+  - Implementó `PluginLoader::getOutdated()` para comparar versión instalada en base de datos contra versión disponible en `manifest.json`.
+  - Cableó `PluginManagerController` para reutilizar el `PluginLoader` del contenedor y exponer `GET /api/v1/plugins/updates`.
+  - Reforzó `PluginLoaderTest.php` con casos de versión mayor, igual y menor.
+  - Reescribió el test del endpoint con fixture real en disco y alineó los nombres nuevos de `TestSuite::run()` con el estilo existente.
+  - Actualizó `docs/03-api/endpoints.md`.
+- **Iteraciones:** 3 (revisión de Copilot, corrección de diseño, refuerzo de tests/contrato API)
+- **Decisión manual:** La versión instalada no se actualiza durante `load()`; se mantiene hasta que una story posterior implemente el proceso explícito de update/rollback.

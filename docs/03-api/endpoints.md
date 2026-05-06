@@ -14,6 +14,7 @@
 | PUT    | /api/v1/entities/{slug}/records/{id} | Actualizar registro (merge JSONB) | Sí |
 | DELETE | /api/v1/entities/{slug}/records/{id} | Eliminar (soft-delete) registro | Sí |
 | GET    | /api/v1/plugins | Listar plugins instalados | Sí (admin) |
+| GET    | /api/v1/plugins/updates | Listar plugins con actualización disponible | Sí (admin) |
 | PUT    | /api/v1/plugins/{slug}/status | Cambiar estado de plugin (activar/desactivar) | Sí (admin) |
 | GET    | /api/v1/plugins/{plugin_slug}/{entity}/{id} | Listar items de extensión para entidad/registro | Sí |
 | POST   | /api/v1/plugins/{plugin_slug}/{entity}/{id} | Crear item de extensión para entidad/registro | Sí |

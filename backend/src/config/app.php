@@ -97,5 +97,6 @@ $container->singleton(PluginExtensionController::class, fn() => new PluginExtens
 ));
 
 $container->singleton(PluginManagerController::class, fn() => new PluginManagerController(
-    $container->get(Database::class)
+    $container->get(Database::class),
+    $container->get(PluginLoader::class)
 ));

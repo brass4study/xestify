@@ -20,9 +20,11 @@ require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
+require_once BASE_PATH . '/src/plugins/PluginLoader.php';
 
 use Xestify\controllers\PluginManagerController;
 use Xestify\core\Request;
+use Xestify\plugins\PluginLoader;
 
 // ---------------------------------------------------------------------------
 // Mock PDO and Statement classes
@@ -60,6 +62,12 @@ class TestPdo extends \PDO
         return new TestStatement($this->plugins);
     }
 
+    #[\ReturnTypeWillChange]
+    public function query($query, ...$args)
+    {
+        return new TestStatement($this->plugins);
+    }
+
     public function __construct()
     {
         /* stub — no real database connection */
@@ -82,7 +90,7 @@ class TestStatement
     public function execute(array $params = []): bool
     {
         $this->lastParams = $params;
-        
+
         // Handle UPDATE: simulate status change
         if (isset($params[':status']) && isset($params[':slug'])) {
             $slug = $params[':slug'];
@@ -94,7 +102,7 @@ class TestStatement
                 }
             }
         }
-        
+
         return true;
     }
 
@@ -141,6 +149,41 @@ function testController(callable $fn): string
     ob_start();
     $fn();
     return ob_get_clean();
+}
+
+function createPluginManagerFixture(array $manifest): string
+{
+    $root = sys_get_temp_dir() . '/xestify_plugin_manager_test_' . bin2hex(random_bytes(4));
+    $slug = (string) ($manifest['slug'] ?? 'test_plugin');
+    $pluginDir = $root . '/' . $slug;
+
+    mkdir($pluginDir, 0777, true);
+    file_put_contents($pluginDir . '/manifest.json', (string) json_encode($manifest, JSON_PRETTY_PRINT));
+
+    return $root;
+}
+
+function removePluginManagerFixture(string $root): void
+{
+    if (!is_dir($root)) {
+        return;
+    }
+
+    $items = scandir($root) ?: [];
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+
+        $path = $root . '/' . $item;
+        if (is_dir($path)) {
+            removePluginManagerFixture($path);
+        } else {
+            unlink($path);
+        }
+    }
+
+    rmdir($root);
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +300,46 @@ TestSuite::run('GET /api/v1/plugins rejects non-admin user', function () {
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Should fail for non-admin');
     assertEquals(403, $response['error']['code'], 'Error code should be 403');
+});
+
+TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function () {
+    $pdo = new TestPdo();
+    $root = createPluginManagerFixture([
+        'slug' => 'clients',
+        'name' => 'Clients',
+        'version' => '2.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+    ]);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $controller = new PluginManagerController($pdo, $loader);
+        $request = new TestRequest('');
+        $request->setUser(['roles' => ['admin']]);
+
+        $output = testController(function () use ($controller, $request): void {
+            $controller->listPluginUpdates([], $request);
+        });
+
+        $response = json_decode($output, true);
+        assertTrue($response['ok'] === true, 'Response ok should be true');
+        assertTrue(isset($response['data']['updates']), 'Should have updates array');
+        assertEquals(1, count($response['data']['updates']), 'Should return one outdated plugin');
+        assertEquals('clients', $response['data']['updates'][0]['slug'], 'Outdated plugin should be clients');
+        assertEquals(
+            '1.0.0',
+            $response['data']['updates'][0]['installed_version'],
+            'Installed version should match DB'
+        );
+        assertEquals(
+            '2.0.0',
+            $response['data']['updates'][0]['available_version'],
+            'Available version should match manifest'
+        );
+    } finally {
+        removePluginManagerFixture($root);
+    }
 });
 
 // ---------------------------------------------------------------------------

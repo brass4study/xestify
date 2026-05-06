@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-04  
-**EPIC activo:** EPIC 6 — Plugins tipo Extension (✅ COMPLETADO)  
-**Próxima story:** STORY 7.1 — Detección de actualizaciones disponibles en PluginLoader
+**Fecha:** 2026-05-06  
+**EPIC activo:** EPIC 7 - Actualizaciones de Plugins y Rollback (EN PROGRESO)  
+**Próxima story:** STORY 7.2 - Proceso de actualización con migración de schema
 
 ---
 
@@ -361,3 +361,27 @@ Story completada. Archivos creados/modificados:
 - Verificacion backend: `php backend/tests/run.php all` → 28/28 archivos pasan
 - Verificacion frontend sintaxis: `node --check frontend/src/js/pages/PluginManager.js` y `node --check frontend/src/js/main.js`
 - Backlog alineado: el siguiente punto es STORY 7.1
+
+# Sesion 2026-05-06 - STORY 7.1 Detección de actualizaciones disponibles en PluginLoader
+
+Story completada. Archivos creados/modificados:
+
+**Modificados (backend):**
+- `backend/src/plugins/PluginLoader.php` — nuevo `getOutdated()` y preservación de `plugins.version` en plugins ya instalados
+- `backend/src/controllers/PluginManagerController.php` — nuevo endpoint `GET /api/v1/plugins/updates` reutilizando `PluginLoader`
+- `backend/src/config/app.php` — inyección de `PluginLoader` en `PluginManagerController`
+- `backend/src/config/routes.php` — ruta `GET /api/v1/plugins/updates`
+- `backend/tests/integration/PluginLoaderTest.php` — cobertura para versión mayor, igual y menor
+- `backend/tests/integration/PluginManagerApiTest.php` — test del endpoint con fixture real en disco
+
+**Modificados (docs):**
+- `docs/03-api/endpoints.md` — documentación del endpoint de updates
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 28/28 archivos pasan
+- Plugins: `php backend/tests/run.php integration-plugins` → 8/8 archivos pasan
+
+**Cierre verificado (2026-05-06):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: `load()` ya no consume la actualización durante el boot
+- Backlog alineado: el siguiente punto es STORY 7.2
