@@ -1,0 +1,32 @@
+{
+  "skill_name": "review-sonarqube-clean-code",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Haz una revision de clean code.",
+      "expected_output": "Interpreta la peticion como ejecucion de limpieza, infiere el alcance desde cambios locales o reporte Sonar, corrige hallazgos seguros, verifica y resume cambios y pendientes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Revisa los hallazgos de SonarQube for IDE del workspace y corrige los problemas de clean code de bajo riesgo.",
+      "expected_output": "Exporta o reutiliza el reporte SonarLint, agrupa hallazgos, aplica cambios acotados, verifica con tests o checks relevantes y reporta pendientes.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Tengo var/reports/sonarlint-problems.json generado. Prioriza los code smells de PluginLoader.php y dime que corregirias.",
+      "expected_output": "Lee el reporte existente, filtra por PluginLoader.php, separa hallazgos accionables de falsos positivos justificados y propone cambios sin refactor amplio.",
+      "files": [
+        "var/reports/sonarlint-problems.json",
+        "backend/src/plugins/PluginLoader.php"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Deja Sonar en verde para los archivos que acabo de tocar, pero no cambies comportamiento.",
+      "expected_output": "Detecta el alcance desde los cambios locales, exporta diagnostics si es viable, corrige solo hallazgos del alcance y ejecuta verificaciones relevantes.",
+      "files": []
+    }
+  ]
+}

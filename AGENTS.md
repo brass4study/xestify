@@ -8,7 +8,7 @@ duplicar reglas.
 ## Inicio de sesion obligatorio
 
 Al comenzar cualquier conversacion sobre este proyecto, leer siempre
-`context/10-productivity/sesion.md` antes de responder cualquier pregunta o realizar cualquier
+`docs/10-productivity/sesion.md` antes de responder cualquier pregunta o realizar cualquier
 accion. Ese archivo contiene el estado actual del proyecto, las stories
 completadas, la story en progreso y las convenciones establecidas.
 
@@ -34,12 +34,12 @@ Esta regla es mandatoria. No hay excepciones. Nunca omitirla.
 Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar
 los tres archivos siguientes en este orden:
 
-1. `context/10-productivity/sesion.md`: marcar la story como completada, anadir commit hash,
+1. `docs/10-productivity/sesion.md`: marcar la story como completada, anadir commit hash,
   actualizar "Ultima actualizacion" y "Proxima story".
-2. `context/10-productivity/productividad.md`: anadir entrada de la story con fecha, estimado
+2. `docs/10-productivity/productividad.md`: anadir entrada de la story con fecha, estimado
   sin IA, tiempo real con IA, aceleracion, que hizo la IA, iteraciones y
   decision manual.
-3. `context/10-productivity/prompts.md`: anadir el prompt exacto que se uso para la story,
+3. `docs/10-productivity/prompts.md`: anadir el prompt exacto que se uso para la story,
   resultado e iteraciones.
 
 Flujo obligatorio para cada story:
@@ -55,7 +55,7 @@ Flujo obligatorio para cada story:
 
 Si el trabajo no corresponde a una story completada, no se deben tocar estos
 archivos automaticamente. En ese caso, explicar en la respuesta que no se
-actualiza `context/10-productivity` porque no se esta cerrando una story.
+actualiza `docs/10-productivity` porque no se esta cerrando una story.
 
 Formato de commit obligatorio para stories y EPICs:
 
@@ -108,6 +108,18 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
   `CONTRIBUTING.md`.
 - No duplicar en este archivo las reglas detalladas de calidad; si cambian, deben
   actualizarse en `CONTRIBUTING.md`.
+
+## Skills locales del proyecto
+
+- Las skills propias de Xestify viven en `skills/`.
+- Seguir el estandar Anthropic Agent Skills: cada skill debe ser una carpeta con
+  `SKILL.md`, frontmatter YAML con `name` y `description`, instrucciones Markdown
+  concisas y recursos opcionales en `scripts/`, `references/`, `assets/` o
+  `evals/` cuando aporten valor.
+- Cuando una peticion encaje con una skill local, leer su `SKILL.md` antes de
+  actuar y aplicar su flujo junto con este `AGENTS.md` y `CONTRIBUTING.md`.
+- Para revisiones de clean code con SonarQube for IDE/SonarLint, usar
+  `skills/review-sonarqube-clean-code/SKILL.md`.
 
 ## Convenciones de entidades y plugins
 
@@ -173,6 +185,7 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 - Backlog: `docs/mvp/backlog.md`
 - Decisiones tecnicas: `docs/mvp/decisiones-tecnicas.md`
 - Calidad y contribucion: `CONTRIBUTING.md`
+- Skills locales: `skills/`
 
 # Errores y lecciones aprendidas
 
