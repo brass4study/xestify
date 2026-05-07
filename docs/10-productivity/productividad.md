@@ -855,8 +855,8 @@
   - Sustituyó el flujo basado en router PHP de desarrollo por configuración Apache + `.htaccess`.
   - Adaptó el frontend para resolver `base path` dinámico y funcionar bajo alias/subruta (`/xestify`).
   - Corrigió backend para aceptar rutas bajo alias Apache y preservar el header `Authorization`.
-  - Extrajo del boot normal el seeding de usuario, la migración legacy `client -> clients` y la sincronización de plugins.
-  - Creó scripts manuales de setup y sincronización (`seed-admin-user.php`, `migrate-legacy-client-records.php`, `sync-plugins.php`).
+  - Extrajo del boot normal el seeding de usuario y la sincronización de plugins.
+  - Creó scripts manuales de setup y sincronización (`seed-admin-user.php`, `sync-plugins.php`).
   - Redefinió el contrato operativo de plugins: runtime desde BD, sync disco -> BD como operación explícita.
   - Actualizó backlog, README y documentación operativa para reflejar Apache+PHP, setup manual y recomendaciones de rendimiento.
   - Midió tiempos reales bajo Apache y aisló el mayor cuello local en `Xdebug` arrancando en cada request.

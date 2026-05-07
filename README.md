@@ -176,7 +176,6 @@ auditoria, permisos finos y marketplace.
 Operaciones manuales de setup:
 
 - `php tools/setup/seed-admin-user.php`: crea el admin inicial si la tabla `users` esta vacia
-- `php tools/setup/migrate-legacy-client-records.php`: migra datos legacy `client` -> `clients`
 - `php tools/setup/sync-plugins.php`: sincroniza plugins presentes en disco con la tabla `plugins`
 
 Estas operaciones ya no se ejecutan en cada request. El runtime normal carga

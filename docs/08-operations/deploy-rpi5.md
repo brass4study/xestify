@@ -59,7 +59,6 @@ path de forma dinamica y mantiene operativos `/xestify/`, `/xestify/api/*`,
 ## Operaciones manuales de setup
 
 - Admin inicial: `php tools/setup/seed-admin-user.php`
-- Migracion legacy `client -> clients`: `php tools/setup/migrate-legacy-client-records.php`
 - Sincronizacion de plugins disco -> BD: `php tools/setup/sync-plugins.php`
 
 Estas operaciones ya no se ejecutan en cada request. Deben lanzarse de forma
@@ -77,7 +76,6 @@ una ruta separada, ejecutar los scripts con `-c` para forzar ese ini. Ejemplo:
 
 ```powershell
 C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/seed-admin-user.php
-C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/migrate-legacy-client-records.php
 C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-plugins.php
 ```
 
