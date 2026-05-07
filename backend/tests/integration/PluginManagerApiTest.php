@@ -15,6 +15,7 @@ declare(strict_types=1);
  */
 
 define('BASE_PATH', dirname(__DIR__, 2));
+define('SEMVER_1_0', '1.0.0');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
@@ -38,7 +39,7 @@ class TestPdo extends \PDO
             'slug' => 'clients',
             'name' => 'Clients',
             'plugin_type' => 'entity',
-            'version' => '1.0.0',
+            'version' => SEMVER_1_0,
             'status' => 'active',
             'schema_version' => 1,
             'installed_at' => '2026-01-01T00:00:00+00:00',
@@ -48,7 +49,7 @@ class TestPdo extends \PDO
             'slug' => 'comments',
             'name' => 'Comments',
             'plugin_type' => 'extension',
-            'version' => '1.0.0',
+            'version' => SEMVER_1_0,
             'status' => 'inactive',
             'schema_version' => 1,
             'installed_at' => '2026-01-02T00:00:00+00:00',
@@ -56,25 +57,23 @@ class TestPdo extends \PDO
         ],
     ];
 
-    #[\ReturnTypeWillChange]
-    public function prepare($query, $options = [])
+    public function prepare(string $query, array $options = []): \PDOStatement|false
     {
         return new TestStatement($this->plugins);
     }
 
-    #[\ReturnTypeWillChange]
-    public function query($query, ...$args)
+    public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): \PDOStatement|false
     {
         return new TestStatement($this->plugins);
     }
 
     public function __construct()
     {
-        /* stub — no real database connection */
+        /* stub - no real database connection */
     }
 }
 
-class TestStatement
+class TestStatement extends \PDOStatement
 {
     /** @var array<int, array<string, mixed>> */
     private array $plugins;
@@ -87,35 +86,36 @@ class TestStatement
         $this->plugins = &$plugins;
     }
 
-    public function execute(array $params = []): bool
+    public function execute(?array $params = null): bool
     {
-        $this->lastParams = $params;
+        $this->lastParams = $params ?? [];
 
-        // Handle UPDATE: simulate status change
-        if (isset($params[':status']) && isset($params[':slug'])) {
-            $slug = $params[':slug'];
+        if (isset($this->lastParams[':status'], $this->lastParams[':slug'])) {
+            $slug = $this->lastParams[':slug'];
             foreach ($this->plugins as &$plugin) {
                 if ($plugin['slug'] === $slug) {
-                    $plugin['status'] = $params[':status'];
-                    $plugin['updated_at'] = date('Y-m-d\\TH:i:sP');
+                    $plugin['status'] = $this->lastParams[':status'];
+                    $plugin['updated_at'] = date('Y-m-d\TH:i:sP');
                     break;
                 }
             }
+            unset($plugin);
         }
 
         return true;
     }
 
-    #[\ReturnTypeWillChange]
-    public function fetchAll($fetchMode = null, ...$args) // NOSONAR
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
     {
         return $this->plugins;
     }
 
-    #[\ReturnTypeWillChange]
-    public function fetch($fetchMode = null, ...$args) // NOSONAR
-    {
-        if ($this->lastParams && isset($this->lastParams[':slug'])) {
+    public function fetch(
+        int $mode = PDO::FETCH_DEFAULT,
+        int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
+        int $cursorOffset = 0
+    ): mixed {
+        if (isset($this->lastParams[':slug'])) {
             $slug = $this->lastParams[':slug'];
             foreach ($this->plugins as $plugin) {
                 if ($plugin['slug'] === $slug) {
@@ -123,7 +123,8 @@ class TestStatement
                 }
             }
         }
-        return null;
+
+        return false;
     }
 }
 
@@ -215,7 +216,16 @@ TestSuite::run('GET /api/v1/plugins returns plugins with required fields', funct
     $response = json_decode($output, true);
     $plugin = $response['data']['plugins'][0];
     
-    $fields = ['slug', 'name', 'plugin_type', 'version', 'status', 'schema_version', 'installed_at', 'updated_at'];
+    $fields = [
+        'slug',
+        'name',
+        'plugin_type',
+        'version',
+        'status',
+        'schema_version',
+        'installed_at',
+        'updated_at',
+    ];
     foreach ($fields as $field) {
         assertTrue(isset($plugin[$field]), "Should have $field field");
     }
@@ -258,7 +268,8 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/status validates status value', funct
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Should fail with invalid status');
     assertTrue(
-        str_contains($response['error']['message'], 'active') || str_contains($response['error']['message'], 'inactive'),
+        str_contains($response['error']['message'], 'active')
+            || str_contains($response['error']['message'], 'inactive'),
         'Error should mention valid status values'
     );
 });
@@ -309,7 +320,7 @@ TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function 
         'name' => 'Clients',
         'version' => '2.0.0',
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => SEMVER_1_0,
     ]);
 
     try {
@@ -328,7 +339,7 @@ TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function 
         assertEquals(1, count($response['data']['updates']), 'Should return one outdated plugin');
         assertEquals('clients', $response['data']['updates'][0]['slug'], 'Outdated plugin should be clients');
         assertEquals(
-            '1.0.0',
+            SEMVER_1_0,
             $response['data']['updates'][0]['installed_version'],
             'Installed version should match DB'
         );

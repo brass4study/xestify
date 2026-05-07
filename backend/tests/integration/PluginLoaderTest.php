@@ -151,7 +151,13 @@ TestSuite::run('discover() returns empty array when plugins dir does not exist',
 });
 
 TestSuite::run('discover() returns slug when valid plugin dir exists', function (): void {
-    $manifest = ['slug' => 'test_disc', 'name' => 'Test', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => SEMVER_1_0];
+    $manifest = [
+        'slug' => 'test_disc',
+        'name' => 'Test',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
     $root = createPluginFixture($manifest);
 
     try {
@@ -204,7 +210,13 @@ TestSuite::run('load() throws PluginException when manifest has invalid JSON', f
 });
 
 TestSuite::run('load() throws PluginException when plugin requires higher core version', function () use ($pdo): void {
-    $manifest = ['slug' => 'future_plugin', 'name' => 'Future', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => '99.0.0'];
+    $manifest = [
+        'slug' => 'future_plugin',
+        'name' => 'Future',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => '99.0.0',
+    ];
     $root = createPluginFixture($manifest);
 
     try {
@@ -225,7 +237,13 @@ TestSuite::run('load() throws PluginException when plugin requires higher core v
 
 TestSuite::run('load() registers new plugin in plugins', function () use ($pdo): void {
     $slug = 'test_reg_' . bin2hex(random_bytes(3));
-    $manifest = ['slug' => $slug, 'name' => 'Test Reg', 'version' => SEMVER_1_0, 'type' => 'entity', 'core_version' => SEMVER_1_0];
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Test Reg',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
     $root = createPluginFixture($manifest);
 
     try {
@@ -287,7 +305,13 @@ TestSuite::run('load() preserves installed version when plugin already registere
     );
     $stmt->execute([SLUG_BIND_PARAM => $slug]);
 
-    $manifest = ['slug' => $slug, 'name' => 'Test Upd', 'version' => '1.1.0', 'type' => 'entity', 'core_version' => SEMVER_1_0];
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Test Upd',
+        'version' => '1.1.0',
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
     $root = createPluginFixture($manifest);
 
     try {
@@ -316,7 +340,11 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
         $dir = $root . '/' . $s;
         mkdir($dir, 0777, true);
         file_put_contents($dir . MANIFEST_FILE_PATH, (string) json_encode([
-            'slug' => $s, 'name' => $s, 'version' => SEMVER_1_0, 'type' => 'extension', 'core_version' => SEMVER_1_0,
+            'slug' => $s,
+            'name' => $s,
+            'version' => SEMVER_1_0,
+            'type' => 'extension',
+            'core_version' => SEMVER_1_0,
         ]));
     }
 
@@ -337,9 +365,10 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
 TestSuite::run('getOutdated() returns plugin when disk version is greater', function () use ($pdo): void {
     $slug = 'test_outdated_' . bin2hex(random_bytes(3));
     $stmt = $pdo->prepare(
-        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '1.0.0', 'inactive')"
+        "INSERT INTO plugins (slug, plugin_type, version, status)
+         VALUES (:slug, 'entity', :version, 'inactive')"
     );
-    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+    $stmt->execute([SLUG_BIND_PARAM => $slug, ':version' => SEMVER_1_0]);
 
     $manifest = [
         'slug' => $slug,
@@ -371,14 +400,15 @@ TestSuite::run('getOutdated() returns plugin when disk version is greater', func
 TestSuite::run('getOutdated() ignores plugin when disk version is equal', function () use ($pdo): void {
     $slug = 'test_equal_' . bin2hex(random_bytes(3));
     $stmt = $pdo->prepare(
-        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '1.0.0', 'inactive')"
+        "INSERT INTO plugins (slug, plugin_type, version, status)
+         VALUES (:slug, 'entity', :version, 'inactive')"
     );
-    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+    $stmt->execute([SLUG_BIND_PARAM => $slug, ':version' => SEMVER_1_0]);
 
     $manifest = [
         'slug' => $slug,
         'name' => 'Test Equal',
-        'version' => '1.0.0',
+        'version' => SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SEMVER_1_0,
     ];
@@ -407,7 +437,7 @@ TestSuite::run('getOutdated() ignores plugin when disk version is lower', functi
     $manifest = [
         'slug' => $slug,
         'name' => 'Test Lower',
-        'version' => '1.0.0',
+        'version' => SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SEMVER_1_0,
     ];

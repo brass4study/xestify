@@ -28,12 +28,12 @@ the cleanup.
      question before editing.
 2. Export diagnostics:
    - For the current VSCode Problems state, run
-     `.\tools\vscode\export-sonarlint-problems.ps1`.
+     `scripts/export-sonarlint-problems.ps1`.
    - For a broader pass over `php`, `js`, and `html` files, run
-     `.\tools\vscode\analyze-sonarlint-workspace.ps1`.
+     `scripts/analyze-sonarlint-workspace.ps1`.
 3. If export fails, report that VSCode must be open, the local exporter must be
-   installed from `tools/vscode/sonarlint-problems-exporter`, and SonarQube for
-   IDE must have published diagnostics.
+   installed from `assets/vscode-extension`, and SonarQube for IDE must have
+   published diagnostics.
 4. Read `var/reports/sonarlint-problems.json` and use `total`, `generated_at`,
    and `issues[]` as the source of truth. Each issue includes `source`, `code`,
    `severity`, `message`, `path`, `line`, `character`, `end_line`, and
@@ -46,6 +46,15 @@ the cleanup.
    explicit approval.
 7. After changes, run the relevant project tests or syntax checks. Export
    SonarQube findings again when feasible and compare the remaining count.
+
+## Bundled Resources
+
+- `scripts/export-sonarlint-problems.ps1`: canonical trigger-based export for
+  the current VSCode Problems state.
+- `scripts/analyze-sonarlint-workspace.ps1`: canonical trigger-based full
+  workspace analysis for `php`, `js`, and `html`.
+- `assets/vscode-extension/`: local VSCode extension that listens for trigger
+  files, exports Sonar diagnostics, and can analyze the whole workspace.
 
 ## Fixing Guidance
 

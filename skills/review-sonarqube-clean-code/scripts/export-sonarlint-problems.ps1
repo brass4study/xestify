@@ -1,7 +1,7 @@
 param(
     [string] $ReportPath = "var\reports\sonarlint-problems.json",
-    [string] $TriggerPath = "var\reports\sonarlint-workspace.request.json",
-    [int] $TimeoutSeconds = 180
+    [string] $TriggerPath = "var\reports\sonarlint-problems.request.json",
+    [int] $TimeoutSeconds = 20
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,7 +17,7 @@ function Write-Trigger {
 
     $request = [ordered] @{
         requested_at = (Get-Date).ToString("o")
-        reason = "analyze-sonarlint-workspace"
+        reason = "export-sonarlint-problems"
     }
 
     $request |
@@ -43,7 +43,7 @@ function Wait-Report {
             }
         }
 
-        Start-Sleep -Milliseconds 500
+        Start-Sleep -Milliseconds 250
     }
 
     throw "No se genero $Path en $Timeout segundos. Recarga VSCode y confirma que la extension local esta activa."
@@ -53,5 +53,6 @@ $startedAt = Get-Date
 Write-Trigger -Path $TriggerPath
 $report = Wait-Report -Path $ReportPath -StartedAt $startedAt -Timeout $TimeoutSeconds
 
-Write-Host "Analisis SonarLint workspace exportado: $($report.FullName)"
+Write-Host "Reporte SonarLint exportado: $($report.FullName)"
 Get-Content $report.FullName -Raw
+

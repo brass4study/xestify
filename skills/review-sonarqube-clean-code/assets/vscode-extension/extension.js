@@ -88,7 +88,7 @@ function writeReport(root, issues) {
   const reportPath = path.join(root, REPORT_PATH);
   const report = {
     generated_at: new Date().toISOString(),
-    exporter: 'tools/vscode/sonarlint-problems-exporter',
+    exporter: 'skills/review-sonarqube-clean-code/assets/vscode-extension',
     total: issues.length,
     issues
   };
@@ -264,3 +264,4 @@ function activate(context) {
 module.exports = {
   activate
 };
+

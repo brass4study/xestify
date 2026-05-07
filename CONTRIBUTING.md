@@ -49,19 +49,19 @@ node --check frontend\src\js\pages\EntityEdit.js
 
 - La extension de VSCode publica sus hallazgos como diagnostics de VSCode.
 - Para exportar exactamente los hallazgos Sonar visibles en Problems, usar la
-  extension local `tools/vscode/sonarlint-problems-exporter`.
+  extension local `skills/review-sonarqube-clean-code/assets/vscode-extension`.
 - El reporte se genera en `var/reports/sonarlint-problems.json`.
 - Los agentes pueden pedir la exportacion ejecutando:
 
 ```powershell
-.\tools\vscode\export-sonarlint-problems.ps1
+.\skills\review-sonarqube-clean-code\scripts\export-sonarlint-problems.ps1
 ```
 
 - Para forzar un analisis completo de archivos `php`, `js` y `html` del
   workspace antes de exportar, ejecutar:
 
 ```powershell
-.\tools\vscode\analyze-sonarlint-workspace.ps1
+.\skills\review-sonarqube-clean-code\scripts\analyze-sonarlint-workspace.ps1
 ```
 
 - El reporte depende del estado actual de VSCode: si SonarQube for IDE no ha

@@ -21,7 +21,7 @@ Copiar esta carpeta a las extensiones locales de VSCode:
 
 ```powershell
 Copy-Item `
-  .\tools\vscode\sonarlint-problems-exporter `
+  .\skills\review-sonarqube-clean-code\assets\vscode-extension `
   "$env:USERPROFILE\.vscode\extensions\xestify.sonarlint-problems-exporter-0.1.0" `
   -Recurse `
   -Force
@@ -54,7 +54,7 @@ var/reports/sonarlint-problems.request.json
 Para pedir una exportacion desde terminal:
 
 ```powershell
-.\tools\vscode\export-sonarlint-problems.ps1
+.\skills\review-sonarqube-clean-code\scripts\export-sonarlint-problems.ps1
 ```
 
 El script escribe el trigger, espera a que VSCode regenere el reporte y muestra
@@ -66,7 +66,7 @@ activa.
 Para forzar el analisis de todos los archivos soportados del workspace:
 
 ```powershell
-.\tools\vscode\analyze-sonarlint-workspace.ps1
+.\skills\review-sonarqube-clean-code\scripts\analyze-sonarlint-workspace.ps1
 ```
 
 La extension abre todos los archivos `php`, `js` y `html`, ejecuta
@@ -76,3 +76,4 @@ exportacion simple porque depende del tiempo de analisis de SonarQube for IDE.
 Durante el analisis completo, la extension crea un grupo temporal de editores a
 la derecha, abre ahi los archivos necesarios y cierra ese grupo al terminar. Asi
 no mezcla las pestanas del analisis con las que ya estaban abiertas.
+
