@@ -57,12 +57,8 @@ class TestPdo extends \PDO
         ],
     ];
 
-    public function prepare(string $query, array $options = []): \PDOStatement|false
-    {
-        return new TestStatement($this->plugins);
-    }
-
-    public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): \PDOStatement|false
+    #[\ReturnTypeWillChange]
+    public function prepare($query, $options = [])
     {
         return new TestStatement($this->plugins);
     }
@@ -73,7 +69,20 @@ class TestPdo extends \PDO
     }
 }
 
-class TestStatement extends \PDOStatement
+class TestPluginLoader extends PluginLoader
+{
+    /** @param array<int, array<string, string>> $updates */
+    public function __construct(private array $updates)
+    {
+    }
+
+    public function getOutdated(): array
+    {
+        return $this->updates;
+    }
+}
+
+class TestStatement
 {
     /** @var array<int, array<string, mixed>> */
     private array $plugins;
@@ -105,16 +114,13 @@ class TestStatement extends \PDOStatement
         return true;
     }
 
-    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+    public function fetchAll(): array
     {
         return $this->plugins;
     }
 
-    public function fetch(
-        int $mode = PDO::FETCH_DEFAULT,
-        int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
-        int $cursorOffset = 0
-    ): mixed {
+    public function fetch(): array|false
+    {
         if (isset($this->lastParams[':slug'])) {
             $slug = $this->lastParams[':slug'];
             foreach ($this->plugins as $plugin) {
@@ -150,41 +156,6 @@ function testController(callable $fn): string
     ob_start();
     $fn();
     return ob_get_clean();
-}
-
-function createPluginManagerFixture(array $manifest): string
-{
-    $root = sys_get_temp_dir() . '/xestify_plugin_manager_test_' . bin2hex(random_bytes(4));
-    $slug = (string) ($manifest['slug'] ?? 'test_plugin');
-    $pluginDir = $root . '/' . $slug;
-
-    mkdir($pluginDir, 0777, true);
-    file_put_contents($pluginDir . '/manifest.json', (string) json_encode($manifest, JSON_PRETTY_PRINT));
-
-    return $root;
-}
-
-function removePluginManagerFixture(string $root): void
-{
-    if (!is_dir($root)) {
-        return;
-    }
-
-    $items = scandir($root) ?: [];
-    foreach ($items as $item) {
-        if ($item === '.' || $item === '..') {
-            continue;
-        }
-
-        $path = $root . '/' . $item;
-        if (is_dir($path)) {
-            removePluginManagerFixture($path);
-        } else {
-            unlink($path);
-        }
-    }
-
-    rmdir($root);
 }
 
 // ---------------------------------------------------------------------------
@@ -315,42 +286,36 @@ TestSuite::run('GET /api/v1/plugins rejects non-admin user', function () {
 
 TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function () {
     $pdo = new TestPdo();
-    $root = createPluginManagerFixture([
+    $loader = new TestPluginLoader([[
         'slug' => 'clients',
         'name' => 'Clients',
-        'version' => '2.0.0',
-        'type' => 'entity',
-        'core_version' => SEMVER_1_0,
-    ]);
+        'plugin_type' => 'entity',
+        'installed_version' => SEMVER_1_0,
+        'available_version' => '2.0.0',
+    ]]);
+    $controller = new PluginManagerController($pdo, $loader);
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['admin']]);
 
-    try {
-        $loader = new PluginLoader($root, $pdo);
-        $controller = new PluginManagerController($pdo, $loader);
-        $request = new TestRequest('');
-        $request->setUser(['roles' => ['admin']]);
+    $output = testController(function () use ($controller, $request): void {
+        $controller->listPluginUpdates([], $request);
+    });
 
-        $output = testController(function () use ($controller, $request): void {
-            $controller->listPluginUpdates([], $request);
-        });
-
-        $response = json_decode($output, true);
-        assertTrue($response['ok'] === true, 'Response ok should be true');
-        assertTrue(isset($response['data']['updates']), 'Should have updates array');
-        assertEquals(1, count($response['data']['updates']), 'Should return one outdated plugin');
-        assertEquals('clients', $response['data']['updates'][0]['slug'], 'Outdated plugin should be clients');
-        assertEquals(
-            SEMVER_1_0,
-            $response['data']['updates'][0]['installed_version'],
-            'Installed version should match DB'
-        );
-        assertEquals(
-            '2.0.0',
-            $response['data']['updates'][0]['available_version'],
-            'Available version should match manifest'
-        );
-    } finally {
-        removePluginManagerFixture($root);
-    }
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Response ok should be true');
+    assertTrue(isset($response['data']['updates']), 'Should have updates array');
+    assertEquals(1, count($response['data']['updates']), 'Should return one outdated plugin');
+    assertEquals('clients', $response['data']['updates'][0]['slug'], 'Outdated plugin should be clients');
+    assertEquals(
+        SEMVER_1_0,
+        $response['data']['updates'][0]['installed_version'],
+        'Installed version should match DB'
+    );
+    assertEquals(
+        '2.0.0',
+        $response['data']['updates'][0]['available_version'],
+        'Available version should match manifest'
+    );
 });
 
 // ---------------------------------------------------------------------------
