@@ -1,3 +1,5 @@
+import { buildAppUrl } from './BasePath.js';
+
 /**
  * Api.js — Generic HTTP client for Xestify frontend.
  *
@@ -9,7 +11,7 @@
  *
  * Usage:
  *   import { Api } from './modules/Api.js';
- *   const api = new Api('/api/v1');
+ *   const api = new Api(buildAppUrl('/api/v1'));
  *   api.setToken(localStorage.getItem('token'));
  *   const { data } = await api.get('/entities/client/records');
  */
@@ -38,7 +40,7 @@ export class Api {
   /**
    * @param {string} baseUrl  Base URL prefix, e.g. '/api/v1'
    */
-  constructor(baseUrl = '/api/v1') {
+  constructor(baseUrl = buildAppUrl('/api/v1')) {
     this.#baseUrl = baseUrl.replace(/\/$/, '');
   }
 

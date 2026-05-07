@@ -788,12 +788,14 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Priority:** MUST
 - **Type:** Backend
 - **Criteria:**
+  - ✅ Endpoint POST `/api/v1/plugins/sync` sincroniza plugins presentes en disco con la tabla `plugins`
+  - ✅ La sincronización registra plugins nuevos, actualiza metadatos/versiones y devuelve resumen de cambios/errores
   - ✅ Endpoint POST `/api/v1/plugins/{slug}/update` ejecuta actualización
   - ✅ Si el plugin tiene `onUpdate()` en Lifecycle.php, se ejecuta antes de activar nueva versión
   - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `plugin` con versión incrementada
   - ✅ Actualización falla atómicamente (transacción) si onUpdate lanza excepción
-  - ✅ Tests: actualización exitosa, fallo con rollback automático
-- **IA Usage:** Lógica de diff + transacción + tests de error
+  - ✅ Tests: sincronización de plugin nuevo, plugin sin cambios, manifest inválido, actualización exitosa y fallo con rollback automático
+- **IA Usage:** Lógica de sync + diff + transacción + tests de error
 - **Dependencias:** STORY 7.1, STORY 4.5, STORY 2.2
 - **Blockers:** Definir estructura de `onUpdate()` en contrato de plugin
 
@@ -838,11 +840,13 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Priority:** SHOULD
 - **Type:** Frontend
 - **Criteria:**
+  - ✅ Botón "Sincronizar" en PluginManager, visible solo para admin
+  - ✅ Botón "Sincronizar" llama a POST `/api/v1/plugins/sync`, muestra feedback y recarga la lista
   - ✅ Badge "Actualización disponible" en plugin con versión desactualizada
   - ✅ Botón "Actualizar" llama a endpoint y muestra feedback
   - ✅ Botón "Rollback" disponible si hay versión anterior
   - ✅ Modal de confirmación antes de actualizar/rollback
-- **IA Usage:** UI badges + modal confirmación + feedback estados
+- **IA Usage:** UI de sincronización + badges + modal confirmación + feedback estados
 - **Dependencias:** STORY 6.5, STORY 7.2, STORY 7.3, STORY 7.4
 - **Blockers:** Ninguno
 

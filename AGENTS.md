@@ -97,7 +97,7 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 - frontend/src/js/main.js: flujo bootstrap con render condicional Login/Dashboard y logout
 - frontend/src/css/main.css: estilos base login y shell
 - frontend/tests/LoginTest.html: 5 tests (render, validacion, exito, error)
-- tools/dev/frontend-router.php: proxy local para servir frontend y API en mismo origen
+- docs/08-operations/apache-vhost-examples.md: ejemplo de configuracion Apache para desarrollo same-origin con `/tests/*`
 ```
 
 ## Convenciones del proyecto
@@ -153,10 +153,13 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 - En Windows, preferir `127.0.0.1` frente a `localhost` para evitar latencias por
   resolucion o fallback IPv6.
-- El proxy frontend de desarrollo debe apuntar a `http://127.0.0.1:8080`.
-- Puertos habituales:
-  - Backend PHP: `http://127.0.0.1:8080`
-  - Frontend/proxy: `http://127.0.0.1:8081`
+- El entorno canonico de desarrollo es Apache+PHP sirviendo todo Xestify en un
+  solo origen desde la raiz del repo.
+- Usar `docs/08-operations/apache-vhost-examples.md` como base para habilitar
+  `/`, `/api/*`, `/health`, `/plugins/*`, `/css/*`, `/js/*` y, solo en
+  desarrollo, `/tests/*`.
+- La exposicion de tests frontend bajo Apache se activa con `SetEnvIf ... ENABLE_TEST=1`.
+- Evitar `tools/dev/frontend-router.php`; ya no forma parte del flujo soportado.
 
 ## Arquitectura
 

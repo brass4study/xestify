@@ -1,4 +1,5 @@
 import { Api, ApiError } from './modules/Api.js';
+import { buildAppUrl } from './modules/BasePath.js';
 import { AppState } from './modules/State.js';
 import { EntityEdit } from './pages/EntityEdit.js';
 import { EntityList } from './pages/EntityList.js';
@@ -8,7 +9,7 @@ import { Navbar } from './modules/Navbar.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
 const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
-const API_BASE = '/api/v1';
+const API_BASE = buildAppUrl('/api/v1');
 
 const app = document.getElementById('app');
 

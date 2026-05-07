@@ -6,12 +6,12 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** STORY 6.5 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** STORY 7.1 incluida (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
 - **Frontend:** UI dinámica basada en metadata y plugins
-- **Operación:** Despliegue local en RPi5, actualizaciones controladas
+- **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
 
@@ -50,8 +50,25 @@ Con este enfoque, una misma entidad base puede usarse en varios sectores con dis
 - Frontend: JavaScript con renderizado dinámico por metadata ([docs/05-frontend/README.md](docs/05-frontend/README.md))
 - Persistencia: PostgreSQL con modelo híbrido relacional + JSONB ([docs/02-entities/README.md](docs/02-entities/README.md))
 - Extensión: sistema de plugins y hooks por eventos ([docs/04-plugins/README.md](docs/04-plugins/README.md))
-- Operación: despliegue en contenedores para Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
+- Operacion: Apache+PHP como runtime canonico y despliegue local en Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
 - Distribución funcional: tienda/repositorio central de plugins
+
+## Runtime web y desarrollo local
+
+Xestify se sirve ahora bajo un unico origen con Apache+PHP:
+
+- `/` entrega la shell frontend (`frontend/src/index.html`)
+- `/css/*` y `/js/*` sirven los estaticos del frontend
+- `/api/*` y `/health` entran por `backend/public/index.php`
+- `/plugins/*` sirve `plugin.js` y assets de plugins
+
+La aplicacion detecta su `base path` en runtime, asi que puede colgar tanto de
+la raiz del host como de una subruta Apache, por ejemplo
+`http://localhost/xestify/`.
+
+En desarrollo, los tests HTML del frontend pueden exponerse bajo `/tests/*`
+activando `ENABLE_TEST=1` en Apache. La configuracion de referencia vive en
+[docs/08-operations/apache-vhost-examples.md](docs/08-operations/apache-vhost-examples.md).
 
 ## Modelo de datos
 
@@ -142,34 +159,58 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 6.4 incluida**:
+MVP implementado hasta **STORY 7.1 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinamico de entidades sobre `plugin_entity_data`.
 - Catalogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
 - Plugin `clients` como entidad base canonica.
 - Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
+- PluginManager y deteccion de actualizaciones disponibles desde `PluginLoader`.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
 
-Pendiente desde STORY 6.5: pagina PluginManager, activacion/desactivacion desde UI, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+Pendiente desde STORY 7.2: proceso de actualizacion con migracion de schema,
+sincronizacion explicita de plugins desde UI, rollback, operacion avanzada,
+auditoria, permisos finos y marketplace.
+
+Operaciones manuales de setup:
+
+- `php tools/setup/seed-admin-user.php`: crea el admin inicial si la tabla `users` esta vacia
+- `php tools/setup/migrate-legacy-client-records.php`: migra datos legacy `client` -> `clients`
+- `php tools/setup/sync-plugins.php`: sincroniza plugins presentes en disco con la tabla `plugins`
+
+Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
+plugins y hooks desde la base de datos; la sincronizacion disco -> BD es
+explicita.
+
+En Windows, si usas el `php.exe` de Apache y su configuracion esta en
+`C:\apache2.4.66\config\php.ini`, ejecuta esos scripts con:
+
+```powershell
+C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-plugins.php
+```
+
+Para evitar latencia innecesaria en local con Apache+PHP:
+
+- usar `DB_HOST=127.0.0.1` en vez de `localhost`
+- dejar `xdebug.start_with_request = trigger` cuando no se este depurando
 
 ## Documentación del proyecto
 
-Índice principal: [context/README.md](context/README.md)
+Indice principal: [docs/README.md](docs/README.md)
 
 Documentos clave:
 
-- [context/11-backlog/roadmap.md](context/11-backlog/roadmap.md)
-- [context/01-architecture/overview.md](context/01-architecture/overview.md)
-- [context/01-architecture/mvc.md](context/01-architecture/mvc.md)
-- [context/01-architecture/plugins.md](context/01-architecture/plugins.md)
-- [context/01-architecture/hooks.md](context/01-architecture/hooks.md)
-- [context/02-entities/postgresql-jsonb.md](context/02-entities/postgresql-jsonb.md)
-- [context/03-api/especificacion-rest.md](context/03-api/especificacion-rest.md)
-- [context/05-frontend/renderizado-dinamico.md](context/05-frontend/renderizado-dinamico.md)
-- [context/08-operations/deploy-rpi5.md](context/08-operations/deploy-rpi5.md)
-- [context/08-operations/actualizaciones.md](context/08-operations/actualizaciones.md)
-- [context/07-security/modelo-seguridad-local.md](context/07-security/modelo-seguridad-local.md)
+- [docs/11-backlog/backlog.md](docs/11-backlog/backlog.md)
+- [docs/01-architecture/overview.md](docs/01-architecture/overview.md)
+- [docs/01-architecture/plugins.md](docs/01-architecture/plugins.md)
+- [docs/01-architecture/hooks.md](docs/01-architecture/hooks.md)
+- [docs/02-entities/README.md](docs/02-entities/README.md)
+- [docs/03-api/endpoints.md](docs/03-api/endpoints.md)
+- [docs/05-frontend/README.md](docs/05-frontend/README.md)
+- [docs/08-operations/deploy-rpi5.md](docs/08-operations/deploy-rpi5.md)
+- [docs/08-operations/apache-vhost-examples.md](docs/08-operations/apache-vhost-examples.md)
+- [docs/07-security/README.md](docs/07-security/README.md)
 
 ## Roadmap resumido
 

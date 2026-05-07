@@ -110,9 +110,12 @@ Rutas:
 - `PUT    /api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}`
 - `DELETE /api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}`
 
-## Servido de assets de plugins en desarrollo
+## Servido de assets de plugins
 
-El router de desarrollo sirve `/plugins/*` desde la carpeta raiz `plugins`, permitiendo cargar `plugin.js` directamente en navegador.
+El runtime canonico bajo Apache+PHP sirve `/plugins/{plugin_slug}/plugin.js`
+desde la carpeta raiz `plugins` en el mismo origen que la API y el frontend.
+Opcionalmente, tambien expone `/plugins/{plugin_slug}/assets/*` para assets
+estaticos del plugin.
 
 ## Ciclo de vida soportado actualmente
 

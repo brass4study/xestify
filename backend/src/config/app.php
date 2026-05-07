@@ -8,8 +8,6 @@ use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
 use Xestify\core\Container;
 use Xestify\core\Database;
-use Xestify\database\seeders\EntitySeeder;
-use Xestify\database\seeders\UserSeeder;
 use Xestify\middleware\AuthMiddleware;
 use Xestify\plugins\HookDispatcher;
 use Xestify\plugins\PluginLoader;
@@ -28,9 +26,6 @@ if (!($container instanceof Container)) {
 // --- Database -----------------------------------------------------------------
 
 $container->singleton(Database::class, fn() => Database::connection());
-
-// Auto-seed on boot: inserts default admin only if users table is empty
-UserSeeder::seedIfEmpty();
 
 // --- JWT ----------------------------------------------------------------------
 
@@ -67,15 +62,11 @@ $container->singleton(PluginLoader::class, fn() => new PluginLoader(
     $container->get(Database::class)
 ));
 
-// Discover local plugins before registering hooks. This keeps plugins as the
-// entity catalog source of truth while preserving existing activation state.
+// Runtime boot relies on the plugins already registered in DB. Disk-to-DB
+// synchronization is an explicit setup/admin operation, not part of every
+// request.
 /** @var PluginLoader $pluginLoader */
 $pluginLoader = $container->get(PluginLoader::class);
-$pluginLoader->loadAll();
-
-// Backward-compatible transition: move old singular demo records to the
-// canonical clients entity slug.
-EntitySeeder::migrateLegacyClientRecords();
 
 // Register active plugin hooks at boot.
 $pluginLoader->registerActiveHooks($container->get(HookDispatcher::class));

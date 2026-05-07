@@ -852,3 +852,48 @@ Cerremos la story 7.1
 **Resultado:** STORY 7.1 cerrada. PluginLoader::getOutdated() detecta actualizaciones comparando la versión instalada contra el manifest en disco, el endpoint GET /api/v1/plugins/updates expone la lista y los tests cubren versión mayor, igual y menor. Se corrigió el diseño para no actualizar plugins.version automáticamente durante load().
 **Iteraciones:** 3
 **Lección:** Para detectar updates, la versión instalada debe ser un estado persistido independiente de la versión disponible en disco; el boot no debe consumir una actualización antes de que el endpoint pueda reportarla.
+
+---
+
+## Sesion tecnica transversal - Apache+PHP single-origin, setup explicito y rendimiento local
+
+**Prompt inicial:**
+```text
+PLEASE IMPLEMENT THIS PLAN:
+## Plan: Unificar Xestify en un solo origen con Apache+PHP
+[...]
+La documentación debe pasar a presentar Apache+PHP como forma oficial de servir la aplicación, tanto en local como en producción.
+```
+
+**Prompt de ajuste de frontend:**
+```text
+Adapta el frontend para usar un base path configurable
+```
+
+**Prompt de optimizacion de boot:**
+```text
+Ok, haz los cambios del punto 1 que has sugerido, despues valoraremos el punto 2
+```
+
+**Prompt de sync explicito:**
+```text
+Implementalo ya
+```
+
+**Prompt de entorno y rendimiento:**
+```text
+Ok, no toquemos nada. Sigamos valorando los puntos 3 y 4 que habias sugerido:
+3.dejar solo registerActiveHooks() con lectura minima de DB
+4.revisar que Apache tenga OPCache activo
+```
+
+**Prompt de documentacion:**
+```text
+Aunque en este caso no estamos cerrando una story, actualiza productivity, por que ha sido un cambio lo suficientemente gordo como para valorarlo, actualiza tambien promps.md y sesion.md
+```
+
+**Resultado:** La aplicacion queda servida y documentada para Apache+PHP single-origin, el frontend soporta `base path` dinamico, el backend funciona correctamente bajo alias `/xestify`, el setup pesado sale del boot a scripts manuales y la sincronizacion de plugins pasa a ser explicita. La medición de rendimiento identificó `Xdebug` como principal lastre local; tras pasar `xdebug.start_with_request` a `trigger`, `login` bajó de ~1103 ms a ~389 ms y `entities` de ~530 ms a ~91 ms.
+
+**Iteraciones:** 9
+
+**Lección:** En un proyecto PHP local servido por Apache, el mayor salto de rendimiento puede no estar en el código de dominio sino en el entorno efectivo de runtime. También conviene separar con claridad runtime, setup y sincronización para evitar trabajo invisible en cada request.

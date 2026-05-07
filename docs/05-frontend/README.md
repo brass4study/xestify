@@ -8,6 +8,11 @@ Esta carpeta reúne la documentación sobre el frontend, el renderizado dinámic
 
 El frontend de Xestify está diseñado para ser completamente dinámico y extensible mediante plugins. La UI se construye a partir de metadatos (schemas) y se adapta automáticamente a las entidades y extensiones instaladas, sin necesidad de modificar el core.
 
+Ademas, el runtime detecta automaticamente su `base path`, por lo que la misma
+aplicacion puede servirse tanto desde la raiz del host como desde una subruta
+Apache, por ejemplo `http://localhost/xestify/`, sin hardcodear `/api` ni
+`/plugins` contra la raiz del dominio.
+
 ---
 
 ## Componentes principales
@@ -63,6 +68,13 @@ form.render();
 ## Pruebas y calidad
 
 - El frontend incluye pruebas E2E en `frontend/tests/` para flujos principales (login, listado, edición, plugins).
+- Bajo Apache en desarrollo, las pruebas HTML se exponen en `/tests/*`. Los
+  módulos de la aplicación que consumen se cargan mediante `/js/*`, igual que
+  en el runtime normal. Esa exposición no forma parte del runtime de producción.
+- Esa exposicion se activa con `SetEnvIf ... ENABLE_TEST=1` y tambien funciona
+  cuando la app cuelga de un alias/subruta, por ejemplo `/xestify/tests/*`.
+- Los tests ya no dependen de una ruta separada `/src/*`; consumen el mismo
+  árbol `/js/*` que usa la aplicacion real.
 - Se recomienda mantener la cobertura de pruebas al añadir nuevos componentes o plugins.
 
 ---

@@ -88,6 +88,46 @@ TestSuite::run('allParams() devuelve todos los route params', function () {
     assertEquals($params, $req->allParams());
 });
 
+TestSuite::run('uri() recorta el prefijo de alias antes de /api', function () {
+    $previousUri = $_SERVER['REQUEST_URI'] ?? null;
+    $_SERVER['REQUEST_URI'] = '/xestify/api/v1/auth/login';
+
+    try {
+        $req = new Request();
+        assertEquals('/api/v1/auth/login', $req->uri());
+    } finally {
+        if ($previousUri === null) {
+            unset($_SERVER['REQUEST_URI']);
+        } else {
+            $_SERVER['REQUEST_URI'] = $previousUri;
+        }
+    }
+});
+
+TestSuite::run('fromGlobals() recupera Authorization desde REDIRECT_HTTP_AUTHORIZATION', function () {
+    $previousRedirectAuth = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+    $previousHttpAuth = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+    unset($_SERVER['HTTP_AUTHORIZATION']);
+    $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Bearer redirected-token';
+
+    try {
+        $req = Request::fromGlobals();
+        assertEquals('redirected-token', $req->bearerToken());
+    } finally {
+        if ($previousRedirectAuth === null) {
+            unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+        } else {
+            $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = $previousRedirectAuth;
+        }
+
+        if ($previousHttpAuth === null) {
+            unset($_SERVER['HTTP_AUTHORIZATION']);
+        } else {
+            $_SERVER['HTTP_AUTHORIZATION'] = $previousHttpAuth;
+        }
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Response tests
 // ---------------------------------------------------------------------------

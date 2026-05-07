@@ -841,3 +841,24 @@
   - Actualizó `docs/03-api/endpoints.md`.
 - **Iteraciones:** 3 (revisión de Copilot, corrección de diseño, refuerzo de tests/contrato API)
 - **Decisión manual:** La versión instalada no se actualiza durante `load()`; se mantiene hasta que una story posterior implemente el proceso explícito de update/rollback.
+
+---
+
+## Sesion tecnica transversal - Apache+PHP single-origin, setup explicito y rendimiento local
+
+- **Fecha:** 2026-05-07
+- **Estimado sin IA:** 8h
+- **Tiempo real con IA:** ~2h 15min
+- **Aceleración:** ~72%
+- **Qué hizo IA:**
+  - Replanteó el runtime de desarrollo y despliegue para operar con Apache+PHP en un solo origen.
+  - Sustituyó el flujo basado en router PHP de desarrollo por configuración Apache + `.htaccess`.
+  - Adaptó el frontend para resolver `base path` dinámico y funcionar bajo alias/subruta (`/xestify`).
+  - Corrigió backend para aceptar rutas bajo alias Apache y preservar el header `Authorization`.
+  - Extrajo del boot normal el seeding de usuario, la migración legacy `client -> clients` y la sincronización de plugins.
+  - Creó scripts manuales de setup y sincronización (`seed-admin-user.php`, `migrate-legacy-client-records.php`, `sync-plugins.php`).
+  - Redefinió el contrato operativo de plugins: runtime desde BD, sync disco -> BD como operación explícita.
+  - Actualizó backlog, README y documentación operativa para reflejar Apache+PHP, setup manual y recomendaciones de rendimiento.
+  - Midió tiempos reales bajo Apache y aisló el mayor cuello local en `Xdebug` arrancando en cada request.
+- **Iteraciones:** 9
+- **Decisión manual:** No cerrar ninguna story nueva con este trabajo; registrarlo como sesión técnica transversal y reservar el sync administrativo para STORY 7.2/7.5.

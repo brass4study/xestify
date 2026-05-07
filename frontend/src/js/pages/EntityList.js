@@ -12,8 +12,6 @@ import { Api, ApiError } from '../modules/Api.js';
 import { AppState } from '../modules/State.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 
-const BASE_URL = '/api/v1';
-
 export class EntityList {
   /** @type {Api} */
   #api;
@@ -38,7 +36,7 @@ export class EntityList {
     this.#container = this.#resolveContainer(container);
     this.#api = (options.api !== null && options.api !== undefined && typeof options.api.get === 'function')
       ? options.api
-      : new Api(BASE_URL);
+      : new Api();
     this.#onCreateNew = typeof options.onCreateNew === 'function'
       ? options.onCreateNew
       : null;

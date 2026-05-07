@@ -143,6 +143,19 @@ TestSuite::run('Ruta con trailing slash es equivalente a sin slash', function ()
     assertTrue($called, 'Trailing slash no debe impedir el match');
 });
 
+TestSuite::run('Ruta bajo alias /xestify hace match con endpoints API', function () {
+    $router = makeRouter();
+    $called = false;
+
+    $router->post('/api/v1/auth/login', function () use (&$called) {
+        $called = true;
+    });
+
+    [$result] = dispatchCapture($router, 'POST', '/xestify/api/v1/auth/login');
+    assertTrue($result === true, 'dispatch debe retornar true bajo alias');
+    assertTrue($called, 'La ruta bajo alias debe resolver al endpoint API');
+});
+
 TestSuite::run('Handler [Controller::class, method] se instancia y llama', function () {
     // Clase inline anónima como stand-in de controller
     $controllerClass = new class {

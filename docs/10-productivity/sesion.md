@@ -385,3 +385,48 @@ Story completada. Archivos creados/modificados:
 - Commit de story: pendiente (este commit)
 - Verificación crítica: `load()` ya no consume la actualización durante el boot
 - Backlog alineado: el siguiente punto es STORY 7.2
+
+# Sesion 2026-05-07 - Runtime Apache+PHP, sync explicito y rendimiento local
+
+Sesion tecnica transversal registrada sin cierre de story formal.
+
+Cambios principales:
+
+- Xestify pasa a documentarse y operarse con Apache+PHP como runtime canonico en un solo origen.
+- Se elimina del flujo soportado `tools/dev/frontend-router.php`.
+- El frontend resuelve su `base path` de forma dinamica y funciona tanto en raiz de host como bajo alias/subruta (`/xestify`).
+- El backend normaliza rutas bajo alias Apache y preserva correctamente `Authorization` en requests protegidas.
+- Se sacan del boot normal:
+  - `UserSeeder::seedIfEmpty()`
+  - `EntitySeeder::migrateLegacyClientRecords()`
+  - `PluginLoader::loadAll()`
+- Se introducen operaciones manuales de setup:
+  - `tools/setup/seed-admin-user.php`
+  - `tools/setup/migrate-legacy-client-records.php`
+  - `tools/setup/sync-plugins.php`
+- El contrato operativo de plugins queda asi:
+  - runtime normal: BD como fuente de verdad
+  - sincronizacion disco -> BD: operacion explicita
+- Se actualiza backlog para reservar:
+  - STORY 7.2: endpoint `POST /api/v1/plugins/sync`
+  - STORY 7.5: boton `Sincronizar` en PluginManager
+- Se documenta la recomendacion de rendimiento local:
+  - `DB_HOST=127.0.0.1`
+  - `xdebug.start_with_request = trigger`
+
+Verificacion destacada:
+
+- Backend: `php backend/tests/run.php all` en verde tras los cambios estructurales.
+- Frontend: 12 suites HTML en verde.
+- Runtime real bajo Apache:
+  - login operativo en `/xestify`
+  - requests protegidas operativas con bearer token
+  - tests frontend servidos por Apache en `/xestify/tests/*`
+- Medicion antes/despues de Xdebug:
+  - login: ~1103 ms -> ~389 ms
+  - entities: ~530 ms -> ~91 ms
+
+Estado resultante:
+
+- La siguiente story formal sigue siendo `STORY 7.2 - Proceso de actualizacion con migracion de schema`.
+- No hay commit de cierre asociado a esta sesion tecnica todavia.

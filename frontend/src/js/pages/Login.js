@@ -11,8 +11,6 @@
 
 import { Api, ApiError } from '../modules/Api.js';
 
-const BASE_URL = '/api/v1';
-
 export class Login {
   /** @type {Api} */
   #api;
@@ -31,7 +29,7 @@ export class Login {
     this.#container = this.#resolveContainer(container);
     this.#api = (options.api !== null && options.api !== undefined && typeof options.api.post === 'function')
       ? options.api
-      : new Api(BASE_URL);
+      : new Api();
     this.#onSuccess = typeof options.onSuccess === 'function' ? options.onSuccess : null;
 
     this.#render();

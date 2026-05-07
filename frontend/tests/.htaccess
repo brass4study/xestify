@@ -1,0 +1,4 @@
+<RequireAny>
+    Require local
+    Require env ENABLE_TEST
+</RequireAny>

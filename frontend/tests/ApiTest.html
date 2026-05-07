@@ -10,7 +10,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Api, ApiError } from '../src/js/modules/Api.js';
+  import { Api, ApiError } from '../js/modules/Api.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, mockFetch, mockFetchNetworkError, finishTestRunner } from './js/helpers.js';
 
   initTestRunner('output');
@@ -110,6 +110,14 @@
     try { await api.post('/entities/client/records', {}); } catch (e) { caught = e; }
     assertTrue(caught instanceof ApiError);
     assertEquals(caught.details, details);
+  });
+
+  await test('constructor sin baseUrl usa /api/v1 bajo el base path actual', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: {} }, req);
+    const api = new Api();
+    await api.get('/things');
+    assertTrue(req.url.includes('/api/v1/things'), 'La URL debe incluir /api/v1/things');
   });
 
   await test('error de red lanza ApiError con code 0', async () => {

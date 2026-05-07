@@ -11,11 +11,10 @@
  */
 
 import { Api, ApiError } from '../modules/Api.js';
+import { buildPluginModuleUrl } from '../modules/BasePath.js';
 import { DynamicForm } from '../modules/DynamicForm.js';
 import { DynamicTabs } from '../modules/DynamicTabs.js';
 import { PluginPanelRegistry } from '../modules/PluginPanelRegistry.js';
-
-const BASE_URL = '/api/v1';
 
 export class EntityEdit {
   /** @type {Api} */
@@ -68,7 +67,7 @@ export class EntityEdit {
     this.#recordId = options.recordId ?? null;
     this.#api = (options.api !== null && options.api !== undefined && typeof options.api.post === 'function')
       ? options.api
-      : new Api(BASE_URL);
+      : new Api();
     this.#onSaved = typeof options.onSaved === 'function' ? options.onSaved : null;
     this.#onCancel = typeof options.onCancel === 'function' ? options.onCancel : null;
 
@@ -256,7 +255,7 @@ export class EntityEdit {
    */
   async #loadPluginModules(tabs) {
     await Promise.allSettled(
-      tabs.map((tab) => import(`/plugins/${tab.id}/plugin.js`))
+      tabs.map((tab) => import(buildPluginModuleUrl(tab.id)))
     );
   }
 

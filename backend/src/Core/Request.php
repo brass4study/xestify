@@ -50,6 +50,33 @@ class Request
             }
         }
 
+        if (function_exists('getallheaders')) {
+            $nativeHeaders = getallheaders();
+            if (is_array($nativeHeaders)) {
+                foreach ($nativeHeaders as $name => $value) {
+                    if (is_string($name)) {
+                        $headers[strtolower($name)] = $value;
+                    }
+                }
+            }
+        }
+
+        if (!array_key_exists('authorization', $headers)) {
+            $fallbackKeys = [
+                'REDIRECT_HTTP_AUTHORIZATION',
+                'Authorization',
+                'PHP_AUTH_DIGEST',
+            ];
+
+            foreach ($fallbackKeys as $key) {
+                $value = $_SERVER[$key] ?? null;
+                if (is_string($value) && $value !== '') {
+                    $headers['authorization'] = $value;
+                    break;
+                }
+            }
+        }
+
         return new self($_GET, $body, $headers, $routeParams);
     }
 
@@ -124,7 +151,34 @@ class Request
 
     public function uri(): string
     {
-        return parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        return $this->normalizeRuntimePath($path);
+    }
+
+    private function normalizeRuntimePath(string $path): string
+    {
+        if ($path === '' || $path === '/') {
+            return '/';
+        }
+
+        if ($path === '/health' || $path === '/api' || str_starts_with($path, '/api/')) {
+            return $path;
+        }
+
+        $apiOffset = strpos($path, '/api/');
+        if ($apiOffset !== false && $apiOffset > 0) {
+            return substr($path, $apiOffset);
+        }
+
+        $healthOffset = strpos($path, '/health');
+        if ($healthOffset !== false && $healthOffset > 0) {
+            $candidate = substr($path, $healthOffset);
+            if ($candidate === '/health' || str_starts_with($candidate, '/health/')) {
+                return $candidate;
+            }
+        }
+
+        return $path;
     }
 
     // -----------------------------------------------------------------------

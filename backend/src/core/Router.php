@@ -54,7 +54,7 @@ class Router
     public function run(): void
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $uri    = $this->normalizeRuntimePath(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
 
         $result = $this->dispatch($method, $uri);
 
@@ -73,7 +73,7 @@ class Router
     public function dispatch(string $method, string $uri): ?true
     {
         $method = strtoupper($method);
-        $uri    = '/' . trim($uri, '/');
+        $uri    = '/' . trim($this->normalizeRuntimePath($uri), '/');
 
         foreach ($this->routes[$method] ?? [] as $route) {
             $params = $this->matchRoute($route['pattern'], $uri);
@@ -160,6 +160,32 @@ class Router
         }
 
         return false;
+    }
+
+    private function normalizeRuntimePath(string $path): string
+    {
+        if ($path === '' || $path === '/') {
+            return '/';
+        }
+
+        if ($path === '/health' || $path === '/api' || str_starts_with($path, '/api/')) {
+            return $path;
+        }
+
+        $apiOffset = strpos($path, '/api/');
+        if ($apiOffset !== false && $apiOffset > 0) {
+            return substr($path, $apiOffset);
+        }
+
+        $healthOffset = strpos($path, '/health');
+        if ($healthOffset !== false && $healthOffset > 0) {
+            $candidate = substr($path, $healthOffset);
+            if ($candidate === '/health' || str_starts_with($candidate, '/health/')) {
+                return $candidate;
+            }
+        }
+
+        return $path;
     }
 
     private function callHandler(callable|array $handler, array $params, ?Request $request = null): void
