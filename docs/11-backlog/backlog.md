@@ -1,12 +1,13 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-05-04)
+## Estado implementado auditado (2026-05-10)
 
-El corte funcional actual queda fijado en **STORY 6.5 incluida**.
+El corte funcional actual queda fijado en **STORY 7.1 incluida**.
 
 - Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, `PluginLoader` cargando `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
 - Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
-- Pendiente a partir de **STORY 7.1**: deteccion de actualizaciones, configuracion de plugins, updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+- Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con `PluginLoader::getOutdated()` y API `GET /api/v1/plugins/updates`.
+- Pendiente a partir de **STORY 7.2**: sync/update/rollback, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -35,9 +36,10 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - EPIC 5: Frontend base
 - EPIC 6: Plugins tipo extension
 - EPIC 7: Actualizaciones de plugins y rollback
-- EPIC 8: Operación técnica y observabilidad
-- EPIC 9: Marketplace de plugins
-- EPIC 10: QA y calidad
+- EPIC 8: Sistema UI, shell frontend y arquitectura SPA
+- EPIC 9: Operación técnica y observabilidad
+- EPIC 10: Marketplace de plugins
+- EPIC 11: QA y calidad
 - Adición MVP A1: Auditoría funcional (cambios en configuración, usuarios y plugins)
 - Adición MVP A2: Matriz de permisos fina (más granular que admin/no-admin)
 
@@ -47,7 +49,7 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - Adición post-MVP A5: Exportación/importación de configuración entre entornos
 
 ### 📌 Decisiones de Alcance (2026-05-02)
-- **IN SCOPE MVP:** EPIC 0-10 + A1 (Auditoría funcional) + A2 (Matriz de permisos fina)
+- **IN SCOPE MVP:** EPIC 0-11 + A1 (Auditoría funcional) + A2 (Matriz de permisos fina)
 - **POSTERIOR A MVP:** A3 (Hardening de sesiones) + A4 (Panel health técnico) + A5 (Export/import configuración)
 
 ---
@@ -852,11 +854,131 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 ---
 
-## EPIC 8: Operación Técnica y Observabilidad (Fase 8)
+## EPIC 8: Sistema UI, Shell Frontend y Arquitectura SPA (Fase 8)
+
+Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consolidar la navegacion y el shell SPA, y dejar el frontend preparado para crecer con una arquitectura modular, resiliente y consistente antes de escalar operacion, marketplace y QA avanzada.
+
+### STORY 8.1: Fundamentos de diseno, navegacion y anatomia de paginas
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Principios visuales y de interaccion documentados para una UI enterprise consistente, jerarquica y con feedback inmediato
+  - ✅ Tokens y reglas base definidos para spacing, tipografia, color, bordes, sombras, estados, iconografia y densidad
+  - ✅ Arquitectura de informacion definida para menu principal, areas, breadcrumbs y tipos de pagina
+  - ✅ Plantillas objetivo definidas para login, list page, detail/form page, plugin management, workbench/dashboard y estados result/empty/error
+  - ✅ Convenciones de copy y estructura de textos preparadas para futura externalizacion i18n sin hardcodear decisiones de idioma en componentes
+  - ✅ Decision tecnica documentada: SPA con URL routing como opcion por defecto sobre hash, compatible con Apache+PHP y refresh
+- **IA Usage:** Sintesis de sistema UI + mapa de navegacion + definicion de plantillas y reglas base
+- **Dependencias:** STORY 5.2, STORY 6.5
+- **Blockers:** Ninguno
+
+### STORY 8.2: Libreria de componentes UI base
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Libreria base de controles reutilizables con categorias tipo Ant: general, layout, navigation, data entry, data display y feedback
+  - ✅ Componentes base definidos al menos para Button, Typography, Page, PageHeader, Section, Breadcrumb, Tabs, Input, FormField, Table, Empty, Alert, Modal y Spinner/Skeleton
+  - ✅ API estable de componentes y clases/tokens comunes para estilo, composicion y variantes de tema
+  - ✅ DynamicForm, DynamicTable, Modal y PluginManager pueden migrar a esta base sin patrones visuales paralelos
+  - ✅ Tests o smoke checks de componentes base y estados visuales principales
+- **IA Usage:** Extraccion de controles base + contrato de componentes + alineacion visual de la UI
+- **Dependencias:** STORY 3.8, STORY 3.9, STORY 5.4, STORY 8.1
+- **Blockers:** Ninguno
+
+### STORY 8.3: Arquitectura frontend y modularizacion
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ `main.js` deja de concentrar la mayor parte del wiring de UI
+  - ✅ Separacion explicita entre `app`, `router`, `layout`, `components`, `pages`, `services`, `state` y adaptadores de plugin
+  - ✅ Libreria de componentes frontend con imports estables y convencion clara de composicion
+  - ✅ Estructura preparada para crecer sin crear archivos monoliticos
+  - ✅ Tests frontend actualizados a la nueva organizacion sin romper ejecucion standalone
+- **IA Usage:** Refactor de arquitectura cliente + modularizacion + ajuste de imports y tests
+- **Dependencias:** STORY 3.6, STORY 5.2, STORY 8.1, STORY 8.2
+- **Blockers:** Ninguno
+
+### STORY 8.4: Shell SPA y plantillas de navegacion
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Shell comun para navegacion principal, cabecera, breadcrumbs, toolbar contextual, area principal de contenido y pie opcional
+  - ✅ Aplicacion de las plantillas definidas en 8.1 a Login, EntityList, EntityEdit, PluginManager y vistas futuras
+  - ✅ Contenedores reutilizables para page header, acciones contextuales y layout de pagina
+  - ✅ Shell y plantillas dejan zonas claras de extension para tabs, paneles, acciones y bloques aportados por plugins
+  - ✅ Integracion del shell sin romper flujos existentes ni generar layouts paralelos
+  - ✅ Tests frontend de render, navegacion basica del shell y encaje de paginas principales
+- **IA Usage:** Construccion del layout compartido + page templates + integracion con paginas existentes
+- **Dependencias:** STORY 8.1, STORY 8.2, STORY 8.3
+- **Blockers:** Ninguno
+
+### STORY 8.5: Implementacion del routing SPA
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Implementacion del router cliente acorde a la decision tomada en 8.1, con URL routing como opcion por defecto
+  - ✅ Soporte de deep links para login, listado de entidad, alta/edicion, plugin manager y futuras paginas de configuracion
+  - ✅ Refresh del navegador no rompe la vista actual ni el shell
+  - ✅ Navegacion programatica y soporte de back/forward coherentes con la SPA
+  - ✅ Tests de navegacion: entrada directa, refresh, back/forward y persistencia de contexto
+- **IA Usage:** Implementacion del router cliente + modelado de rutas + tests de navegacion
+- **Dependencias:** STORY 8.1, STORY 8.3, STORY 8.4
+- **Blockers:** Ninguno
+
+### STORY 8.6: Infraestructura transversal de frontend y resiliencia
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Gestion de estado global ampliada para shell, usuario, notificaciones, modales globales y estado transversal de navegacion
+  - ✅ Mecanismo global de manejo de errores de frontend con fallback UI y mensajes amigables para errores JS y de red
+  - ✅ Servicios/frontend helpers comunes para feedback global, modales y errores sin soluciones paralelas por pagina
+  - ✅ Base preparada para i18n y theming: textos externalizables y tokens compatibles con tema claro/oscuro sin exigir aun catalogo completo de traducciones
+  - ✅ Pages y componentes consumen la infraestructura comun de estado y resiliencia sin multiplicar stores o handlers ad hoc
+- **IA Usage:** Consolidacion de estado global + error handling + servicios UI transversales + bases de i18n/theming
+- **Dependencias:** STORY 3.7, STORY 8.2, STORY 8.3, STORY 8.5
+- **Blockers:** Ninguno
+
+### STORY 8.7: UX transversal, accesibilidad y microinteracciones
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Estados unificados de loading, vacio, error y exito en flujos principales
+  - ✅ Confirmacion consistente en acciones destructivas o sensibles
+  - ✅ Prevencion de doble submit y feedback claro de operaciones en curso
+  - ✅ Mejora de foco, accesibilidad basica por teclado y continuidad de contexto tras guardar/cancelar
+  - ✅ Responsive, densidad razonable y microinteracciones suaves aplicadas al menos en Login, EntityList, EntityEdit y PluginManager
+- **IA Usage:** Refinamiento UX + estados comunes + accesibilidad basica + microinteracciones y continuidad de contexto
+- **Dependencias:** STORY 8.2, STORY 8.4, STORY 8.5, STORY 8.6
+- **Blockers:** Ninguno
+
+### STORY 8.8: Documentacion de arquitectura frontend y testing UI automatizado
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Documentacion de arquitectura frontend con estructura de carpetas, convenciones de componentes, flujo SPA y decisiones de routing
+  - ✅ Guia de extension para nuevas paginas, patrones de datos y puntos de integracion de plugins en UI
+  - ✅ Base de tests UI automatizados con preferencia por Playwright para smoke/E2E de navegador
+  - ✅ Cobertura minima de flujos UI: login, navegacion shell, listado/edicion de entidad y PluginManager
+  - ✅ Ejecucion documentada y estable sobre el runtime Apache+PHP same-origin del proyecto
+- **IA Usage:** Documentacion tecnica frontend + bootstrap de Playwright + casos smoke/E2E de UI
+- **Dependencias:** STORY 8.3, STORY 8.4, STORY 8.5, STORY 8.7
+- **Blockers:** Ninguno
+
+---
+
+## EPIC 9: Operación Técnica y Observabilidad (Fase 9)
 
 Objetivo: Sistema observable con health checks, preparado para deployment en RPi5 con backup automatizado y hardening básico de seguridad.
 
-### STORY 8.1: Endpoint de health técnico del sistema
+### STORY 9.1: Endpoint de health técnico del sistema
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Backend
@@ -869,7 +991,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5, STORY 4.1
 - **Blockers:** Ninguno
 
-### STORY 8.2: Backup automático de base de datos
+### STORY 9.2: Backup automático de base de datos
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Infrastructure
@@ -882,7 +1004,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5, STORY 1.4
 - **Blockers:** `pg_dump` disponible en entorno
 
-### STORY 8.3: Docker Compose para deployment en RPi5
+### STORY 9.3: Docker Compose para deployment en RPi5
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Infrastructure
@@ -895,7 +1017,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5b
 - **Blockers:** Acceso a RPi5 para validación (puede validarse en local x86)
 
-### STORY 8.4: Hardening básico de seguridad (headers + rate limiting)
+### STORY 9.4: Hardening básico de seguridad (headers + rate limiting)
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Backend
@@ -909,11 +1031,11 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 
 ---
 
-## EPIC 9: Marketplace de Plugins (Fase 9)
+## EPIC 10: Marketplace de Plugins (Fase 10)
 
 Objetivo: Repositorio central de plugins publicados, browseable e instalable desde la UI de Xestify.
 
-### STORY 9.1: Schema y modelo de datos del marketplace
+### STORY 10.1: Schema y modelo de datos del marketplace
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Database
@@ -925,7 +1047,7 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
 - **Dependencias:** STORY 2.4
 - **Blockers:** Definir si marketplace es local (mismo repo) o remoto (URL externa)
 
-### STORY 9.2: API de marketplace (browse, search, detalle)
+### STORY 10.2: API de marketplace (browse, search, detalle)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
@@ -936,10 +1058,10 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Validación de compatibilidad de versión antes de instalar
   - ✅ Tests: listado, filtros, instalación, incompatibilidad rechazada
 - **IA Usage:** Controlador + lógica de descarga + tests
-- **Dependencias:** STORY 9.1, STORY 4.1, STORY 4.5
+- **Dependencias:** STORY 10.1, STORY 4.1, STORY 4.5
 - **Blockers:** Ninguno
 
-### STORY 9.3: Frontend - UI de marketplace en PluginManager
+### STORY 10.3: Frontend - UI de marketplace en PluginManager
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -950,10 +1072,10 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Feedback visual durante instalación (loading, éxito, error)
   - ✅ Plugin instalado muestra estado "Instalado" en lugar de botón
 - **IA Usage:** UI cards + buscador + feedback de estado
-- **Dependencias:** STORY 9.2, STORY 6.4
+- **Dependencias:** STORY 10.2, STORY 6.4
 - **Blockers:** Ninguno
 
-### STORY 9.4: Publicación de plugin al marketplace
+### STORY 10.4: Publicación de plugin al marketplace
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Backend
@@ -963,16 +1085,16 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Calcula checksum del paquete para verificación de integridad
   - ✅ Tests: publicación válida, inválida por manifest incorrecto
 - **IA Usage:** Lógica de validación + checksum + tests
-- **Dependencias:** STORY 9.1, STORY 4.6
+- **Dependencias:** STORY 10.1, STORY 4.6
 - **Blockers:** Ninguno
 
 ---
 
-## EPIC 10: QA y Calidad (Fase 10)
+## EPIC 11: QA y Calidad (Fase 11)
 
 Objetivo: Suite de tests completa, automatización CI y coverage mínimo establecido para el proyecto.
 
-### STORY 10.1: Suite de tests de integración E2E backend
+### STORY 11.1: Suite de tests de integración E2E backend
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Testing
@@ -985,7 +1107,7 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
 - **Dependencias:** STORY 1.x, STORY 3.x, STORY 4.x
 - **Blockers:** Base de datos de test configurada
 
-### STORY 10.2: Coverage mínimo 80% en servicios core
+### STORY 11.2: Coverage mínimo 80% en servicios core
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Testing
@@ -998,7 +1120,7 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
 - **Dependencias:** STORY 3.1, STORY 3.2, STORY 4.2, STORY A1.2
 - **Blockers:** Ninguno
 
-### STORY 10.3: GitHub Actions CI pipeline
+### STORY 11.3: GitHub Actions CI pipeline
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** DevOps
@@ -1008,10 +1130,10 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
   - ✅ Falla el pipeline si algún test falla
   - ✅ Badge de CI en README
 - **IA Usage:** Workflow YAML completo + setup actions
-- **Dependencias:** STORY 10.1
+- **Dependencias:** STORY 11.1
 - **Blockers:** Acceso a secrets de PostgreSQL en GitHub Actions
 
-### STORY 10.4: Tests de rendimiento básicos (API response times)
+### STORY 11.4: Tests de rendimiento básicos (API response times)
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Testing
@@ -1064,7 +1186,7 @@ Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y pl
   - ✅ Se audita activar/desactivar plugin
   - ✅ Cada registro incluye `who`, `what`, `when`, `where`
 - **IA Usage:** Inyección de hooks de auditoría en controladores/servicios
-- **Dependencias:** STORY A1.2, STORY 7.1, STORY 6.2, STORY 9.2 (o equivalentes)
+- **Dependencias:** STORY A1.2, STORY 7.1, STORY 6.2, STORY 10.2 (o equivalentes)
 - **Blockers:** Disponibilidad de endpoints de gestión
 
 ### STORY A1.4: Endpoint y vista básica de auditoría (solo admin)
@@ -1135,7 +1257,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ---
 
-## 📊 Resumen del Backlog Académico (EPIC 0-10 + A1/A2)
+## 📊 Resumen del Backlog Académico (EPIC 0-11 + A1/A2)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 
