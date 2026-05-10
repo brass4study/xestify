@@ -6,7 +6,9 @@ namespace Xestify\controllers;
 
 use PDO;
 use Xestify\core\Request;
+use Xestify\core\RequestFactory;
 use Xestify\core\Response;
+use Xestify\core\RuntimePathNormalizer;
 
 /**
  * PluginExtensionController — generic REST endpoints for extension plugin data.
@@ -32,7 +34,7 @@ class PluginExtensionController
     private const MSG_PLUGIN_NOT_ACTIVE = 'Extension plugin is not active.';
     private const MSG_PARENT_NOT_FOUND = 'Parent entity record not found.';
 
-    public function __construct(private PDO $pdo)
+    public function __construct(private PDO $pdo, private ?RequestFactory $requestFactory = null)
     {
     }
 
@@ -42,7 +44,7 @@ class PluginExtensionController
      */
     public function index(array $params, ?Request $request = null): void
     {
-        $request    ??= Request::fromGlobals($params);
+        $request    ??= $this->requestFactory()->fromGlobals($params);
         $pluginSlug = (string) ($params['plugin_slug'] ?? '');
         $entity     = (string) ($params['entity'] ?? '');
         $recordId   = (string) ($params['id'] ?? '');
@@ -84,7 +86,7 @@ class PluginExtensionController
      */
     public function create(array $params, ?Request $request = null): void
     {
-        $request    ??= Request::fromGlobals($params);
+        $request    ??= $this->requestFactory()->fromGlobals($params);
         $pluginSlug = (string) ($params['plugin_slug'] ?? '');
         $entity     = (string) ($params['entity'] ?? '');
         $recordId   = (string) ($params['id'] ?? '');
@@ -130,7 +132,7 @@ class PluginExtensionController
      */
     public function update(array $params, ?Request $request = null): void
     {
-        $request    ??= Request::fromGlobals($params);
+        $request    ??= $this->requestFactory()->fromGlobals($params);
         $pluginSlug = (string) ($params['plugin_slug'] ?? '');
         $entity     = (string) ($params['entity'] ?? '');
         $recordId   = (string) ($params['id'] ?? '');
@@ -175,7 +177,7 @@ class PluginExtensionController
      */
     public function delete(array $params, ?Request $request = null): void
     {
-        $request    ??= Request::fromGlobals($params);
+        $request    ??= $this->requestFactory()->fromGlobals($params);
         $pluginSlug = (string) ($params['plugin_slug'] ?? '');
         $entity     = (string) ($params['entity'] ?? '');
         $recordId   = (string) ($params['id'] ?? '');
@@ -305,6 +307,15 @@ class PluginExtensionController
         $stmt->execute([':id' => $recordId, ':entity' => $entity]);
 
         return $stmt->fetchColumn() !== false;
+    }
+
+    private function requestFactory(): RequestFactory
+    {
+        if ($this->requestFactory === null) {
+            $this->requestFactory = new RequestFactory(new RuntimePathNormalizer());
+        }
+
+        return $this->requestFactory;
     }
 }
 

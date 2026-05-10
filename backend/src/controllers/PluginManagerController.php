@@ -11,7 +11,9 @@ use OutOfBoundsException;
 use PDO;
 use PDOException;
 use Xestify\core\Request;
+use Xestify\core\RequestFactory;
 use Xestify\core\Response;
+use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\PluginException;
 use Xestify\plugins\PluginLoader;
 
@@ -26,7 +28,7 @@ use Xestify\plugins\PluginLoader;
  */
 class PluginManagerController
 {
-    public function __construct(private PDO $pdo, private ?PluginLoader $pluginLoader = null)
+    public function __construct(private PDO $pdo, private ?PluginLoader $pluginLoader = null, private ?RequestFactory $requestFactory = null)
     {
     }
 
@@ -44,7 +46,7 @@ class PluginManagerController
      */
     public function listPlugins(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
 
         if (!$this->isAdminRequest($request)) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
@@ -72,7 +74,7 @@ class PluginManagerController
      */
     public function updatePluginStatus(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if (!$this->isAdminRequest($request)) {
@@ -156,7 +158,7 @@ class PluginManagerController
 
     public function listPluginUpdates(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
 
         if (!$this->isAdminRequest($request)) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
@@ -177,7 +179,7 @@ class PluginManagerController
      */
     public function syncPlugins(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
 
         if (!$this->isAdminRequest($request)) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
@@ -198,7 +200,7 @@ class PluginManagerController
      */
     public function updatePlugin(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if (!$this->isAdminRequest($request)) {
@@ -231,5 +233,14 @@ class PluginManagerController
         }
 
         return $this->pluginLoader;
+    }
+
+    private function requestFactory(): RequestFactory
+    {
+        if ($this->requestFactory === null) {
+            $this->requestFactory = new RequestFactory(new RuntimePathNormalizer());
+        }
+
+        return $this->requestFactory;
     }
 }

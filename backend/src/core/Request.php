@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Xestify\core;
 
 /**
- * Encapsula la petici├│n HTTP entrante.
- * Lee headers, query params, body JSON y route params.
+ * Encapsula la peticion HTTP ya resuelta.
+ * Contiene method, uri, headers, query params, body JSON y route params.
  */
 class Request
 {
@@ -14,70 +14,24 @@ class Request
     private array $body;
     private array $headers;
     private array $routeParams;
+    private string $method;
+    private string $uri;
     private ?array $user = null;
 
     public function __construct(
-        array $query       = [],
-        array $body        = [],
-        array $headers     = [],
-        array $routeParams = []
+        array $query = [],
+        array $body = [],
+        array $headers = [],
+        array $routeParams = [],
+        string $method = 'GET',
+        string $uri = '/'
     ) {
-        $this->query       = $query;
-        $this->body        = $body;
-        $this->headers     = array_change_key_case($headers, CASE_LOWER);
+        $this->query = $query;
+        $this->body = $body;
+        $this->headers = array_change_key_case($headers, CASE_LOWER);
         $this->routeParams = $routeParams;
-    }
-
-    /**
-     * Construye un Request desde las superglobales PHP ($_GET, php://input, $_SERVER).
-     */
-    public static function fromGlobals(array $routeParams = []): self
-    {
-        $body = [];
-        $raw  = file_get_contents('php://input');
-        if ($raw !== '' && $raw !== false) {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded)) {
-                $body = $decoded;
-            }
-        }
-
-        $headers = [];
-        foreach ($_SERVER as $key => $value) {
-            if (str_starts_with($key, 'HTTP_')) {
-                $name           = strtolower(str_replace('_', '-', substr($key, 5)));
-                $headers[$name] = $value;
-            }
-        }
-
-        if (function_exists('getallheaders')) {
-            $nativeHeaders = getallheaders();
-            if (is_array($nativeHeaders)) {
-                foreach ($nativeHeaders as $name => $value) {
-                    if (is_string($name)) {
-                        $headers[strtolower($name)] = $value;
-                    }
-                }
-            }
-        }
-
-        if (!array_key_exists('authorization', $headers)) {
-            $fallbackKeys = [
-                'REDIRECT_HTTP_AUTHORIZATION',
-                'Authorization',
-                'PHP_AUTH_DIGEST',
-            ];
-
-            foreach ($fallbackKeys as $key) {
-                $value = $_SERVER[$key] ?? null;
-                if (is_string($value) && $value !== '') {
-                    $headers['authorization'] = $value;
-                    break;
-                }
-            }
-        }
-
-        return new self($_GET, $body, $headers, $routeParams);
+        $this->method = strtoupper($method);
+        $this->uri = $uri === '' ? '/' : $uri;
     }
 
     // -----------------------------------------------------------------------
@@ -123,6 +77,7 @@ class Request
         if (str_starts_with($auth, 'Bearer ')) {
             return substr($auth, 7);
         }
+
         return null;
     }
 
@@ -146,39 +101,12 @@ class Request
 
     public function method(): string
     {
-        return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        return $this->method;
     }
 
     public function uri(): string
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-        return $this->normalizeRuntimePath($path);
-    }
-
-    private function normalizeRuntimePath(string $path): string
-    {
-        if ($path === '' || $path === '/') {
-            return '/';
-        }
-
-        if ($path === '/health' || $path === '/api' || str_starts_with($path, '/api/')) {
-            return $path;
-        }
-
-        $apiOffset = strpos($path, '/api/');
-        if ($apiOffset !== false && $apiOffset > 0) {
-            return substr($path, $apiOffset);
-        }
-
-        $healthOffset = strpos($path, '/health');
-        if ($healthOffset !== false && $healthOffset > 0) {
-            $candidate = substr($path, $healthOffset);
-            if ($candidate === '/health' || str_starts_with($candidate, '/health/')) {
-                return $candidate;
-            }
-        }
-
-        return $path;
+        return $this->uri;
     }
 
     // -----------------------------------------------------------------------

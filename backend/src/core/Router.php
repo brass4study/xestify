@@ -9,7 +9,7 @@ use Xestify\middleware\AuthMiddleware;
 
 /**
  * Router HTTP minimalista.
- * Soporta rutas est├íticas y par├ímetros din├ímicos (:param).
+ * Soporta rutas estaticas y parametros dinamicos (:param).
  * Mapea rutas a [Controller::class, 'method'] o cualquier callable.
  */
 class Router
@@ -17,14 +17,14 @@ class Router
     /** @var array<string, array<array{pattern: string, handler: callable|array}>> */
     private array $routes = [];
 
-    private Container $container;
-
     /** @var string[] */
     private array $protectedPrefixes = ['/api/v1/entities', '/api/v1/plugins'];
 
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
+    public function __construct(
+        private Container $container,
+        private RequestFactory $requestFactory,
+        private RuntimePathNormalizer $pathNormalizer
+    ) {
     }
 
     public function get(string $path, callable|array $handler): void
@@ -48,13 +48,13 @@ class Router
     }
 
     /**
-     * Despacha la petici├│n actual al handler correspondiente.
+     * Despacha la peticion actual al handler correspondiente.
      * Llamado desde bootstrap una vez registradas todas las rutas.
      */
     public function run(): void
     {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $uri    = $this->normalizeRuntimePath(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
+        $method = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $uri = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
 
         $result = $this->dispatch($method, $uri);
 
@@ -64,22 +64,23 @@ class Router
     }
 
     /**
-     * Resuelve la ruta y ejecuta el handler. Devuelve true si encontr├│ ruta, null si no.
+     * Resuelve la ruta y ejecuta el handler. Devuelve true si encontro ruta, null si no.
      *
-    * @param string $method  HTTP method (GET, POST, etc.)
-     * @param string $uri     Path de la petici├│n
+     * @param string $method HTTP method (GET, POST, etc.)
+     * @param string $uri    Path de la peticion
      * @return true|null
      */
     public function dispatch(string $method, string $uri): ?true
     {
-        $method = strtoupper($method);
-        $uri    = '/' . trim($this->normalizeRuntimePath($uri), '/');
+        $normalizedMethod = strtoupper($method);
+        $normalizedUri = '/' . trim($this->pathNormalizer->normalize($uri), '/');
 
-        foreach ($this->routes[$method] ?? [] as $route) {
-            $params = $this->matchRoute($route['pattern'], $uri);
+        foreach ($this->routes[$normalizedMethod] ?? [] as $route) {
+            $params = $this->matchRoute($route['pattern'], $normalizedUri);
             if ($params !== null) {
-                $request = Request::fromGlobals($params);
-                $this->dispatchWithMiddleware($route['handler'], $params, $request, $uri);
+                $request = $this->requestFactory->fromGlobals($params, $normalizedMethod, $normalizedUri);
+                $this->dispatchWithMiddleware($route['handler'], $params, $request, $normalizedUri);
+
                 return true;
             }
         }
@@ -99,17 +100,18 @@ class Router
 
     /**
      * Convierte /entities/:slug/records/:id o /entities/{slug}/records/{id}
-     * en un patrón con named groups.
+     * en un patron con named groups.
      */
     private function buildPattern(string $path): string
     {
-        $path    = '/' . trim($path, '/');
+        $path = '/' . trim($path, '/');
         $pattern = preg_replace(['/\{([a-zA-Z_]\w*)\}/', '/:([a-zA-Z_]\w*)/'], '(?P<$1>[^/]+)', $path) ?? $path;
+
         return '#^' . $pattern . '$#';
     }
 
     /**
-     * Intenta hacer match. Devuelve array de par├ímetros capturados o null.
+     * Intenta hacer match. Devuelve array de parametros capturados o null.
      *
      * @return array<string, string>|null
      */
@@ -119,7 +121,6 @@ class Router
             return null;
         }
 
-        // Filtra solo los named captures (string keys)
         return array_filter(
             $matches,
             fn($key) => is_string($key),
@@ -129,18 +130,20 @@ class Router
 
     /**
      * Ejecuta el handler. Soporta:
-     *   - [ControllerClass::class, 'method']  ÔåÆ instancia via Container si est├í registrado, sino new
+     *   - [ControllerClass::class, 'method'] instancia via Container si esta registrado, sino new
      *   - callable
      */
     private function dispatchWithMiddleware(callable|array $handler, array $params, Request $request, string $uri): void
     {
         if (!$this->requiresAuth($uri)) {
             $this->callHandler($handler, $params, $request);
+
             return;
         }
 
         if (!$this->container->has(AuthMiddleware::class)) {
             Response::make()->serverError('Auth middleware is not configured.');
+
             return;
         }
 
@@ -162,32 +165,6 @@ class Router
         return false;
     }
 
-    private function normalizeRuntimePath(string $path): string
-    {
-        if ($path === '' || $path === '/') {
-            return '/';
-        }
-
-        if ($path === '/health' || $path === '/api' || str_starts_with($path, '/api/')) {
-            return $path;
-        }
-
-        $apiOffset = strpos($path, '/api/');
-        if ($apiOffset !== false && $apiOffset > 0) {
-            return substr($path, $apiOffset);
-        }
-
-        $healthOffset = strpos($path, '/health');
-        if ($healthOffset !== false && $healthOffset > 0) {
-            $candidate = substr($path, $healthOffset);
-            if ($candidate === '/health' || str_starts_with($candidate, '/health/')) {
-                return $candidate;
-            }
-        }
-
-        return $path;
-    }
-
     private function callHandler(callable|array $handler, array $params, ?Request $request = null): void
     {
         if (is_array($handler) && count($handler) === 2) {
@@ -195,6 +172,7 @@ class Router
 
             if (is_object($target)) {
                 $this->invokeController($target, (string) $method, $params, $request);
+
                 return;
             }
 
@@ -203,6 +181,7 @@ class Router
                 : new $target(); // NOSONAR S5992 - clase conocida al registrar la ruta
 
             $this->invokeController($instance, (string) $method, $params, $request);
+
             return;
         }
 
@@ -215,6 +194,7 @@ class Router
 
         if ($request !== null && $ref->getNumberOfParameters() >= 2) {
             $instance->$method($params, $request); // NOSONAR S5992 - metodo conocido al registrar la ruta
+
             return;
         }
 

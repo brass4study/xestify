@@ -8,6 +8,8 @@ use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
 use Xestify\core\Container;
 use Xestify\core\Database;
+use Xestify\core\RequestFactory;
+use Xestify\core\RuntimePathNormalizer;
 use Xestify\middleware\AuthMiddleware;
 use Xestify\plugins\HookDispatcher;
 use Xestify\plugins\PluginLoader;
@@ -36,6 +38,11 @@ $container->singleton(JwtService::class, fn() => new JwtService(
 
 $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware(
     $container->get(JwtService::class)
+));
+
+$container->singleton(RuntimePathNormalizer::class, fn() => new RuntimePathNormalizer());
+$container->singleton(RequestFactory::class, fn() => new RequestFactory(
+    $container->get(RuntimePathNormalizer::class)
 ));
 
 // --- Entity layer -------------------------------------------------------------
@@ -74,20 +81,24 @@ $pluginLoader->registerActiveHooks($container->get(HookDispatcher::class));
 // --- Controllers --------------------------------------------------------------
 
 $container->singleton(AuthController::class, fn() => new AuthController(
-    $container->get(JwtService::class)
+    $container->get(JwtService::class),
+    $container->get(RequestFactory::class)
 ));
 
 $container->singleton(EntityController::class, fn() => new EntityController(
     $container->get(EntityService::class),
     $container->get(Database::class),
-    $container->get(HookDispatcher::class)
+    $container->get(HookDispatcher::class),
+    $container->get(RequestFactory::class)
 ));
 
 $container->singleton(PluginExtensionController::class, fn() => new PluginExtensionController(
-    $container->get(Database::class)
+    $container->get(Database::class),
+    $container->get(RequestFactory::class)
 ));
 
 $container->singleton(PluginManagerController::class, fn() => new PluginManagerController(
     $container->get(Database::class),
-    $container->get(PluginLoader::class)
+    $container->get(PluginLoader::class),
+    $container->get(RequestFactory::class)
 ));

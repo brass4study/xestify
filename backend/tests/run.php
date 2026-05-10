@@ -18,6 +18,8 @@ $root = dirname(__DIR__, 2);
 $groups = [
     'unit' => [
         'backend/tests/unit/RouterTest.php',
+        'backend/tests/unit/RuntimePathNormalizerTest.php',
+        'backend/tests/unit/RequestFactoryTest.php',
         'backend/tests/unit/AuthMiddlewareTest.php',
         'backend/tests/unit/EntityServiceHooksTest.php',
         'backend/tests/unit/ValidationServiceTest.php',

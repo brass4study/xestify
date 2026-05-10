@@ -7,7 +7,8 @@ function normalizeBasePath(pathname) {
 }
 
 function detectBasePath(moduleUrl) {
-  const url = new URL(moduleUrl, window.location.href);
+  const baseUrl = globalThis.location?.href ?? 'http://localhost/';
+  const url = new URL(moduleUrl, baseUrl);
   const pathname = url.pathname;
   const markers = ['/src/js/', '/js/', '/plugins/'];
 

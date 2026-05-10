@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use Xestify\core\Request;
+use Xestify\core\RequestFactory;
 use Xestify\core\Response;
+use Xestify\core\RuntimePathNormalizer;
 
 require_once __DIR__ . '/helpers.php';
 require_once dirname(__DIR__, 2) . '/src/core/Request.php';
+require_once dirname(__DIR__, 2) . '/src/core/RequestFactory.php';
 require_once dirname(__DIR__, 2) . '/src/core/Response.php';
+require_once dirname(__DIR__, 2) . '/src/core/RuntimePathNormalizer.php';
 
 const CONTENT_TYPE_JSON = 'application/json';
 
@@ -88,31 +92,32 @@ TestSuite::run('allParams() devuelve todos los route params', function () {
     assertEquals($params, $req->allParams());
 });
 
-TestSuite::run('uri() recorta el prefijo de alias antes de /api', function () {
-    $previousUri = $_SERVER['REQUEST_URI'] ?? null;
-    $_SERVER['REQUEST_URI'] = '/xestify/api/v1/auth/login';
-
-    try {
-        $req = new Request();
-        assertEquals('/api/v1/auth/login', $req->uri());
-    } finally {
-        if ($previousUri === null) {
-            unset($_SERVER['REQUEST_URI']);
-        } else {
-            $_SERVER['REQUEST_URI'] = $previousUri;
-        }
-    }
+TestSuite::run('method() devuelve el metodo resuelto al construir Request', function () {
+    $req = new Request(method: 'post');
+    assertEquals('POST', $req->method());
 });
 
-TestSuite::run('fromGlobals() recupera Authorization desde REDIRECT_HTTP_AUTHORIZATION', function () {
+TestSuite::run('uri() devuelve la URI ya resuelta al construir Request', function () {
+    $req = new Request(uri: '/api/v1/auth/login');
+    assertEquals('/api/v1/auth/login', $req->uri());
+});
+
+TestSuite::run('RequestFactory recupera Authorization desde REDIRECT_HTTP_AUTHORIZATION', function () {
     $previousRedirectAuth = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
     $previousHttpAuth = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+    $previousMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+    $previousUri = $_SERVER['REQUEST_URI'] ?? null;
     unset($_SERVER['HTTP_AUTHORIZATION']);
     $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Bearer redirected-token';
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/xestify/api/v1/entities';
 
     try {
-        $req = Request::fromGlobals();
+        $factory = new RequestFactory(new RuntimePathNormalizer());
+        $req = $factory->fromGlobals();
         assertEquals('redirected-token', $req->bearerToken());
+        assertEquals('GET', $req->method());
+        assertEquals('/api/v1/entities', $req->uri());
     } finally {
         if ($previousRedirectAuth === null) {
             unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
@@ -124,6 +129,18 @@ TestSuite::run('fromGlobals() recupera Authorization desde REDIRECT_HTTP_AUTHORI
             unset($_SERVER['HTTP_AUTHORIZATION']);
         } else {
             $_SERVER['HTTP_AUTHORIZATION'] = $previousHttpAuth;
+        }
+
+        if ($previousMethod === null) {
+            unset($_SERVER['REQUEST_METHOD']);
+        } else {
+            $_SERVER['REQUEST_METHOD'] = $previousMethod;
+        }
+
+        if ($previousUri === null) {
+            unset($_SERVER['REQUEST_URI']);
+        } else {
+            $_SERVER['REQUEST_URI'] = $previousUri;
         }
     }
 });

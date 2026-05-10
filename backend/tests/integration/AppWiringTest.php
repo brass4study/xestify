@@ -36,7 +36,9 @@ spl_autoload_register(function (string $class): void {
 
 use Xestify\core\Container;
 use Xestify\core\Database;
+use Xestify\core\RequestFactory;
 use Xestify\core\Router;
+use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\HookException;
 use Xestify\plugins\PluginLoader;
@@ -69,7 +71,11 @@ try {
 function buildAppRouter(Container $container): Router
 {
     require BASE_PATH . '/src/config/app.php'; // NOSONAR - test rebuilds a fresh container per case
-    $router = new Router($container);
+    $router = new Router(
+        $container,
+        $container->get(RequestFactory::class),
+        $container->get(RuntimePathNormalizer::class)
+    );
     require BASE_PATH . '/src/config/routes.php'; // NOSONAR - routes must be registered on each fresh router
     return $router;
 }

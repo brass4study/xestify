@@ -3,13 +3,17 @@
 declare(strict_types=1);
 
 use Xestify\core\Container;
+use Xestify\core\RequestFactory;
 use Xestify\core\Router;
+use Xestify\core\RuntimePathNormalizer;
 
 require_once __DIR__ . '/helpers.php';
 require_once dirname(__DIR__, 2) . '/src/core/Container.php';
 require_once dirname(__DIR__, 2) . '/src/core/Request.php';
+require_once dirname(__DIR__, 2) . '/src/core/RequestFactory.php';
 require_once dirname(__DIR__, 2) . '/src/core/Response.php';
 require_once dirname(__DIR__, 2) . '/src/core/Router.php';
+require_once dirname(__DIR__, 2) . '/src/core/RuntimePathNormalizer.php';
 require_once dirname(__DIR__, 2) . '/src/exceptions/AuthException.php';
 require_once dirname(__DIR__, 2) . '/src/services/JwtService.php';
 require_once dirname(__DIR__, 2) . '/src/middleware/AuthMiddleware.php';
@@ -28,14 +32,35 @@ const ROUTE_API_ENTITIES = '/api/v1/entities';
 
 function makeRouter(): Router
 {
-    return new Router(new Container());
+    $container = new Container();
+    $normalizer = new RuntimePathNormalizer();
+
+    return new Router($container, new RequestFactory($normalizer), $normalizer);
 }
 
 function dispatchCapture(Router $router, string $method, string $uri): array
 {
+    $previousMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+    $previousUri = $_SERVER['REQUEST_URI'] ?? null;
+    $_SERVER['REQUEST_METHOD'] = $method;
+    $_SERVER['REQUEST_URI'] = $uri;
+
     ob_start();
     $result = $router->dispatch($method, $uri);
     $output = ob_get_clean() ?: '';
+
+    if ($previousMethod === null) {
+        unset($_SERVER['REQUEST_METHOD']);
+    } else {
+        $_SERVER['REQUEST_METHOD'] = $previousMethod;
+    }
+
+    if ($previousUri === null) {
+        unset($_SERVER['REQUEST_URI']);
+    } else {
+        $_SERVER['REQUEST_URI'] = $previousUri;
+    }
+
     return [$result, $output];
 }
 
@@ -164,7 +189,8 @@ TestSuite::run('Handler [Controller::class, method] se instancia y llama', funct
     };
 
     $container = new Container();
-    $router    = new Router($container);
+    $normalizer = new RuntimePathNormalizer();
+    $router = new Router($container, new RequestFactory($normalizer), $normalizer);
 
     // Registrar la instancia bajo su clase en el container
     $container->singleton(get_class($controllerClass), fn() => $controllerClass);
@@ -178,7 +204,8 @@ TestSuite::run('Handler [Controller::class, method] se instancia y llama', funct
 TestSuite::run('Ruta protegida requiere token bearer', function () {
     $container = new Container();
     $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware(new JwtService('router-secret')));
-    $router = new Router($container);
+    $normalizer = new RuntimePathNormalizer();
+    $router = new Router($container, new RequestFactory($normalizer), $normalizer);
     $called = false;
 
     $router->get(ROUTE_API_ENTITIES, function () use (&$called) {
@@ -210,7 +237,8 @@ TestSuite::run('Ruta protegida entrega Request autenticada al controller', funct
     $container = new Container();
     $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware($jwt));
     $container->singleton(get_class($controller), fn() => $controller);
-    $router = new Router($container);
+    $normalizer = new RuntimePathNormalizer();
+    $router = new Router($container, new RequestFactory($normalizer), $normalizer);
     $router->get(ROUTE_API_ENTITIES, [get_class($controller), 'index']);
 
     try {

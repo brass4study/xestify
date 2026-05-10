@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Xestify\controllers;
 
 use PDO;
-
 use Xestify\core\Request;
+use Xestify\core\RequestFactory;
 use Xestify\core\Response;
+use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\HookException;
 use Xestify\exceptions\RepositoryException;
@@ -31,7 +32,8 @@ class EntityController
     public function __construct(
         private EntityService $service,
         private PDO $pdo,
-        private HookDispatcher $hookDispatcher = new HookDispatcher()
+        private HookDispatcher $hookDispatcher = new HookDispatcher(),
+        private ?RequestFactory $requestFactory = null
     ) {
     }
 
@@ -44,7 +46,7 @@ class EntityController
      */
     public function listEntities(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
 
         $stmt = $this->pdo->prepare(
             'SELECT p.slug, p.name AS label, p.schema_json, p.schema_version
@@ -84,7 +86,7 @@ class EntityController
      */
     public function schema(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
@@ -120,7 +122,7 @@ class EntityController
      */
     public function index(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
@@ -139,7 +141,7 @@ class EntityController
      */
     public function create(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug    = (string) ($params['slug'] ?? '');
         $data    = $request->allBody();
         $ownerId = $this->resolveOwnerId($request);
@@ -172,7 +174,7 @@ class EntityController
      */
     public function show(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $id      = (string) ($params['id'] ?? '');
 
         if ($id === '') {
@@ -196,7 +198,7 @@ class EntityController
      */
     public function update(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug    = (string) ($params['slug'] ?? '');
         $id      = (string) ($params['id'] ?? '');
         $data    = $request->allBody();
@@ -229,7 +231,7 @@ class EntityController
      */
     public function destroy(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $id = (string) ($params['id'] ?? '');
 
         if ($id === '') {
@@ -254,7 +256,7 @@ class EntityController
      */
     public function tabs(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
@@ -274,7 +276,7 @@ class EntityController
      */
     public function actions(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
         if ($slug === '') {
@@ -314,5 +316,14 @@ class EntityController
         } else {
             Response::make()->notFound($exception->getMessage());
         }
+    }
+
+    private function requestFactory(): RequestFactory
+    {
+        if ($this->requestFactory === null) {
+            $this->requestFactory = new RequestFactory(new RuntimePathNormalizer());
+        }
+
+        return $this->requestFactory;
     }
 }

@@ -6,16 +6,15 @@ namespace Xestify\controllers;
 
 use Xestify\core\Database;
 use Xestify\core\Request;
+use Xestify\core\RequestFactory;
 use Xestify\core\Response;
+use Xestify\core\RuntimePathNormalizer;
 use Xestify\services\JwtService;
 
 class AuthController
 {
-    private JwtService $jwt;
-
-    public function __construct(JwtService $jwt)
+    public function __construct(private JwtService $jwt, private ?RequestFactory $requestFactory = null)
     {
-        $this->jwt = $jwt;
     }
 
     /**
@@ -27,7 +26,7 @@ class AuthController
      */
     public function login(array $params, ?Request $request = null): void
     {
-        $request ??= Request::fromGlobals($params);
+        $request ??= $this->requestFactory()->fromGlobals($params);
 
         $email    = (string) $request->body('email', '');
         $password = (string) $request->body('password', '');
@@ -62,5 +61,14 @@ class AuthController
             'access_token' => $token,
             'email'        => (string) $user['email'],
         ]);
+    }
+
+    private function requestFactory(): RequestFactory
+    {
+        if ($this->requestFactory === null) {
+            $this->requestFactory = new RequestFactory(new RuntimePathNormalizer());
+        }
+
+        return $this->requestFactory;
     }
 }
