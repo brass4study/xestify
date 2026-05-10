@@ -12,15 +12,27 @@ $loader = new PluginLoader(
 );
 
 try {
-    $loaded = $loader->loadAll();
-    $count = count($loaded);
+    $result = $loader->syncAll();
+    $summary = $result['summary'];
+    $plugins = $result['plugins'];
 
     echo "Plugin sync executed.\n";
-    echo "Plugins synchronized: {$count}\n";
+    echo "Plugins discovered: {$summary['discovered']}\n";
+    echo "Registered: {$summary['registered']}\n";
+    echo "Unchanged: {$summary['unchanged']}\n";
+    echo "Outdated: {$summary['outdated']}\n";
+    echo "Errors: {$summary['errors']}\n";
 
-    foreach ($loaded as $slug => $manifest) {
-        $version = is_array($manifest) && isset($manifest['version']) ? (string) $manifest['version'] : 'unknown';
-        echo "- {$slug} ({$version})\n";
+    foreach ($plugins as $slug => $plugin) {
+        $resultType = is_array($plugin) && isset($plugin['result']) ? (string) $plugin['result'] : 'unknown';
+        $installed = is_array($plugin) && isset($plugin['installed_version'])
+            ? (string) $plugin['installed_version']
+            : 'n/a';
+        $available = is_array($plugin) && isset($plugin['available_version'])
+            ? (string) $plugin['available_version']
+            : 'n/a';
+        $message = is_array($plugin) && isset($plugin['message']) ? (string) $plugin['message'] : '';
+        echo "- {$slug}: {$resultType} (installed={$installed}, available={$available}) {$message}\n";
     }
 } catch (\Throwable $e) {
     fwrite(STDERR, "Plugin sync failed: {$e->getMessage()}\n");

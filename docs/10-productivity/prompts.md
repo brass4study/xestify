@@ -897,3 +897,31 @@ Aunque en este caso no estamos cerrando una story, actualiza productivity, por q
 **Iteraciones:** 9
 
 **LecciÃƒÂ³n:** En un proyecto PHP local servido por Apache, el mayor salto de rendimiento puede no estar en el cÃƒÂ³digo de dominio sino en el entorno efectivo de runtime. TambiÃƒÂ©n conviene separar con claridad runtime, setup y sincronizaciÃƒÂ³n para evitar trabajo invisible en cada request.
+
+---
+
+### STORY 7.2 - Proceso de actualizacion con migracion de schema
+
+**Prompt de analisis:**
+```text
+Ok, vamos a implementar la story 7.2, leela y analiza los cambios necesarios.
+Asegurate que esta bien planteada la logica, y revisa si podriamos optimizarla.
+Hazme preguntas para asegurarnos que vamos a implementarlo como queremos.
+```
+
+**Prompt de implementacion:**
+```text
+PLEASE IMPLEMENT THIS PLAN:
+# STORY 7.2 — Sync y actualización de plugins con schema aditivo y rollback automático
+[...]
+- `sync` no debe “consumir” actualizaciones; solo descubrir y registrar correctamente.
+- `update` preserva el `status` previo; si el plugin estaba activo, la nueva versión queda activa.
+- Esta story deja preparada la base para `7.4`, pero **no** implementa todavía rollback manual ni `onRollback()`.
+- El alcance del schema diff en `7.2` queda limitado a **evolución aditiva segura**.
+```
+
+**Resultado:** STORY 7.2 completada. La aplicacion ya dispone de sincronizacion explicita de plugins desde disco (`POST /api/v1/plugins/sync`) sin consumir la version/schema runtime de plugins instalados, y de actualizacion transaccional (`POST /api/v1/plugins/{slug}/update`) con diff de schema solo aditivo, snapshot previo en `plugin_update_history`, `onUpdate(array $context)` opcional y rollback automatico si el lifecycle falla. `tools/setup/sync-plugins.php` adopta la misma semantica y el backlog/documentacion quedan alineados con `plugins.schema_json` como fuente viva del schema.
+
+**Iteraciones:** 4
+
+**Leccion:** En un sistema con plugins versionados, conviene separar nitidamente tres responsabilidades: descubrir desde disco, operar el runtime persistido y actualizar de forma explicita. Si `sync` consume actualizaciones o mezcla schema disponible con schema vivo, el sistema pierde trazabilidad y complica tanto el rollback como la evolucion segura del modelo.

@@ -39,5 +39,7 @@ $router->delete(ROUTE_PLUGIN_ITEM,                             [PluginExtensionC
 
 // Plugin manager endpoints
 $router->get('/api/v1/plugins',                    [PluginManagerController::class, 'listPlugins']);
+$router->post('/api/v1/plugins/sync',              [PluginManagerController::class, 'syncPlugins']);
 $router->get('/api/v1/plugins/updates',            [PluginManagerController::class, 'listPluginUpdates']);
+$router->post('/api/v1/plugins/{slug}/update',     [PluginManagerController::class, 'updatePlugin']);
 $router->put('/api/v1/plugins/{slug}/status',      [PluginManagerController::class, 'updatePluginStatus']);

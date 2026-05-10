@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__, 2));
 define('SEMVER_1_0', '1.0.0');
+define('SEMVER_2_0', '2.0.0');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
@@ -71,14 +72,46 @@ class TestPdo extends \PDO
 
 class TestPluginLoader extends PluginLoader
 {
-    /** @param array<int, array<string, string>> $updates */
-    public function __construct(private array $updates)
+    /**
+     * @param array<int, array<string, string>> $updates
+     * @param array{
+     *   summary?: array<string, int>,
+     *   plugins?: array<string, array<string, mixed>>
+     * } $syncResult
+     * @param array{
+     *   plugin?: array<string, mixed>,
+     *   update?: array<string, mixed>
+     * }|null $updateResult
+     */
+    public function __construct(
+        private array $updates,
+        private array $syncResult = ['summary' => [], 'plugins' => []],
+        private ?array $updateResult = null,
+        private ?\Throwable $updateError = null
+    )
     {
     }
 
     public function getOutdated(): array
     {
         return $this->updates;
+    }
+
+    public function syncAll(): array
+    {
+        return $this->syncResult;
+    }
+
+    public function update(string $slug): array
+    {
+        if ($this->updateError !== null) {
+            throw $this->updateError;
+        }
+
+        return $this->updateResult ?? [
+            'plugin' => ['slug' => $slug],
+            'update' => ['from_version' => SEMVER_1_0, 'to_version' => SEMVER_2_0, 'schema_changed' => false, 'diff' => []],
+        ];
     }
 }
 
@@ -291,7 +324,7 @@ TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function 
         'name' => 'Clients',
         'plugin_type' => 'entity',
         'installed_version' => SEMVER_1_0,
-        'available_version' => '2.0.0',
+        'available_version' => SEMVER_2_0,
     ]]);
     $controller = new PluginManagerController($pdo, $loader);
     $request = new TestRequest('');
@@ -312,10 +345,137 @@ TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function 
         'Installed version should match DB'
     );
     assertEquals(
-        '2.0.0',
+        SEMVER_2_0,
         $response['data']['updates'][0]['available_version'],
         'Available version should match manifest'
     );
+});
+
+TestSuite::run('POST /api/v1/plugins/sync returns sync summary for admin', function () {
+    $loader = new TestPluginLoader(
+        [],
+        [
+            'summary' => [
+                'discovered' => 2,
+                'registered' => 1,
+                'unchanged' => 0,
+                'outdated' => 1,
+                'errors' => 0,
+            ],
+            'plugins' => [
+                'clients' => [
+                    'slug' => 'clients',
+                    'result' => 'outdated',
+                    'installed_version' => SEMVER_1_0,
+                    'available_version' => SEMVER_2_0,
+                ],
+            ],
+        ]
+    );
+    $controller = new PluginManagerController(new TestPdo(), $loader);
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->syncPlugins([], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Sync should succeed for admin');
+    assertEquals(2, $response['data']['summary']['discovered'], 'Summary should include discovered count');
+    assertEquals(1, $response['data']['summary']['outdated'], 'Summary should include outdated count');
+    assertEquals('outdated', $response['data']['plugins']['clients']['result'], 'clients should be outdated');
+});
+
+TestSuite::run('POST /api/v1/plugins/sync rejects non-admin user', function () {
+    $controller = new PluginManagerController(new TestPdo(), new TestPluginLoader([]));
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['viewer']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->syncPlugins([], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Sync should fail for non-admin');
+    assertEquals(403, $response['error']['code'], 'Error code should be 403');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/update returns update result for admin', function () {
+    $loader = new TestPluginLoader(
+        [],
+        ['summary' => [], 'plugins' => []],
+        [
+            'plugin' => [
+                'slug' => 'clients',
+                'name' => 'Clients',
+                'plugin_type' => 'entity',
+                'version' => SEMVER_2_0,
+                'status' => 'active',
+                'schema_version' => 2,
+            ],
+            'update' => [
+                'from_version' => SEMVER_1_0,
+                'to_version' => SEMVER_2_0,
+                'schema_changed' => true,
+                'diff' => [
+                    'fields' => ['added' => ['email']],
+                ],
+            ],
+        ]
+    );
+    $controller = new PluginManagerController(new TestPdo(), $loader);
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePlugin(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Update should succeed for admin');
+    assertEquals(SEMVER_2_0, $response['data']['plugin']['version'], 'Plugin version should be updated');
+    assertTrue($response['data']['update']['schema_changed'] === true, 'Schema change should be reported');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/update returns 404 when plugin is not installed', function () {
+    $loader = new TestPluginLoader(
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        new \OutOfBoundsException('missing')
+    );
+    $controller = new PluginManagerController(new TestPdo(), $loader);
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePlugin(['slug' => 'missing'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Missing plugin update should fail');
+    assertEquals(404, $response['error']['code'], 'Error code should be 404');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/update returns 409 for unsupported update', function () {
+    $loader = new TestPluginLoader(
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        new \DomainException('non additive change')
+    );
+    $controller = new PluginManagerController(new TestPdo(), $loader);
+    $request = new TestRequest('');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePlugin(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Unsupported update should fail');
+    assertEquals(409, $response['error']['code'], 'Error code should be 409');
 });
 
 // ---------------------------------------------------------------------------

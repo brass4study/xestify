@@ -69,6 +69,10 @@ request. El boot registra solo los hooks de plugins activos en BD; la
 sincronizacion de nuevos plugins o cambios de manifest se hace con
 `sync-plugins.php` o, mas adelante, con el flujo administrativo dedicado.
 
+`sync-plugins.php` registra plugins nuevos y detecta updates disponibles, pero
+no consume la version ni el schema runtime de plugins ya instalados. La
+actualizacion real se aplica despues con el endpoint administrativo dedicado.
+
 ### Nota para Windows con Apache+PHP
 
 Si se usa el binario PHP de Apache en Windows y el `php.ini` efectivo vive en

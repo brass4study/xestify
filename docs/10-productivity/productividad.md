@@ -862,3 +862,22 @@
   - Midió tiempos reales bajo Apache y aisló el mayor cuello local en `Xdebug` arrancando en cada request.
 - **Iteraciones:** 9
 - **Decisión manual:** No cerrar ninguna story nueva con este trabajo; registrarlo como sesión técnica transversal y reservar el sync administrativo para STORY 7.2/7.5.
+
+---
+
+### STORY 7.2 - Proceso de actualizacion con migracion de schema
+- **Fecha:** 2026-05-10
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** ~1h 45min
+- **Aceleración:** ~71%
+- **Qué hizo IA:**
+  - Reinterpretó la story contra el modelo real del repo, usando `plugins.schema_json` como schema vivo en lugar de `entity_metadata`.
+  - Añadió la migración `006_plugin_update_history.sql` y la tabla `plugin_update_history` para snapshots previos al update.
+  - Refactorizó `PluginLoader` para separar `syncAll()` y `update()`, preservando el runtime de plugins ya instalados durante la sincronización desde disco.
+  - Implementó el flujo transaccional de update con diff de schema solo aditivo, snapshot previo, `onUpdate(array $context)` opcional y rollback automático ante error.
+  - Expuso `POST /api/v1/plugins/sync` y `POST /api/v1/plugins/{slug}/update` en `PluginManagerController` y `routes.php`.
+  - Adaptó `tools/setup/sync-plugins.php` al nuevo contrato explícito de sync sin consumo parcial de actualizaciones.
+  - Reforzó tests de integración para sync best-effort, update exitoso, conflicto por cambio no aditivo, rollback al fallar lifecycle y tabla `plugin_update_history`.
+  - Actualizó backlog, README, docs de API y documentación operativa para reflejar el cierre de la story.
+- **Iteraciones:** 4
+- **Decisión manual:** Mantener `onUpdate()` como convención opcional detectada con `method_exists` y no ampliar `PluginLifecycleInterface`, para no romper plugins existentes mientras se prepara la base de rollback manual de la STORY 7.4.

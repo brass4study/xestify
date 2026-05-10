@@ -6,7 +6,7 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** STORY 7.1 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** STORY 7.2 incluida (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
@@ -159,24 +159,24 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 7.1 incluida**:
+MVP implementado hasta **STORY 7.2 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinamico de entidades sobre `plugin_entity_data`.
 - Catalogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
 - Plugin `clients` como entidad base canonica.
 - Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
-- PluginManager y deteccion de actualizaciones disponibles desde `PluginLoader`.
+- PluginManager, deteccion de actualizaciones disponibles y flujo explicito de sync/update desde `PluginLoader`.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
 
-Pendiente desde STORY 7.2: proceso de actualizacion con migracion de schema,
+Pendiente desde STORY 7.3: configuracion avanzada de plugins,
 sincronizacion explicita de plugins desde UI, rollback, operacion avanzada,
 auditoria, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 
 - `php tools/setup/seed-admin-user.php`: crea el admin inicial si la tabla `users` esta vacia
-- `php tools/setup/sync-plugins.php`: sincroniza plugins presentes en disco con la tabla `plugins`
+- `php tools/setup/sync-plugins.php`: registra plugins nuevos y detecta updates disponibles sin consumir la version/schema runtime de plugins ya instalados
 
 Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
 plugins y hooks desde la base de datos; la sincronizacion disco -> BD es

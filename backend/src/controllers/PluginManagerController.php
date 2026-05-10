@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Xestify\controllers;
 
+use DomainException;
 use Exception;
 use InvalidArgumentException;
+use OutOfBoundsException;
 use PDO;
 use PDOException;
 use Xestify\core\Request;
 use Xestify\core\Response;
+use Xestify\exceptions\PluginException;
 use Xestify\plugins\PluginLoader;
 
 /**
@@ -17,6 +20,8 @@ use Xestify\plugins\PluginLoader;
  *
  * Routes (require AuthMiddleware + admin role):
  *   GET    /api/v1/plugins
+ *   POST   /api/v1/plugins/sync
+ *   POST   /api/v1/plugins/{slug}/update
  *   PUT    /api/v1/plugins/{slug}/status
  */
 class PluginManagerController
@@ -30,6 +35,8 @@ class PluginManagerController
     private const MSG_INVALID_STATUS = 'Status must be "active" or "inactive".';
     private const MSG_ADMIN_REQUIRED = 'Admin role is required.';
     private const MSG_PLUGIN_NOT_FOUND = 'Plugin not found.';
+    private const MSG_PLUGIN_UPDATE_FAILED = 'Plugin update failed.';
+    private const MSG_ERROR_PREFIX = 'Error: ';
 
     /**
      * GET /api/v1/plugins
@@ -94,7 +101,7 @@ class PluginManagerController
         } catch (InvalidArgumentException $e) {
             Response::make()->unprocessable($e->getMessage(), ['status' => $e->getMessage()]);
         } catch (Exception $e) {
-            Response::make()->serverError('Error: ' . $e->getMessage());
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
     }
 
@@ -160,7 +167,59 @@ class PluginManagerController
             $outdated = $this->loader()->getOutdated();
             Response::make()->json(['updates' => $outdated]);
         } catch (\Throwable $e) {
-            Response::make()->serverError('Error: ' . $e->getMessage());
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins/sync
+     * Sync plugins present on disk into the plugins table without consuming updates.
+     */
+    public function syncPlugins(array $params, ?Request $request = null): void
+    {
+        $request ??= Request::fromGlobals($params);
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        try {
+            $result = $this->loader()->syncAll();
+            Response::make()->json($result);
+        } catch (\Throwable $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins/{slug}/update
+     * Apply an explicit plugin update from disk to the installed runtime state.
+     */
+    public function updatePlugin(array $params, ?Request $request = null): void
+    {
+        $request ??= Request::fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $result = $this->loader()->update($slug);
+            Response::make()->json($result);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (DomainException | PluginException $e) {
+            Response::make()->error(409, $e->getMessage());
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_PLUGIN_UPDATE_FAILED . ' ' . $e->getMessage());
         }
     }
 

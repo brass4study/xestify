@@ -2,12 +2,12 @@
 
 ## Estado implementado auditado (2026-05-10)
 
-El corte funcional actual queda fijado en **STORY 7.1 incluida**.
+El corte funcional actual queda fijado en **STORY 7.2 incluida**.
 
 - Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, `PluginLoader` cargando `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
 - Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
 - Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con `PluginLoader::getOutdated()` y API `GET /api/v1/plugins/updates`.
-- Pendiente a partir de **STORY 7.2**: sync/update/rollback, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
+- Pendiente a partir de **STORY 7.3**: configuracion avanzada de plugins, rollback manual, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -791,11 +791,12 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Type:** Backend
 - **Criteria:**
   - ✅ Endpoint POST `/api/v1/plugins/sync` sincroniza plugins presentes en disco con la tabla `plugins`
-  - ✅ La sincronización registra plugins nuevos, actualiza metadatos/versiones y devuelve resumen de cambios/errores
+  - ✅ La sincronización registra plugins nuevos, preserva la versión/schema runtime de plugins ya instalados y devuelve resumen de cambios/errores
   - ✅ Endpoint POST `/api/v1/plugins/{slug}/update` ejecuta actualización
   - ✅ Si el plugin tiene `onUpdate()` en Lifecycle.php, se ejecuta antes de activar nueva versión
-  - ✅ Schema diff: si hay nuevos campos en `schema.json`, se aplican a `plugin` con versión incrementada
+  - ✅ Schema diff solo aditivo: si hay nuevos campos en `schema.json`, se aplican al schema vivo en `plugins.schema_json` con versión incrementada
   - ✅ Actualización falla atómicamente (transacción) si onUpdate lanza excepción
+  - ✅ La actualización persiste snapshot previo en `plugin_update_history` para preparar rollback manual futuro
   - ✅ Tests: sincronización de plugin nuevo, plugin sin cambios, manifest inválido, actualización exitosa y fallo con rollback automático
 - **IA Usage:** Lógica de sync + diff + transacción + tests de error
 - **Dependencias:** STORY 7.1, STORY 4.5, STORY 2.2
@@ -808,12 +809,12 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Descripción:**
   Cuando un plugin de tipo `entity` está activo, el admin puede entrar a su pantalla de configuración
   para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
-  y añadir campos adicionales libres. Los cambios generan una nueva versión en `entity_metadata`.
+  y añadir campos adicionales libres. Los cambios generan una nueva versión en `plugins.schema_json`.
 - **Criteria:**
   - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
   - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
   - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
-  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `entity_metadata`
+  - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `plugins.schema_json`
   - ✅ Solo visible para plugins de tipo `entity` que estén en estado `active`
   - ✅ Backend valida que los campos obligatorios del plugin (`fields`) no sean eliminables desde UI
   - ✅ Tests backend: update schema + versión incrementada + campos base intocables
@@ -829,7 +830,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **Type:** Backend
 - **Criteria:**
   - ✅ Endpoint POST `/api/v1/plugins/{slug}/rollback` restaura versión anterior
-  - ✅ Requiere que exista snapshot del schema anterior en `entity_metadata`
+  - ✅ Requiere que exista snapshot previo en `plugin_update_history`
   - ✅ Ejecuta `onRollback()` del plugin si existe
   - ✅ Estado plugin vuelve a versión registrada antes del update
   - ✅ Tests: rollback exitoso, error si no hay snapshot previo

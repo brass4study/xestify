@@ -45,7 +45,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all MigrationIdempotenceTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-005).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -55,7 +55,7 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('all migration tables exist after running 001-005', function (): void {
+TestSuite::run('all migration tables exist after running 001-006', function (): void {
     $pdo = Database::connection();
 
     $tables = [
@@ -64,6 +64,7 @@ TestSuite::run('all migration tables exist after running 001-005', function (): 
         'plugins',
         'plugin_hooks',
         'plugin_extension_data',
+        'plugin_update_history',
     ];
     foreach ($tables as $table) {
         $stmt = $pdo->query(
@@ -85,6 +86,7 @@ TestSuite::run('re-running all migrations does not cause errors', function (): v
         '003_plugins.sql',
         '004_plugin_hooks.sql',
         '005_plugin_extension_data.sql',
+        '006_plugin_update_history.sql',
     ];
 
     foreach ($migrations as $file) {

@@ -33,6 +33,7 @@ $groups = [
         'backend/tests/integration/EntityDataTableTest.php',
         'backend/tests/integration/EntityMetadataTableTest.php',
         'backend/tests/integration/PluginsRegistryTableTest.php',
+        'backend/tests/integration/PluginUpdateHistoryTableTest.php',
         'backend/tests/integration/PluginHookRegistryTableTest.php',
         'backend/tests/integration/SystemEntitiesTableTest.php',
         'backend/tests/integration/SystemEntityTest.php',

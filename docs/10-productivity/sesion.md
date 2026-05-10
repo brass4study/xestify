@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-06  
+**Fecha:** 2026-05-10
 **EPIC activo:** EPIC 7 - Actualizaciones de Plugins y Rollback (EN PROGRESO)  
-**Próxima story:** STORY 7.2 - Proceso de actualización con migración de schema
+**Próxima story:** STORY 7.3 - Frontend - Página de configuración de plugin activado
 
 ---
 
@@ -428,3 +428,44 @@ Estado resultante:
 
 - La siguiente story formal sigue siendo `STORY 7.2 - Proceso de actualizacion con migracion de schema`.
 - No hay commit de cierre asociado a esta sesion tecnica todavia.
+
+# Sesion 2026-05-10 - STORY 7.2 Proceso de actualizacion con migracion de schema
+
+Story completada. Archivos creados/modificados:
+
+**Creados (backend):**
+- `backend/database/migrations/006_plugin_update_history.sql` — tabla `plugin_update_history` para snapshots previos a update
+- `backend/tests/integration/PluginUpdateHistoryTableTest.php` — verificacion de tabla, columnas e indice
+
+**Modificados (backend):**
+- `backend/src/plugins/PluginLoader.php` — separa `syncAll()` y `update()`, preserva runtime en sync, aplica diff de schema solo aditivo y persiste snapshots antes del update
+- `backend/src/controllers/PluginManagerController.php` — nuevos endpoints admin `POST /api/v1/plugins/sync` y `POST /api/v1/plugins/{slug}/update`
+- `backend/src/config/routes.php` — nuevas rutas de sync y update
+- `tools/setup/sync-plugins.php` — usa `syncAll()` y deja de consumir actualizaciones durante la sincronizacion desde disco
+- `backend/tests/integration/PluginLoaderTest.php` — cobertura de sync best-effort, update exitoso, diff aditivo, conflictos y rollback atomico
+- `backend/tests/integration/PluginManagerApiTest.php` — cobertura API para sync/update, 403, 404 y 409
+- `backend/tests/integration/MigrationIdempotenceTest.php` — incluye la migracion `006_plugin_update_history.sql`
+- `backend/tests/run.php` — agrega `PluginUpdateHistoryTableTest.php` al grupo `integration-db`
+
+**Modificados (docs):**
+- `docs/03-api/endpoints.md` — documentacion de `POST /api/v1/plugins/sync` y `POST /api/v1/plugins/{slug}/update`
+- `docs/11-backlog/backlog.md` — STORY 7.2 marcada como incluida y STORY 7.3 como siguiente punto
+- `README.md` — corte funcional actualizado a STORY 7.2 y contrato operativo de sync/update
+- `docs/README.md` — estado global actualizado a STORY 7.2
+- `docs/08-operations/deploy-rpi5.md` — nota operativa del nuevo sync explicito sin consumo de runtime
+
+**Decisiones de diseño cerradas en esta story:**
+- `sync` registra plugins nuevos y detecta updates, pero preserva `plugins.version`, `plugins.schema_json` y `plugins.schema_version` de plugins ya instalados.
+- `update` solo acepta evolucion de schema aditiva sobre `plugins.schema_json`.
+- `onUpdate(array $context)` es opcional y no rompe `PluginLifecycleInterface`.
+- Los snapshots previos al update quedan persistidos en `plugin_update_history` para preparar STORY 7.4.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php integration-plugins` → 8/8 archivos pasan
+- Backend DB: `php backend/tests/run.php integration-db` → 11/11 archivos pasan
+- Backend completo: `php backend/tests/run.php all` → 29/29 archivos pasan
+
+**Cierre verificado (2026-05-10):**
+- Commit de story: pendiente (este commit)
+- Verificacion critica: `tools/setup/sync-plugins.php` ya no muta schema/version runtime de plugins existentes
+- Backlog alineado: el siguiente punto es STORY 7.3

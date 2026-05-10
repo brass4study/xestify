@@ -18,6 +18,7 @@ require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
 require_once BASE_PATH . '/src/core/Database.php';
+require_once BASE_PATH . '/src/plugins/PluginLifecycleInterface.php';
 require_once BASE_PATH . '/src/plugins/PluginLoader.php';
 
 use Xestify\core\Database;
@@ -62,12 +63,20 @@ try {
 /**
  * Create a temporary plugin directory with a manifest.json (and optional Hooks.php).
  *
- * @param array $manifest       Manifest fields to write.
- * @param bool  $withHooks      Whether to create a Hooks.php file.
- * @param bool  $invalidJson    Write invalid JSON to manifest (for error tests).
+ * @param array       $manifest        Manifest fields to write.
+ * @param bool        $withHooks       Whether to create a Hooks.php file.
+ * @param bool        $invalidJson     Write invalid JSON to manifest (for error tests).
+ * @param array|null  $schema          Optional schema payload override for entity plugins.
+ * @param string|null $lifecycleSource Optional Lifecycle.php contents.
  * @return string               Path to the created plugins root directory.
  */
-function createPluginFixture(array $manifest, bool $withHooks = false, bool $invalidJson = false): string
+function createPluginFixture(
+    array $manifest,
+    bool $withHooks = false,
+    bool $invalidJson = false,
+    ?array $schema = null,
+    ?string $lifecycleSource = null
+): string
 {
     $root = sys_get_temp_dir() . '/xestify_plugin_test_' . bin2hex(random_bytes(4));
     $slug = $manifest['slug'] ?? 'test_plugin';
@@ -79,18 +88,27 @@ function createPluginFixture(array $manifest, bool $withHooks = false, bool $inv
     file_put_contents($pluginDir . MANIFEST_FILE_PATH, $jsonContent);
 
     if (($manifest['type'] ?? '') === 'entity' && !$invalidJson) {
-        file_put_contents($pluginDir . '/schema.json', json_encode([
+        $schema ??= [
             'entity' => $slug,
+            'version' => $manifest['version'] ?? SEMVER_1_0,
+            'identities' => [
+                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+            ],
             'fields' => [
                 'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
             ],
             'custom_fields' => [],
             'relations' => [],
-        ], JSON_PRETTY_PRINT));
+        ];
+        file_put_contents($pluginDir . '/schema.json', json_encode($schema, JSON_PRETTY_PRINT));
     }
 
     if ($withHooks) {
         file_put_contents($pluginDir . '/Hooks.php', "<?php\n// Hooks loaded for test\n");
+    }
+
+    if ($lifecycleSource !== null) {
+        file_put_contents($pluginDir . '/Lifecycle.php', $lifecycleSource);
     }
 
     return $root;
@@ -127,6 +145,9 @@ function removeFixture(string $root): void
  */
 function cleanupPlugin(PDO $db, string $slug): void
 {
+    $history = $db->prepare('DELETE FROM plugin_update_history WHERE slug = :slug');
+    $history->execute([SLUG_BIND_PARAM => $slug]);
+
     $stmt = $db->prepare('DELETE FROM plugins WHERE slug = :slug');
     $stmt->execute([SLUG_BIND_PARAM => $slug]);
 }
@@ -137,6 +158,8 @@ function cleanupPlugin(PDO $db, string $slug): void
 
 define('SLUG_BIND_PARAM', ':slug');
 define('SEMVER_1_0', '1.0.0');
+define('SEMVER_1_1', '1.1.0');
+define('SEMVER_2_0', '2.0.0');
 define('MANIFEST_FILE_PATH', '/manifest.json');
 
 // ---------------------------------------------------------------------------
@@ -308,7 +331,7 @@ TestSuite::run('load() preserves installed version when plugin already registere
     $manifest = [
         'slug' => $slug,
         'name' => 'Test Upd',
-        'version' => '1.1.0',
+        'version' => SEMVER_1_1,
         'type' => 'entity',
         'core_version' => SEMVER_1_0,
     ];
@@ -362,6 +385,139 @@ TestSuite::run('loadAll() loads all discovered plugins', function () use ($pdo):
     }
 });
 
+TestSuite::run('syncAll() registers new plugin and returns summary', function () use ($pdo): void {
+    $slug = 'test_sync_new_' . bin2hex(random_bytes(3));
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Sync New',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $result = $loader->syncAll();
+
+        assertEquals(1, $result['summary']['discovered'], 'Should discover one plugin');
+        assertEquals(1, $result['summary']['registered'], 'Should register one plugin');
+        assertEquals('registered', $result['plugins'][$slug]['result'], 'Plugin should be registered');
+
+        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertTrue($row !== false, 'Plugin must exist after sync');
+        assertEquals(SEMVER_1_0, (string) $row['version'], 'Installed version should match manifest');
+        assertTrue($row['schema_json'] !== null, 'Entity schema should be persisted on first sync');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() preserves installed runtime for existing outdated plugin', function () use ($pdo): void {
+    $slug = 'test_sync_old_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, :name, 'entity', '1.0.0', 'inactive', 4, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':name' => 'Old Name',
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Old Label'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'New Name',
+        'version' => SEMVER_2_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SEMVER_2_0,
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'New Label'],
+            'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $result = $loader->syncAll();
+
+        assertEquals('outdated', $result['plugins'][$slug]['result'], 'Plugin should be reported as outdated');
+
+        $stmt = $pdo->prepare('SELECT name, version, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertTrue($row !== false, 'Plugin must still exist after sync');
+        assertEquals('New Name', (string) $row['name'], 'Safe metadata refresh should update name');
+        assertEquals(SEMVER_1_0, (string) $row['version'], 'Installed version must be preserved');
+        assertEquals('4', (string) $row['schema_version'], 'schema_version must be preserved');
+
+        $decoded = json_decode((string) $row['schema_json'], true);
+        assertEquals('Old Label', (string) ($decoded['fields']['name']['label'] ?? ''), 'Schema must not be consumed');
+        assertTrue(!isset($decoded['fields']['email']), 'New disk fields must not be applied during sync');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() reports invalid manifest without aborting batch', function () use ($pdo): void {
+    $goodSlug = 'test_sync_good_' . bin2hex(random_bytes(3));
+    $badSlug = 'test_sync_bad_' . bin2hex(random_bytes(3));
+    $root = sys_get_temp_dir() . '/xestify_sync_batch_' . bin2hex(random_bytes(4));
+    mkdir($root, 0777, true);
+
+    $goodDir = $root . '/' . $goodSlug;
+    mkdir($goodDir, 0777, true);
+    file_put_contents($goodDir . MANIFEST_FILE_PATH, (string) json_encode([
+        'slug' => $goodSlug,
+        'name' => 'Good',
+        'version' => SEMVER_1_0,
+        'type' => 'extension',
+        'core_version' => SEMVER_1_0,
+    ]));
+
+    $badDir = $root . '/' . $badSlug;
+    mkdir($badDir, 0777, true);
+    file_put_contents($badDir . MANIFEST_FILE_PATH, '{invalid');
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $result = $loader->syncAll();
+
+        assertEquals(2, $result['summary']['discovered'], 'Should discover both plugin directories');
+        assertEquals(1, $result['summary']['registered'], 'Should register the valid plugin');
+        assertEquals(1, $result['summary']['errors'], 'Should report one sync error');
+        assertEquals('registered', $result['plugins'][$goodSlug]['result'], 'Valid plugin should be registered');
+        assertEquals('error', $result['plugins'][$badSlug]['result'], 'Invalid plugin should be reported as error');
+
+        $stmt = $pdo->prepare('SELECT slug FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $goodSlug]);
+        assertTrue($stmt->fetch(PDO::FETCH_ASSOC) !== false, 'Valid plugin should still be inserted');
+    } finally {
+        cleanupPlugin($pdo, $goodSlug);
+        cleanupPlugin($pdo, $badSlug);
+        removeFixture($root);
+    }
+});
+
 TestSuite::run('getOutdated() returns plugin when disk version is greater', function () use ($pdo): void {
     $slug = 'test_outdated_' . bin2hex(random_bytes(3));
     $stmt = $pdo->prepare(
@@ -373,7 +529,7 @@ TestSuite::run('getOutdated() returns plugin when disk version is greater', func
     $manifest = [
         'slug' => $slug,
         'name' => 'Test Outdated',
-        'version' => '2.0.0',
+        'version' => SEMVER_2_0,
         'type' => 'entity',
         'core_version' => SEMVER_1_0,
     ];
@@ -391,6 +547,324 @@ TestSuite::run('getOutdated() returns plugin when disk version is greater', func
         }
 
         assertTrue($found, 'Should report plugin when disk version is greater');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('update() upgrades plugin version without schema changes and stores snapshot', function () use ($pdo): void {
+    $slug = 'test_update_ver_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Versioned Plugin', 'entity', '1.0.0', 'inactive', 1, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'version' => SEMVER_1_0,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Versioned Plugin',
+        'version' => SEMVER_2_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SEMVER_2_0,
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $result = $loader->update($slug);
+
+        assertEquals('1.0.0', $result['update']['from_version'], 'Should report old version');
+        assertEquals(SEMVER_2_0, $result['update']['to_version'], 'Should report new version');
+        assertTrue($result['update']['schema_changed'] === false, 'Schema should remain unchanged');
+
+        $stmt = $pdo->prepare('SELECT version, schema_version FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertEquals(SEMVER_2_0, (string) ($row['version'] ?? ''), 'Installed version should be upgraded');
+        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'schema_version should not change');
+
+        $history = $pdo->prepare(
+            'SELECT COUNT(*) AS cnt FROM plugin_update_history WHERE slug = :slug AND target_version = :target'
+        );
+        $history->execute([SLUG_BIND_PARAM => $slug, ':target' => SEMVER_2_0]);
+        $historyRow = $history->fetch(PDO::FETCH_ASSOC);
+        assertEquals('1', (string) ($historyRow['cnt'] ?? '0'), 'Successful update should create one snapshot');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('update() merges additive schema changes and increments schema version', function () use ($pdo): void {
+    $slug = 'test_update_schema_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Schema Plugin', 'entity', '1.0.0', 'inactive', 2, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'version' => SEMVER_1_0,
+            'identities' => [
+                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+            ],
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Schema Plugin',
+        'version' => SEMVER_1_1,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SEMVER_1_1,
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+        ],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $result = $loader->update($slug);
+
+        assertTrue($result['update']['schema_changed'] === true, 'Schema should change on additive update');
+        assertTrue(in_array('email', $result['update']['diff']['fields']['added'], true), 'email field should be added');
+        assertTrue(
+            in_array('phone', $result['update']['diff']['custom_fields']['added'], true),
+            'phone custom field should be added'
+        );
+
+        $stmt = $pdo->prepare('SELECT version, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+
+        assertEquals(SEMVER_1_1, (string) ($row['version'] ?? ''), 'Version should be updated');
+        assertEquals('3', (string) ($row['schema_version'] ?? ''), 'schema_version should increment');
+        assertTrue(isset($decoded['fields']['email']), 'New field should be merged into live schema');
+        assertEquals('Phone', (string) ($decoded['custom_fields'][0]['label'] ?? ''), 'New custom field should be merged');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('update() fails when disk version is not greater', function () use ($pdo): void {
+    $slug = 'test_update_same_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Same Version', 'entity', :version, 'inactive', 1, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':version' => SEMVER_1_0,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Same Version',
+        'version' => SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $threw = false;
+        try {
+            $loader->update($slug);
+        } catch (\DomainException) {
+            $threw = true;
+        }
+
+        assertTrue($threw, 'Update should fail when disk version is not greater');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('update() fails on non-additive schema change', function () use ($pdo): void {
+    $slug = 'test_update_break_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Breaking Plugin', 'entity', '1.0.0', 'inactive', 1, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Breaking Plugin',
+        'version' => SEMVER_1_1,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SEMVER_1_1,
+        'fields' => [
+            'name' => ['type' => 'text', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $threw = false;
+        try {
+            $loader->update($slug);
+        } catch (\DomainException) {
+            $threw = true;
+        }
+
+        assertTrue($threw, 'Update should fail on non-additive schema changes');
+
+        $stmt = $pdo->prepare('SELECT version, schema_version FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        assertEquals(SEMVER_1_0, (string) ($row['version'] ?? ''), 'Version must stay unchanged');
+        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'schema_version must stay unchanged');
+    } finally {
+        cleanupPlugin($pdo, $slug);
+        removeFixture($root);
+    }
+});
+
+TestSuite::run('update() rolls back plugin and snapshot when onUpdate fails', function () use ($pdo): void {
+    $slug = 'test_update_rollback_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Rollback Plugin', 'entity', '1.0.0', 'active', 1, :schema::jsonb)"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Rollback Plugin',
+        'version' => SEMVER_2_0,
+        'type' => 'entity',
+        'core_version' => SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SEMVER_2_0,
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $lifecycle = <<<PHP
+<?php
+declare(strict_types=1);
+namespace Xestify\plugins\\{$slug};
+use PDO;
+use RuntimeException;
+use Xestify\plugins\PluginLifecycleInterface;
+final class Lifecycle implements PluginLifecycleInterface {
+    public function __construct(private PDO \$pdo) {}
+    public function onInstall(): void {}
+    public function onActivate(): void {}
+    public function onDeactivate(): void {}
+    public function onUpdate(array \$context): void {
+        throw new RuntimeException('update failed on purpose');
+    }
+}
+PHP;
+    $root = createPluginFixture($manifest, false, false, $schema, $lifecycle);
+
+    try {
+        $loader = new PluginLoader($root, $pdo);
+        $threw = false;
+        try {
+            $loader->update($slug);
+        } catch (\RuntimeException $e) {
+            $threw = str_contains($e->getMessage(), 'on purpose');
+        }
+
+        assertTrue($threw, 'Update should bubble lifecycle failure');
+
+        $stmt = $pdo->prepare('SELECT version, status, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([SLUG_BIND_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+
+        assertEquals(SEMVER_1_0, (string) ($row['version'] ?? ''), 'Version must roll back');
+        assertEquals('active', (string) ($row['status'] ?? ''), 'Status must roll back');
+        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'schema_version must roll back');
+        assertTrue(!isset($decoded['fields']['email']), 'Merged schema must not persist after rollback');
+
+        $history = $pdo->prepare('SELECT COUNT(*) AS cnt FROM plugin_update_history WHERE slug = :slug');
+        $history->execute([SLUG_BIND_PARAM => $slug]);
+        $historyRow = $history->fetch(PDO::FETCH_ASSOC);
+        assertEquals('0', (string) ($historyRow['cnt'] ?? '0'), 'Snapshot insert must roll back with transaction');
     } finally {
         cleanupPlugin($pdo, $slug);
         removeFixture($root);
@@ -430,9 +904,9 @@ TestSuite::run('getOutdated() ignores plugin when disk version is equal', functi
 TestSuite::run('getOutdated() ignores plugin when disk version is lower', function () use ($pdo): void {
     $slug = 'test_lower_' . bin2hex(random_bytes(3));
     $stmt = $pdo->prepare(
-        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', '2.0.0', 'inactive')"
+        "INSERT INTO plugins (slug, plugin_type, version, status) VALUES (:slug, 'entity', :version, 'inactive')"
     );
-    $stmt->execute([SLUG_BIND_PARAM => $slug]);
+    $stmt->execute([SLUG_BIND_PARAM => $slug, ':version' => SEMVER_2_0]);
 
     $manifest = [
         'slug' => $slug,
