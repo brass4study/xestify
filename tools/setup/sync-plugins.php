@@ -4,15 +4,39 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-use Xestify\plugins\PluginLoader;
+use Xestify\core\Database;
+use Xestify\plugins\application\InstalledPluginSchemaValidator;
+use Xestify\plugins\application\PluginSyncService;
+use Xestify\plugins\infrastructure\PluginCompatibilityValidator;
+use Xestify\plugins\infrastructure\PluginDependencyValidator;
+use Xestify\plugins\infrastructure\PluginDiscoveryService;
+use Xestify\plugins\infrastructure\PluginManifestReader;
+use Xestify\plugins\infrastructure\PluginSchemaCodec;
+use Xestify\plugins\infrastructure\PluginSchemaReader;
+use Xestify\plugins\infrastructure\PluginSourceService;
+use Xestify\plugins\infrastructure\PluginClassLoader;
+use Xestify\plugins\runtime\PluginLifecycleInvoker;
+use Xestify\repositories\PluginRepository;
 
-$loader = new PluginLoader(
-    dirname(__DIR__, 2) . '/plugins',
-    Xestify\core\Database::connection()
+$pluginsDir = dirname(__DIR__, 2) . '/plugins';
+$pdo = Database::connection();
+$pluginRepository = new PluginRepository($pdo, new PluginSchemaCodec());
+$pluginSyncService = new PluginSyncService(
+    new PluginSourceService(
+        new PluginDiscoveryService($pluginsDir),
+        new PluginManifestReader($pluginsDir),
+        new PluginSchemaReader($pluginsDir),
+        new PluginCompatibilityValidator(),
+        new PluginDependencyValidator($pluginRepository)
+    ),
+    $pluginRepository,
+    new PluginLifecycleInvoker(new PluginClassLoader($pluginsDir, $pdo)),
+    new PluginSchemaCodec(),
+    new InstalledPluginSchemaValidator()
 );
 
 try {
-    $result = $loader->syncAll();
+    $result = $pluginSyncService->syncAll();
     $summary = $result['summary'];
     $plugins = $result['plugins'];
 

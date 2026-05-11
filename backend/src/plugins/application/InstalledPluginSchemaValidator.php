@@ -1,0 +1,230 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Xestify\plugins\application;
+
+use DomainException;
+
+final class InstalledPluginSchemaValidator
+{
+    private const ASSOCIATIVE_SECTIONS = ['identities', 'fields'];
+    private const LIST_SECTIONS = ['custom_fields', 'relations'];
+
+    /**
+     * @param array<string, mixed>|null $installedSchema
+     * @param array<string, mixed>|null $canonicalSchema
+     */
+    public function assertContainsCanonical(string $slug, ?array $installedSchema, ?array $canonicalSchema): void
+    {
+        $installed = $this->requireSchema($slug, $installedSchema, 'installed');
+        $canonical = $this->requireSchema($slug, $canonicalSchema, 'canonical');
+
+        $this->assertEntityMatches($slug, $installed, $canonical);
+        $this->assertAssociativeSectionsContainCanonical($slug, $installed, $canonical);
+        $this->assertListSectionsContainCanonical($slug, $installed, $canonical);
+    }
+
+    /**
+     * @param array<string, mixed>|null $installedSchema
+     * @param array<string, mixed>|null $targetSchema
+     */
+    public function assertCanApplyUpdate(string $slug, ?array $installedSchema, ?array $targetSchema): void
+    {
+        $installed = $this->requireSchema($slug, $installedSchema, 'installed');
+        $target = $this->requireSchema($slug, $targetSchema, 'target');
+
+        $this->assertEntityMatches($slug, $installed, $target);
+        $this->assertInstalledSectionsExist($slug, $installed, $target);
+        $this->assertOverlappingAssociativeDefinitionsMatch($slug, $installed, $target);
+        $this->assertOverlappingListDefinitionsMatch($slug, $installed, $target);
+    }
+
+    /**
+     * @param array<string, mixed>|null $schema
+     * @return array<string, mixed>
+     */
+    private function requireSchema(string $slug, ?array $schema, string $kind): array
+    {
+        if ($schema === null || $schema === []) {
+            throw new DomainException("Plugin '{$slug}' has a corrupt {$kind} schema.");
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $expected
+     */
+    private function assertEntityMatches(string $slug, array $installed, array $expected): void
+    {
+        if (!isset($expected['entity'])) {
+            return;
+        }
+
+        if (($installed['entity'] ?? null) !== $expected['entity']) {
+            throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: entity mismatch.");
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $canonical
+     */
+    private function assertAssociativeSectionsContainCanonical(string $slug, array $installed, array $canonical): void
+    {
+        foreach (self::ASSOCIATIVE_SECTIONS as $section) {
+            $installedMap = $this->requireArraySection($slug, $installed, $section);
+            $canonicalMap = $this->arraySection($canonical, $section);
+
+            foreach ($canonicalMap as $key => $definition) {
+                if (!is_string($key)) {
+                    continue;
+                }
+
+                if (!array_key_exists($key, $installedMap)) {
+                    throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: {$section}.{$key} missing.");
+                }
+
+                $this->assertDefinitionsMatch($slug, "{$section}.{$key}", $installedMap[$key], $definition);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $canonical
+     */
+    private function assertListSectionsContainCanonical(string $slug, array $installed, array $canonical): void
+    {
+        foreach (self::LIST_SECTIONS as $section) {
+            $installedByKey = $this->indexListSection($this->requireArraySection($slug, $installed, $section));
+            $canonicalByKey = $this->indexListSection($this->arraySection($canonical, $section));
+
+            foreach ($canonicalByKey as $key => $definition) {
+                if (!array_key_exists($key, $installedByKey)) {
+                    throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: {$section}.{$key} missing.");
+                }
+
+                $this->assertDefinitionsMatch($slug, "{$section}.{$key}", $installedByKey[$key], $definition);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $target
+     */
+    private function assertInstalledSectionsExist(string $slug, array $installed, array $target): void
+    {
+        $this->requireArraySection($slug, $installed, 'fields');
+        $this->requireArraySection($slug, $installed, 'custom_fields');
+        $this->requireArraySection($slug, $installed, 'relations');
+
+        if (isset($target['identities'])) {
+            $this->requireArraySection($slug, $installed, 'identities');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $target
+     */
+    private function assertOverlappingAssociativeDefinitionsMatch(string $slug, array $installed, array $target): void
+    {
+        foreach (self::ASSOCIATIVE_SECTIONS as $section) {
+            $installedMap = $this->arraySection($installed, $section);
+            $targetMap = $this->arraySection($target, $section);
+
+            foreach ($installedMap as $key => $definition) {
+                if (is_string($key) && array_key_exists($key, $targetMap)) {
+                    $this->assertDefinitionsMatch($slug, "{$section}.{$key}", $definition, $targetMap[$key]);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $installed
+     * @param array<string, mixed> $target
+     */
+    private function assertOverlappingListDefinitionsMatch(string $slug, array $installed, array $target): void
+    {
+        foreach (self::LIST_SECTIONS as $section) {
+            $installedByKey = $this->indexListSection($this->arraySection($installed, $section));
+            $targetByKey = $this->indexListSection($this->arraySection($target, $section));
+
+            foreach ($installedByKey as $key => $definition) {
+                if (array_key_exists($key, $targetByKey)) {
+                    $this->assertDefinitionsMatch($slug, "{$section}.{$key}", $definition, $targetByKey[$key]);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
+     */
+    private function requireArraySection(string $slug, array $schema, string $section): array
+    {
+        if (!isset($schema[$section]) || !is_array($schema[$section])) {
+            throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: {$section} missing.");
+        }
+
+        return $schema[$section];
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
+     */
+    private function arraySection(array $schema, string $section): array
+    {
+        return isset($schema[$section]) && is_array($schema[$section]) ? $schema[$section] : [];
+    }
+
+    /**
+     * @param array<string, mixed> $section
+     * @return array<string, array<string, mixed>>
+     */
+    private function indexListSection(array $section): array
+    {
+        $indexed = [];
+        foreach ($section as $item) {
+            if (!is_array($item) || !isset($item['key']) || !is_string($item['key'])) {
+                continue;
+            }
+
+            $indexed[$item['key']] = $item;
+        }
+
+        return $indexed;
+    }
+
+    private function assertDefinitionsMatch(string $slug, string $path, mixed $installed, mixed $expected): void
+    {
+        if ($this->normalizeForComparison($installed) !== $this->normalizeForComparison($expected)) {
+            throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: {$path} changed.");
+        }
+    }
+
+    private function normalizeForComparison(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(fn(mixed $item): mixed => $this->normalizeForComparison($item), $value);
+        }
+
+        ksort($value);
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->normalizeForComparison($item);
+        }
+
+        return $value;
+    }
+}

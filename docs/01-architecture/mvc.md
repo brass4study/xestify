@@ -57,7 +57,7 @@ Responsabilidades:
 
 - ValidationService
 - EntityService
-- PluginLoader
+- PluginSyncService / PluginUpdateService / PluginStatusService
 - HookDispatcher
 - UpdateManager
 

@@ -73,5 +73,7 @@ FROM plugins
 WHERE plugin_type = 'entity' AND status = 'active' AND schema_json IS NOT NULL;
 ```
 
-Esta decisión elimina la duplicación de datos y convierte a `PluginLoader` en el
-único punto de registro de entidades al arranque del sistema. Toda la lógica de alta, consulta y validación de entidades se basa en los plugins instalados y activos.
+Esta decision elimina la duplicacion de datos y hace que el catalogo de
+entidades dependa unicamente de los plugins instalados y activos. La
+sincronizacion desde disco a base de datos es explicita (`PluginSyncService`) y
+el boot solo registra hooks activos (`PluginHookRegistrar`).

@@ -166,7 +166,8 @@ MVP implementado hasta **STORY 7.2 incluida**:
 - Catalogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
 - Plugin `clients` como entidad base canonica.
 - Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
-- PluginManager, deteccion de actualizaciones disponibles y flujo explicito de sync/update desde `PluginLoader`.
+- PluginManager, deteccion de actualizaciones disponibles y flujo explicito de
+  sync/update desde servicios especializados del subsistema de plugins.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
 
 Pendiente desde STORY 7.3: configuracion avanzada de plugins,
@@ -215,7 +216,7 @@ Documentos clave:
 
 1. Implementar Core MVC backend.
 2. Implementar motor de metadata y CRUD dinamico.
-3. Implementar PluginLoader y HookDispatcher.
+3. Implementar subsistema de plugins y HookDispatcher.
 4. Implementar frontend dinamico (formularios, tablas, tabs).
 5. Implementar sistema de actualizaciones y rollback.
 6. Integrar marketplace de plugins y ciclo de versionado.

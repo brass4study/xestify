@@ -94,11 +94,11 @@ SonarQube lo detecte.
   `preg_replace`, `json_encode`, `file_get_contents`, etc.
 - Sin instanciacion dinamica con variable; evitar `new $class()` y
   `$obj->$method()`. Usar un mapa explicito o factory conocido.
-- Excepcion controlada: `Router` y `PluginLoader` pueden usar instanciacion o
-  despacho dinamico porque son los puntos arquitectonicos que convierten rutas y
-  plugins declarados en ejecucion real. Esa excepcion debe quedar marcada con
-  `// NOSONAR`, estar cubierta por tests y no extenderse a servicios, modelos,
-  controladores ni logica de negocio.
+- Excepcion controlada: `Router`, `PluginClassLoader` y `PluginHookRegistrar`
+  pueden usar instanciacion o despacho dinamico porque son los puntos
+  arquitectonicos que convierten rutas y plugins declarados en ejecucion real.
+  Esa excepcion debe quedar marcada con `// NOSONAR`, estar cubierta por tests
+  y no extenderse a servicios, modelos, controladores ni logica de negocio.
 - Cast explicito antes de funciones con tipo estricto cuando el valor venga de
   una funcion que devuelve `mixed`.
 - Sin variables globales; nunca `global $var`.

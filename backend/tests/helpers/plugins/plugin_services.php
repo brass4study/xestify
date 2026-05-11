@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+use Xestify\plugins\application\PluginOutdatedService;
+use Xestify\plugins\application\InstalledPluginSchemaValidator;
+use Xestify\plugins\application\PluginSchemaMergeService;
+use Xestify\plugins\application\PluginStatusService;
+use Xestify\plugins\application\PluginSyncService;
+use Xestify\plugins\application\PluginUpdateService;
+use Xestify\plugins\infrastructure\PluginClassLoader;
+use Xestify\plugins\infrastructure\PluginCompatibilityValidator;
+use Xestify\plugins\infrastructure\PluginDependencyValidator;
+use Xestify\plugins\infrastructure\PluginDiscoveryService;
+use Xestify\plugins\infrastructure\PluginManifestReader;
+use Xestify\plugins\infrastructure\PluginSchemaCodec;
+use Xestify\plugins\infrastructure\PluginSchemaReader;
+use Xestify\plugins\infrastructure\PluginSourceService;
+use Xestify\plugins\runtime\PluginLifecycleInvoker;
+use Xestify\repositories\PluginRepository;
+use Xestify\repositories\PluginUpdateHistoryRepository;
+
+function buildPluginRepository(\PDO $pdo): PluginRepository
+{
+    return new PluginRepository($pdo, new PluginSchemaCodec());
+}
+
+function buildPluginSourceService(string $root, \PDO $pdo): PluginSourceService
+{
+    $repository = buildPluginRepository($pdo);
+
+    return new PluginSourceService(
+        new PluginDiscoveryService($root),
+        new PluginManifestReader($root),
+        new PluginSchemaReader($root),
+        new PluginCompatibilityValidator(),
+        new PluginDependencyValidator($repository)
+    );
+}
+
+function buildPluginLifecycleInvoker(string $root, \PDO $pdo): PluginLifecycleInvoker
+{
+    return new PluginLifecycleInvoker(new PluginClassLoader($root, $pdo));
+}
+
+function buildPluginSyncService(string $root, \PDO $pdo): PluginSyncService
+{
+    return new PluginSyncService(
+        buildPluginSourceService($root, $pdo),
+        buildPluginRepository($pdo),
+        buildPluginLifecycleInvoker($root, $pdo),
+        new PluginSchemaCodec(),
+        new InstalledPluginSchemaValidator()
+    );
+}
+
+function buildPluginUpdateService(string $root, \PDO $pdo): PluginUpdateService
+{
+    return new PluginUpdateService(
+        $pdo,
+        buildPluginSourceService($root, $pdo),
+        buildPluginRepository($pdo),
+        new PluginUpdateHistoryRepository($pdo),
+        new PluginSchemaCodec(),
+        new PluginSchemaMergeService(),
+        buildPluginLifecycleInvoker($root, $pdo),
+        new InstalledPluginSchemaValidator()
+    );
+}
+
+function buildPluginOutdatedService(string $root, \PDO $pdo): PluginOutdatedService
+{
+    return new PluginOutdatedService(
+        buildPluginSourceService($root, $pdo),
+        buildPluginRepository($pdo)
+    );
+}
+
+function buildPluginStatusService(string $root, \PDO $pdo): PluginStatusService
+{
+    return new PluginStatusService(
+        buildPluginRepository($pdo),
+        buildPluginLifecycleInvoker($root, $pdo)
+    );
+}

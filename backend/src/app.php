@@ -6,7 +6,6 @@ use Xestify\core\Container;
 use Xestify\core\RequestFactory;
 use Xestify\core\Router;
 use Xestify\core\RuntimePathNormalizer;
-use Xestify\plugins\PluginLoader;
 
 $container = new Container();
 

@@ -8,14 +8,12 @@ use DomainException;
 use Exception;
 use InvalidArgumentException;
 use OutOfBoundsException;
-use PDO;
-use PDOException;
 use Xestify\core\Request;
 use Xestify\core\RequestFactory;
 use Xestify\core\Response;
 use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\PluginLoader;
+use Xestify\plugins\application\PluginAdministrationService;
 
 /**
  * PluginManagerController — Management endpoints for plugins.
@@ -28,8 +26,10 @@ use Xestify\plugins\PluginLoader;
  */
 class PluginManagerController
 {
-    public function __construct(private PDO $pdo, private ?PluginLoader $pluginLoader = null, private ?RequestFactory $requestFactory = null)
-    {
+    public function __construct(
+        private PluginAdministrationService $pluginAdministration,
+        private ?RequestFactory $requestFactory = null
+    ) {
     }
 
     private const MSG_SLUG_REQUIRED = 'Plugin slug is required.';
@@ -54,15 +54,9 @@ class PluginManagerController
         }
 
         try {
-            $stmt = $this->pdo->prepare(
-                'SELECT slug, name, plugin_type, version, status, schema_version, installed_at, updated_at
-                 FROM plugins
-                 ORDER BY slug ASC'
-            );
-            $stmt->execute();
-            $plugins = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $plugins = $this->pluginAdministration->listInstalled();
             Response::make()->json(['plugins' => $plugins]);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             Response::make()->serverError('Database error: ' . $e->getMessage());
         }
     }
@@ -89,19 +83,12 @@ class PluginManagerController
 
         try {
             $status = $this->extractStatus($request);
-
-            if (!$this->pluginExists($slug)) {
-                Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
-            } else {
-                $plugin = $this->persistPluginStatus($slug, $status);
-                if (!$plugin) {
-                    Response::make()->serverError('Failed to update plugin status.');
-                } else {
-                    Response::make()->json($plugin);
-                }
-            }
+            $plugin = $this->pluginAdministration->setStatus($slug, $status);
+            Response::make()->json($plugin);
         } catch (InvalidArgumentException $e) {
             Response::make()->unprocessable($e->getMessage(), ['status' => $e->getMessage()]);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
@@ -121,28 +108,6 @@ class PluginManagerController
         }
 
         return $status;
-    }
-
-    private function pluginExists(string $slug): bool
-    {
-        $stmt = $this->pdo->prepare('SELECT id FROM plugins WHERE slug = :slug');
-        $stmt->execute([':slug' => $slug]);
-        return (bool) $stmt->fetch();
-    }
-
-    private function persistPluginStatus(string $slug, string $status): array|false
-    {
-        $stmt = $this->pdo->prepare(
-            'UPDATE plugins SET status = :status, updated_at = NOW()
-             WHERE slug = :slug
-             RETURNING slug, name, plugin_type, version, status, schema_version, installed_at, updated_at'
-        );
-        $stmt->execute([
-            ':status' => $status,
-            ':slug'   => $slug,
-        ]);
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     private function isAdminRequest(Request $request): bool
@@ -166,7 +131,7 @@ class PluginManagerController
         }
 
         try {
-            $outdated = $this->loader()->getOutdated();
+            $outdated = $this->pluginAdministration->getOutdated();
             Response::make()->json(['updates' => $outdated]);
         } catch (\Throwable $e) {
             Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
@@ -187,7 +152,7 @@ class PluginManagerController
         }
 
         try {
-            $result = $this->loader()->syncAll();
+            $result = $this->pluginAdministration->syncAll();
             Response::make()->json($result);
         } catch (\Throwable $e) {
             Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
@@ -214,7 +179,7 @@ class PluginManagerController
         }
 
         try {
-            $result = $this->loader()->update($slug);
+            $result = $this->pluginAdministration->update($slug);
             Response::make()->json($result);
         } catch (OutOfBoundsException) {
             Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
@@ -223,16 +188,6 @@ class PluginManagerController
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_PLUGIN_UPDATE_FAILED . ' ' . $e->getMessage());
         }
-    }
-
-    private function loader(): PluginLoader
-    {
-        if ($this->pluginLoader === null) {
-            $pluginsDir = defined('PLUGINS_PATH') ? PLUGINS_PATH : dirname(BASE_PATH) . '/plugins';
-            $this->pluginLoader = new PluginLoader($pluginsDir, $this->pdo);
-        }
-
-        return $this->pluginLoader;
     }
 
     private function requestFactory(): RequestFactory

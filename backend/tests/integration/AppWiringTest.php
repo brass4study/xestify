@@ -41,7 +41,6 @@ use Xestify\core\Router;
 use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\HookException;
-use Xestify\plugins\PluginLoader;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 
@@ -131,14 +130,12 @@ TestSuite::run('protected entity route accepts valid token', function (): void {
 });
 
 TestSuite::run('boot wiring injects active hooks into EntityService', function (): void {
+    $pdo = Database::connection();
+    $pdo->prepare("UPDATE plugins SET status = 'active' WHERE slug = 'clients'")->execute();
+
     $container = new Container();
     buildAppRouter($container);
 
-    /** @var PluginLoader $loader */
-    $loader = $container->get(PluginLoader::class);
-    $loader->activate('clients');
-
-    $pdo = Database::connection();
     $email = 'duplicate-' . bin2hex(random_bytes(4)) . '@test.local';
     $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'clients' AND content->>'email' = :email")
         ->execute([':email' => $email]);

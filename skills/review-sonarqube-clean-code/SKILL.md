@@ -67,8 +67,9 @@ the cleanup.
   - Delete unused code only when usage search confirms it is unused.
 - For tests, keep readability higher priority than over-abstracting assertions.
   Do not hide test intent just to silence duplication warnings.
-- For `Router` and `PluginLoader`, respect the existing project exception for
-  controlled dynamic dispatch marked with `// NOSONAR` and covered by tests.
+- For `Router`, `PluginClassLoader` and `PluginHookRegistrar`, respect the
+  existing project exception for controlled dynamic dispatch marked with
+  `// NOSONAR` and covered by tests.
 - When a finding is intentionally accepted, explain the reason and avoid adding
   suppressions unless the project already uses that pattern for the same case.
 

@@ -4,9 +4,9 @@
 
 El corte funcional actual queda fijado en **STORY 7.2 incluida**.
 
-- Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, `PluginLoader` cargando `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
+- Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, lectura y validacion de `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
 - Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
-- Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con `PluginLoader::getOutdated()` y API `GET /api/v1/plugins/updates`.
+- Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con el servicio de plugins y API `GET /api/v1/plugins/updates`.
 - Pendiente a partir de **STORY 7.3**: configuracion avanzada de plugins, rollback manual, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
@@ -1291,7 +1291,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 **Semana 3: EPIC 3 (fin) + EPIC 4 + EPIC 5 (inicio)**
 - EntityController REST, CRUD dinámico
-- PluginLoader, plugin ciclo de vida
+- Subsistema de plugins y ciclo de vida
 - Frontend login, navbar, Entity list/edit dinámico
 - **Estimado sin IA:** 56 horas
 - **Estimado con IA:** 32 horas (43% ahorro)

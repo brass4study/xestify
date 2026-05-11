@@ -59,7 +59,7 @@ Para pedir una exportacion desde terminal:
 
 El script escribe el trigger, espera a que VSCode regenere el reporte y muestra
 el JSON resultante. VSCode debe estar abierto y la extension local debe estar
-activa.
+activa. Esta exportacion simple no abre pestañas ni crea grupos temporales.
 
 ## Analizar workspace desde terminal
 
@@ -69,11 +69,28 @@ Para forzar el analisis de todos los archivos soportados del workspace:
 .\skills\review-sonarqube-clean-code\scripts\analyze-sonarlint-workspace.ps1
 ```
 
+Para limitar el analisis a una lista concreta de archivos del workspace:
+
+```powershell
+.\skills\review-sonarqube-clean-code\scripts\analyze-sonarlint-workspace.ps1 `
+  -Files backend/src/config/app.php,backend/src/controllers/PluginManagerController.php
+```
+
 La extension abre todos los archivos `php`, `js` y `html`, ejecuta
 `SonarLint.AnalyseOpenFile` y exporta el reporte final. Puede tardar mas que la
 exportacion simple porque depende del tiempo de analisis de SonarQube for IDE.
 
 Durante el analisis completo, la extension crea un grupo temporal de editores a
-la derecha, abre ahi los archivos necesarios y cierra ese grupo al terminar. Asi
-no mezcla las pestanas del analisis con las que ya estaban abiertas.
+la derecha, abre ahi los archivos necesarios en una unica pestaña preview y
+cierra ese grupo al terminar. Asi no mezcla las pestañas del analisis con las
+que ya estaban abiertas.
 
+Si la extension no puede crear o cerrar ese grupo temporal, aborta el analisis
+para proteger el layout del IDE y escribe un estado de error en:
+
+```text
+var/reports/sonarlint-workspace.status.json
+```
+
+En ese caso, el script de PowerShell falla rapido con ese mensaje en vez de
+agotar el timeout.

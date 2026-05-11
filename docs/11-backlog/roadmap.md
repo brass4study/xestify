@@ -192,7 +192,7 @@ La estrategia vigente de implementación es:
 ### Fase 4 - Sistema de plugins y hooks backend
 
 **Consolidado**
-- `PluginLoader`
+- subsistema backend de plugins (descubrimiento, sync, update, status y hooks)
 - `HookDispatcher`
 - hooks `beforeSave` y `afterSave`
 - lifecycle de plugin
@@ -419,7 +419,6 @@ Y deja fuera, por ahora:
 | Retrasar el `EPIC 8` | Puede fragmentar UX y arquitectura frontend | Abrir shell, sistema UI y modularización cuanto antes tras Fase 7 |
 | Crecimiento de deuda frontend | Dificulta mantenimiento y testing UI | Consolidar componentes, routing y resiliencia en Fase 8 |
 | Posponer observabilidad | Riesgo operativo al acercarse a despliegue real | No retrasar en exceso Fase 9 |
-| Clases grandes en backend (`PluginLoader`) | Complica evolución y revisión | Planificar refactors acotados tras estabilizar funcionalidad |
 
 ---
 

@@ -23,6 +23,8 @@ define('BASE_PATH', dirname(__DIR__, 2));
 define('PLUGINS_PATH', dirname(BASE_PATH) . '/plugins');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
+require_once BASE_PATH . '/tests/helpers/autoload.php';
+require_once BASE_PATH . '/tests/helpers/plugins/plugin_services.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
@@ -31,7 +33,6 @@ require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
 require_once BASE_PATH . '/src/plugins/PluginLifecycleInterface.php';
-require_once BASE_PATH . '/src/plugins/PluginLoader.php';
 require_once BASE_PATH . '/src/services/JwtService.php';
 require_once BASE_PATH . '/src/controllers/PluginExtensionController.php';
 require_once PLUGINS_PATH . '/comments/Hooks.php';
@@ -40,7 +41,6 @@ require_once PLUGINS_PATH . '/comments/Lifecycle.php';
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 use Xestify\plugins\HookDispatcher;
-use Xestify\plugins\PluginLoader;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\plugins\comments\Hooks;
 use Xestify\plugins\comments\Lifecycle;
@@ -130,24 +130,23 @@ function cleanComments(): void
 
 function ensureCommentsPluginActive(): void
 {
-    $loader = new PluginLoader(PLUGINS_PATH, Database::connection());
-    $loader->load('comments');
-    $loader->activate('comments');
+    $pdo = Database::connection();
+    buildPluginSyncService(PLUGINS_PATH, $pdo)->syncAll();
+    buildPluginStatusService(PLUGINS_PATH, $pdo)->activate('comments');
 }
 
 function seedParentRecord(): void
 {
     Database::connection()->prepare(
         "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Clientes', 'entity', '1.0.0', 'active', 1, :schema)
+         VALUES (:slug, 'Clientes', 'entity', '1.0.0', 'active', 1, CAST(:schema AS jsonb))
          ON CONFLICT (slug) DO UPDATE
          SET name = EXCLUDED.name,
              status = 'active',
-             schema_json = EXCLUDED.schema_json,
              updated_at = NOW()"
     )->execute([
         ':slug' => TEST_ENTITY,
-        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
+        ':schema' => canonicalClientsSchemaJson(),
     ]);
 
     Database::connection()->prepare(
@@ -165,6 +164,27 @@ function seedParentRecord(): void
     ]);
 }
 
+function canonicalClientsSchemaJson(): string
+{
+    $schemaPath = PLUGINS_PATH . '/clients/schema.json';
+    $raw = file_get_contents($schemaPath);
+    if ($raw === false) {
+        throw new RuntimeException('clients schema fixture is not readable');
+    }
+
+    $schema = json_decode($raw, true);
+    if (!is_array($schema) || !isset($schema['fields']['email'], $schema['identities']['id'])) {
+        throw new RuntimeException('clients schema fixture is invalid');
+    }
+
+    $json = json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        throw new RuntimeException('clients schema fixture cannot be encoded');
+    }
+
+    return $json;
+}
+
 echo str_repeat('-', 40) . "\n";
 ensureCommentsPluginActive();
 seedParentRecord();
@@ -174,9 +194,7 @@ seedParentRecord();
 // ---------------------------------------------------------------------------
 
 TestSuite::run('plugin installation creates plugin_extension_data table (generic extension table)', function (): void {
-    $loader = new PluginLoader(PLUGINS_PATH, Database::connection());
-
-    $loader->load('comments');
+    buildPluginSyncService(PLUGINS_PATH, Database::connection())->syncAll();
 
     // Verify generic extension table exists
     $stmt = Database::connection()->query(
