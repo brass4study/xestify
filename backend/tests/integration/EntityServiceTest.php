@@ -22,7 +22,7 @@ require_once BASE_PATH . '/src/exceptions/EntityServiceException.php';
 require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
-require_once BASE_PATH . '/src/services/ValidationService.php';
+require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 
 use Xestify\core\Database;
@@ -69,7 +69,19 @@ try {
 
 const TEST_ENTITY_SLUG = 'test_entity_service';
 
-const TEST_SCHEMA_JSON = '{"fields":{"name":{"type":"string","required":true},"age":{"type":"number","required":false}}}';
+define('TEST_SCHEMA_JSON', <<<'JSON'
+{
+  "fields": {
+    "name": {"type": "string", "required": true},
+    "age": {"type": "number", "required": false}
+  },
+  "custom_fields": [
+    {"key": "phone", "type": "string", "required": false},
+    {"key": "creation_stamp", "type": "timestamp", "required": false},
+    {"key": "is_active", "type": "boolean", "required": false}
+  ]
+}
+JSON);
 
 function buildService(): EntityService
 {
@@ -103,6 +115,20 @@ function cleanTestData(): void
         ->execute([':slug' => TEST_ENTITY_SLUG]);
 }
 
+/**
+ * @param list<array{field: string, code: string, message: string}> $errors
+ */
+function hasServiceValidationError(array $errors, string $field, string $code): bool
+{
+    foreach ($errors as $error) {
+        if (($error['field'] ?? '') === $field && ($error['code'] ?? '') === $code) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -117,6 +143,29 @@ TestSuite::run('createRecord() persists valid data and returns row with id', fun
     assertTrue(isset($record['id']) && $record['id'] !== '', 'record must have an id');
     assertTrue($record['entity_slug'] === TEST_ENTITY_SLUG, 'entity_slug must match');
     assertTrue($record['deleted_at'] === null, 'deleted_at must be null');
+
+    cleanTestData();
+});
+
+TestSuite::run('createRecord() persists custom_fields from schema', function (): void {
+    cleanTestData();
+    seedSchema();
+    $svc = buildService();
+
+    $record = $svc->createRecord(TEST_ENTITY_SLUG, [
+        'name' => 'Custom Fields Client',
+        'phone' => '+34 600 000 000',
+        'creation_stamp' => 'now',
+        'is_active' => true,
+    ]);
+
+    $content = is_array($record['content'] ?? null)
+        ? $record['content']
+        : json_decode((string) ($record['content'] ?? '{}'), true);
+
+    assertEquals('+34 600 000 000', $content['phone'] ?? null, 'phone custom field must persist');
+    assertEquals('now', $content['creation_stamp'] ?? null, 'creation_stamp custom field must persist');
+    assertTrue(($content['is_active'] ?? null) === true, 'is_active custom field must persist');
 
     cleanTestData();
 });
@@ -136,7 +185,34 @@ TestSuite::run('createRecord() throws ValidationException for missing required f
     }
 
     assertTrue($caught, 'ValidationException must be thrown');
-    assertTrue(isset($errors['name']), 'errors must contain the missing required field');
+    assertTrue(
+        hasServiceValidationError($errors, 'name', 'required'),
+        'errors must contain the missing required field'
+    );
+
+    cleanTestData();
+});
+
+TestSuite::run('updateRecord() rejects invalid payload with structured errors', function (): void {
+    cleanTestData();
+    seedSchema();
+    $svc = buildService();
+    $created = $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Invalid Update']);
+    $caught = false;
+    $errors = [];
+
+    try {
+        $svc->updateRecord((string) $created['id'], TEST_ENTITY_SLUG, ['is_active' => 'yes']);
+    } catch (ValidationException $e) {
+        $caught = true;
+        $errors = $e->getErrors();
+    }
+
+    assertTrue($caught, 'ValidationException must be thrown');
+    assertTrue(
+        hasServiceValidationError($errors, 'is_active', 'invalid_type'),
+        'errors must contain invalid_type for is_active'
+    );
 
     cleanTestData();
 });

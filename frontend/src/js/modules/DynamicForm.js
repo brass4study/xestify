@@ -135,11 +135,17 @@ export class DynamicForm {
       return [];
     }
 
-    const rawFields = schema.fields;
+    return [
+      ...this.#normalizeFieldSection(schema.fields),
+      ...this.#normalizeFieldSection(schema.custom_fields),
+    ];
+  }
+
+  #normalizeFieldSection(rawFields) {
     if (Array.isArray(rawFields)) {
       return rawFields
-        .filter((field) => field && typeof field === 'object' && typeof field.name === 'string')
-        .map((field) => ({ ...field }));
+        .filter((field) => field && typeof field === 'object' && this.#fieldName(field) !== null)
+        .map((field) => ({ ...field, name: this.#fieldName(field) }));
     }
 
     if (rawFields && typeof rawFields === 'object') {
@@ -153,6 +159,17 @@ export class DynamicForm {
     }
 
     return [];
+  }
+
+  #fieldName(field) {
+    for (const key of ['name', 'key', 'slug']) {
+      const value = field[key];
+      if (typeof value === 'string' && value.trim() !== '') {
+        return value;
+      }
+    }
+
+    return null;
   }
 
   #resolveContainer(container) {
@@ -261,7 +278,7 @@ export class DynamicForm {
       return errors;
     }
 
-    if (type === 'string' || type === 'email' || type === 'date' || type === 'select') {
+    if (this.#isStringLikeType(type)) {
       this.#validateStringLike(field, String(value), errors);
     }
 
@@ -274,6 +291,10 @@ export class DynamicForm {
     }
 
     return errors;
+  }
+
+  #isStringLikeType(type) {
+    return ['string', 'email', 'date', 'timestamp', 'select'].includes(type);
   }
 
   #validateStringLike(field, value, errors) {

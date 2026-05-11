@@ -35,6 +35,16 @@ use Xestify\plugins\runtime\PluginLifecycleInvoker;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 use Xestify\services\ValidationService;
+use Xestify\validation\FieldValidatorRegistry;
+use Xestify\validation\schema\SchemaFieldExtractor;
+use Xestify\validation\support\ValidationRules;
+use Xestify\validation\validators\BooleanFieldValidator;
+use Xestify\validation\validators\DateFieldValidator;
+use Xestify\validation\validators\EmailFieldValidator;
+use Xestify\validation\validators\NumberFieldValidator;
+use Xestify\validation\validators\SelectFieldValidator;
+use Xestify\validation\validators\StringFieldValidator;
+use Xestify\validation\validators\TimestampFieldValidator;
 
 if (!function_exists('xestifyRegisterCoreHttpServices')) {
     function xestifyRegisterCoreHttpServices(Container $container): void
@@ -61,7 +71,22 @@ if (!function_exists('xestifyRegisterEntityServices')) {
     function xestifyRegisterEntityServices(Container $container): void
     {
         $container->singleton(HookDispatcher::class, fn() => new HookDispatcher());
-        $container->singleton(ValidationService::class, fn() => new ValidationService());
+        $container->singleton(SchemaFieldExtractor::class, fn() => new SchemaFieldExtractor());
+        $container->singleton(ValidationRules::class, fn() => new ValidationRules());
+        $container->singleton(FieldValidatorRegistry::class, fn() => new FieldValidatorRegistry([
+            'string' => new StringFieldValidator(),
+            'number' => new NumberFieldValidator(),
+            'boolean' => new BooleanFieldValidator(),
+            'date' => new DateFieldValidator(),
+            'timestamp' => new TimestampFieldValidator(),
+            'email' => new EmailFieldValidator(),
+            'select' => new SelectFieldValidator(),
+        ]));
+        $container->singleton(ValidationService::class, fn() => new ValidationService(
+            $container->get(SchemaFieldExtractor::class),
+            $container->get(FieldValidatorRegistry::class),
+            $container->get(ValidationRules::class)
+        ));
         $container->singleton(GenericRepository::class, fn() => new GenericRepository(
             $container->get(Database::class)
         ));

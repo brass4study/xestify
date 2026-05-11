@@ -53,10 +53,10 @@ final class EntityService
     public function createRecord(string $entitySlug, array $data, ?string $ownerId = null): array
     {
         $schema = $this->fetchCurrentSchema($entitySlug);
-        $errors = $this->validator->validate($data, $schema);
+        $result = $this->validator->validate($data, $schema);
 
-        if ($errors !== []) {
-            throw new ValidationException($errors);
+        if (!$result->isValid()) {
+            throw new ValidationException($result->errors());
         }
 
         $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
@@ -79,10 +79,10 @@ final class EntityService
     public function updateRecord(string $id, string $entitySlug, array $data): array
     {
         $schema = $this->fetchCurrentSchema($entitySlug);
-        $errors = $this->validator->validate($data, $schema, false);
+        $result = $this->validator->validate($data, $schema, false);
 
-        if ($errors !== []) {
-            throw new ValidationException($errors);
+        if (!$result->isValid()) {
+            throw new ValidationException($result->errors());
         }
 
         $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);

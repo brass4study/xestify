@@ -27,7 +27,7 @@ require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
-require_once BASE_PATH . '/src/services/ValidationService.php';
+require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
 require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
@@ -77,7 +77,14 @@ try {
 
 const CTRL_ENTITY_SLUG = 'test_entity_ctrl';
 
-const CTRL_SCHEMA_JSON = '{"fields":{"title":{"type":"string","required":true},"score":{"type":"number","required":false}}}';
+const CTRL_SCHEMA_JSON = <<<'JSON'
+{
+  "fields": {
+    "title": {"type": "string", "required": true},
+    "score": {"type": "number", "required": false}
+  }
+}
+JSON;
 
 function buildController(): EntityController
 {
@@ -122,6 +129,26 @@ function cleanCtrlData(): void
         ->execute([':slug' => CTRL_ENTITY_SLUG]);
     $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
         ->execute([':slug' => CTRL_ENTITY_SLUG]);
+}
+
+function hasControllerValidationError(array $result, string $field, string $code): bool
+{
+    $details = $result['error']['details'] ?? [];
+    if (!is_array($details)) {
+        return false;
+    }
+
+    foreach ($details as $error) {
+        if (!is_array($error)) {
+            continue;
+        }
+
+        if (($error['field'] ?? '') === $field && ($error['code'] ?? '') === $code) {
+            return is_string($error['message'] ?? null) && $error['message'] !== '';
+        }
+    }
+
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +200,10 @@ TestSuite::run('POST create returns 422 for invalid data', function (): void {
 
     assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
     assertTrue(($result['error']['code'] ?? 0) === 422, 'code must be 422');
-    assertTrue(isset($result['error']['details']['title']), 'details must mention missing title');
+    assertTrue(
+        hasControllerValidationError($result, 'title', 'required'),
+        'details must include structured missing title error'
+    );
 
     cleanCtrlData();
 });
@@ -211,7 +241,10 @@ TestSuite::run('GET show returns single record by id', function (): void {
 TestSuite::run('GET show returns 404 for unknown id', function (): void {
     $ctrl = buildController();
 
-    $result = callController($ctrl, 'show', ['slug' => CTRL_ENTITY_SLUG, 'id' => '00000000-0000-0000-0000-000000000000']);
+    $result = callController($ctrl, 'show', [
+        'slug' => CTRL_ENTITY_SLUG,
+        'id' => '00000000-0000-0000-0000-000000000000',
+    ]);
 
     assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
     assertTrue(($result['error']['code'] ?? 0) === 404, MSG_CODE_404);

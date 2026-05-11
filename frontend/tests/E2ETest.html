@@ -78,6 +78,17 @@
       { name: 'email', label: 'Email', type: 'email' },
     ] },
   ];
+  const CLIENTS_SCHEMA = {
+    fields: {
+      name: { label: 'Nombre', type: 'string', required: true },
+      email: { label: 'Email', type: 'email' },
+    },
+    custom_fields: [
+      { key: 'phone', label: 'Telefono', type: 'string' },
+      { key: 'creation_stamp', label: 'Fecha de alta', type: 'timestamp', default: 'now' },
+      { key: 'is_active', label: 'Activo', type: 'boolean', default: true },
+    ],
+  };
 
   const RECORDS = [
     { id: '1', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'Alice', email: 'alice@test.com' } },
@@ -208,6 +219,16 @@
     container.remove();
   });
 
+  await test('EntityEdit renders custom_fields from the full entity schema', async () => {
+    const container = makeSandbox();
+    const page = new EntityEdit(container, 'clients', CLIENTS_SCHEMA);
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    assertTrue(container.querySelector('input[name="phone"]') !== null, 'phone should render');
+    assertTrue(container.querySelector('input[name="creation_stamp"]') !== null, 'creation_stamp should render');
+    assertTrue(container.querySelector('input[name="is_active"][type="checkbox"]') !== null, 'is_active should render');
+    container.remove();
+  });
+
   await test('EntityEdit validates required fields on submit', async () => {
     const container = makeSandbox();
     const schema = ENTITIES[0];
@@ -289,15 +310,20 @@
     mockFetch([
       { url: '/entities/clients/records', method: 'POST', data: CREATED_RECORD },
       { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/clients/schema', data: { entity_slug: 'clients', schema_version: 1, schema: CLIENTS_SCHEMA } },
       { url: '/entities', data: ENTITIES },
     ]);
 
     // Simulate the flow wired in main.js: EntityList with onCreateNew → EntityEdit
     let entityListPage;
+    let schemaEndpointLoaded = false;
     const reloadSlug = await new Promise((resolve) => {
       entityListPage = new EntityList(container, {
-        onCreateNew: (slug) => {
-          const schema = AppState.getEntities().find((e) => e.slug === slug) ?? { slug, fields: [] };
+        onCreateNew: async (slug) => {
+          const response = await fetch(`/entities/${slug}/schema`);
+          const payload = await response.json();
+          schemaEndpointLoaded = true;
+          const schema = payload.data.schema;
           container.innerHTML = '';
           const editPage = new EntityEdit(container, slug, schema, {
             onSaved: () => { resolve(slug); },
@@ -308,6 +334,8 @@
           if (form) {
             const nameInput = form.querySelector('[name="name"]');
             if (nameInput) nameInput.value = 'Carol';
+            const phoneInput = form.querySelector('[name="phone"]');
+            if (phoneInput) phoneInput.value = '+34 600 000 000';
           }
           // EntityEdit listens to click on the save button, not form submit
           const saveBtn = container.querySelector('.xt-btn--primary');
@@ -334,6 +362,7 @@
     const rows = container.querySelectorAll('tbody tr');
     assertEquals(rows.length, 2, 'EntityList should show 2 rows after reload');
     assertEquals(reloadSlug, 'clients', 'Reloaded entity slug should be "clients"');
+    assertTrue(schemaEndpointLoaded, 'Create flow should load the full schema endpoint');
     container.remove();
   });
 

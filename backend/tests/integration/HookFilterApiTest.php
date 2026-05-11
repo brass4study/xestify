@@ -28,7 +28,7 @@ require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
-require_once BASE_PATH . '/src/services/ValidationService.php';
+require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 

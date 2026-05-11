@@ -23,6 +23,8 @@ $groups = [
         'backend/tests/unit/AuthMiddlewareTest.php',
         'backend/tests/unit/EntityServiceHooksTest.php',
         'backend/tests/unit/ValidationServiceTest.php',
+        'backend/tests/unit/FieldValidatorsTest.php',
+        'backend/tests/unit/SchemaFieldExtractorTest.php',
         'backend/tests/unit/HookDispatcherTest.php',
         'backend/tests/unit/HookFilterTest.php',
         'backend/tests/unit/JwtServiceTest.php',

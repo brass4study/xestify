@@ -22,6 +22,17 @@
       { name: 'email', label: 'Email', type: 'email' },
     ],
   };
+  const CLIENTS_SCHEMA = {
+    fields: {
+      name: { label: 'Nombre', type: 'string', required: true },
+      email: { label: 'Email', type: 'email', required: true },
+    },
+    custom_fields: [
+      { key: 'phone', label: 'Telefono', type: 'string' },
+      { key: 'creation_stamp', label: 'Fecha de alta', type: 'timestamp', default: 'now' },
+      { key: 'is_active', label: 'Activo', type: 'boolean', default: true },
+    ],
+  };
 
   // -------------------------------------------------------------------------
   // Tests
@@ -102,6 +113,24 @@
     assertEquals(emailInput.value, 'cliente.test@example.com', 'email input should be pre-filled from object schema');
   });
 
+  await test('pre-fills custom_fields from initialData', async () => {
+    const container = makeSandbox();
+    const page = new EntityEdit(container, 'clients', CLIENTS_SCHEMA, {
+      initialData: {
+        name: 'Cliente test',
+        email: 'cliente.test@example.com',
+        phone: '+34 600 000 000',
+        creation_stamp: '2026-05-11T09:00:00Z',
+        is_active: false,
+      },
+    });
+
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    assertEquals(container.querySelector('[name="phone"]').value, '+34 600 000 000');
+    assertEquals(container.querySelector('[name="creation_stamp"]').value, '2026-05-11T09:00:00Z');
+    assertTrue(container.querySelector('[name="is_active"]').checked === false, 'is_active should be unchecked');
+  });
+
   await test('submit() POST to /entities/:slug/records on create', async () => {
     const container = makeSandbox();
     let capturedUrl = null;
@@ -120,6 +149,28 @@
 
     assertTrue(capturedUrl.includes('/entities/client/records'), 'Should POST to correct URL');
     assertEquals(capturedBody.name, 'ACME', 'Body should contain name');
+  });
+
+  await test('submit() includes custom_fields in request body', async () => {
+    const container = makeSandbox();
+    let capturedBody = null;
+
+    globalThis.fetch = async (_url, init) => {
+      capturedBody = JSON.parse(init.body);
+      return { status: 201, json: async () => ({ ok: true, data: { id: 1, ...capturedBody } }) };
+    };
+
+    const page = new EntityEdit(container, 'clients', CLIENTS_SCHEMA);
+    container.querySelector('[name="name"]').value = 'ACME';
+    container.querySelector('[name="email"]').value = 'info@acme.com';
+    container.querySelector('[name="phone"]').value = '+34 600 000 000';
+    container.querySelector('[name="creation_stamp"]').value = 'now';
+    container.querySelector('[name="is_active"]').checked = true;
+    await page.submit();
+
+    assertEquals(capturedBody.phone, '+34 600 000 000', 'Body should contain phone');
+    assertEquals(capturedBody.creation_stamp, 'now', 'Body should contain creation_stamp');
+    assertEquals(capturedBody.is_active, true, 'Body should contain is_active');
   });
 
   await test('submit() PUT to /entities/:slug/records/:id on edit', async () => {

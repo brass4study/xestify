@@ -21,7 +21,7 @@ require_once BASE_PATH . '/src/exceptions/HookException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
 require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
-require_once BASE_PATH . '/src/services/ValidationService.php';
+require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 

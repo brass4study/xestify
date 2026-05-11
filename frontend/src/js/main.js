@@ -203,9 +203,15 @@ async function showEntityList(content, api, preloadSlug) {
  * @param {string|null} recordId       null = create, string = edit existing
  * @param {object} initialData         Pre-fill values for edit mode
  */
-function showEntityEdit(content, api, slug, recordId, initialData) {
-  const entities = AppState.getEntities();
-  const schema = entities.find((e) => e.slug === slug) ?? { slug, fields: [] };
+async function showEntityEdit(content, api, slug, recordId, initialData) {
+  content.replaceChildren();
+  showPlaceholder(content, 'Cargando formulario...');
+
+  const schema = await loadEntitySchema(api, slug);
+  if (schema === null) {
+    showPlaceholder(content, 'No se pudo cargar el formulario de la entidad.');
+    return null;
+  }
 
   content.replaceChildren();
 
@@ -222,6 +228,19 @@ function showEntityEdit(content, api, slug, recordId, initialData) {
   });
 
   return entityEdit;
+}
+
+async function loadEntitySchema(api, slug) {
+  try {
+    const { data } = await api.get(`/entities/${slug}/schema`);
+    if (data?.schema !== null && typeof data?.schema === 'object') {
+      return data.schema;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function setAuthToken(token) {

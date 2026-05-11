@@ -5,13 +5,27 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/services/ValidationService.php';
+require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 
 use Xestify\services\ValidationService;
 
 $service = new ValidationService();
 
-TestSuite::run('validate returns no errors for valid payload', function () use ($service): void {
+/**
+ * @param list<array{field: string, code: string, message: string}> $errors
+ */
+function findValidationError(array $errors, string $field, string $code): ?array
+{
+    foreach ($errors as $error) {
+        if (($error['field'] ?? '') === $field && ($error['code'] ?? '') === $code) {
+            return $error;
+        }
+    }
+
+    return null;
+}
+
+TestSuite::run('validate returns valid result for valid payload', function () use ($service): void {
     $schema = [
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'minLength' => 2, 'maxLength' => 100],
@@ -32,21 +46,38 @@ TestSuite::run('validate returns no errors for valid payload', function () use (
         'status' => 'draft',
     ];
 
-    $errors = $service->validate($data, $schema);
-    assertEquals([], $errors, 'Expected no validation errors');
+    $result = $service->validate($data, $schema);
+
+    assertTrue($result->isValid(), 'Expected valid result');
+    assertEquals([], $result->errors(), 'Expected no validation errors');
 });
 
-TestSuite::run('validate reports missing required field', function () use ($service): void {
+TestSuite::run('validate reports missing required field with structured error', function () use ($service): void {
     $schema = [
         'fields' => [
             'name' => ['type' => 'string', 'required' => true],
         ],
     ];
 
-    $errors = $service->validate([], $schema);
+    $result = $service->validate([], $schema);
+    $error = findValidationError($result->errors(), 'name', 'required');
 
-    assertTrue(isset($errors['name']), 'Expected required error for name');
-    assertEquals('Field is required', $errors['name'][0] ?? null);
+    assertFalse($result->isValid(), 'Expected invalid result');
+    assertEquals('Field is required', $error['message'] ?? null);
+});
+
+TestSuite::run('validate reports unknown field type as schema error', function () use ($service): void {
+    $schema = [
+        'fields' => [
+            'payload' => ['type' => 'json_blob', 'required' => true],
+        ],
+    ];
+
+    $result = $service->validate(['payload' => '{}'], $schema);
+    $error = findValidationError($result->errors(), 'payload', 'unknown_type');
+
+    assertFalse($result->isValid(), 'Expected invalid result for unknown type');
+    assertEquals('Unsupported type: json_blob', $error['message'] ?? null);
 });
 
 TestSuite::run('validate reports invalid type', function () use ($service): void {
@@ -56,10 +87,10 @@ TestSuite::run('validate reports invalid type', function () use ($service): void
         ],
     ];
 
-    $errors = $service->validate(['isActive' => 'yes'], $schema);
+    $result = $service->validate(['isActive' => 'yes'], $schema);
+    $error = findValidationError($result->errors(), 'isActive', 'invalid_type');
 
-    assertTrue(isset($errors['isActive']), 'Expected type error for isActive');
-    assertEquals('Expected boolean', $errors['isActive'][0] ?? null);
+    assertEquals('Expected boolean', $error['message'] ?? null);
 });
 
 TestSuite::run('validate reports invalid email', function () use ($service): void {
@@ -69,10 +100,10 @@ TestSuite::run('validate reports invalid email', function () use ($service): voi
         ],
     ];
 
-    $errors = $service->validate(['email' => 'invalid_mail'], $schema);
+    $result = $service->validate(['email' => 'invalid_mail'], $schema);
+    $error = findValidationError($result->errors(), 'email', 'invalid_email');
 
-    assertTrue(isset($errors['email']), 'Expected email error');
-    assertEquals('Invalid email', $errors['email'][0] ?? null);
+    assertEquals('Invalid email', $error['message'] ?? null);
 });
 
 TestSuite::run('validate checks min and max length for strings', function () use ($service): void {
@@ -82,11 +113,13 @@ TestSuite::run('validate checks min and max length for strings', function () use
         ],
     ];
 
-    $shortErrors = $service->validate(['title' => 'AB'], $schema);
-    assertEquals('Minimum length is 3', $shortErrors['title'][0] ?? null);
+    $shortResult = $service->validate(['title' => 'AB'], $schema);
+    $shortError = findValidationError($shortResult->errors(), 'title', 'min_length');
+    assertEquals('Minimum length is 3', $shortError['message'] ?? null);
 
-    $longErrors = $service->validate(['title' => 'ABCDEF'], $schema);
-    assertEquals('Maximum length is 5', $longErrors['title'][0] ?? null);
+    $longResult = $service->validate(['title' => 'ABCDEF'], $schema);
+    $longError = findValidationError($longResult->errors(), 'title', 'max_length');
+    assertEquals('Maximum length is 5', $longError['message'] ?? null);
 });
 
 TestSuite::run('validate checks min and max range for numbers', function () use ($service): void {
@@ -96,11 +129,13 @@ TestSuite::run('validate checks min and max range for numbers', function () use 
         ],
     ];
 
-    $belowErrors = $service->validate(['qty' => 0], $schema);
-    assertEquals('Minimum value is 1', $belowErrors['qty'][0] ?? null);
+    $belowResult = $service->validate(['qty' => 0], $schema);
+    $belowError = findValidationError($belowResult->errors(), 'qty', 'min_value');
+    assertEquals('Minimum value is 1', $belowError['message'] ?? null);
 
-    $aboveErrors = $service->validate(['qty' => 11], $schema);
-    assertEquals('Maximum value is 10', $aboveErrors['qty'][0] ?? null);
+    $aboveResult = $service->validate(['qty' => 11], $schema);
+    $aboveError = findValidationError($aboveResult->errors(), 'qty', 'max_value');
+    assertEquals('Maximum value is 10', $aboveError['message'] ?? null);
 });
 
 TestSuite::run('validate checks select options', function () use ($service): void {
@@ -110,10 +145,10 @@ TestSuite::run('validate checks select options', function () use ($service): voi
         ],
     ];
 
-    $errors = $service->validate(['status' => 'archived'], $schema);
+    $result = $service->validate(['status' => 'archived'], $schema);
+    $error = findValidationError($result->errors(), 'status', 'invalid_option');
 
-    assertTrue(isset($errors['status']), 'Expected select option error');
-    assertEquals('Value not allowed', $errors['status'][0] ?? null);
+    assertEquals('Value not allowed', $error['message'] ?? null);
 });
 
 TestSuite::run('validate supports list style schema field definitions', function () use ($service): void {
@@ -124,10 +159,49 @@ TestSuite::run('validate supports list style schema field definitions', function
         ],
     ];
 
-    $errors = $service->validate(['slug' => 'ok', 'priority' => 5], $schema);
-    assertEquals([], $errors, 'Expected no errors for list style fields');
+    $result = $service->validate(['slug' => 'ok', 'priority' => 5], $schema);
+
+    assertTrue($result->isValid(), 'Expected no errors for list style fields');
+});
+
+TestSuite::run('validate supports custom_fields definitions', function () use ($service): void {
+    $schema = [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => true],
+            ['key' => 'creation_stamp', 'type' => 'timestamp', 'required' => false],
+            ['key' => 'is_active', 'type' => 'boolean', 'required' => true],
+        ],
+    ];
+
+    $validResult = $service->validate([
+        'name' => 'Cliente',
+        'phone' => '+34 600 000 000',
+        'creation_stamp' => 'now',
+        'is_active' => true,
+    ], $schema);
+    assertTrue($validResult->isValid(), 'Expected no errors for valid custom_fields');
+
+    $missingResult = $service->validate(['name' => 'Cliente'], $schema);
+    assertTrue(
+        findValidationError($missingResult->errors(), 'phone', 'required') !== null,
+        'Expected required error for custom field phone'
+    );
+    assertTrue(
+        findValidationError($missingResult->errors(), 'is_active', 'required') !== null,
+        'Expected required error for custom field is_active'
+    );
+
+    $typeResult = $service->validate([
+        'name' => 'Cliente',
+        'phone' => '+34 600 000 000',
+        'is_active' => 'yes',
+    ], $schema);
+    $error = findValidationError($typeResult->errors(), 'is_active', 'invalid_type');
+    assertEquals('Expected boolean', $error['message'] ?? null);
 });
 
 TestSuite::summary();
 exit(TestSuite::exitCode());
-

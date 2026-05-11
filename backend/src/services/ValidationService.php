@@ -4,273 +4,104 @@ declare(strict_types=1);
 
 namespace Xestify\services;
 
+use Xestify\validation\DefaultFieldValidatorRegistryFactory;
+use Xestify\validation\FieldValidatorRegistry;
+use Xestify\validation\model\ValidationError;
+use Xestify\validation\model\ValidationResult;
+use Xestify\validation\schema\SchemaFieldExtractor;
+use Xestify\validation\support\ValidationRules;
+
 final class ValidationService
 {
-    public function validate(array $data, array $schema, bool $requireAll = true): array
+    public function __construct(
+        private ?SchemaFieldExtractor $fieldExtractor = null,
+        private ?FieldValidatorRegistry $validatorRegistry = null,
+        private ?ValidationRules $rules = null
+    ) {
+        $this->fieldExtractor ??= new SchemaFieldExtractor();
+        $this->validatorRegistry ??= (new DefaultFieldValidatorRegistryFactory())->create();
+        $this->rules ??= new ValidationRules();
+    }
+
+    public function validate(array $data, array $schema, bool $requireAll = true): ValidationResult
     {
         $errors = [];
-        $fields = $this->extractFields($schema);
 
-        foreach ($fields as $fieldName => $rules) {
-            $fieldErrors = $this->validateField($fieldName, $data, $rules, $requireAll);
-            if ($fieldErrors !== []) {
-                $errors[$fieldName] = $fieldErrors;
-            }
+        foreach ($this->fieldExtractor->extract($schema) as $fieldName => $fieldRules) {
+            $errors = array_merge($errors, $this->validateField($fieldName, $data, $fieldRules, $requireAll));
         }
 
-        return $errors;
+        return $errors === []
+            ? ValidationResult::valid()
+            : ValidationResult::fromErrors($errors);
     }
 
-    private function extractFields(array $schema): array
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $fieldRules
+     * @return list<ValidationError>
+     */
+    private function validateField(string $fieldName, array $data, array $fieldRules, bool $requireAll): array
     {
-        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
-            return [];
-        }
-
-        $fields = [];
-        foreach ($schema['fields'] as $key => $definition) {
-            if (is_string($key) && is_array($definition)) {
-                $fields[$key] = $definition;
-                continue;
-            }
-
-            if (!is_array($definition)) {
-                continue;
-            }
-
-            $name = $this->resolveFieldName($definition);
-            if ($name === null) {
-                continue;
-            }
-
-            $fields[$name] = $definition;
-        }
-
-        return $fields;
-    }
-
-    private function resolveFieldName(array $definition): ?string
-    {
-        foreach (['name', 'slug', 'key'] as $candidate) {
-            if (isset($definition[$candidate]) && is_string($definition[$candidate])) {
-                $value = trim($definition[$candidate]);
-                if ($value !== '') {
-                    return $value;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function validateField(string $fieldName, array $data, array $rules, bool $requireAll = true): array
-    {
-        $errors = [];
-        $isRequired = $requireAll && $this->toBool($rules['required'] ?? false);
         $isPresent = array_key_exists($fieldName, $data);
         $value = $isPresent ? $data[$fieldName] : null;
 
-        if ($isRequired && $this->isMissing($isPresent, $value)) {
-            $errors[] = 'Field is required';
-        } elseif ($isPresent && $value !== null && $value !== '') {
-            $type = (string) ($rules['type'] ?? 'string');
-            $errors = $this->validateType($type, $value, $rules);
-
-            if ($errors === [] && $this->usesStringBounds($type)) {
-                $errors = array_merge($errors, $this->validateStringBounds((string) $value, $rules));
-            }
-
-            if ($errors === [] && $type === 'number') {
-                $errors = array_merge($errors, $this->validateNumericBounds((float) $value, $rules));
-            }
+        if ($requireAll && $this->rules->isRequired($fieldRules) && $this->rules->isMissing($isPresent, $value)) {
+            return [new ValidationError($fieldName, 'required', 'Field is required')];
         }
 
-        return $errors;
-    }
-
-    private function validateType(string $type, mixed $value, array $rules): array
-    {
-        $errors = [];
-
-        switch ($type) {
-            case 'string':
-                $errors = $this->validateStringType($value);
-                break;
-            case 'number':
-                $errors = $this->validateNumberType($value);
-                break;
-            case 'boolean':
-                $errors = $this->validateBooleanType($value);
-                break;
-            case 'date':
-                $errors = $this->validateDateType($value);
-                break;
-            case 'email':
-                $errors = $this->validateEmailType($value);
-                break;
-            case 'select':
-                $errors = $this->validateSelect($value, $rules);
-                break;
-            default:
-                $errors[] = 'Unsupported type: ' . $type;
-                break;
+        if (!$this->shouldValidateValue($isPresent, $value)) {
+            return [];
         }
 
-        return $errors;
+        return $this->validatePresentValue($fieldName, $value, $fieldRules);
     }
 
-    private function validateStringType(mixed $value): array
+    private function shouldValidateValue(bool $isPresent, mixed $value): bool
     {
-        return is_string($value) ? [] : ['Expected string'];
+        return $isPresent && $value !== null && $value !== '';
     }
 
-    private function validateNumberType(mixed $value): array
+    /**
+     * @param array<string, mixed> $fieldRules
+     * @return list<ValidationError>
+     */
+    private function validatePresentValue(string $fieldName, mixed $value, array $fieldRules): array
     {
-        $isValid = is_int($value) || is_float($value) || (is_string($value) && is_numeric($value));
-        return $isValid ? [] : ['Expected number'];
+        $type = is_string($fieldRules['type'] ?? null) ? $fieldRules['type'] : 'string';
+        $validator = $this->validatorRegistry->get($type);
+
+        if ($validator === null) {
+            return [new ValidationError($fieldName, 'unknown_type', 'Unsupported type: ' . $type)];
+        }
+
+        $errors = $validator->validate($fieldName, $value, $fieldRules);
+        if ($errors !== []) {
+            return $errors;
+        }
+
+        return $this->validateCommonRules($fieldName, $value, $fieldRules, $type);
     }
 
-    private function validateBooleanType(mixed $value): array
+    /**
+     * @param array<string, mixed> $fieldRules
+     * @return list<ValidationError>
+     */
+    private function validateCommonRules(string $fieldName, mixed $value, array $fieldRules, string $type): array
     {
-        return is_bool($value) ? [] : ['Expected boolean'];
-    }
+        if ($type === 'number') {
+            return $this->rules->validateNumericBounds($fieldName, (float) $value, $fieldRules);
+        }
 
-    private function validateDateType(mixed $value): array
-    {
-        $isValid = is_string($value) && $this->isValidDate($value);
-        return $isValid ? [] : ['Expected date in YYYY-MM-DD format'];
-    }
+        if ($this->usesStringBounds($type)) {
+            return $this->rules->validateStringBounds($fieldName, (string) $value, $fieldRules);
+        }
 
-    private function validateEmailType(mixed $value): array
-    {
-        $isValid = is_string($value) && $this->isValidEmail($value);
-        return $isValid ? [] : ['Invalid email'];
+        return [];
     }
 
     private function usesStringBounds(string $type): bool
     {
-        return in_array($type, ['string', 'email', 'date', 'select'], true);
-    }
-
-    private function validateSelect(mixed $value, array $rules): array
-    {
-        $errors = [];
-
-        if (!is_scalar($value)) {
-            $errors[] = 'Expected scalar value for select';
-        } else {
-            $options = $rules['options'] ?? [];
-            if (is_array($options) && $options !== []) {
-                $isAllowed = false;
-                foreach ($options as $option) {
-                    if ((string) $option === (string) $value) {
-                        $isAllowed = true;
-                        break;
-                    }
-                }
-
-                if (!$isAllowed) {
-                    $errors[] = 'Value not allowed';
-                }
-            }
-        }
-
-        return $errors;
-    }
-
-    private function validateStringBounds(string $value, array $rules): array
-    {
-        $errors = [];
-
-        if (isset($rules['minLength']) && is_numeric($rules['minLength'])) {
-            $minLength = (int) $rules['minLength'];
-            if (mb_strlen($value) < $minLength) {
-                $errors[] = 'Minimum length is ' . $minLength;
-            }
-        }
-
-        if (isset($rules['maxLength']) && is_numeric($rules['maxLength'])) {
-            $maxLength = (int) $rules['maxLength'];
-            if (mb_strlen($value) > $maxLength) {
-                $errors[] = 'Maximum length is ' . $maxLength;
-            }
-        }
-
-        return $errors;
-    }
-
-    private function validateNumericBounds(float $value, array $rules): array
-    {
-        $errors = [];
-
-        if (isset($rules['min']) && is_numeric($rules['min'])) {
-            $min = (float) $rules['min'];
-            if ($value < $min) {
-                $errors[] = 'Minimum value is ' . $this->formatNumber($min);
-            }
-        }
-
-        if (isset($rules['max']) && is_numeric($rules['max'])) {
-            $max = (float) $rules['max'];
-            if ($value > $max) {
-                $errors[] = 'Maximum value is ' . $this->formatNumber($max);
-            }
-        }
-
-        return $errors;
-    }
-
-    private function formatNumber(float $number): string
-    {
-        if (floor($number) === $number) {
-            return (string) (int) $number;
-        }
-
-        return (string) $number;
-    }
-
-    private function isMissing(bool $isPresent, mixed $value): bool
-    {
-        if (!$isPresent) {
-            return true;
-        }
-
-        if ($value === null) {
-            return true;
-        }
-
-        return is_string($value) && trim($value) === '';
-    }
-
-    private function isValidDate(string $value): bool
-    {
-        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
-        if ($date === false) {
-            return false;
-        }
-
-        return $date->format('Y-m-d') === $value;
-    }
-
-    private function isValidEmail(string $value): bool
-    {
-        return filter_var($value, FILTER_VALIDATE_EMAIL) !== false;
-    }
-
-    private function toBool(mixed $value): bool
-    {
-        $result = false;
-
-        if (is_bool($value)) {
-            $result = $value;
-        } elseif (is_int($value)) {
-            $result = $value !== 0;
-        } elseif (is_string($value)) {
-            $normalized = strtolower(trim($value));
-            $result = $normalized === '1' || $normalized === 'true' || $normalized === 'yes';
-        }
-
-        return $result;
+        return in_array($type, ['string', 'email', 'date', 'timestamp', 'select'], true);
     }
 }
-

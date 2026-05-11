@@ -290,12 +290,8 @@ export class EntityEdit {
     if (Array.isArray(schema.fields)) {
       return {
         ...schema,
-        fields: schema.fields.map((field) => {
-          if (Object.hasOwn(initialData, field.name)) {
-            return { ...field, default: initialData[field.name] };
-          }
-          return field;
-        }),
+        fields: this.#applyDefaultsToFieldList(schema.fields, initialData),
+        custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
       };
     }
 
@@ -311,10 +307,44 @@ export class EntityEdit {
       return {
         ...schema,
         fields: fieldsWithDefaults,
+        custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
       };
     }
 
-    return { ...schema };
+    return {
+      ...schema,
+      custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
+    };
+  }
+
+  #applyDefaultsToFieldList(fields, initialData) {
+    if (!Array.isArray(fields)) {
+      return fields;
+    }
+
+    return fields.map((field) => {
+      if (field === null || typeof field !== 'object') {
+        return field;
+      }
+
+      const fieldName = this.#fieldName(field);
+      if (fieldName !== null && Object.hasOwn(initialData, fieldName)) {
+        return { ...field, default: initialData[fieldName] };
+      }
+
+      return field;
+    });
+  }
+
+  #fieldName(field) {
+    for (const key of ['name', 'key', 'slug']) {
+      const value = field[key];
+      if (typeof value === 'string' && value.trim() !== '') {
+        return value;
+      }
+    }
+
+    return null;
   }
 
   // ---------------------------------------------------------------------------

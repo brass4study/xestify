@@ -8,21 +8,21 @@ use RuntimeException;
 
 /**
  * Thrown when entity data fails schema validation.
- * Carries the full errors map returned by ValidationService::validate().
+ * Carries the structured errors returned by ValidationResult::errors().
  */
 class ValidationException extends RuntimeException
 {
-    /** @var array<string, list<string>> */
+    /** @var list<array{field: string, code: string, message: string}> */
     private array $errors;
 
-    /** @param array<string, list<string>> $errors */
+    /** @param list<array{field: string, code: string, message: string}> $errors */
     public function __construct(array $errors)
     {
         parent::__construct('Validation failed');
         $this->errors = $errors;
     }
 
-    /** @return array<string, list<string>> */
+    /** @return list<array{field: string, code: string, message: string}> */
     public function getErrors(): array
     {
         return $this->errors;
