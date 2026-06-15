@@ -13,6 +13,7 @@ use Xestify\validation\validators\EmailFieldValidator;
 use Xestify\validation\validators\NumberFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
+use Xestify\validation\validators\TextFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
 
 TestSuite::run('StringFieldValidator accepts strings and rejects other values', function (): void {
@@ -20,6 +21,13 @@ TestSuite::run('StringFieldValidator accepts strings and rejects other values', 
 
     assertEquals([], $validator->validate('name', 'Alice', []));
     assertEquals('invalid_type', $validator->validate('name', 12, [])[0]->code());
+});
+
+TestSuite::run('TextFieldValidator accepts strings and rejects other values', function (): void {
+    $validator = new TextFieldValidator();
+
+    assertEquals([], $validator->validate('description', 'Long text', []));
+    assertEquals('invalid_type', $validator->validate('description', ['text'], [])[0]->code());
 });
 
 TestSuite::run('NumberFieldValidator accepts numeric values and rejects non numeric values', function (): void {

@@ -354,12 +354,13 @@ export class EntityEdit {
   /**
    * Show per-field validation errors below each input.
    *
-   * @param {Record<string, string|string[]>} errors
+   * @param {Record<string, string|string[]>|Array<object>} errors
    */
   #showErrors(errors) {
     const formEl = this.#container.querySelector('.xt-edit-form form');
+    const normalizedErrors = this.#normalizeErrors(errors);
 
-    for (const [fieldName, messages] of Object.entries(errors)) {
+    for (const [fieldName, messages] of Object.entries(normalizedErrors)) {
       let input = null;
       if (formEl !== null) {
         input = formEl.querySelector(`[name="${fieldName}"]`);
@@ -382,6 +383,40 @@ export class EntityEdit {
         formEl.appendChild(errorEl);
       }
     }
+  }
+
+  #normalizeErrors(errors) {
+    if (Array.isArray(errors)) {
+      return this.#normalizeStructuredErrors(errors);
+    }
+
+    if (errors === null || typeof errors !== 'object') {
+      return {};
+    }
+
+    return errors;
+  }
+
+  #normalizeStructuredErrors(errors) {
+    const normalized = {};
+
+    for (const error of errors) {
+      if (error === null || typeof error !== 'object') {
+        continue;
+      }
+
+      const field = typeof error.field === 'string' && error.field.trim() !== ''
+        ? error.field
+        : '_global';
+      const message = typeof error.message === 'string' && error.message.trim() !== ''
+        ? error.message
+        : 'Error de validacion';
+
+      normalized[field] ??= [];
+      normalized[field].push(message);
+    }
+
+    return normalized;
   }
 
   /**
@@ -457,11 +492,21 @@ export class EntityEdit {
   }
 
   #handleSubmitError(err) {
-    if (err instanceof ApiError && Object.keys(err.details).length > 0) {
+    if (err instanceof ApiError && this.#hasErrorDetails(err.details)) {
       this.#showErrors(err.details);
       return;
     }
     this.#showGlobalError(err instanceof ApiError ? err.message : 'Error desconocido');
+  }
+
+  #hasErrorDetails(details) {
+    if (Array.isArray(details)) {
+      return details.length > 0;
+    }
+
+    return details !== null
+      && typeof details === 'object'
+      && Object.keys(details).length > 0;
   }
 
   /**

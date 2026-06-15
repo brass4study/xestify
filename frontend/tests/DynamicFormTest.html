@@ -42,6 +42,7 @@
     return {
       fields: [
         { name: 'title', label: 'Title', type: 'string', required: true, minLength: 3 },
+        { name: 'description', label: 'Description', type: 'text', required: true },
         { name: 'amount', label: 'Amount', type: 'number', min: 1, max: 100 },
         { name: 'email', label: 'Email', type: 'email', required: true },
         { name: 'due_date', label: 'Due Date', type: 'date', required: true },
@@ -86,6 +87,7 @@
     form.render();
 
     assertTrue(sandbox.querySelector('input[name="title"][type="text"]') !== null, 'string input missing');
+    assertTrue(sandbox.querySelector('textarea[name="description"]') !== null, 'text textarea missing');
     assertTrue(sandbox.querySelector('input[name="amount"][type="number"]') !== null, 'number input missing');
     assertTrue(sandbox.querySelector('input[name="email"][type="email"]') !== null, 'email input missing');
     assertTrue(sandbox.querySelector('input[name="due_date"][type="date"]') !== null, 'date input missing');
@@ -98,6 +100,7 @@
     form.render();
 
     setInputValue('input[name="title"]', 'Invoice A');
+    setInputValue('textarea[name="description"]', 'Large product description');
     setInputValue('input[name="amount"]', '25');
     setInputValue('input[name="email"]', 'admin@xestify.local');
     setInputValue('input[name="due_date"]', '2026-05-01');
@@ -106,6 +109,7 @@
 
     const data = form.getData();
     assertEquals(data.title, 'Invoice A');
+    assertEquals(data.description, 'Large product description');
     assertEquals(data.amount, 25);
     assertEquals(data.email, 'admin@xestify.local');
     assertEquals(data.due_date, '2026-05-01');
@@ -118,6 +122,7 @@
     form.render();
 
     setInputValue('input[name="title"]', 'Invoice A');
+    setInputValue('textarea[name="description"]', 'Valid description');
     setInputValue('input[name="amount"]', '50');
     setInputValue('input[name="email"]', 'admin@xestify.local');
     setInputValue('input[name="due_date"]', '2026-05-10');

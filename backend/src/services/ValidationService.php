@@ -102,6 +102,6 @@ final class ValidationService
 
     private function usesStringBounds(string $type): bool
     {
-        return in_array($type, ['string', 'email', 'date', 'timestamp', 'select'], true);
+        return in_array($type, ['string', 'text', 'email', 'date', 'timestamp', 'select'], true);
     }
 }

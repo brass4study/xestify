@@ -93,6 +93,21 @@ TestSuite::run('validate reports invalid type', function () use ($service): void
     assertEquals('Expected boolean', $error['message'] ?? null);
 });
 
+TestSuite::run('validate supports text fields', function () use ($service): void {
+    $schema = [
+        'fields' => [
+            'description' => ['type' => 'text', 'required' => true, 'minLength' => 3],
+        ],
+    ];
+
+    $validResult = $service->validate(['description' => 'Producto nuevo'], $schema);
+    assertTrue($validResult->isValid(), 'Expected text field to be valid');
+
+    $invalidResult = $service->validate(['description' => 123], $schema);
+    $error = findValidationError($invalidResult->errors(), 'description', 'invalid_type');
+    assertEquals('Expected text', $error['message'] ?? null);
+});
+
 TestSuite::run('validate reports invalid email', function () use ($service): void {
     $schema = [
         'fields' => [

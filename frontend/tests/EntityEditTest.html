@@ -12,7 +12,15 @@
 
 <script type="module">
   import { EntityEdit } from '../js/pages/EntityEdit.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
+  import {
+    initTestRunner,
+    separator,
+    test,
+    assertEquals,
+    assertTrue,
+    makeSandbox,
+    finishTestRunner
+  } from './js/helpers.js';
 
   initTestRunner('output');
 
@@ -224,6 +232,39 @@
     const errorList = container.querySelector('.xt-field-errors[data-field="name"]');
     assertTrue(errorList !== null, 'Field error list should be rendered');
     assertTrue(errorList.textContent.includes('Too short'), 'Error message should be shown');
+  });
+
+  await test('submit() shows structured API validation errors', async () => {
+    const container = makeSandbox();
+    const productSchema = {
+      fields: [
+        { name: 'name', label: 'Nombre', type: 'string', required: true },
+        { name: 'description', label: 'Descripcion', type: 'text' },
+      ],
+    };
+    globalThis.fetch = async () => ({
+      status: 422,
+      json: async () => ({
+        ok: false,
+        error: {
+          code: 422,
+          message: 'Validation failed',
+          details: [
+            { field: 'description', code: 'invalid_type', message: 'Expected text' },
+          ],
+        },
+      }),
+    });
+
+    const page = new EntityEdit(container, 'products', productSchema);
+    container.querySelector('[name="name"]').value = 'Producto test';
+    container.querySelector('[name="description"]').value = 'Descripcion';
+    await page.submit();
+
+    const errorList = container.querySelector('.xt-field-errors[data-field="description"]');
+    assertTrue(errorList !== null, 'Structured field error list should be rendered');
+    assertTrue(errorList.textContent.includes('Expected text'), 'Structured error message should be shown');
+    assertTrue(!errorList.textContent.includes('[object Object]'), 'Structured errors must not render as object text');
   });
 
   await test('submit() shows global error banner on generic ApiError', async () => {

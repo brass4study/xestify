@@ -1,7 +1,7 @@
 /**
  * DynamicForm.js — Schema-driven form renderer for Xestify frontend.
  *
- * Supports field types: string, number, email, date, select, boolean.
+ * Supports field types: string, text, number, email, date, select, boolean.
  * No listeners and no Proxy; simple imperative API.
  */
 
@@ -112,6 +112,11 @@ export class DynamicForm {
       return result;
     }
 
+    if (input instanceof HTMLTextAreaElement) {
+      result.value = input.value;
+      return result;
+    }
+
     if (!(input instanceof HTMLInputElement)) {
       return result;
     }
@@ -208,6 +213,19 @@ export class DynamicForm {
       return input;
     }
 
+    if (type === 'text') {
+      const textarea = document.createElement('textarea');
+      textarea.id = this.#fieldId(field.name);
+      textarea.name = field.name;
+      textarea.rows = Number.isInteger(field.rows) ? field.rows : 4;
+
+      if (field.default !== undefined && field.default !== null) {
+        textarea.value = String(field.default);
+      }
+
+      return textarea;
+    }
+
     const input = document.createElement('input');
     input.id = this.#fieldId(field.name);
     input.name = field.name;
@@ -294,7 +312,7 @@ export class DynamicForm {
   }
 
   #isStringLikeType(type) {
-    return ['string', 'email', 'date', 'timestamp', 'select'].includes(type);
+    return ['string', 'text', 'email', 'date', 'timestamp', 'select'].includes(type);
   }
 
   #validateStringLike(field, value, errors) {
