@@ -28,6 +28,7 @@ require_once BASE_PATH . '/tests/helpers/plugins/plugin_services.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
+require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
@@ -40,6 +41,7 @@ require_once PLUGINS_PATH . '/comments/Lifecycle.php';
 
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
+use Xestify\exceptions\ValidationException;
 use Xestify\plugins\HookDispatcher;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\plugins\comments\Hooks;
@@ -85,6 +87,7 @@ const TEST_ENTITY   = 'clients';
 const TEST_RECORD   = '00000000-0000-0000-0000-000000000001';
 const TEST_COMMENT_BODY = 'Primer comentario de prueba';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
+const MSG_BODY_MUST_MATCH = 'body must match';
 
 function callComments(PluginExtensionController $ctrl, string $method, array $params, array $body = []): array
 {
@@ -164,22 +167,44 @@ function seedParentRecord(): void
     ]);
 }
 
+function seedUser(string $id, string $email): void
+{
+    Database::connection()->prepare(
+        'INSERT INTO users (id, email, password_hash, roles)
+         VALUES (:id, :email, :password_hash, :roles::jsonb)
+         ON CONFLICT (id) DO UPDATE
+         SET email = EXCLUDED.email,
+             password_hash = EXCLUDED.password_hash,
+             roles = EXCLUDED.roles'
+    )->execute([
+        ':id' => $id,
+        ':email' => $email,
+        ':password_hash' => 'test-hash',
+        ':roles' => '["operador"]',
+    ]);
+}
+
+function deleteUser(string $id): void
+{
+    Database::connection()->prepare('DELETE FROM users WHERE id = :id')->execute([':id' => $id]);
+}
+
 function canonicalClientsSchemaJson(): string
 {
     $schemaPath = PLUGINS_PATH . '/clients/schema.json';
     $raw = file_get_contents($schemaPath);
     if ($raw === false) {
-        throw new RuntimeException('clients schema fixture is not readable');
+        throw new ValidationException('clients schema fixture is not readable');
     }
 
     $schema = json_decode($raw, true);
     if (!is_array($schema) || !isset($schema['fields']['email'], $schema['identities']['id'])) {
-        throw new RuntimeException('clients schema fixture is invalid');
+        throw new ValidationException('clients schema fixture is invalid');
     }
 
     $json = json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
-        throw new RuntimeException('clients schema fixture cannot be encoded');
+        throw new ValidationException('clients schema fixture cannot be encoded');
     }
 
     return $json;
@@ -244,7 +269,7 @@ TestSuite::run('plugin installation registers registerTabs hook in plugin_hooks'
 
 TestSuite::run('Hooks::register() injects Comentarios tab via registerTabs hook', function (): void {
     $dispatcher = new HookDispatcher();
-    $hooks      = new Hooks();
+    $hooks      = new Hooks(Database::connection());
     $hooks->register($dispatcher);
 
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
@@ -259,13 +284,41 @@ TestSuite::run('Hooks::register() injects Comentarios tab via registerTabs hook'
 
 TestSuite::run('Comentarios tab appears in GET /entities/{slug}/tabs API response', function (): void {
     $dispatcher = new HookDispatcher();
-    $hooks      = new Hooks();
+    $hooks      = new Hooks(Database::connection());
     $hooks->register($dispatcher);
 
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]);
     $ids  = array_column($tabs, 'id');
 
     assertTrue(in_array('comments', $ids, true), 'comments tab must appear in registerTabs result');
+});
+
+TestSuite::run('Comentarios tab does not appear for non-target entities', function (): void {
+    $dispatcher = new HookDispatcher();
+    $hooks      = new Hooks(Database::connection());
+    $hooks->register($dispatcher);
+
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'products']);
+    $ids  = array_column($tabs, 'id');
+
+    assertFalse(in_array('comments', $ids, true), 'comments tab must not appear for non-target entities');
+});
+
+TestSuite::run('Comentarios tab does not appear when plugin is inactive', function (): void {
+    Database::connection()
+        ->prepare("UPDATE plugins SET status = 'inactive' WHERE slug = 'comments'")
+        ->execute();
+
+    $dispatcher = new HookDispatcher();
+    $hooks      = new Hooks(Database::connection());
+    $hooks->register($dispatcher);
+
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]);
+    $ids  = array_column($tabs, 'id');
+
+    assertFalse(in_array('comments', $ids, true), 'comments tab must not appear when plugin is inactive');
+
+    ensureCommentsPluginActive();
 });
 
 TestSuite::run('GET comments returns empty array when no comments exist', function (): void {
@@ -292,7 +345,7 @@ TestSuite::run('POST creates a comment and it appears in GET response', function
     assertTrue($createResult['ok'] ?? false, 'POST ok must be true');
     assertTrue(isset($createResult['data']['id']), 'Created comment must have id');
     $content = $createResult['data']['content'] ?? [];
-    assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, 'body must match');
+    assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, MSG_BODY_MUST_MATCH);
     assertEquals('test-user-id', $content['author_id'] ?? null, 'author_id must match');
     assertTrue(isset($content['stamp']), 'Created comment must include stamp');
 
@@ -301,11 +354,132 @@ TestSuite::run('POST creates a comment and it appears in GET response', function
 
     assertEquals(1, count($comments), 'GET must return 1 comment');
     $c = $comments[0]['content'] ?? [];
-    assertEquals(TEST_COMMENT_BODY, $c['body'] ?? null, 'body must match');
+    assertEquals(TEST_COMMENT_BODY, $c['body'] ?? null, MSG_BODY_MUST_MATCH);
     assertEquals('test-user-id', $c['author_id'] ?? null, 'author_id must match');
     assertTrue(isset($c['stamp']), 'Listed comment must include stamp');
 
     cleanComments();
+});
+
+TestSuite::run('POST auto-generates stamp and author_id from authenticated user when omitted', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+
+    $request = new Request([], ['body' => TEST_COMMENT_BODY], [], [
+        'plugin_slug' => 'comments',
+        'entity' => TEST_ENTITY,
+        'id' => TEST_RECORD,
+    ]);
+    $request->setUser([
+        'sub' => '00000000-0000-0000-0000-000000000123',
+        'email' => 'schema@test.local',
+    ]);
+
+    ob_start();
+    $ctrl->create(['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD], $request);
+    $output = ob_get_clean();
+    $response = json_decode((string) $output, true);
+
+    assertTrue(($response['ok'] ?? false) === true, 'POST ok must be true');
+    $content = $response['data']['content'] ?? [];
+    assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, MSG_BODY_MUST_MATCH);
+    assertEquals('00000000-0000-0000-0000-000000000123', $content['author_id'] ?? null, 'author_id must come from request user sub');
+    assertTrue(is_string($content['stamp'] ?? null) && ($content['stamp'] ?? '') !== '', 'stamp must be auto-generated');
+
+    cleanComments();
+});
+
+TestSuite::run('POST does not include author_name when author_id is missing in users', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+
+    $request = new Request([], ['body' => 'Comentario con email visible'], [], [
+        'plugin_slug' => 'comments',
+        'entity' => TEST_ENTITY,
+        'id' => TEST_RECORD,
+    ]);
+    $request->setUser([
+        'sub' => '00000000-0000-0000-0000-000000000777',
+        'email' => 'visible.user@test.local',
+    ]);
+
+    ob_start();
+    $ctrl->create(['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD], $request);
+    $output = ob_get_clean();
+    $response = json_decode((string) $output, true);
+
+    assertTrue(($response['ok'] ?? false) === true, 'POST ok must be true');
+    $content = $response['data']['content'] ?? [];
+    assertFalse(isset($content['author_name']), 'author_name must not be returned when user row is missing');
+
+    cleanComments();
+});
+
+TestSuite::run('GET comments includes author_name when author_id exists in users', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+
+    $authorId = '00000000-0000-4000-8000-000000000321';
+    $authorEmail = 'autor.comments@test.local';
+    seedUser($authorId, $authorEmail);
+
+    $createResult = callComments(
+        $ctrl,
+        'create',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        ['body' => 'Comentario con autor visible', 'author_id' => $authorId]
+    );
+
+    assertTrue($createResult['ok'] ?? false, 'POST ok must be true');
+    $createdContent = $createResult['data']['content'] ?? [];
+    assertEquals($authorEmail, $createdContent['author_name'] ?? null, 'create response must include author_name');
+
+    $listResult = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
+    assertTrue($listResult['ok'] ?? false, 'GET ok must be true');
+
+    $rows = $listResult['data'] ?? [];
+    assertEquals(1, count($rows), 'GET must return one comment');
+    $content = $rows[0]['content'] ?? [];
+    assertEquals($authorId, $content['author_id'] ?? null, 'author_id must be preserved');
+    assertEquals($authorEmail, $content['author_name'] ?? null, 'author_name must resolve from users email');
+
+    cleanComments();
+    deleteUser($authorId);
+});
+
+TestSuite::run('GET comments resolves UUID author_name to user email', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+
+    $authorId = 'f19d2d13-10f5-4d02-91b7-b9ce5f1d7a6d';
+    $authorEmail = 'autor.uuid@test.local';
+    seedUser($authorId, $authorEmail);
+
+    Database::connection()->prepare(
+        'INSERT INTO plugin_extension_data (plugin_slug, entity_slug, record_id, content)
+         VALUES (:plugin_slug, :entity_slug, :record_id, :content::jsonb)'
+    )->execute([
+        ':plugin_slug' => 'comments',
+        ':entity_slug' => TEST_ENTITY,
+        ':record_id' => TEST_RECORD,
+        ':content' => json_encode([
+            'body' => 'Comentario legado con author_name UUID',
+            'author_id' => $authorId,
+            'author_name' => $authorId,
+            'stamp' => date('c'),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $listResult = callComments($ctrl, 'index', ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD]);
+    assertTrue($listResult['ok'] ?? false, 'GET ok must be true');
+
+    $rows = $listResult['data'] ?? [];
+    assertEquals(1, count($rows), 'GET must return one comment');
+    $content = $rows[0]['content'] ?? [];
+    assertEquals($authorEmail, $content['author_name'] ?? null, 'author_name UUID must resolve to user email');
+
+    cleanComments();
+    deleteUser($authorId);
 });
 
 TestSuite::run('POST with empty body returns 422', function (): void {

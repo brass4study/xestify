@@ -1,17 +1,27 @@
 {
     "plugin": "comments",
     "version": "1.0.0",
+    "target_entity": "*",
     "fields": {
         "body": {
             "type": "text",
             "required": true,
-            "label": "Comentario"
+            "label": "Comentario",
+            "editable": false
         },
         "author_id": {
             "type": "uuid",
             "required": false,
             "label": "Autor",
-            "auto_populated": true
+            "auto_generated": true,
+            "editable": false
+        },
+        "stamp": {
+            "type": "timestamp",
+            "required": false,
+            "label": "Fecha",
+            "auto_generated": true,
+            "editable": false
         }
     }
 }

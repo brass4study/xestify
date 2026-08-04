@@ -27,6 +27,7 @@ try {
 const SYNC_SLUG_PARAM = ':slug';
 const SYNC_SEMVER_1_0 = '1.0.0';
 const SYNC_SEMVER_2_0 = '2.0.0';
+const MSG_PLUGIN_MUST_EXIST_AFTER_SYNC = 'Plugin must exist after sync';
 
 echo str_repeat('-', 40) . "\n";
 
@@ -53,7 +54,7 @@ TestSuite::run('syncAll() registers new plugin and returns summary', function ()
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        assertTrue($row !== false, 'Plugin must exist after sync');
+        assertTrue($row !== false, MSG_PLUGIN_MUST_EXIST_AFTER_SYNC);
         assertEquals(SYNC_SEMVER_1_0, (string) $row['version'], 'Installed version should match manifest');
         assertTrue($row['schema_json'] !== null, 'Entity schema should be persisted on first sync');
     } finally {
@@ -214,6 +215,101 @@ TestSuite::run('syncAll() reports invalid manifest without aborting batch', func
     } finally {
         cleanupPluginRecord($pdo, $goodSlug);
         cleanupPluginRecord($pdo, $badSlug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() persists extension schema on first registration when schema.json exists', function () use ($pdo): void {
+    $slug = 'test_sync_ext_schema_' . bin2hex(random_bytes(3));
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Extension With Schema',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'extension',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+    $schemaPath = $root . '/' . $slug . '/schema.json';
+    file_put_contents(
+        $schemaPath,
+        (string) json_encode([
+            'plugin' => $slug,
+            'version' => SYNC_SEMVER_1_0,
+            'fields' => [
+                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+                'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
+            ],
+            'target_entity' => '*',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+    );
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        assertEquals('registered', $result['plugins'][$slug]['result'], 'Extension should be registered');
+
+        $stmt = $pdo->prepare('SELECT schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([SYNC_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertTrue($row !== false, MSG_PLUGIN_MUST_EXIST_AFTER_SYNC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
+        assertTrue(is_array($decoded), 'Extension schema_json should be persisted');
+        assertTrue(isset($decoded['fields']['body']), 'Persisted schema must contain body field');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() backfills missing extension schema_json from disk schema', function () use ($pdo): void {
+    $slug = 'test_sync_ext_backfill_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, :name, 'extension', '1.0.0', 'inactive', 1, NULL)"
+    )->execute([
+        ':slug' => $slug,
+        ':name' => 'Backfill Extension',
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Backfill Extension',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'extension',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+    $schemaPath = $root . '/' . $slug . '/schema.json';
+    file_put_contents(
+        $schemaPath,
+        (string) json_encode([
+            'plugin' => $slug,
+            'version' => SYNC_SEMVER_1_0,
+            'fields' => [
+                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            ],
+            'target_entity' => '*',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+    );
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        assertEquals('unchanged', $result['plugins'][$slug]['result'], 'Extension should remain unchanged');
+
+        $stmt = $pdo->prepare('SELECT schema_json, schema_version FROM plugins WHERE slug = :slug');
+        $stmt->execute([SYNC_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertTrue($row !== false, MSG_PLUGIN_MUST_EXIST_AFTER_SYNC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
+        assertTrue(is_array($decoded), 'Missing schema_json should be backfilled');
+        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'Backfill should preserve schema_version');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
         removePluginFixture($root);
     }
 });

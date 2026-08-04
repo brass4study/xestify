@@ -18,6 +18,8 @@
 | GET    | /api/v1/plugins/updates | Listar plugins con actualización disponible | Sí (admin) |
 | POST   | /api/v1/plugins/{slug}/update | Aplicar actualización explícita de plugin | Sí (admin) |
 | PUT    | /api/v1/plugins/{slug}/status | Cambiar estado de plugin (activar/desactivar) | Sí (admin) |
+| GET    | /api/v1/plugins/{slug}/config | Obtener configuración de plugin activo | Sí (admin) |
+| PUT    | /api/v1/plugins/{slug}/config | Guardar configuración y versionar schema de plugin activo | Sí (admin) |
 | GET    | /api/v1/plugins/{plugin_slug}/{entity}/{id} | Listar items de extensión para entidad/registro | Sí |
 | POST   | /api/v1/plugins/{plugin_slug}/{entity}/{id} | Crear item de extensión para entidad/registro | Sí |
 | PUT    | /api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id} | Actualizar (merge) item de extensión | Sí |

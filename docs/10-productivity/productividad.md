@@ -881,3 +881,21 @@
   - Actualizó backlog, README, docs de API y documentación operativa para reflejar el cierre de la story.
 - **Iteraciones:** 4
 - **Decisión manual:** Mantener `onUpdate()` como convención opcional detectada con `method_exists` y no ampliar `PluginLifecycleInterface`, para no romper plugins existentes mientras se prepara la base de rollback manual de la STORY 7.4.
+
+---
+
+### STORY 7.3 - Frontend - Pagina de configuracion de plugin activado
+- **Fecha:** 2026-08-04
+- **Estimado sin IA:** 8h
+- **Tiempo real con IA:** ~2h 30min
+- **Aceleración:** ~69%
+- **Qué hizo IA:**
+  - Preparó el cierre documental de la story ya implementada y contrastó el alcance real contra los diffs del repositorio.
+  - Documentó la nueva página `PluginConfig.js` para configurar plugins activos desde `/plugins/{slug}/config`.
+  - Registró los endpoints admin `GET /api/v1/plugins/{slug}/config` y `PUT /api/v1/plugins/{slug}/config`.
+  - Resumió la lógica backend de `PluginAdministrationService` para proteger campos base, activar/desactivar sugerencias, añadir campos libres y versionar `plugins.schema_json`.
+  - Incorporó el refuerzo para plugins `extension`: configuración de campos desde la misma tabla, persistencia de `target_entity` y validación de entidad destino.
+  - Recogió la separación de responsabilidades en `ExtensionPluginConfigService`, `ExtensionPluginContentService` y `ExtensionPluginDataStore`.
+  - Verificó la suite backend completa y sintaxis de los módulos JS afectados antes de preparar el commit.
+- **Iteraciones:** 3
+- **Decisión manual:** Tratar el refuerzo de plugins `extension` como parte del cierre de STORY 7.3, manteniendo STORY 7.4 enfocada exclusivamente en rollback manual.

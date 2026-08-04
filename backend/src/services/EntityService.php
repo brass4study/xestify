@@ -85,7 +85,7 @@ final class EntityService
             throw new ValidationException($result->errors());
         }
 
-        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
+        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data, $id);
         $record  = $this->repository->update($id, $context['data']);
         $this->dispatchAfter('afterSave', $entitySlug, $record);
 
@@ -163,9 +163,13 @@ final class EntityService
      * @param  array<string, mixed> $data
      * @return array<string, mixed>
      */
-    private function dispatchBefore(string $hook, string $entitySlug, array $data): array
+    private function dispatchBefore(string $hook, string $entitySlug, array $data, ?string $recordId = null): array
     {
         $context = ['slug' => $entitySlug, 'data' => $data];
+
+        if ($recordId !== null) {
+            $context['id'] = $recordId;
+        }
 
         if ($this->hooks === null) {
             return $context;

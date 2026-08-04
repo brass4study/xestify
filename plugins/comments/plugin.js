@@ -8,7 +8,6 @@
  *   - flush(resolvedId): Promise   Persists pending POST/PUT/DELETE to the API.
  */
 
-import { AppState } from '../../js/modules/State.js';
 import { PluginPanelRegistry } from '../../js/modules/PluginPanelRegistry.js';
 
 export class CommentsPanel {
@@ -139,14 +138,13 @@ export class CommentsPanel {
           const newBody = item.pendingBody;
           const payload = {
             body: newBody,
-            author_id: AppState.getUserEmail() ?? '',
-            stamp: new Date().toISOString(),
           };
           ops.push(
             api.put(`${resolved}/${item.id}`, payload).then(({ data }) => {
               const c = this.#contentObject(data?.content);
               item.body = newBody;
               item.author_id = typeof c.author_id === 'string' ? c.author_id : (item.author_id ?? null);
+              item.author_name = typeof c.author_name === 'string' ? c.author_name : (item.author_name ?? null);
               item.stamp = typeof c.stamp === 'string' ? c.stamp : (item.stamp ?? null);
               item.pendingBody = undefined;
             })
@@ -158,8 +156,6 @@ export class CommentsPanel {
         const body = item.pendingBody ?? item.body;
         const payload = {
           body,
-          author_id: AppState.getUserEmail() ?? '',
-          stamp: new Date().toISOString(),
         };
         ops.push(
           api.post(resolved, payload).then(({ data }) => {
@@ -168,6 +164,7 @@ export class CommentsPanel {
               id: data.id,
               body: typeof c.body === 'string' ? c.body : '',
               author_id: typeof c.author_id === 'string' ? c.author_id : null,
+              author_name: typeof c.author_name === 'string' ? c.author_name : null,
               stamp: typeof c.stamp === 'string' ? c.stamp : (data.created_at ?? null),
               created_at: typeof data.created_at === 'string' ? data.created_at : null,
             });
@@ -241,6 +238,7 @@ export class CommentsPanel {
                 id: d.id,
                 body: typeof c.body === 'string' ? c.body : '',
                 author_id: typeof c.author_id === 'string' ? c.author_id : null,
+                author_name: typeof c.author_name === 'string' ? c.author_name : null,
                 stamp: typeof c.stamp === 'string' ? c.stamp : (d.created_at ?? null),
                 created_at: typeof d.created_at === 'string' ? d.created_at : null,
               };
@@ -283,8 +281,10 @@ export class CommentsPanel {
     bodyEl.textContent = displayBody;
     li.appendChild(bodyEl);
 
+    const authorDisplay = this.#resolveAuthorDisplay(item);
     const formattedStamp = this.#formatStamp(item.stamp ?? null);
-    if (formattedStamp !== null || (typeof item.author_id === 'string' && item.author_id !== '')) {
+
+    if (formattedStamp !== null || authorDisplay !== null) {
       const isModified = item.stamp !== null
         && item.created_at !== null
         && item.stamp !== undefined
@@ -298,8 +298,8 @@ export class CommentsPanel {
       if (formattedStamp !== null) {
         parts.push(`el ${formattedStamp}`);
       }
-      if (typeof item.author_id === 'string' && item.author_id !== '') {
-        parts.push(`por ${item.author_id}`);
+      if (authorDisplay !== null) {
+        parts.push(`por ${authorDisplay}`);
       }
       const metaEl = document.createElement('span');
       metaEl.className = 'xt-tab-panel__item-meta';
@@ -414,6 +414,34 @@ export class CommentsPanel {
   }
 
   /**
+   * @param {object} item
+   * @returns {string|null}
+   */
+  #resolveAuthorDisplay(item) {
+    const rawItem = item !== null && typeof item === 'object' ? item : {};
+    const authorName = typeof rawItem.author_name === 'string'
+      ? rawItem.author_name.trim()
+      : '';
+    if (authorName !== '') {
+      return authorName;
+    }
+    const authorId = typeof rawItem.author_id === 'string'
+      ? rawItem.author_id.trim()
+      : '';
+    if (authorId === '') {
+      return null;
+    }
+
+    // Avoid showing raw UUIDs when backend could not resolve author_name.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(authorId);
+    if (isUuid) {
+      return null;
+    }
+
+    return authorId;
+  }
+
+  /**
    * @param {unknown} content
    * @returns {Record<string, unknown>}
    */
@@ -450,10 +478,18 @@ export class CommentsPanel {
     if (Number.isNaN(date.getTime())) {
       return stamp;
     }
-    return new Intl.DateTimeFormat('es-ES', {
-      dateStyle: 'short',
-      timeStyle: 'short',
+    const formattedDate = new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     }).format(date);
+    const formattedTime = new Intl.DateTimeFormat('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(date);
+
+    return `${formattedDate} a las ${formattedTime}`;
   }
 }
 

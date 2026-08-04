@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
 use Xestify\controllers\EntityController;
+use Xestify\controllers\ExtensionPluginContentService;
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
 use Xestify\core\Container;
@@ -16,6 +18,7 @@ use Xestify\repositories\GenericRepository;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
 use Xestify\plugins\application\InstalledPluginSchemaValidator;
+use Xestify\plugins\application\ExtensionPluginConfigService;
 use Xestify\plugins\application\PluginAdministrationService;
 use Xestify\plugins\application\PluginOutdatedService;
 use Xestify\plugins\application\PluginSchemaMergeService;
@@ -164,12 +167,16 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class)
         ));
+        $container->singleton(ExtensionPluginConfigService::class, fn() => new ExtensionPluginConfigService(
+            $container->get(PluginRepository::class)
+        ));
         $container->singleton(PluginAdministrationService::class, fn() => new PluginAdministrationService(
             $container->get(PluginRepository::class),
             $container->get(PluginSyncService::class),
             $container->get(PluginOutdatedService::class),
             $container->get(PluginUpdateService::class),
-            $container->get(PluginStatusService::class)
+            $container->get(PluginStatusService::class),
+            $container->get(ExtensionPluginConfigService::class)
         ));
     }
 }
@@ -196,9 +203,19 @@ if (!function_exists('xestifyRegisterControllers')) {
             $container->get(RequestFactory::class)
         ));
 
+        $container->singleton(ExtensionPluginContentService::class, fn() => new ExtensionPluginContentService(
+            $container->get(Database::class)
+        ));
+
+        $container->singleton(ExtensionPluginDataStore::class, fn() => new ExtensionPluginDataStore(
+            $container->get(Database::class)
+        ));
+
         $container->singleton(PluginExtensionController::class, fn() => new PluginExtensionController(
             $container->get(Database::class),
-            $container->get(RequestFactory::class)
+            $container->get(RequestFactory::class),
+            $container->get(ExtensionPluginContentService::class),
+            $container->get(ExtensionPluginDataStore::class)
         ));
 
         $container->singleton(PluginManagerController::class, fn() => new PluginManagerController(

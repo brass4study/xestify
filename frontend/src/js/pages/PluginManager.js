@@ -17,17 +17,22 @@ export class PluginManager {
   /** @type {Api} */
   #api;
 
+  /** @type {(plugin: Object) => void} */
+  #onConfigure;
+
   /** @type {Array<Object>} */
   #plugins = [];
 
   /**
    * @param {HTMLElement|string} container
    * @param {Api|undefined} api
+   * @param {{ onConfigure?: (plugin: Object) => void }} options
    */
-  constructor(container, api = undefined) {
+  constructor(container, api = undefined, options = {}) {
     const resolved = this.#resolveContainer(container);
     this.#container = resolved;
     this.#api = api ?? new Api();
+    this.#onConfigure = typeof options.onConfigure === 'function' ? options.onConfigure : () => {};
   }
 
   /**
@@ -102,6 +107,7 @@ export class PluginManager {
         ? 'xt-plugin-manager__type-badge--entity'
         : 'xt-plugin-manager__type-badge--extension';
 
+      const canConfigure = plugin.status === 'active' && (plugin.plugin_type === 'entity' || plugin.plugin_type === 'extension');
       row.innerHTML = `
         <td class="xt-plugin-manager__cell-name">${this.#escapeHtml(plugin.name || plugin.slug)}</td>
         <td class="xt-plugin-manager__cell-type">
@@ -120,12 +126,20 @@ export class PluginManager {
                   data-action="${plugin.status === 'active' ? 'deactivate' : 'activate'}">
             ${plugin.status === 'active' ? 'Deactivate' : 'Activate'}
           </button>
+          ${canConfigure ? '<button class="xt-plugin-manager__action-btn xt-plugin-manager__action-btn--configure" data-action="configure">Configure</button>' : ''}
         </td>
       `;
 
-      const actionBtn = row.querySelector('.xt-plugin-manager__action-btn');
-      actionBtn.addEventListener('click', () => {
-        this.#handleActionClick(plugin, actionBtn);
+      const actionButtons = row.querySelectorAll('.xt-plugin-manager__action-btn');
+      actionButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          if (button.dataset.action === 'configure') {
+            this.#onConfigure(plugin);
+            return;
+          }
+
+          this.#handleActionClick(plugin, button);
+        });
       });
 
       tbody.appendChild(row);

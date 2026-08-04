@@ -197,9 +197,9 @@ Generate a comprehensive .gitignore that includes:
 
 - [ ] STORY 7.1: Detección de actualizaciones disponibles
 - [ ] STORY 7.2: Proceso de actualización con migración de schema
-- [ ] STORY 7.3: Rollback manual a versión anterior
-- [ ] STORY 7.4: Frontend - UI de actualización y rollback
-- [ ] STORY 7.5: Frontend - Página de configuración de plugin activado (custom fields)
+- [ ] STORY 7.3: Frontend - Página de configuración de plugin activado
+- [ ] STORY 7.4: Rollback manual a versión anterior
+- [ ] STORY 7.5: Frontend - UI de actualización y rollback
 
 ### EPIC 8: Operación Técnica y Observabilidad
 

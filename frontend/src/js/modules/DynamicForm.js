@@ -140,10 +140,33 @@ export class DynamicForm {
       return [];
     }
 
-    return [
-      ...this.#normalizeFieldSection(schema.fields),
-      ...this.#normalizeFieldSection(schema.custom_fields),
-    ];
+    const baseFields = this.#normalizeFieldSection(schema.fields);
+    const customFields = this.#normalizeFieldSection(schema.custom_fields);
+    const combined = [...baseFields, ...customFields];
+    const byName = new Map(combined.map((field) => [field.name, field]));
+
+    const ordered = [];
+    const orderList = Array.isArray(schema.ui_field_order) ? schema.ui_field_order : [];
+    for (const candidate of orderList) {
+      if (typeof candidate !== 'string') {
+        continue;
+      }
+
+      const field = byName.get(candidate);
+      if (field) {
+        ordered.push(field);
+        byName.delete(candidate);
+      }
+    }
+
+    for (const field of combined) {
+      if (byName.has(field.name)) {
+        ordered.push(field);
+        byName.delete(field.name);
+      }
+    }
+
+    return ordered;
   }
 
   #normalizeFieldSection(rawFields) {

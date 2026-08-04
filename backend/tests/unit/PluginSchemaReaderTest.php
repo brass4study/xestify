@@ -12,15 +12,17 @@ require_once BASE_PATH . '/src/plugins/infrastructure/PluginSchemaReader.php';
 use Xestify\exceptions\PluginException;
 use Xestify\plugins\infrastructure\PluginSchemaReader;
 
+const TEST_SCHEMA_VERSION = '1.0.0';
+
 echo str_repeat('-', 40) . "\n";
 
-TestSuite::run('read() returns null for extension plugins', function (): void {
+TestSuite::run('read() returns null for extension plugins without schema.json', function (): void {
     $root = createPluginFixture([
         'slug' => 'extension_plugin',
         'name' => 'Extension',
-        'version' => '1.0.0',
+        'version' => TEST_SCHEMA_VERSION,
         'type' => 'extension',
-        'core_version' => '1.0.0',
+        'core_version' => TEST_SCHEMA_VERSION,
     ]);
 
     try {
@@ -30,6 +32,41 @@ TestSuite::run('read() returns null for extension plugins', function (): void {
             'type' => 'extension',
         ]);
         assertNull($schema, 'Extension plugins should not require schema');
+    } finally {
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('read() returns decoded schema for extension plugins when schema.json exists', function (): void {
+    $slug = 'extension_with_schema';
+    $root = createPluginFixture([
+        'slug' => $slug,
+        'name' => 'Extension With Schema',
+        'version' => TEST_SCHEMA_VERSION,
+        'type' => 'extension',
+        'core_version' => TEST_SCHEMA_VERSION,
+    ]);
+
+    file_put_contents(
+        $root . '/' . $slug . '/schema.json',
+        (string) json_encode([
+            'plugin' => $slug,
+            'version' => TEST_SCHEMA_VERSION,
+            'fields' => [
+                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            ],
+        ], JSON_PRETTY_PRINT)
+    );
+
+    try {
+        $reader = new PluginSchemaReader($root);
+        $schema = $reader->read([
+            'slug' => $slug,
+            'type' => 'extension',
+        ]);
+
+        assertTrue(is_array($schema), 'Extension schema should be decoded when provided');
+        assertTrue(isset($schema['fields']['body']), 'Extension schema must include body field');
     } finally {
         removePluginFixture($root);
     }
@@ -63,9 +100,9 @@ TestSuite::run('read() throws PluginException when schema lacks fields', functio
         [
             'slug' => $slug,
             'name' => 'Bad Schema',
-            'version' => '1.0.0',
+            'version' => TEST_SCHEMA_VERSION,
             'type' => 'entity',
-            'core_version' => '1.0.0',
+            'core_version' => TEST_SCHEMA_VERSION,
         ],
         false,
         false,
@@ -93,9 +130,9 @@ TestSuite::run('read() returns decoded schema for entity plugins', function (): 
     $root = createPluginFixture([
         'slug' => $slug,
         'name' => 'Good Schema',
-        'version' => '1.0.0',
+        'version' => TEST_SCHEMA_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => TEST_SCHEMA_VERSION,
     ]);
 
     try {

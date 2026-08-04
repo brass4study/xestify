@@ -28,8 +28,11 @@ final class PluginRepository
              FROM plugins
              ORDER BY slug ASC'
         );
+        if ($stmt === false) {
+            return [];
+        }
 
-        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -48,13 +51,38 @@ final class PluginRepository
     }
 
     /**
+     * @return list<string>
+     */
+    public function listActiveEntitySlugs(): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT slug
+             FROM plugins
+             WHERE status = :status
+               AND plugin_type = :plugin_type
+             ORDER BY slug ASC'
+        );
+        $stmt->execute([
+            ':status' => 'active',
+            ':plugin_type' => 'entity',
+        ]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_values(array_map(static fn(array $row): string => (string) $row['slug'], $rows));
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function listInstalledVersions(): array
     {
         $stmt = $this->pdo->query('SELECT slug, name, plugin_type, version FROM plugins');
+        if ($stmt === false) {
+            return [];
+        }
 
-        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -140,6 +168,32 @@ final class PluginRepository
     }
 
     /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>|null
+     */
+    public function fillSchemaIfMissing(string $slug, array $schema): ?array
+    {
+        $schemaJson = $this->schemaCodec->encode($schema, $slug);
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugins
+                SET schema_json = CAST(:schema_json AS jsonb),
+                    updated_at = NOW()
+              WHERE slug = :slug
+                AND schema_json IS NULL
+              RETURNING ' . self::SELECT_COLUMNS
+        );
+        $stmt->execute([
+            ':slug' => $slug,
+            ':schema_json' => $schemaJson,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $row;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function updateStatus(string $slug, string $status): ?array
@@ -152,6 +206,32 @@ final class PluginRepository
         $stmt->execute([
             ':status' => $status,
             ':slug' => $slug,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $row;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>|null
+     */
+    public function updateSchemaConfig(string $slug, array $schema): ?array
+    {
+        $schemaJson = $this->schemaCodec->encode($schema, $slug);
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugins
+                SET schema_json = CAST(:schema_json AS jsonb),
+                    schema_version = schema_version + 1,
+                    updated_at = NOW()
+              WHERE slug = :slug
+              RETURNING ' . self::SELECT_COLUMNS
+        );
+        $stmt->execute([
+            ':slug' => $slug,
+            ':schema_json' => $schemaJson,
         ]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

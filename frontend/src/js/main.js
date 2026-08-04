@@ -4,6 +4,7 @@ import { AppState } from './modules/State.js';
 import { EntityEdit } from './pages/EntityEdit.js';
 import { EntityList } from './pages/EntityList.js';
 import { Login } from './pages/Login.js';
+import { PluginConfig } from './pages/PluginConfig.js';
 import { PluginManager } from './pages/PluginManager.js';
 import { Navbar } from './modules/Navbar.js';
 
@@ -131,13 +132,26 @@ async function navigateTo(page, content, api) {
     return;
   }
 
+  if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
+    const parts = page.split('/');
+    const slug = parts.length >= 4 ? parts[2] : '';
+    if (slug !== '') {
+      await showPluginConfig(content, api, slug);
+      return;
+    }
+  }
+
   if (page === 'plugins') {
     if (!currentUserIsAdmin()) {
       showPlaceholder(content, 'Acceso denegado: solo administradores.');
       return;
     }
 
-    const pluginManager = new PluginManager(content, api);
+    const pluginManager = new PluginManager(content, api, {
+      onConfigure: (plugin) => {
+        navigateTo(`/plugins/${plugin.slug}/config`, content, api);
+      },
+    });
     await pluginManager.init();
     return;
   }
@@ -241,6 +255,21 @@ async function loadEntitySchema(api, slug) {
   }
 
   return null;
+}
+
+async function showPluginConfig(content, api, slug) {
+  content.replaceChildren();
+  showPlaceholder(content, 'Cargando configuracion del plugin...');
+
+  const page = new PluginConfig(content, {
+    slug,
+    api,
+    onBack: () => {
+      navigateTo('plugins', content, api);
+    },
+  });
+
+  await page.init();
 }
 
 function setAuthToken(token) {

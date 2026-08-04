@@ -925,3 +925,18 @@ PLEASE IMPLEMENT THIS PLAN:
 **Iteraciones:** 4
 
 **Leccion:** En un sistema con plugins versionados, conviene separar nitidamente tres responsabilidades: descubrir desde disco, operar el runtime persistido y actualizar de forma explicita. Si `sync` consume actualizaciones o mezcla schema disponible con schema vivo, el sistema pierde trazabilidad y complica tanto el rollback como la evolucion segura del modelo.
+
+---
+
+### STORY 7.3 - Frontend - Pagina de configuracion de plugin activado
+
+**Prompt de cierre y documentacion:**
+```text
+Ya he implementado la story 7.3 y su refuerzo prepara el commit y todos los cambios necesarios en la documentacion. Acuerdate de no realizar el commit directamente, consultame antes
+```
+
+**Resultado:** STORY 7.3 preparada para commit. La aplicacion incorpora la pagina `PluginConfig` accesible desde `PluginManager` para plugins activos, endpoints `GET/PUT /api/v1/plugins/{slug}/config`, guardado versionado de `plugins.schema_json`, proteccion de campos base y gestion de campos sugeridos/adicionales. El refuerzo amplia el mismo flujo a plugins `extension`, con configuracion de campos, persistencia de `target_entity` (`*` o slug de entidad activa), filtrado de la extension por entidad destino y normalizacion del contenido contra el schema persistido.
+
+**Iteraciones:** 3
+
+**Leccion:** La configuracion de plugins debe tratar `entity` y `extension` como casos compatibles pero no identicos: comparten tabla de configuracion y versionado de schema, pero las extensiones necesitan conservar su relacion de aplicacion (`target_entity`) y normalizar sus datos antes de escribir en `plugin_extension_data`.

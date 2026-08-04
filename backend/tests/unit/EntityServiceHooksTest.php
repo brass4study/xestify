@@ -223,6 +223,21 @@ TestSuite::run('updateRecord() dispatches afterSave after persisting', function 
     assertTrue($afterCalled, 'afterSave must be called during updateRecord');
 });
 
+TestSuite::run('updateRecord() passes record id to beforeSave context', function (): void {
+    $hooks = new HookDispatcher();
+    $capturedId = '';
+
+    $hooks->register('beforeSave', static function (array $ctx) use (&$capturedId): array {
+        $capturedId = (string) ($ctx['id'] ?? '');
+        return $ctx;
+    });
+
+    [$svc] = buildHooksService($hooks);
+    $svc->updateRecord('record-123', 'client', ['name' => 'Bob']);
+
+    assertEquals('record-123', $capturedId, 'updateRecord must pass record id into beforeSave context');
+});
+
 TestSuite::run('updateRecord() beforeSave blocking throws HookException', function (): void {
     $hooks = new HookDispatcher();
     $hooks->register('beforeSave', static function (array $ctx): array { // NOSONAR

@@ -1,13 +1,14 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-05-10)
+## Estado implementado auditado (2026-08-04)
 
-El corte funcional actual queda fijado en **STORY 7.2 incluida**.
+El corte funcional actual queda fijado en **STORY 7.3 incluida**.
 
 - Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, lectura y validacion de `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
 - Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
 - Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con el servicio de plugins y API `GET /api/v1/plugins/updates`.
-- Pendiente a partir de **STORY 7.3**: configuracion avanzada de plugins, rollback manual, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
+- Cerrado en STORY 7.3: pagina de configuracion de plugins activos, campos configurables para plugins `entity`, refuerzo para plugins `extension` y configuracion de `target_entity`.
+- Pendiente a partir de **STORY 7.4**: rollback manual, UI de actualizacion/rollback, consolidacion frontend, operacion avanzada, auditoria, permisos finos y marketplace.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -822,6 +823,19 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - **IA Usage:** Endpoint PUT config + lógica diff de schema + página frontend con form dinámico
 - **Dependencias:** STORY 4.7, STORY 6.4, STORY 7.2
 - **Blockers:** Ninguno
+
+#### Refuerzo STORY 7.3 (ampliación funcional)
+
+- Extender la pantalla `/plugins/{slug}/config` para plugins `extension` en estado `active`.
+- Permitir configuración de campos del `schema` del plugin extension desde la misma tabla unificada.
+- Añadir configuración de relación de extensión mediante `target_entity`:
+  - `*` para aplicar a cualquier entidad.
+  - slug explícito (por ejemplo `clients`) para restringir el alcance.
+- Mantener compatibilidad completa con configuración de plugins `entity` ya implementada.
+- Actualizar tests backend/frontend para cubrir:
+  - visibilidad de `Configure` en plugins extension activos,
+  - lectura/escritura de `target_entity`,
+  - guardado de campos en plugins extension.
 
 
 ### STORY 7.4: Rollback manual de plugin a versión anterior

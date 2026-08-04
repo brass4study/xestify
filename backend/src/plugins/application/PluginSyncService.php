@@ -106,6 +106,7 @@ final class PluginSyncService
         }
 
         $this->refreshMetadataIfNeeded($existing, $manifest);
+        $this->backfillSchemaIfMissing($existing, $manifest, $schema);
 
         return [
             'slug' => $slug,
@@ -144,5 +145,23 @@ final class PluginSyncService
         if ((string) $existing['name'] !== $name) {
             $this->pluginRepository->refreshName((string) $manifest['slug'], $name);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $existing
+     * @param array<string, mixed> $manifest
+     * @param array<string, mixed>|null $schema
+     */
+    private function backfillSchemaIfMissing(array $existing, array $manifest, ?array $schema): void
+    {
+        if ($schema === null) {
+            return;
+        }
+
+        if ($this->schemaCodec->decode($existing['schema_json'] ?? null) !== null) {
+            return;
+        }
+
+        $this->pluginRepository->fillSchemaIfMissing((string) $manifest['slug'], $schema);
     }
 }

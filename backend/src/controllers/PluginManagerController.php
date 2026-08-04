@@ -23,6 +23,8 @@ use Xestify\plugins\application\PluginAdministrationService;
  *   POST   /api/v1/plugins/sync
  *   POST   /api/v1/plugins/{slug}/update
  *   PUT    /api/v1/plugins/{slug}/status
+ *   GET    /api/v1/plugins/{slug}/config
+ *   PUT    /api/v1/plugins/{slug}/config
  */
 class PluginManagerController
 {
@@ -38,6 +40,7 @@ class PluginManagerController
     private const MSG_ADMIN_REQUIRED = 'Admin role is required.';
     private const MSG_PLUGIN_NOT_FOUND = 'Plugin not found.';
     private const MSG_PLUGIN_UPDATE_FAILED = 'Plugin update failed.';
+    private const MSG_PLUGIN_CONFIG_FAILED = 'Plugin config update failed.';
     private const MSG_ERROR_PREFIX = 'Error: ';
 
     /**
@@ -83,7 +86,9 @@ class PluginManagerController
 
         try {
             $status = $this->extractStatus($request);
-            $plugin = $this->pluginAdministration->setStatus($slug, $status);
+            $plugin = $status === 'active'
+                ? $this->pluginAdministration->activate($slug)
+                : $this->pluginAdministration->deactivate($slug);
             Response::make()->json($plugin);
         } catch (InvalidArgumentException $e) {
             Response::make()->unprocessable($e->getMessage(), ['status' => $e->getMessage()]);
@@ -187,6 +192,67 @@ class PluginManagerController
             Response::make()->error(409, $e->getMessage());
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_PLUGIN_UPDATE_FAILED . ' ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /api/v1/plugins/{slug}/config
+     */
+    public function getPluginConfig(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $config = $this->pluginAdministration->getConfig($slug);
+            Response::make()->json($config);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (InvalidArgumentException | DomainException $e) {
+            Response::make()->unprocessable($e->getMessage());
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * PUT /api/v1/plugins/{slug}/config
+     */
+    public function updatePluginConfig(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $payload = $request->allBody();
+            $result = $this->pluginAdministration->saveConfig($slug, is_array($payload) ? $payload : []);
+            Response::make()->json($result);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (InvalidArgumentException | DomainException $e) {
+            Response::make()->unprocessable($e->getMessage());
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_PLUGIN_CONFIG_FAILED . ' ' . $e->getMessage());
         }
     }
 

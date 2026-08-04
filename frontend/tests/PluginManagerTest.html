@@ -252,6 +252,55 @@
     assertTrue(error !== null, 'Error banner should be displayed');
   });
 
+  await test('shows configure button for active entity and extension plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const configureButtons = container.querySelectorAll('.xt-plugin-manager__action-btn--configure');
+    assertEquals(configureButtons.length, 2, 'Active entity and extension plugins should expose Configure button');
+  });
+
+  await test('calls onConfigure callback when configure button is clicked', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    let configuredSlug = '';
+    const manager = new PluginManager(container, api, {
+      onConfigure: (plugin) => {
+        configuredSlug = plugin.slug;
+      },
+    });
+    await manager.init();
+
+    const configureBtn = container.querySelector('.xt-plugin-manager__action-btn--configure');
+    assertTrue(configureBtn !== null, 'Configure button should exist');
+    configureBtn.click();
+
+    assertEquals(configuredSlug, 'clients', 'onConfigure should receive plugin slug');
+  });
+
   // ─────────────────────────────────────────────────────────────────────────
   // Summary
   // ─────────────────────────────────────────────────────────────────────────

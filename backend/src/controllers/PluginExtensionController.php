@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xestify\controllers;
 
 use PDO;
+use Throwable;
 use Xestify\core\Request;
 use Xestify\core\RequestFactory;
 use Xestify\core\Response;
@@ -34,8 +35,14 @@ class PluginExtensionController
     private const MSG_PLUGIN_NOT_ACTIVE = 'Extension plugin is not active.';
     private const MSG_PARENT_NOT_FOUND = 'Parent entity record not found.';
 
-    public function __construct(private PDO $pdo, private ?RequestFactory $requestFactory = null)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private ?RequestFactory $requestFactory = null,
+        private ?ExtensionPluginContentService $contentService = null,
+        private ?ExtensionPluginDataStore $dataStore = null
+    ) {
+        $this->contentService ??= new ExtensionPluginContentService($pdo);
+        $this->dataStore ??= new ExtensionPluginDataStore($pdo);
     }
 
     /**
@@ -44,131 +51,77 @@ class PluginExtensionController
      */
     public function index(array $params, ?Request $request = null): void
     {
-        $request    ??= $this->requestFactory()->fromGlobals($params);
-        $pluginSlug = (string) ($params['plugin_slug'] ?? '');
-        $entity     = (string) ($params['entity'] ?? '');
-        $recordId   = (string) ($params['id'] ?? '');
-
-        $hasError = $this->respondNotFoundIfEmpty($pluginSlug, self::MSG_PLUGIN_REQUIRED)
-            || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
-            || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED);
-        if ($hasError) {
+        $context = $this->resolveBaseContext($params, $request);
+        if (!$this->ensureReadableRequest($context)) {
             return;
         }
 
-        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
-            return;
-        }
-
-        $stmt = $this->pdo->prepare(
-            'SELECT id, plugin_slug, entity_slug, record_id, content, created_at
-               FROM plugin_extension_data
-              WHERE plugin_slug = :plugin
-                AND entity_slug = :entity
-                AND record_id   = :record_id
-              ORDER BY created_at ASC'
-        );
-        $stmt->execute([
-            ':plugin'    => $pluginSlug,
-            ':entity'    => $entity,
-            ':record_id' => $recordId,
-        ]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->dataStore->fetchRows($context['plugin_slug'], $context['entity'], $context['record_id']);
 
         $rows = array_map(fn(array $row) => $this->decodeContent($row), $rows ?: []);
+        $rows = $this->attachAuthorNames($rows);
 
         Response::make()->json($rows, ['total' => count($rows)]);
     }
 
     /**
      * POST /api/v1/plugins/{plugin_slug}/{entity}/{id}
-     * Creates a new item. The request body is stored verbatim as content.
+        * Creates a new item. Content is normalized against persisted extension schema.
      */
     public function create(array $params, ?Request $request = null): void
     {
-        $request    ??= $this->requestFactory()->fromGlobals($params);
-        $pluginSlug = (string) ($params['plugin_slug'] ?? '');
-        $entity     = (string) ($params['entity'] ?? '');
-        $recordId   = (string) ($params['id'] ?? '');
-        $data       = $request->allBody();
-
-        $hasError = $this->respondNotFoundIfEmpty($pluginSlug, self::MSG_PLUGIN_REQUIRED)
-            || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
-            || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED);
-        if ($hasError) {
+        $context = $this->resolveBaseContext($params, $request);
+        if (!$this->ensureReadableRequest($context)) {
             return;
         }
 
-        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
-            return;
-        }
-
+        $data = $context['request']->allBody();
         if ($data === []) {
             Response::make()->unprocessable(self::MSG_CONTENT_REQUIRED, ['content' => self::MSG_CONTENT_REQUIRED]);
             return;
         }
 
-        $content = json_encode($data);
+        $data = $this->contentService->normalizeContentBySchema($context['plugin_slug'], $data, $context['request']);
+        $row = $this->dataStore->insertRow($context['plugin_slug'], $context['entity'], $context['record_id'], $data);
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO plugin_extension_data (plugin_slug, entity_slug, record_id, content)
-             VALUES (:plugin, :entity, :record_id, :content)
-             RETURNING id, plugin_slug, entity_slug, record_id, content, created_at'
-        );
-        $stmt->execute([
-            ':plugin'    => $pluginSlug,
-            ':entity'    => $entity,
-            ':record_id' => $recordId,
-            ':content'   => $content !== false ? $content : '{}',
-        ]);
+        $payload = $row !== false ? $this->decodeContent($row) : [];
+        $payload = $this->attachAuthorName($payload);
 
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        Response::make()->status(201)->json($row !== false ? $this->decodeContent($row) : []);
+        Response::make()->status(201)->json($payload);
     }
 
     /**
      * PUT /api/v1/plugins/{plugin_slug}/{entity}/{id}/{item_id}
-     * Merges the request body into the existing content (JSONB merge).
+        * Merges schema-normalized request body into existing content (JSONB merge).
      */
     public function update(array $params, ?Request $request = null): void
     {
-        $request    ??= $this->requestFactory()->fromGlobals($params);
-        $pluginSlug = (string) ($params['plugin_slug'] ?? '');
-        $entity     = (string) ($params['entity'] ?? '');
-        $recordId   = (string) ($params['id'] ?? '');
-        $itemId     = (string) ($params['item_id'] ?? '');
-        $data       = $request->allBody();
+        $context = $this->resolveItemContext($params, $request);
+        $data = $context['request']->allBody();
 
-        if (!$this->guardExtensionWriteRequest($pluginSlug, $entity, $recordId, $itemId, $data)) {
+        if (!$this->guardExtensionWriteRequest($context['plugin_slug'], $context['entity'], $context['record_id'], $context['item_id'], $data)) {
             return;
         }
 
-        $content = json_encode($data);
+        $data = $this->contentService->normalizeContentBySchema($context['plugin_slug'], $data, $context['request']);
 
-        $stmt = $this->pdo->prepare(
-            'UPDATE plugin_extension_data
-                SET content = content || :content::jsonb
-              WHERE id          = :item_id
-                AND plugin_slug = :plugin
-                AND entity_slug = :entity
-                AND record_id   = :record_id
-            RETURNING id, plugin_slug, entity_slug, record_id, content, created_at'
+        $row = $this->dataStore->updateRow(
+            $context['item_id'],
+            $context['plugin_slug'],
+            $context['entity'],
+            $context['record_id'],
+            $data
         );
-        $stmt->execute([
-            ':content'   => $content !== false ? $content : '{}',
-            ':item_id'   => $itemId,
-            ':plugin'    => $pluginSlug,
-            ':entity'    => $entity,
-            ':record_id' => $recordId,
-        ]);
 
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row === false) {
             Response::make()->notFound(self::MSG_ITEM_NOT_FOUND);
             return;
         }
 
-        Response::make()->json($this->decodeContent($row));
+        $payload = $this->decodeContent($row);
+        $payload = $this->attachAuthorName($payload);
+
+        Response::make()->json($payload);
     }
 
     /**
@@ -177,39 +130,19 @@ class PluginExtensionController
      */
     public function delete(array $params, ?Request $request = null): void
     {
-        $request    ??= $this->requestFactory()->fromGlobals($params);
-        $pluginSlug = (string) ($params['plugin_slug'] ?? '');
-        $entity     = (string) ($params['entity'] ?? '');
-        $recordId   = (string) ($params['id'] ?? '');
-        $itemId     = (string) ($params['item_id'] ?? '');
-
-        $hasError = $this->respondNotFoundIfEmpty($pluginSlug, self::MSG_PLUGIN_REQUIRED)
-            || $this->respondNotFoundIfEmpty($entity, self::MSG_ENTITY_REQUIRED)
-            || $this->respondNotFoundIfEmpty($recordId, self::MSG_RECORD_REQUIRED)
-            || $this->respondNotFoundIfEmpty($itemId, self::MSG_ITEM_REQUIRED);
-        if ($hasError) {
+        $context = $this->resolveItemContext($params, $request);
+        if (!$this->ensureDeleteRequest($context)) {
             return;
         }
 
-        if (!$this->guardExtensionRequest($pluginSlug, $entity, $recordId)) {
-            return;
-        }
-
-        $stmt = $this->pdo->prepare(
-            'DELETE FROM plugin_extension_data
-              WHERE id          = :item_id
-                AND plugin_slug = :plugin
-                AND entity_slug = :entity
-                AND record_id   = :record_id'
+        $affectedRows = $this->dataStore->deleteRow(
+            $context['item_id'],
+            $context['plugin_slug'],
+            $context['entity'],
+            $context['record_id']
         );
-        $stmt->execute([
-            ':item_id'   => $itemId,
-            ':plugin'    => $pluginSlug,
-            ':entity'    => $entity,
-            ':record_id' => $recordId,
-        ]);
 
-        if ($stmt->rowCount() === 0) {
+        if ($affectedRows === 0) {
             Response::make()->notFound(self::MSG_ITEM_NOT_FOUND);
             return;
         }
@@ -232,6 +165,100 @@ class PluginExtensionController
         return $row;
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function attachAuthorNames(array $rows): array
+    {
+        $authorIds = [];
+        foreach ($rows as $row) {
+            $content = is_array($row['content'] ?? null) ? $row['content'] : [];
+            $authorId = trim((string) ($content['author_id'] ?? ''));
+
+            if ($authorId !== '') {
+                $authorIds[$authorId] = true;
+            }
+        }
+
+        if ($authorIds === []) {
+            return $rows;
+        }
+
+        $authors = $this->loadAuthorsById(array_keys($authorIds));
+        foreach ($rows as $idx => $row) {
+            $content = is_array($row['content'] ?? null) ? $row['content'] : [];
+            $authorId = trim((string) ($content['author_id'] ?? ''));
+            if ($authorId === '') {
+                continue;
+            }
+
+            if (isset($authors[$authorId])) {
+                $content['author_name'] = $authors[$authorId];
+            } else {
+                unset($content['author_name']);
+            }
+
+            $rows[$idx]['content'] = $content;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function attachAuthorName(array $row): array
+    {
+        $rows = $this->attachAuthorNames([$row]);
+        return $rows[0] ?? $row;
+    }
+
+    /**
+     * @param array<int, string> $authorIds
+     * @return array<string, string>
+     */
+    private function loadAuthorsById(array $authorIds): array
+    {
+        if ($authorIds === []) {
+            return [];
+        }
+
+        $placeholders = [];
+        $params = [];
+        foreach (array_values($authorIds) as $idx => $authorId) {
+            $key = ':id' . $idx;
+            $placeholders[] = $key;
+            $params[$key] = $authorId;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT id::text AS id, email
+                   FROM users
+                  WHERE id IN (' . implode(', ', $placeholders) . ')'
+            );
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable) {
+            return [];
+        }
+
+        $authors = [];
+        foreach ($rows as $row) {
+            $id = trim((string) ($row['id'] ?? ''));
+            $email = trim((string) ($row['email'] ?? ''));
+            if ($id === '' || $email === '') {
+                continue;
+            }
+
+            $authors[$id] = $email;
+        }
+
+        return $authors;
+    }
+
     private function respondNotFoundIfEmpty(string $value, string $message): bool
     {
         if ($value !== '') {
@@ -241,19 +268,79 @@ class PluginExtensionController
         return true;
     }
 
+    /**
+     * @param array<string, mixed> $params
+     * @return array{request: Request, plugin_slug: string, entity: string, record_id: string}
+     */
+    private function resolveBaseContext(array $params, ?Request $request = null): array
+    {
+        $resolvedRequest = $request ?? $this->requestFactory()->fromGlobals($params);
+
+        return [
+            'request' => $resolvedRequest,
+            'plugin_slug' => (string) ($params['plugin_slug'] ?? ''),
+            'entity' => (string) ($params['entity'] ?? ''),
+            'record_id' => (string) ($params['id'] ?? ''),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array{request: Request, plugin_slug: string, entity: string, record_id: string, item_id: string}
+     */
+    private function resolveItemContext(array $params, ?Request $request = null): array
+    {
+        $context = $this->resolveBaseContext($params, $request);
+        $context['item_id'] = (string) ($params['item_id'] ?? '');
+
+        return $context;
+    }
+
+    /**
+     * @param array{request: Request, plugin_slug: string, entity: string, record_id: string} $context
+     */
+    private function ensureReadableRequest(array $context): bool
+    {
+        $hasError = $this->respondNotFoundIfEmpty($context['plugin_slug'], self::MSG_PLUGIN_REQUIRED)
+            || $this->respondNotFoundIfEmpty($context['entity'], self::MSG_ENTITY_REQUIRED)
+            || $this->respondNotFoundIfEmpty($context['record_id'], self::MSG_RECORD_REQUIRED);
+
+        return !$hasError && $this->guardExtensionRequest($context['plugin_slug'], $context['entity'], $context['record_id']);
+    }
+
+    /**
+     * @param array{request: Request, plugin_slug: string, entity: string, record_id: string, item_id: string} $context
+     */
+    private function ensureDeleteRequest(array $context): bool
+    {
+        $hasError = $this->respondNotFoundIfEmpty($context['plugin_slug'], self::MSG_PLUGIN_REQUIRED)
+            || $this->respondNotFoundIfEmpty($context['entity'], self::MSG_ENTITY_REQUIRED)
+            || $this->respondNotFoundIfEmpty($context['record_id'], self::MSG_RECORD_REQUIRED)
+            || $this->respondNotFoundIfEmpty($context['item_id'], self::MSG_ITEM_REQUIRED);
+
+        return !$hasError && $this->guardExtensionRequest($context['plugin_slug'], $context['entity'], $context['record_id']);
+    }
+
     private function guardExtensionRequest(string $pluginSlug, string $entity, string $recordId): bool
     {
-        if (!$this->isActiveExtensionPlugin($pluginSlug)) {
+        $isValid = true;
+
+        if ($isValid && !$this->isActiveExtensionPlugin($pluginSlug)) {
             Response::make()->notFound(self::MSG_PLUGIN_NOT_ACTIVE);
-            return false;
+            $isValid = false;
         }
 
-        if (!$this->parentRecordExists($entity, $recordId)) {
+        if ($isValid && !$this->contentService->isEntityAllowedByPluginConfig($pluginSlug, $entity)) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_ACTIVE);
+            $isValid = false;
+        }
+
+        if ($isValid && !$this->parentRecordExists($entity, $recordId)) {
             Response::make()->notFound(self::MSG_PARENT_NOT_FOUND);
-            return false;
+            $isValid = false;
         }
 
-        return true;
+        return $isValid;
     }
 
     private function guardExtensionWriteRequest(

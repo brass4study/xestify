@@ -61,23 +61,46 @@ class EntityController
 
         $entities = [];
         foreach ($rows as $row) {
-            $schema = json_decode((string) ($row['schema_json'] ?? '{}'), true);
-            $fields = is_array($schema) && isset($schema['fields']) ? $schema['fields'] : [];
-            $singularLabel = null;
-            if (is_array($schema) && isset($schema['label_singular']) && is_string($schema['label_singular'])) {
-                $singularLabel = $schema['label_singular'];
-            }
+            $schemaConfig = $this->extractEntitySchemaConfig($row);
 
             $entities[] = [
                 'slug'           => $row['slug'],
                 'label'          => $row['label'],
-                'label_singular' => $singularLabel,
+                'label_singular' => $schemaConfig['label_singular'],
                 'schema_version' => (int) ($row['schema_version'] ?? 1),
-                'fields'         => $fields,
+                'fields'         => $schemaConfig['fields'],
+                'custom_fields'  => $schemaConfig['custom_fields'],
+                'ui_field_order' => $schemaConfig['ui_field_order'],
             ];
         }
 
         Response::make()->json($entities);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{label_singular: ?string, fields: array<mixed>, custom_fields: array<mixed>, ui_field_order: array<mixed>}
+     */
+    private function extractEntitySchemaConfig(array $row): array
+    {
+        $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+        $schema = is_array($decoded) ? $decoded : [];
+
+        $fields = isset($schema['fields']) && is_array($schema['fields']) ? $schema['fields'] : [];
+        $customFields = isset($schema['custom_fields']) && is_array($schema['custom_fields']) ? $schema['custom_fields'] : [];
+        $uiFieldOrder = isset($schema['ui_field_order']) && is_array($schema['ui_field_order']) ? $schema['ui_field_order'] : [];
+
+        $singularLabel = null;
+        if (isset($schema['label_singular']) && is_string($schema['label_singular'])) {
+            $singularLabel = $schema['label_singular'];
+        }
+
+        return [
+            'label_singular' => $singularLabel,
+            'fields' => $fields,
+            'custom_fields' => $customFields,
+            'ui_field_order' => $uiFieldOrder,
+        ];
     }
 
     /**

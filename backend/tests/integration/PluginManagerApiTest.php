@@ -10,11 +10,14 @@ declare(strict_types=1);
  * - POST /api/v1/plugins/sync
  * - POST /api/v1/plugins/{slug}/update
  * - PUT  /api/v1/plugins/{slug}/status
+ * - GET  /api/v1/plugins/{slug}/config
+ * - PUT  /api/v1/plugins/{slug}/config
  */
 
 define('BASE_PATH', dirname(__DIR__, 2));
 define('SEMVER_1_0', '1.0.0');
 define('SEMVER_2_0', '2.0.0');
+define('ASSERT_ERR_422', 'Error code should be 422');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
@@ -111,6 +114,149 @@ final class TestPluginAdministrationService extends PluginAdministrationService
 
         throw new OutOfBoundsException('missing');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function activate(string $slug): array
+    {
+        return $this->setStatus($slug, 'active');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function deactivate(string $slug): array
+    {
+        return $this->setStatus($slug, 'inactive');
+    }
+
+    /**
+     * @return array{plugin: array<string, mixed>, config: array<string, mixed>}
+     */
+    public function getConfig(string $slug): array
+    {
+        foreach ($this->plugins as $plugin) {
+            if ($plugin['slug'] === $slug) {
+                if (($plugin['status'] ?? '') !== 'active') {
+                    throw new DomainException('Only active plugins can be configured.');
+                }
+
+                if (($plugin['plugin_type'] ?? '') === 'extension') {
+                    return [
+                        'plugin' => [
+                            'slug' => $plugin['slug'],
+                            'name' => $plugin['name'],
+                            'plugin_type' => $plugin['plugin_type'],
+                            'status' => $plugin['status'],
+                            'version' => $plugin['version'],
+                            'schema_version' => $plugin['schema_version'],
+                        ],
+                        'config' => [
+                            'target_entity' => '*',
+                            'fields' => [
+                                [
+                                    'active' => true,
+                                    'key' => 'body',
+                                    'type' => 'text',
+                                    'label' => 'Comentario',
+                                    'required' => true,
+                                    'locked' => false,
+                                    'source' => 'base',
+                                ],
+                            ],
+                        ],
+                    ];
+                }
+
+                return [
+                    'plugin' => [
+                        'slug' => $plugin['slug'],
+                        'name' => $plugin['name'],
+                        'plugin_type' => $plugin['plugin_type'],
+                        'status' => $plugin['status'],
+                        'version' => $plugin['version'],
+                        'schema_version' => $plugin['schema_version'],
+                    ],
+                    'config' => [
+                        'fields' => [
+                            [
+                                'active' => true,
+                                'key' => 'name',
+                                'type' => 'string',
+                                'label' => 'Nombre',
+                                'required' => true,
+                                'locked' => true,
+                                'source' => 'base',
+                            ],
+                            [
+                                'active' => true,
+                                'key' => 'phone',
+                                'type' => 'string',
+                                'label' => 'Telefono',
+                                'required' => false,
+                                'locked' => false,
+                                'source' => 'suggested',
+                            ],
+                            [
+                                'active' => false,
+                                'key' => 'is_active',
+                                'type' => 'boolean',
+                                'label' => 'Activo',
+                                'required' => false,
+                                'locked' => false,
+                                'source' => 'suggested',
+                            ],
+                        ],
+                    ],
+                ];
+            }
+        }
+
+        throw new OutOfBoundsException('missing');
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{plugin: array<string, mixed>, config: array<string, mixed>}
+     */
+    public function saveConfig(string $slug, array $payload): array
+    {
+        if (!isset($payload['fields']) || !is_array($payload['fields'])) {
+            throw new InvalidArgumentException('fields must be an array.');
+        }
+
+        foreach ($this->plugins as &$plugin) {
+            if ($plugin['slug'] !== $slug) {
+                continue;
+            }
+
+            if (($plugin['status'] ?? '') !== 'active') {
+                throw new DomainException('Only active plugins can be configured.');
+            }
+
+            $plugin['schema_version'] = (int) $plugin['schema_version'] + 1;
+
+            $config = ['fields' => $payload['fields']];
+            if (($plugin['plugin_type'] ?? '') === 'extension') {
+                $config['target_entity'] = (string) ($payload['target_entity'] ?? '*');
+            }
+
+            return [
+                'plugin' => [
+                    'slug' => $plugin['slug'],
+                    'name' => $plugin['name'],
+                    'plugin_type' => $plugin['plugin_type'],
+                    'status' => $plugin['status'],
+                    'version' => $plugin['version'],
+                    'schema_version' => $plugin['schema_version'],
+                ],
+                'config' => $config,
+            ];
+        }
+
+        throw new OutOfBoundsException('missing');
+    }
 }
 
 final class TestRequest extends Request
@@ -198,7 +344,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/status requires status parameter', fu
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Should fail without status');
-    assertEquals(422, $response['error']['code'] ?? null, 'Error code should be 422');
+    assertEquals(422, $response['error']['code'] ?? null, ASSERT_ERR_422);
 });
 
 TestSuite::run('PUT /api/v1/plugins/{slug}/status activates plugin', function (): void {
@@ -361,6 +507,125 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns 409 for unsupported u
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Unsupported update should fail');
     assertEquals(409, $response['error']['code'] ?? null, 'Error code should be 409');
+});
+
+TestSuite::run('GET /api/v1/plugins/{slug}/config returns plugin configuration for active entity', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(pluginListFixture()));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->getPluginConfig(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Config fetch should succeed');
+    assertEquals('clients', $response['data']['plugin']['slug'] ?? null, 'Response should include plugin slug');
+    assertTrue(is_array($response['data']['config']['fields'] ?? null), 'fields should be an array');
+});
+
+TestSuite::run('GET /api/v1/plugins/{slug}/config returns plugin configuration for active extension', function (): void {
+    $plugins = pluginListFixture();
+    $plugins[1]['status'] = 'active';
+    $controller = new PluginManagerController(new TestPluginAdministrationService($plugins));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->getPluginConfig(['slug' => 'comments'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Config fetch for extension should succeed');
+    assertEquals('comments', $response['data']['plugin']['slug'] ?? null, 'Response should include extension slug');
+    assertEquals('*', $response['data']['config']['target_entity'] ?? null, 'Response should include extension target entity');
+    assertEquals('base', $response['data']['config']['fields'][0]['source'] ?? null, 'Extension schema fields should be serialized as base');
+});
+
+TestSuite::run('PUT /api/v1/plugins/{slug}/config persists extension target_entity', function (): void {
+    $plugins = pluginListFixture();
+    $plugins[1]['status'] = 'active';
+    $controller = new PluginManagerController(new TestPluginAdministrationService($plugins));
+    $request = new TestRequest(json_encode([
+        'target_entity' => 'clients',
+        'fields' => [
+            [
+                'active' => true,
+                'key' => 'body',
+                'type' => 'text',
+                'label' => 'Comentario',
+                'required' => true,
+            ],
+        ],
+    ], JSON_UNESCAPED_UNICODE));
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePluginConfig(['slug' => 'comments'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Extension config save should succeed');
+    assertEquals('clients', $response['data']['config']['target_entity'] ?? null, 'Extension target_entity should be persisted');
+});
+
+TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schema version', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(pluginListFixture()));
+    $request = new TestRequest(json_encode([
+        'fields' => [
+            [
+                'active' => true,
+                'key' => 'name',
+                'type' => 'string',
+                'label' => 'Nombre',
+                'required' => true,
+                'locked' => true,
+                'source' => 'base',
+            ],
+            [
+                'active' => true,
+                'key' => 'phone',
+                'type' => 'string',
+                'label' => 'Telefono',
+                'required' => false,
+                'locked' => false,
+                'source' => 'suggested',
+            ],
+            [
+                'active' => true,
+                'key' => 'city',
+                'type' => 'string',
+                'label' => 'Ciudad',
+                'required' => false,
+                'locked' => false,
+                'source' => 'additional',
+            ],
+        ],
+    ], JSON_UNESCAPED_UNICODE));
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePluginConfig(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Config save should succeed');
+    assertEquals(2, $response['data']['plugin']['schema_version'] ?? null, 'Schema version should be incremented');
+    assertEquals('city', $response['data']['config']['fields'][2]['key'] ?? null, 'Additional field should be persisted');
+});
+
+TestSuite::run('PUT /api/v1/plugins/{slug}/config validates payload arrays', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(pluginListFixture()));
+    $request = new TestRequest('{}');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->updatePluginConfig(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Config save should fail for invalid payload');
+    assertEquals(422, $response['error']['code'] ?? null, ASSERT_ERR_422);
 });
 
 TestSuite::summary();

@@ -6,7 +6,7 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** STORY 7.2 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** STORY 7.3 incluida (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
@@ -159,7 +159,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 7.2 incluida**:
+MVP implementado hasta **STORY 7.3 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinamico de entidades sobre `plugin_entity_data`.
@@ -168,11 +168,12 @@ MVP implementado hasta **STORY 7.2 incluida**:
 - Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
 - PluginManager, deteccion de actualizaciones disponibles y flujo explicito de
   sync/update desde servicios especializados del subsistema de plugins.
+- Pagina de configuracion de plugins activos con campos configurables, schema
+  versionado y soporte de `target_entity` para plugins `extension`.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
 
-Pendiente desde STORY 7.3: configuracion avanzada de plugins,
-sincronizacion explicita de plugins desde UI, rollback, operacion avanzada,
-auditoria, permisos finos y marketplace.
+Pendiente desde STORY 7.4: rollback manual, UI de actualizacion/rollback,
+operacion avanzada, auditoria, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 

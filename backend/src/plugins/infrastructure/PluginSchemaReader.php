@@ -19,15 +19,17 @@ final class PluginSchemaReader
      */
     public function read(array $manifest): ?array
     {
-        if (($manifest['type'] ?? '') !== 'entity') {
-            return null;
-        }
+        $type = (string) ($manifest['type'] ?? '');
 
         $slug = (string) $manifest['slug'];
         $path = $this->pluginsDir . '/' . $slug . '/schema.json';
 
         if (!file_exists($path)) {
-            throw new PluginException("schema.json not found for entity plugin: {$slug}");
+            if ($type === 'entity') {
+                throw new PluginException("schema.json not found for entity plugin: {$slug}");
+            }
+
+            return null;
         }
 
         $raw = file_get_contents($path);
@@ -37,7 +39,11 @@ final class PluginSchemaReader
 
         $decoded = json_decode($raw, true);
         if (!is_array($decoded) || !isset($decoded['fields']) || !is_array($decoded['fields'])) {
-            throw new PluginException("Invalid schema.json for entity plugin '{$slug}': missing fields");
+            throw new PluginException("Invalid schema.json for plugin '{$slug}': missing fields");
+        }
+
+        if (array_is_list($decoded['fields'])) {
+            throw new PluginException("Invalid schema.json for plugin '{$slug}': fields must be an object");
         }
 
         return $decoded;

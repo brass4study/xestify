@@ -43,3 +43,5 @@ $router->post('/api/v1/plugins/sync',              [PluginManagerController::cla
 $router->get('/api/v1/plugins/updates',            [PluginManagerController::class, 'listPluginUpdates']);
 $router->post('/api/v1/plugins/{slug}/update',     [PluginManagerController::class, 'updatePlugin']);
 $router->put('/api/v1/plugins/{slug}/status',      [PluginManagerController::class, 'updatePluginStatus']);
+$router->get('/api/v1/plugins/{slug}/config',      [PluginManagerController::class, 'getPluginConfig']);
+$router->put('/api/v1/plugins/{slug}/config',      [PluginManagerController::class, 'updatePluginConfig']);

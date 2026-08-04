@@ -53,7 +53,7 @@ final class Hooks
             return $ctx;
         }
 
-        $recordId = (string) ($ctx['data']['id'] ?? '');
+        $recordId = (string) ($ctx['id'] ?? ($ctx['data']['id'] ?? ''));
 
         $sql = 'SELECT COUNT(*) FROM plugin_entity_data
                 WHERE entity_slug = :slug

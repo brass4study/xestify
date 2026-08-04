@@ -233,20 +233,62 @@ export class DynamicTable {
       return [];
     }
 
-    const fields = schema.fields;
+    const baseColumns = this.#columnsFromSection(schema.fields);
+    const customColumns = this.#columnsFromSection(schema.custom_fields);
+    const combined = [...baseColumns, ...customColumns];
+    const byName = new Map(combined.map((column) => [column.name, column]));
 
-    if (Array.isArray(fields)) {
-      return fields
-        .filter((field) => field && typeof field === 'object' && typeof field.name === 'string')
-        .map((field) => ({
-          name: field.name,
-          label: field.label ?? field.name,
-        }));
+    const ordered = [];
+    const orderList = Array.isArray(schema.ui_field_order) ? schema.ui_field_order : [];
+    for (const candidate of orderList) {
+      if (typeof candidate !== 'string') {
+        continue;
+      }
+
+      const column = byName.get(candidate);
+      if (column) {
+        ordered.push(column);
+        byName.delete(candidate);
+      }
     }
 
-    if (fields && typeof fields === 'object') {
-      return Object.keys(fields).map((name) => {
-        const cfg = fields[name];
+    for (const column of combined) {
+      if (byName.has(column.name)) {
+        ordered.push(column);
+        byName.delete(column.name);
+      }
+    }
+
+    return ordered;
+  }
+
+  #columnsFromSection(section) {
+    if (Array.isArray(section)) {
+      return section
+        .filter((field) => field && typeof field === 'object')
+        .map((field) => {
+          let name = '';
+          if (typeof field.name === 'string') {
+            name = field.name;
+          } else if (typeof field.key === 'string') {
+            name = field.key;
+          }
+
+          if (name === '') {
+            return null;
+          }
+
+          return {
+            name,
+            label: field.label ?? name,
+          };
+        })
+        .filter((column) => column !== null);
+    }
+
+    if (section && typeof section === 'object') {
+      return Object.keys(section).map((name) => {
+        const cfg = section[name];
         const label = cfg && typeof cfg === 'object' ? (cfg.label ?? name) : name;
         return { name, label };
       });

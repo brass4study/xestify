@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>PluginConfigTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<h2>PluginConfigTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { PluginConfig } from '../js/pages/PluginConfig.js';
+
+  const out = document.getElementById('output');
+  let passed = 0;
+  let failed = 0;
+
+  class MockApi {
+    constructor() {
+      this.calls = [];
+      this.savedPayload = null;
+    }
+
+    async get(url) {
+      this.calls.push({ method: 'GET', url });
+      if (url === '/plugins/clients/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'clients',
+              name: 'Clients',
+              plugin_type: 'entity',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 2,
+            },
+            config: {
+              fields: [
+                { active: true, key: 'name', type: 'string', label: 'Nombre', required: true, locked: true, source: 'base' },
+                { active: true, key: 'phone', type: 'string', label: 'Telefono', required: false, locked: false, source: 'suggested' },
+                { active: false, key: 'is_active', type: 'boolean', label: 'Activo', required: false, locked: false, source: 'suggested' },
+              ],
+            },
+          },
+        };
+      }
+
+      if (url === '/plugins/comments/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'comments',
+              name: 'Comments',
+              plugin_type: 'extension',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 4,
+            },
+            config: {
+              target_entity: '*',
+              fields: [
+                { active: true, key: 'body', type: 'text', label: 'Comentario', required: true, locked: true, source: 'base' },
+                { active: true, key: 'author_id', type: 'uuid', label: 'Autor', required: false, locked: true, source: 'base' },
+                { active: true, key: 'stamp', type: 'timestamp', label: 'Fecha', required: false, locked: true, source: 'base' },
+              ],
+            },
+          },
+        };
+      }
+
+      if (url === '/entities') {
+        return {
+          data: [
+            { slug: 'clients', label: 'Clientes' },
+            { slug: 'orders', label: 'Pedidos' },
+          ],
+        };
+      }
+
+      throw new Error('GET not mocked');
+    }
+
+    async put(url, body) {
+      this.calls.push({ method: 'PUT', url, body });
+      this.savedPayload = body;
+
+      if (url === '/plugins/clients/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'clients',
+              name: 'Clients',
+              plugin_type: 'entity',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 3,
+            },
+            config: {
+              fields: body.fields,
+            },
+          },
+        };
+      }
+
+      if (url === '/plugins/comments/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'comments',
+              name: 'Comments',
+              plugin_type: 'extension',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 5,
+            },
+            config: {
+              target_entity: body.target_entity,
+              fields: body.fields,
+            },
+          },
+        };
+      }
+
+      throw new Error('PUT not mocked');
+    }
+  }
+
+  function log(msg) {
+    out.textContent += msg + '\n';
+  }
+
+  async function test(name, fn) {
+    try {
+      await fn();
+      log(`✅ ${name}`);
+      passed++;
+    } catch (error) {
+      log(`❌ ${name}: ${error.message}`);
+      failed++;
+    }
+  }
+
+  function assertEquals(actual, expected, msg) {
+    if (actual !== expected) {
+      throw new Error(`${msg} (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`);
+    }
+  }
+
+  function assertTrue(value, msg) {
+    if (!value) {
+      throw new Error(msg);
+    }
+  }
+
+  function makeSandbox() {
+    const div = document.createElement('div');
+    document.getElementById('sandbox').appendChild(div);
+    return div;
+  }
+
+  await test('renderiza campos en formato tabla con columnas esperadas', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'clients', api });
+    await page.init();
+
+    const headers = [...container.querySelectorAll('.xt-plugin-config__table thead th')].map((th) => th.textContent.trim());
+    assertEquals(headers.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Requerido|Acciones', 'Debe renderizar columnas de tabla esperadas');
+    const rows = container.querySelectorAll('.xt-plugin-config__table tbody tr');
+    assertEquals(rows.length, 3, 'Debe renderizar 3 filas iniciales');
+  });
+
+  await test('los campos bloqueados base se muestran sin poder editar o desactivar', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'clients', api });
+    await page.init();
+
+    const firstRow = container.querySelector('[data-row-index="0"]');
+    const activeInput = firstRow.querySelector('[data-name="active"]');
+    const keyInput = firstRow.querySelector('[data-name="key"]');
+    const typeSelect = firstRow.querySelector('[data-name="type"]');
+    const requiredInput = firstRow.querySelector('[data-name="required"]');
+
+    assertTrue(activeInput.disabled === true, 'Campo base debe estar bloqueado para activo');
+    assertTrue(keyInput.readOnly === true, 'Campo base debe estar bloqueado para clave');
+    assertTrue(typeSelect.disabled === true, 'Campo base debe estar bloqueado para tipo');
+    assertTrue(requiredInput.disabled === true, 'Campo base debe estar bloqueado para requerido');
+  });
+
+  await test('campos sugeridos son editables y enviables con override', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'clients', api });
+    await page.init();
+
+    const suggestedRow = container.querySelector('[data-row-index="1"]');
+    const labelInput = suggestedRow.querySelector('[data-name="label"]');
+    const typeSelect = suggestedRow.querySelector('[data-name="type"]');
+    const requiredInput = suggestedRow.querySelector('[data-name="required"]');
+
+    labelInput.value = 'Telefono principal';
+    typeSelect.value = 'text';
+    requiredInput.checked = true;
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    const phone = api.savedPayload.fields.find((field) => field.key === 'phone');
+    assertTrue(phone !== undefined, 'Debe existir fila phone en payload');
+    assertEquals(phone.label, 'Telefono principal', 'Debe enviar etiqueta sobreescrita');
+    assertEquals(phone.type, 'text', 'Debe enviar tipo sobreescrito');
+    assertTrue(phone.required === true, 'Debe enviar requerido sobreescrito');
+  });
+
+  await test('permite reordenar filas y guarda nuevo orden', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'clients', api });
+    await page.init();
+
+    const moveDownFirst = container.querySelector('[data-action="move-down"][data-row-index="0"]');
+    moveDownFirst.click();
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assertEquals(api.savedPayload.fields[0].key, 'phone', 'El nuevo primer campo debe reflejar reordenacion');
+    assertEquals(api.savedPayload.fields[1].key, 'name', 'El segundo campo debe reflejar reordenacion');
+  });
+
+  await test('plugin extension muestra combo de target_entity y lo envia al guardar', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'comments', api });
+    await page.init();
+
+    const targetSelect = container.querySelector('[data-name="target-entity"]');
+    assertTrue(targetSelect !== null, 'Debe renderizar select target_entity para extension');
+    assertEquals(targetSelect.tagName, 'SELECT', 'target_entity debe renderizarse como combobox');
+
+    const allOption = targetSelect.querySelector('option[value="*"]');
+    assertTrue(allOption !== null, 'Debe incluir opcion Todos');
+    assertEquals(allOption.textContent.trim(), 'Todos', 'La opcion * debe mostrarse como Todos');
+
+    targetSelect.value = 'clients';
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assertEquals(api.savedPayload.target_entity, 'clients', 'Debe enviar target_entity al guardar extension');
+  });
+
+  await test('plugin extension muestra campos base sin mentir sobre su origen', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'comments', api });
+    await page.init();
+
+    const bodyRow = container.querySelector('[data-row-index="0"]');
+    const bodyBadge = bodyRow.querySelector('.xt-plugin-config__badge');
+    const bodyActive = bodyRow.querySelector('[data-name="active"]');
+    const bodyKeyInput = bodyRow.querySelector('[data-name="key"]');
+    const bodyLabelInput = bodyRow.querySelector('[data-name="label"]');
+    const bodyRequiredInput = bodyRow.querySelector('[data-name="required"]');
+    const bodyRemove = bodyRow.querySelector('[data-action="remove-row"]');
+
+    assertEquals(bodyBadge.textContent.trim(), 'base', 'El campo body debe mostrarse como base');
+    assertTrue(bodyActive.disabled === true, 'Un campo base no debe poder desactivarse');
+    assertTrue(bodyKeyInput.readOnly === true, 'La clave de un campo base no debe ser editable');
+    assertTrue(bodyLabelInput.readOnly === true, 'La etiqueta de un campo base no debe ser editable');
+    assertTrue(bodyRequiredInput.disabled === true, 'El requerido de un campo base no debe ser editable');
+    assertTrue(bodyRemove === null, 'Un campo base no debe mostrar boton eliminar');
+
+    const authorRow = container.querySelector('[data-row-index="1"]');
+    const authorRequired = authorRow.querySelector('[data-name="required"]');
+    assertTrue(authorRequired.disabled === true, 'Un campo base bloqueado debe seguir bloqueado');
+  });
+
+  log('────────────────────────────────────────────────────────────────────────');
+  const cls = failed === 0 ? 'pass' : 'fail';
+  log(`Resultado: ${passed} passed, ${failed} failed`);
+  out.innerHTML = out.textContent
+    .replaceAll('✅', '<span class="pass">✅</span>')
+    .replaceAll('❌', '<span class="fail">❌</span>')
+    .replace(/Resultado:.*/, (m) => `<span class="${cls}">${m}</span>`);
+</script>
+</body>
+</html>

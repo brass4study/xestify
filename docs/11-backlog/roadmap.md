@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-05-11
-> **Estado del proyecto:** **STORY 7.2 incluida** — EPIC 7 en progreso, próxima story `7.3`
+> **Última actualización:** 2026-08-04
+> **Estado del proyecto:** **STORY 7.3 incluida** — EPIC 7 en progreso, próxima story `7.4`
 
 ---
 
@@ -27,9 +27,9 @@ Su objetivo es:
 
 El corte funcional vigente del producto queda fijado en:
 
-- `STORY 7.2` completada
+- `STORY 7.3` completada
 - `EPIC 7` todavía abierto
-- siguiente story funcional: `STORY 7.3`
+- siguiente story funcional: `STORY 7.4`
 
 ### Funcionalidades nucleares (Core)
 
@@ -78,6 +78,7 @@ Hoy Xestify ya tiene consolidados:
 - `PluginManager` básico
 - detección de updates (`7.1`)
 - sync/update explícito de plugins con rollback transaccional y snapshots (`7.2`)
+- configuración de plugins activos con schema versionado, campos configurables y `target_entity` para extensiones (`7.3`)
 - runtime same-origin bajo Apache+PHP
 
 ### Decisiones técnicas tomadas

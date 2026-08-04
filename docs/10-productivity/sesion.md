@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-05-10
+**Fecha:** 2026-08-04
 **EPIC activo:** EPIC 7 - Actualizaciones de Plugins y Rollback (EN PROGRESO)  
-**Próxima story:** STORY 7.3 - Frontend - Página de configuración de plugin activado
+**Próxima story:** STORY 7.4 - Rollback manual de plugin a versión anterior
 
 ---
 
@@ -469,3 +469,54 @@ Story completada. Archivos creados/modificados:
 - Commit de story: pendiente (este commit)
 - Verificacion critica: `tools/setup/sync-plugins.php` ya no muta schema/version runtime de plugins existentes
 - Backlog alineado: el siguiente punto es STORY 7.3
+
+# Sesion 2026-08-04 - STORY 7.3 Frontend - Pagina de configuracion de plugin activado
+
+Story completada junto con su refuerzo funcional para plugins `extension`.
+
+**Creados (backend):**
+- `backend/src/plugins/application/ExtensionPluginConfigService.php` - servicio de configuracion de plugins extension, campos activos y `target_entity`
+- `backend/src/controllers/ExtensionPluginContentService.php` - normalizacion de contenido extension contra schema persistido y validacion de entidad destino
+- `backend/src/controllers/ExtensionPluginDataStore.php` - acceso dedicado a `plugin_extension_data`
+
+**Creados (frontend):**
+- `frontend/src/js/pages/PluginConfig.js` - pagina admin `/plugins/{slug}/config` para configurar campos de plugins `entity` y `extension`
+- `frontend/tests/PluginConfigTest.html` - 6 tests frontend para render, bloqueo de campos base, reordenacion, guardado y `target_entity`
+
+**Modificados (backend):**
+- `backend/src/plugins/application/PluginAdministrationService.php` - `getConfig()` y `saveConfig()` para plugins activos configurables, versionado de schema y proteccion de campos base
+- `backend/src/controllers/PluginManagerController.php` - endpoints `GET/PUT /api/v1/plugins/{slug}/config`
+- `backend/src/config/app.php` y `backend/src/config/routes.php` - wiring de servicios y rutas de configuracion
+- `backend/src/repositories/PluginRepository.php` - persistencia de schema configurado, incremento de `schema_version` y listado de entidades activas
+- `backend/src/plugins/application/PluginSyncService.php` y `PluginSchemaReader.php` - soporte de schema en plugins `extension`
+- `backend/src/controllers/PluginExtensionController.php` - uso de servicios dedicados, filtrado por `target_entity`, normalizacion por schema y resolucion de `author_name`
+- `backend/src/controllers/EntityController.php` y `backend/src/services/EntityService.php` - ajustes para schema vivo y campos configurables
+
+**Modificados (frontend y plugins):**
+- `frontend/src/js/main.js` - navegacion hacia `/plugins/{slug}/config`
+- `frontend/src/js/pages/PluginManager.js` - boton `Configure` para plugins `entity` y `extension` activos
+- `frontend/src/css/main.css` - estilos de la pagina de configuracion y acciones del manager
+- `frontend/src/js/modules/DynamicForm.js` y `DynamicTable.js` - soporte de nuevos tipos/campos configurables
+- `plugins/comments/schema.json`, `Hooks.php` y `plugin.js` - schema extension configurable, `target_entity`, stamp/autor y UI de comentarios reforzada
+- `plugins/clients/Hooks.php` - ajuste de compatibilidad con schema configurado
+
+**Modificados (tests):**
+- `backend/tests/integration/PluginManagerApiTest.php` - cobertura de config entity/extension, versionado y `target_entity`
+- `backend/tests/integration/PluginSyncServiceTest.php` - schema de extension persistido y backfill desde disco
+- `backend/tests/integration/CommentsPluginTest.php` - 17 tests para extension activa, filtro por entidad, autor, stamp y errores
+- `backend/tests/unit/PluginSchemaReaderTest.php` y `EntityServiceHooksTest.php` - cobertura de schema extension y hooks
+- `frontend/tests/PluginManagerTest.html` - boton configure y callback de navegacion
+
+**Docs actualizadas:**
+- `docs/11-backlog/backlog.md` - refuerzo de STORY 7.3 documentado
+- `docs/03-api/endpoints.md` - endpoints de configuracion de plugins
+- `README.md`, `docs/README.md` y `docs/11-backlog/roadmap.md` - corte funcional actualizado a STORY 7.3
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` -> 43/43 archivos pasan
+- Frontend sintaxis: `node --check frontend/src/js/main.js`, `PluginConfig.js`, `PluginManager.js`, `DynamicForm.js`, `DynamicTable.js` y `plugins/comments/plugin.js`
+
+**Cierre verificado (2026-08-04):**
+- Commit de story: pendiente (este commit)
+- Verificacion critica: los campos base del plugin no se pueden editar/desactivar desde UI/API y los plugins `extension` pueden restringirse por `target_entity`
+- Backlog alineado: el siguiente punto es STORY 7.4
