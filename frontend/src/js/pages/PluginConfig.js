@@ -115,6 +115,7 @@ export class PluginConfig {
                 <th>Tipo</th>
                 <th>Etiqueta</th>
                 <th>Requerido</th>
+                <th>Cabecera</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -147,6 +148,7 @@ export class PluginConfig {
     const immutableField = locked || isBase;
     const keyReadonly = immutableField || source === 'suggested';
     const editable = !immutableField;
+    const summaryViewChecked = field.summaryView === false ? '' : 'checked';
 
     let sourceBadge = '<span class="xt-plugin-config__badge xt-plugin-config__badge--additional">adicional</span>';
     if (source === 'base') {
@@ -176,6 +178,9 @@ export class PluginConfig {
         </td>
         <td>
           <input type="checkbox" data-name="required" ${field.required ? 'checked' : ''} ${editable ? '' : 'disabled'}>
+        </td>
+        <td>
+          <input type="checkbox" data-name="summaryView" ${summaryViewChecked} ${editable ? '' : 'disabled'}>
         </td>
         <td class="xt-plugin-config__actions-cell">
           <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--icon" data-action="move-up" data-row-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
@@ -287,6 +292,7 @@ export class PluginConfig {
       type: 'string',
       label: '',
       required: false,
+      summaryView: true,
       locked: false,
       source: 'additional',
     };
@@ -349,6 +355,7 @@ export class PluginConfig {
     const typeSelect = rowEl.querySelector('[data-name="type"]');
     const activeCheckbox = rowEl.querySelector('[data-name="active"]');
     const requiredCheckbox = rowEl.querySelector('[data-name="required"]');
+    const summaryViewCheckbox = rowEl.querySelector('[data-name="summaryView"]');
 
     return {
       active: activeCheckbox ? !!activeCheckbox.checked : false,
@@ -356,6 +363,7 @@ export class PluginConfig {
       type: typeSelect ? typeSelect.value : 'string',
       label: labelInput ? labelInput.value.trim() : '',
       required: requiredCheckbox ? !!requiredCheckbox.checked : false,
+      summaryView: summaryViewCheckbox ? !!summaryViewCheckbox.checked : true,
       locked: original.locked === true,
       source: String(original.source ?? 'additional'),
     };

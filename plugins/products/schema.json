@@ -15,33 +15,28 @@
             "type": "string",
             "required": true,
             "label": "Nombre"
-        },
-        "sku": {
-            "type": "string",
-            "required": true,
-            "label": "SKU"
         }
     },
     "custom_fields": [
+        {
+            "key": "sku",
+            "type": "string",
+            "required": true,
+            "label": "SKU",
+            "summaryView": false
+        },
+        {
+            "key": "description",
+            "type": "text",
+            "required": true,
+            "label": "Descripción",
+            "summaryView": false
+        },    
         {
             "key": "price",
             "type": "number",
             "required": false,
             "label": "Precio"
-        },
-        {
-            "key": "creation_stamp",
-            "type": "timestamp",
-            "required": false,
-            "default": "now",
-            "label": "Fecha de alta"
-        },
-        {
-            "key": "is_active",
-            "type": "boolean",
-            "required": false,
-            "default": true,
-            "label": "Activo"
         }
     ],
     "relations": []

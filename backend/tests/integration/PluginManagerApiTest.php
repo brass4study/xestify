@@ -186,6 +186,7 @@ final class TestPluginAdministrationService extends PluginAdministrationService
                                 'type' => 'string',
                                 'label' => 'Nombre',
                                 'required' => true,
+                                'summaryView' => true,
                                 'locked' => true,
                                 'source' => 'base',
                             ],
@@ -195,6 +196,7 @@ final class TestPluginAdministrationService extends PluginAdministrationService
                                 'type' => 'string',
                                 'label' => 'Telefono',
                                 'required' => false,
+                                'summaryView' => true,
                                 'locked' => false,
                                 'source' => 'suggested',
                             ],
@@ -204,6 +206,7 @@ final class TestPluginAdministrationService extends PluginAdministrationService
                                 'type' => 'boolean',
                                 'label' => 'Activo',
                                 'required' => false,
+                                'summaryView' => false,
                                 'locked' => false,
                                 'source' => 'suggested',
                             ],
@@ -522,6 +525,7 @@ TestSuite::run('GET /api/v1/plugins/{slug}/config returns plugin configuration f
     assertTrue($response['ok'] === true, 'Config fetch should succeed');
     assertEquals('clients', $response['data']['plugin']['slug'] ?? null, 'Response should include plugin slug');
     assertTrue(is_array($response['data']['config']['fields'] ?? null), 'fields should be an array');
+    assertTrue($response['data']['config']['fields'][0]['summaryView'] === true, 'Base fields should include summaryView');
 });
 
 TestSuite::run('GET /api/v1/plugins/{slug}/config returns plugin configuration for active extension', function (): void {
@@ -555,6 +559,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config persists extension target_enti
                 'type' => 'text',
                 'label' => 'Comentario',
                 'required' => true,
+                'summaryView' => true,
             ],
         ],
     ], JSON_UNESCAPED_UNICODE));
@@ -579,6 +584,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schem
                 'type' => 'string',
                 'label' => 'Nombre',
                 'required' => true,
+                'summaryView' => true,
                 'locked' => true,
                 'source' => 'base',
             ],
@@ -588,6 +594,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schem
                 'type' => 'string',
                 'label' => 'Telefono',
                 'required' => false,
+                'summaryView' => false,
                 'locked' => false,
                 'source' => 'suggested',
             ],
@@ -597,6 +604,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schem
                 'type' => 'string',
                 'label' => 'Ciudad',
                 'required' => false,
+                'summaryView' => true,
                 'locked' => false,
                 'source' => 'additional',
             ],
@@ -612,6 +620,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schem
     assertTrue($response['ok'] === true, 'Config save should succeed');
     assertEquals(2, $response['data']['plugin']['schema_version'] ?? null, 'Schema version should be incremented');
     assertEquals('city', $response['data']['config']['fields'][2]['key'] ?? null, 'Additional field should be persisted');
+    assertTrue($response['data']['config']['fields'][1]['summaryView'] === false, 'summaryView should round-trip in saved config');
 });
 
 TestSuite::run('PUT /api/v1/plugins/{slug}/config validates payload arrays', function (): void {

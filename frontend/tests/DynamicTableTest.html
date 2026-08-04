@@ -27,7 +27,7 @@
       fields: [
         { name: 'id', label: 'ID' },
         { name: 'title', label: 'Title' },
-        { name: 'status', label: 'Status' }
+        { name: 'status', label: 'Status', summaryView: false }
       ]
     };
   }
@@ -75,7 +75,21 @@
     table.render();
 
     const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent);
-    assertEquals(headers, ['ID', 'Title', 'Status']);
+    assertEquals(headers, ['ID', 'Title']);
+  });
+
+  await test('render() hides columns with summaryView false in object schemas', async () => {
+    const table = new DynamicTable(createRecords(2), {
+      fields: {
+        id: { label: 'ID', summaryView: true },
+        title: { label: 'Title', summaryView: true },
+        status: { label: 'Status', summaryView: false },
+      },
+    }, '#table-container');
+    table.render();
+
+    const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent);
+    assertEquals(headers, ['ID', 'Title']);
   });
 
   await test('render() shows rows for current page', async () => {

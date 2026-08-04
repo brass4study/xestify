@@ -38,9 +38,9 @@
             },
             config: {
               fields: [
-                { active: true, key: 'name', type: 'string', label: 'Nombre', required: true, locked: true, source: 'base' },
-                { active: true, key: 'phone', type: 'string', label: 'Telefono', required: false, locked: false, source: 'suggested' },
-                { active: false, key: 'is_active', type: 'boolean', label: 'Activo', required: false, locked: false, source: 'suggested' },
+                { active: true, key: 'name', type: 'string', label: 'Nombre', required: true, summaryView: true, locked: true, source: 'base' },
+                { active: true, key: 'phone', type: 'string', label: 'Telefono', required: false, summaryView: true, locked: false, source: 'suggested' },
+                { active: false, key: 'is_active', type: 'boolean', label: 'Activo', required: false, summaryView: false, locked: false, source: 'suggested' },
               ],
             },
           },
@@ -168,7 +168,7 @@
     await page.init();
 
     const headers = [...container.querySelectorAll('.xt-plugin-config__table thead th')].map((th) => th.textContent.trim());
-    assertEquals(headers.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Requerido|Acciones', 'Debe renderizar columnas de tabla esperadas');
+    assertEquals(headers.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Requerido|Cabecera|Acciones', 'Debe renderizar columnas de tabla esperadas');
     const rows = container.querySelectorAll('.xt-plugin-config__table tbody tr');
     assertEquals(rows.length, 3, 'Debe renderizar 3 filas iniciales');
   });
@@ -185,11 +185,14 @@
     const keyInput = firstRow.querySelector('[data-name="key"]');
     const typeSelect = firstRow.querySelector('[data-name="type"]');
     const requiredInput = firstRow.querySelector('[data-name="required"]');
+    const summaryInput = firstRow.querySelector('[data-name="summaryView"]');
 
     assertTrue(activeInput.disabled === true, 'Campo base debe estar bloqueado para activo');
     assertTrue(keyInput.readOnly === true, 'Campo base debe estar bloqueado para clave');
     assertTrue(typeSelect.disabled === true, 'Campo base debe estar bloqueado para tipo');
     assertTrue(requiredInput.disabled === true, 'Campo base debe estar bloqueado para requerido');
+    assertTrue(summaryInput.disabled === true, 'Campo base debe estar bloqueado para cabecera');
+    assertTrue(summaryInput.checked === true, 'Campo base debe mostrarse en cabecera por defecto');
   });
 
   await test('campos sugeridos son editables y enviables con override', async () => {
@@ -203,10 +206,12 @@
     const labelInput = suggestedRow.querySelector('[data-name="label"]');
     const typeSelect = suggestedRow.querySelector('[data-name="type"]');
     const requiredInput = suggestedRow.querySelector('[data-name="required"]');
+    const summaryInput = suggestedRow.querySelector('[data-name="summaryView"]');
 
     labelInput.value = 'Telefono principal';
     typeSelect.value = 'text';
     requiredInput.checked = true;
+    summaryInput.checked = false;
 
     const saveButton = container.querySelector('[data-action="save"]');
     saveButton.click();
@@ -217,6 +222,7 @@
     assertEquals(phone.label, 'Telefono principal', 'Debe enviar etiqueta sobreescrita');
     assertEquals(phone.type, 'text', 'Debe enviar tipo sobreescrito');
     assertTrue(phone.required === true, 'Debe enviar requerido sobreescrito');
+    assertTrue(phone.summaryView === false, 'Debe enviar cabecera sobreescrita');
   });
 
   await test('permite reordenar filas y guarda nuevo orden', async () => {

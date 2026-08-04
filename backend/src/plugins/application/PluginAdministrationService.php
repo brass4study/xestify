@@ -160,14 +160,14 @@ class PluginAdministrationService
     }
 
     /**
-     * @param array<int, array{active: bool, key: string, type: string, label: string, required: bool}> $rows
+     * @param array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool}> $rows
      * @param array<string, array{key: string, type: string, required: bool, label: string}> $baseByKey
      * @param array<string, array{key: string, type: string, required: bool, label: string}> $catalogByKey
      * @return array{
      *   seen_keys: array<string, bool>,
      *   ui_order: array<int, string>,
-     *   suggested_catalog: array<int, array{key: string, type: string, label: string, required: bool, origin: string}>,
-     *   active_custom_fields: array<int, array{key: string, type: string, label: string, required: bool, origin: string}>
+     *   suggested_catalog: array<int, array{key: string, type: string, label: string, required: bool, summaryView: bool, origin: string}>,
+     *   active_custom_fields: array<int, array{key: string, type: string, label: string, required: bool, summaryView: bool, origin: string}>
      * }
      */
     private function compileEntityConfigRows(array $rows, array $baseByKey, array $catalogByKey): array
@@ -205,6 +205,7 @@ class PluginAdministrationService
                 'type' => $row['type'],
                 'label' => $row['label'],
                 'required' => $row['required'],
+                'summaryView' => $row['summaryView'],
                 'origin' => $isSuggested ? 'suggested' : 'additional',
             ];
 
@@ -331,7 +332,7 @@ class PluginAdministrationService
 
     /**
      * @param array<string, mixed> $plugin
-     * @return array{plugin: array<string, mixed>, config: array<string, mixed>}
+    * @return array{plugin: array<string, mixed>, config: array<string, mixed>}
      */
     private function buildConfigResponse(array $plugin): array
     {
@@ -363,7 +364,7 @@ class PluginAdministrationService
 
     /**
      * @param array<string, mixed> $schema
-     * @return array{fields: array<int, array<string, mixed>>}
+    * @return array{fields: array<int, array<string, mixed>>}
      */
     private function buildEntityConfigPayload(array $schema): array
     {
@@ -395,6 +396,7 @@ class PluginAdministrationService
                 'type' => $field['type'],
                 'label' => $field['label'],
                 'required' => $field['required'],
+                'summaryView' => $field['summaryView'],
                 'locked' => true,
                 'source' => 'base',
             ];
@@ -409,6 +411,7 @@ class PluginAdministrationService
                 'type' => (string) ($activeField['type'] ?? $field['type']),
                 'label' => (string) ($activeField['label'] ?? $field['label']),
                 'required' => (bool) ($activeField['required'] ?? $field['required']),
+                'summaryView' => (bool) ($activeField['summaryView'] ?? $field['summaryView']),
                 'locked' => false,
                 'source' => 'suggested',
             ];
@@ -426,6 +429,7 @@ class PluginAdministrationService
                 'type' => $field['type'],
                 'label' => $field['label'],
                 'required' => $field['required'],
+                'summaryView' => $field['summaryView'],
                 'locked' => false,
                 'source' => 'additional',
             ];
@@ -436,7 +440,7 @@ class PluginAdministrationService
 
     /**
      * @param array<string, mixed> $schema
-     * @return array<int, array{key: string, type: string, required: bool, label: string}>
+     * @return array<int, array{key: string, type: string, required: bool, label: string, summaryView: bool}>
      */
     private function baseFieldsFromSchema(array $schema): array
     {
@@ -451,6 +455,7 @@ class PluginAdministrationService
                 'type' => $definition['type'] ?? 'string',
                 'required' => $definition['required'] ?? false,
                 'label' => $definition['label'] ?? $key,
+                'summaryView' => $definition['summaryView'] ?? true,
             ]);
         }
 
@@ -518,7 +523,7 @@ class PluginAdministrationService
 
     /**
      * @param array<int, mixed> $rows
-     * @return array<int, array{active: bool, key: string, type: string, label: string, required: bool}>
+    * @return array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool}>
      */
     private function normalizePayloadRows(array $rows): array
     {
@@ -535,6 +540,7 @@ class PluginAdministrationService
                 'type' => $field['type'],
                 'label' => $field['label'],
                 'required' => $field['required'],
+                'summaryView' => (bool) ($entry['summaryView'] ?? true),
             ];
         }
 
@@ -543,7 +549,7 @@ class PluginAdministrationService
 
     /**
      * @param array<string, mixed> $entry
-     * @return array{key: string, type: string, required: bool, label: string}
+    * @return array{key: string, type: string, required: bool, label: string, summaryView: bool}
      */
     private function normalizeFieldDefinition(array $entry): array
     {
@@ -572,6 +578,7 @@ class PluginAdministrationService
             'type' => $type,
             'required' => (bool) ($entry['required'] ?? false),
             'label' => $label,
+            'summaryView' => (bool) ($entry['summaryView'] ?? true),
         ];
     }
 }

@@ -41,7 +41,7 @@ final class ExtensionPluginConfigService
 
     /**
      * @param array<string, mixed> $schema
-     * @return array{target_entity: string, fields: array<int, array<string, mixed>>}
+    * @return array{target_entity: string, fields: array<int, array<string, mixed>>}
      */
     public function buildConfigPayload(array $schema, callable $normalizeFieldDefinition, callable $orderedRows): array
     {
@@ -72,6 +72,7 @@ final class ExtensionPluginConfigService
                 'type' => $normalized['type'],
                 'label' => $normalized['label'],
                 'required' => $normalized['required'],
+                'summaryView' => $normalized['summaryView'] ?? true,
                 'locked' => !$editable,
                 'source' => $source,
             ];
@@ -90,7 +91,7 @@ final class ExtensionPluginConfigService
 
     /**
      * @param array<string, mixed> $schema
-     * @param array<int, array{active: bool, key: string, type: string, label: string, required: bool}> $rows
+     * @param array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool}> $rows
      * @return array<string, array<string, mixed>>
      */
     private function buildNextFields(array $schema, array $rows): array
@@ -131,7 +132,7 @@ final class ExtensionPluginConfigService
     }
 
     /**
-     * @param array{active: bool, key: string, type: string, label: string, required: bool} $row
+     * @param array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool} $row
      * @param array<string, mixed>|null $existingDefinition
      * @return array<string, mixed>
      */
@@ -141,6 +142,7 @@ final class ExtensionPluginConfigService
             'type' => $row['type'],
             'required' => $row['required'],
             'label' => $row['label'],
+            'summaryView' => $row['summaryView'],
         ];
 
         if ($existingDefinition === null) {
@@ -197,7 +199,7 @@ final class ExtensionPluginConfigService
     }
 
     /**
-     * @param array{active: bool, key: string, type: string, label: string, required: bool} $row
+     * @param array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool} $row
      * @param array<string, mixed> $definition
      */
     private function assertImmutableBaseField(array $row, array $definition, string $key): void

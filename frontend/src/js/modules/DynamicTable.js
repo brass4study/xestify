@@ -278,6 +278,10 @@ export class DynamicTable {
             return null;
           }
 
+          if (field.summaryView === false) {
+            return null;
+          }
+
           return {
             name,
             label: field.label ?? name,
@@ -289,9 +293,13 @@ export class DynamicTable {
     if (section && typeof section === 'object') {
       return Object.keys(section).map((name) => {
         const cfg = section[name];
+        if (cfg && typeof cfg === 'object' && cfg.summaryView === false) {
+          return null;
+        }
+
         const label = cfg && typeof cfg === 'object' ? (cfg.label ?? name) : name;
         return { name, label };
-      });
+      }).filter((column) => column !== null);
     }
 
     return [];

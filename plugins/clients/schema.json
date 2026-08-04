@@ -16,10 +16,16 @@
             "required": true,
             "label": "Nombre"
         },
+        "surnames": {
+            "type": "string",
+            "required": true,
+            "label": "Apellidos"
+        },        
         "email": {
             "type": "email",
             "required": true,
-            "label": "Email"
+            "label": "Email",
+            "summaryView": false
         }
     },
     "custom_fields": [
@@ -27,21 +33,24 @@
             "key": "phone",
             "type": "string",
             "required": false,
-            "label": "Telefono"
+            "label": "Telefono",
+            "summaryView": false
         },
         {
             "key": "creation_stamp",
             "type": "timestamp",
             "required": false,
             "default": "now",
-            "label": "Fecha de alta"
+            "label": "Fecha de alta",
+            "summaryView": false
         },
         {
             "key": "is_active",
             "type": "boolean",
             "required": false,
             "default": true,
-            "label": "Activo"
+            "label": "Activo",
+            "summaryView": false
         }
     ],
     "relations": []
