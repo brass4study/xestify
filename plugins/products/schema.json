@@ -1,0 +1,48 @@
+{
+    "entity": "products",
+    "label_singular": "producto",
+    "version": "1.0.0",
+    "identities": {
+        "id": {
+            "type": "uuid",
+            "label": "ID",
+            "auto_generated": true,
+            "editable": false
+        }
+    },
+    "fields": {
+        "name": {
+            "type": "string",
+            "required": true,
+            "label": "Nombre"
+        },
+        "sku": {
+            "type": "string",
+            "required": true,
+            "label": "SKU"
+        }
+    },
+    "custom_fields": [
+        {
+            "key": "price",
+            "type": "number",
+            "required": false,
+            "label": "Precio"
+        },
+        {
+            "key": "creation_stamp",
+            "type": "timestamp",
+            "required": false,
+            "default": "now",
+            "label": "Fecha de alta"
+        },
+        {
+            "key": "is_active",
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "label": "Activo"
+        }
+    ],
+    "relations": []
+}
