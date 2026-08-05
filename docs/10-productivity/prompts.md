@@ -940,3 +940,18 @@ Ya he implementado la story 7.3 y su refuerzo prepara el commit y todos los camb
 **Iteraciones:** 3
 
 **Leccion:** La configuracion de plugins debe tratar `entity` y `extension` como casos compatibles pero no identicos: comparten tabla de configuracion y versionado de schema, pero las extensiones necesitan conservar su relacion de aplicacion (`target_entity`) y normalizar sus datos antes de escribir en `plugin_extension_data`.
+
+---
+
+### STORY 7.4 - Rollback manual de plugin a version anterior
+
+**Prompt de implementacion:**
+```text
+Implementemos la siguiente Story en el roadmap, la 7.4
+```
+
+**Resultado:** STORY 7.4 implementada. Se añadió rollback manual por API (`POST /api/v1/plugins/{slug}/rollback`) con restauración transaccional desde `plugin_update_history` filtrando por `slug + target_version`, ejecución opcional de `onRollback(array $context)` y respuesta de conflicto (`409`) cuando no existe snapshot aplicable. También se incorporó cobertura de integración específica (`PluginRollbackServiceTest`) y ampliación de tests de lifecycle/API.
+
+**Iteraciones:** 3
+
+**Leccion:** Guardar snapshots por versión objetivo permite rollback seguro y determinista en cadenas de updates (`v1->v2->v3`), evitando restauraciones ambiguas cuando hay múltiples snapshots históricos del mismo plugin.

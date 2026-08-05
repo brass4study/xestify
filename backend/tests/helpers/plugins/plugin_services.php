@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xestify\plugins\application\PluginOutdatedService;
+use Xestify\plugins\application\PluginRollbackService;
 use Xestify\plugins\application\InstalledPluginSchemaValidator;
 use Xestify\plugins\application\PluginSchemaMergeService;
 use Xestify\plugins\application\PluginStatusService;
@@ -65,6 +66,16 @@ function buildPluginUpdateService(string $root, \PDO $pdo): PluginUpdateService
         new PluginSchemaMergeService(),
         buildPluginLifecycleInvoker($root, $pdo),
         new InstalledPluginSchemaValidator()
+    );
+}
+
+function buildPluginRollbackService(string $root, \PDO $pdo): PluginRollbackService
+{
+    return new PluginRollbackService(
+        $pdo,
+        buildPluginRepository($pdo),
+        new PluginUpdateHistoryRepository($pdo),
+        buildPluginLifecycleInvoker($root, $pdo)
     );
 }
 

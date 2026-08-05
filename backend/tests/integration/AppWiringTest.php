@@ -142,11 +142,19 @@ TestSuite::run('boot wiring injects active hooks into EntityService', function (
 
     /** @var EntityService $service */
     $service = $container->get(EntityService::class);
-    $service->createRecord('clients', ['name' => 'Ana Uno', 'email' => $email]);
+    $service->createRecord('clients', [
+        'name' => 'Ana Uno',
+        'surnames' => 'Prueba Uno',
+        'email' => $email,
+    ]);
 
     $threw = false;
     try {
-        $service->createRecord('clients', ['name' => 'Ana Dos', 'email' => $email]);
+        $service->createRecord('clients', [
+            'name' => 'Ana Dos',
+            'surnames' => 'Prueba Dos',
+            'email' => $email,
+        ]);
     } catch (HookException) {
         $threw = true;
     } finally {

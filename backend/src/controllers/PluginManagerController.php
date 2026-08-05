@@ -22,6 +22,7 @@ use Xestify\plugins\application\PluginAdministrationService;
  *   GET    /api/v1/plugins
  *   POST   /api/v1/plugins/sync
  *   POST   /api/v1/plugins/{slug}/update
+ *   POST   /api/v1/plugins/{slug}/rollback
  *   PUT    /api/v1/plugins/{slug}/status
  *   GET    /api/v1/plugins/{slug}/config
  *   PUT    /api/v1/plugins/{slug}/config
@@ -40,6 +41,7 @@ class PluginManagerController
     private const MSG_ADMIN_REQUIRED = 'Admin role is required.';
     private const MSG_PLUGIN_NOT_FOUND = 'Plugin not found.';
     private const MSG_PLUGIN_UPDATE_FAILED = 'Plugin update failed.';
+    private const MSG_PLUGIN_ROLLBACK_FAILED = 'Plugin rollback failed.';
     private const MSG_PLUGIN_CONFIG_FAILED = 'Plugin config update failed.';
     private const MSG_ERROR_PREFIX = 'Error: ';
 
@@ -192,6 +194,37 @@ class PluginManagerController
             Response::make()->error(409, $e->getMessage());
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_PLUGIN_UPDATE_FAILED . ' ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins/{slug}/rollback
+     * Restore plugin runtime state from the latest matching snapshot.
+     */
+    public function rollbackPlugin(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$this->isAdminRequest($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $result = $this->pluginAdministration->rollback($slug);
+            Response::make()->json($result);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (DomainException | PluginException $e) {
+            Response::make()->error(409, $e->getMessage());
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_PLUGIN_ROLLBACK_FAILED . ' ' . $e->getMessage());
         }
     }
 

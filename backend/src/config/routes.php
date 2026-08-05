@@ -42,6 +42,7 @@ $router->get('/api/v1/plugins',                    [PluginManagerController::cla
 $router->post('/api/v1/plugins/sync',              [PluginManagerController::class, 'syncPlugins']);
 $router->get('/api/v1/plugins/updates',            [PluginManagerController::class, 'listPluginUpdates']);
 $router->post('/api/v1/plugins/{slug}/update',     [PluginManagerController::class, 'updatePlugin']);
+$router->post('/api/v1/plugins/{slug}/rollback',   [PluginManagerController::class, 'rollbackPlugin']);
 $router->put('/api/v1/plugins/{slug}/status',      [PluginManagerController::class, 'updatePluginStatus']);
 $router->get('/api/v1/plugins/{slug}/config',      [PluginManagerController::class, 'getPluginConfig']);
 $router->put('/api/v1/plugins/{slug}/config',      [PluginManagerController::class, 'updatePluginConfig']);

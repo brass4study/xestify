@@ -24,6 +24,8 @@ try {
     exit(0);
 }
 
+const LIFECYCLE_VERSION = '1.0.0';
+
 echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('onInstall(), onActivate() and onDeactivate() call lifecycle methods', function () use ($pdo): void {
@@ -44,9 +46,9 @@ PHP;
     $root = createPluginFixture([
         'slug' => $slug,
         'name' => 'Lifecycle Plugin',
-        'version' => '1.0.0',
+        'version' => LIFECYCLE_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => LIFECYCLE_VERSION,
     ], false, false, null, $lifecycle);
 
     try {
@@ -86,9 +88,9 @@ PHP;
     $root = createPluginFixture([
         'slug' => $slug,
         'name' => 'Lifecycle Update Plugin',
-        'version' => '1.0.0',
+        'version' => LIFECYCLE_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => LIFECYCLE_VERSION,
     ], false, false, null, $lifecycle);
 
     try {
@@ -96,6 +98,40 @@ PHP;
         $invoker = buildPluginLifecycleInvoker($root, $pdo);
         $invoker->onUpdate($slug, ['slug' => $slug]);
         assertEquals($slug, $GLOBALS['lc_context_slug'] ?? null, 'onUpdate must receive context');
+    } finally {
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('onRollback() is optional and receives context when implemented', function () use ($pdo): void {
+    $slug = 'rollback' . bin2hex(random_bytes(4));
+    $lifecycle = <<<PHP
+<?php
+declare(strict_types=1);
+namespace Xestify\plugins\\{$slug};
+use PDO;
+use Xestify\plugins\PluginLifecycleInterface;
+final class Lifecycle implements PluginLifecycleInterface {
+    public function __construct(private PDO \$pdo) {}
+    public function onInstall(): void {}
+    public function onActivate(): void {}
+    public function onDeactivate(): void {}
+    public function onRollback(array \$context): void { \$GLOBALS['lc_rollback_to'] = \$context['to_version'] ?? null; }
+}
+PHP;
+    $root = createPluginFixture([
+        'slug' => $slug,
+        'name' => 'Lifecycle Rollback Plugin',
+        'version' => LIFECYCLE_VERSION,
+        'type' => 'entity',
+        'core_version' => LIFECYCLE_VERSION,
+    ], false, false, null, $lifecycle);
+
+    try {
+        $GLOBALS['lc_rollback_to'] = null;
+        $invoker = buildPluginLifecycleInvoker($root, $pdo);
+        $invoker->onRollback($slug, ['to_version' => LIFECYCLE_VERSION]);
+        assertEquals(LIFECYCLE_VERSION, $GLOBALS['lc_rollback_to'] ?? null, 'onRollback must receive context');
     } finally {
         removePluginFixture($root);
     }

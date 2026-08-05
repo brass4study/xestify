@@ -899,3 +899,20 @@
   - Verificó la suite backend completa y sintaxis de los módulos JS afectados antes de preparar el commit.
 - **Iteraciones:** 3
 - **Decisión manual:** Tratar el refuerzo de plugins `extension` como parte del cierre de STORY 7.3, manteniendo STORY 7.4 enfocada exclusivamente en rollback manual.
+
+---
+
+### STORY 7.4 - Rollback manual de plugin a version anterior
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** ~2h
+- **Aceleración:** ~67%
+- **Qué hizo IA:**
+  - Implementó `PluginRollbackService` con transacción, lock de plugin instalado y selección de snapshot por `slug + target_version`.
+  - Añadió restauración de estado/version/schema en `PluginRepository` y consulta dedicada en `PluginUpdateHistoryRepository`.
+  - Expuso `POST /api/v1/plugins/{slug}/rollback` en `PluginManagerController` y `routes.php`.
+  - Añadió convención opcional `onRollback(array $context)` en `PluginLifecycleInvoker` sin romper `PluginLifecycleInterface`.
+  - Reforzó la cobertura con pruebas de integración para rollback exitoso, rollback sin snapshot y API de rollback (200/404/409).
+  - Actualizó documentación de endpoints y estado de backlog/roadmap/sesión.
+- **Iteraciones:** 3
+- **Decisión manual:** Mantener `onRollback()` como convención opcional detectada por `method_exists`, igual que `onUpdate()`, para preservar compatibilidad con plugins existentes.

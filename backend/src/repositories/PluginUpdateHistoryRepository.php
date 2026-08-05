@@ -35,4 +35,28 @@ final class PluginUpdateHistoryRepository
             ':target_version' => $targetVersion,
         ]);
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function lockLatestSnapshotForRollback(string $slug, string $currentVersion): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, slug, name, plugin_type, version, status, schema_version, schema_json, target_version, created_at
+             FROM plugin_update_history
+             WHERE slug = :slug
+               AND target_version = :target_version
+             ORDER BY created_at DESC
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $stmt->execute([
+            ':slug' => $slug,
+            ':target_version' => $currentVersion,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $row;
+    }
 }

@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-04
-> **Estado del proyecto:** **STORY 7.3 incluida** — EPIC 7 en progreso, próxima story `7.4`
+> **Última actualización:** 2026-08-05
+> **Estado del proyecto:** **STORY 7.4 incluida** — EPIC 7 en progreso, próxima story `7.5`
 
 ---
 
@@ -27,9 +27,9 @@ Su objetivo es:
 
 El corte funcional vigente del producto queda fijado en:
 
-- `STORY 7.3` completada
+- `STORY 7.4` completada
 - `EPIC 7` todavía abierto
-- siguiente story funcional: `STORY 7.4`
+- siguiente story funcional: `STORY 7.5`
 
 ### Funcionalidades nucleares (Core)
 
@@ -235,10 +235,10 @@ avanzada y rollback manual.
 **Cerrado ya en esta fase**
 - `7.1` detección de actualizaciones disponibles
 - `7.2` sync/update explícito con schema aditivo, rollback transaccional y snapshots en `plugin_update_history`
-
-**Pendiente**
 - `7.3` página de configuración del plugin activado
 - `7.4` rollback manual a versión anterior
+
+**Pendiente**
 - `7.5` UI de actualización y rollback en `PluginManager`
 
 **Criterio real de salida**

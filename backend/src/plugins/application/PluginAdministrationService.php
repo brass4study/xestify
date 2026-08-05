@@ -16,6 +16,7 @@ class PluginAdministrationService
         private PluginSyncService $pluginSyncService,
         private PluginOutdatedService $pluginOutdatedService,
         private PluginUpdateService $pluginUpdateService,
+        private PluginRollbackService $pluginRollbackService,
         private PluginStatusService $pluginStatusService,
         private ExtensionPluginConfigService $extensionPluginConfigService
     ) {
@@ -63,6 +64,17 @@ class PluginAdministrationService
     public function update(string $slug): array
     {
         return $this->pluginUpdateService->update($slug);
+    }
+
+    /**
+     * @return array{
+     *   plugin: array<string, mixed>,
+     *   rollback: array<string, mixed>
+     * }
+     */
+    public function rollback(string $slug): array
+    {
+        return $this->pluginRollbackService->rollback($slug);
     }
 
     /**
@@ -259,7 +271,7 @@ class PluginAdministrationService
             throw new InvalidArgumentException('Plugin schema is invalid.');
         }
 
-        $normalizedFields = $this->normalizeSchemaFields($decoded['fields'] ?? null);
+        $normalizedFields = PluginSchemaFieldNormalizer::normalize($decoded['fields'] ?? null);
         if ($normalizedFields === null) {
             if ($isExtension) {
                 $decoded['fields'] = [];
@@ -278,56 +290,6 @@ class PluginAdministrationService
         }
 
         return $decoded;
-    }
-
-    /**
-     * @param mixed $rawFields
-     * @return array<string, array{type: string, required: bool, label: string}>|null
-     */
-    private function normalizeSchemaFields(mixed $rawFields): ?array
-    {
-        if (!is_array($rawFields)) {
-            return null;
-        }
-
-        $normalized = [];
-
-        if (array_is_list($rawFields)) {
-            foreach ($rawFields as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-
-                $key = trim((string) ($entry['name'] ?? ($entry['key'] ?? '')));
-                if ($key === '') {
-                    continue;
-                }
-
-                $normalized[$key] = [
-                    ...$entry,
-                    'type' => trim((string) ($entry['type'] ?? 'string')),
-                    'required' => (bool) ($entry['required'] ?? false),
-                    'label' => trim((string) ($entry['label'] ?? $key)),
-                ];
-            }
-
-            return $normalized;
-        }
-
-        foreach ($rawFields as $key => $definition) {
-            if (!is_string($key) || !is_array($definition)) {
-                continue;
-            }
-
-            $normalized[$key] = [
-                ...$definition,
-                'type' => trim((string) ($definition['type'] ?? 'string')),
-                'required' => (bool) ($definition['required'] ?? false),
-                'label' => trim((string) ($definition['label'] ?? $key)),
-            ];
-        }
-
-        return $normalized;
     }
 
     /**

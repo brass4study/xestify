@@ -293,4 +293,42 @@ final class PluginRepository
 
         return $row;
     }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     * @return array<string, mixed>
+     */
+    public function restoreFromSnapshot(string $pluginId, array $snapshot): array
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugins
+                SET name = :name,
+                    plugin_type = :plugin_type,
+                    version = :version,
+                    status = :status,
+                    schema_version = :schema_version,
+                    schema_json = CAST(:schema_json AS jsonb),
+                    updated_at = NOW()
+              WHERE id = :id
+              RETURNING slug, name, plugin_type, version, status, schema_version, installed_at, updated_at'
+        );
+
+        $stmt->execute([
+            ':id' => $pluginId,
+            ':name' => (string) ($snapshot['name'] ?? ''),
+            ':plugin_type' => (string) ($snapshot['plugin_type'] ?? ''),
+            ':version' => (string) ($snapshot['version'] ?? ''),
+            ':status' => (string) ($snapshot['status'] ?? ''),
+            ':schema_version' => (int) ($snapshot['schema_version'] ?? 1),
+            ':schema_json' => $snapshot['schema_json'] ?? null,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            $slug = (string) ($snapshot['slug'] ?? '');
+            throw new PluginException("Failed to restore plugin '{$slug}' from snapshot.");
+        }
+
+        return $row;
+    }
 }

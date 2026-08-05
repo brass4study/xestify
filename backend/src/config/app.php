@@ -21,6 +21,7 @@ use Xestify\plugins\application\InstalledPluginSchemaValidator;
 use Xestify\plugins\application\ExtensionPluginConfigService;
 use Xestify\plugins\application\PluginAdministrationService;
 use Xestify\plugins\application\PluginOutdatedService;
+use Xestify\plugins\application\PluginRollbackService;
 use Xestify\plugins\application\PluginSchemaMergeService;
 use Xestify\plugins\application\PluginStatusService;
 use Xestify\plugins\application\PluginSyncService;
@@ -159,6 +160,12 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginLifecycleInvoker::class),
             $container->get(InstalledPluginSchemaValidator::class)
         ));
+        $container->singleton(PluginRollbackService::class, fn() => new PluginRollbackService(
+            $container->get(Database::class),
+            $container->get(PluginRepository::class),
+            $container->get(PluginUpdateHistoryRepository::class),
+            $container->get(PluginLifecycleInvoker::class)
+        ));
         $container->singleton(PluginStatusService::class, fn() => new PluginStatusService(
             $container->get(PluginRepository::class),
             $container->get(PluginLifecycleInvoker::class)
@@ -175,6 +182,7 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginSyncService::class),
             $container->get(PluginOutdatedService::class),
             $container->get(PluginUpdateService::class),
+            $container->get(PluginRollbackService::class),
             $container->get(PluginStatusService::class),
             $container->get(ExtensionPluginConfigService::class)
         ));

@@ -17,6 +17,7 @@
 | POST   | /api/v1/plugins/sync | Sincronizar plugins desde disco sin consumir actualizaciones | Sí (admin) |
 | GET    | /api/v1/plugins/updates | Listar plugins con actualización disponible | Sí (admin) |
 | POST   | /api/v1/plugins/{slug}/update | Aplicar actualización explícita de plugin | Sí (admin) |
+| POST   | /api/v1/plugins/{slug}/rollback | Revertir plugin a la versión previa desde snapshot | Sí (admin) |
 | PUT    | /api/v1/plugins/{slug}/status | Cambiar estado de plugin (activar/desactivar) | Sí (admin) |
 | GET    | /api/v1/plugins/{slug}/config | Obtener configuración de plugin activo | Sí (admin) |
 | PUT    | /api/v1/plugins/{slug}/config | Guardar configuración y versionar schema de plugin activo | Sí (admin) |

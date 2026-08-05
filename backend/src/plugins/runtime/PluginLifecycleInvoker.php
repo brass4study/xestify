@@ -46,4 +46,15 @@ final class PluginLifecycleInvoker
             $lifecycle->onUpdate($context); // @phpstan-ignore-line optional lifecycle convention
         }
     }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function onRollback(string $slug, array $context): void
+    {
+        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        if ($lifecycle !== null && method_exists($lifecycle, 'onRollback')) {
+            $lifecycle->onRollback($context); // @phpstan-ignore-line optional lifecycle convention
+        }
+    }
 }

@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-08-04
+**Fecha:** 2026-08-05
 **EPIC activo:** EPIC 7 - Actualizaciones de Plugins y Rollback (EN PROGRESO)  
-**Próxima story:** STORY 7.4 - Rollback manual de plugin a versión anterior
+**Próxima story:** STORY 7.5 - Frontend - UI de actualización y rollback en PluginManager
 
 ---
 
@@ -520,3 +520,43 @@ Story completada junto con su refuerzo funcional para plugins `extension`.
 - Commit de story: pendiente (este commit)
 - Verificacion critica: los campos base del plugin no se pueden editar/desactivar desde UI/API y los plugins `extension` pueden restringirse por `target_entity`
 - Backlog alineado: el siguiente punto es STORY 7.4
+
+# Sesion 2026-08-05 - STORY 7.4 Rollback manual de plugin a version anterior
+
+Story implementada.
+
+**Creados (backend):**
+- `backend/src/plugins/application/PluginRollbackService.php` - rollback transaccional por `slug`, restaura snapshot y ejecuta `onRollback()` opcional
+- `backend/tests/integration/PluginRollbackServiceTest.php` - cobertura de rollback exitoso y error cuando no hay snapshot
+
+**Modificados (backend):**
+- `backend/src/controllers/PluginManagerController.php` - endpoint `POST /api/v1/plugins/{slug}/rollback`
+- `backend/src/config/routes.php` - alta de ruta rollback en plugin manager
+- `backend/src/config/app.php` - wiring de `PluginRollbackService` y dependencias
+- `backend/src/plugins/application/PluginAdministrationService.php` - exposición de operación `rollback()`
+- `backend/src/plugins/runtime/PluginLifecycleInvoker.php` - soporte de convención opcional `onRollback(array $context)`
+- `backend/src/repositories/PluginRepository.php` - restauración de estado/version/schema desde snapshot
+- `backend/src/repositories/PluginUpdateHistoryRepository.php` - lectura bloqueante del snapshot aplicable por versión objetivo
+
+**Modificados (tests):**
+- `backend/tests/helpers/plugins/plugin_services.php` - builder `buildPluginRollbackService()`
+- `backend/tests/integration/PluginLifecycleInvokerTest.php` - cobertura de `onRollback()` opcional
+- `backend/tests/integration/PluginManagerApiTest.php` - casos API rollback: éxito, 404 y 409
+- `backend/tests/run.php` - incluye `PluginRollbackServiceTest.php` en `integration-plugins`
+
+**Docs actualizadas:**
+- `docs/03-api/endpoints.md` - endpoint rollback documentado
+- `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` - corte funcional actualizado a STORY 7.4
+
+**Tests finales:**
+- Backend plugins: `php backend/tests/run.php integration-plugins` -> 15/15 archivos en verde
+- Backend específicos de la story:
+  - `PluginRollbackServiceTest.php` -> 2/2 ✅
+  - `PluginLifecycleInvokerTest.php` -> 3/3 ✅
+  - `PluginManagerApiTest.php` -> 18/18 ✅
+- Ajuste adicional post-implementación: `AppWiringTest.php` actualizado para alinear payload de `clients` con schema vigente (`surnames` requerido), dejando el caso de wiring en verde.
+
+**Cierre verificado (2026-08-05):**
+- Commit de story: pendiente (este commit)
+- Verificacion critica: el rollback restaura versión y schema desde `plugin_update_history`, y devuelve `409` cuando no existe snapshot compatible
+- Backlog alineado: el siguiente punto es STORY 7.5

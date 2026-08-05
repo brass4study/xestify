@@ -9,6 +9,7 @@ declare(strict_types=1);
  * - GET  /api/v1/plugins/updates
  * - POST /api/v1/plugins/sync
  * - POST /api/v1/plugins/{slug}/update
+ * - POST /api/v1/plugins/{slug}/rollback
  * - PUT  /api/v1/plugins/{slug}/status
  * - GET  /api/v1/plugins/{slug}/config
  * - PUT  /api/v1/plugins/{slug}/config
@@ -52,6 +53,10 @@ final class TestPluginAdministrationService extends PluginAdministrationService
      *   plugin?: array<string, mixed>,
      *   update?: array<string, mixed>
      * }|null $updateResult
+     * @param array{
+     *   plugin?: array<string, mixed>,
+     *   rollback?: array<string, mixed>
+     * }|null $rollbackResult
      */
     public function __construct(
         private array $plugins,
@@ -59,6 +64,8 @@ final class TestPluginAdministrationService extends PluginAdministrationService
         private array $syncResult = ['summary' => [], 'plugins' => []],
         private ?array $updateResult = null,
         private ?Throwable $updateError = null,
+        private ?array $rollbackResult = null,
+        private ?Throwable $rollbackError = null,
         private ?Throwable $statusError = null
     ) {
         // Parent dependencies are intentionally bypassed in this test double.
@@ -95,6 +102,22 @@ final class TestPluginAdministrationService extends PluginAdministrationService
                 'to_version' => SEMVER_2_0,
                 'schema_changed' => false,
                 'diff' => [],
+            ],
+        ];
+    }
+
+    public function rollback(string $slug): array
+    {
+        if ($this->rollbackError !== null) {
+            throw $this->rollbackError;
+        }
+
+        return $this->rollbackResult ?? [
+            'plugin' => ['slug' => $slug, 'version' => SEMVER_1_0],
+            'rollback' => [
+                'from_version' => SEMVER_2_0,
+                'to_version' => SEMVER_1_0,
+                'snapshot_id' => 'snapshot-test-id',
             ],
         ];
     }
@@ -509,6 +532,86 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns 409 for unsupported u
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Unsupported update should fail');
+    assertEquals(409, $response['error']['code'] ?? null, 'Error code should be 409');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/rollback restores plugin for admin', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(
+        pluginListFixture(),
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        null,
+        [
+            'plugin' => [
+                'slug' => 'clients',
+                'name' => 'Clients',
+                'plugin_type' => 'entity',
+                'version' => SEMVER_1_0,
+                'status' => 'active',
+                'schema_version' => 1,
+            ],
+            'rollback' => [
+                'from_version' => SEMVER_2_0,
+                'to_version' => SEMVER_1_0,
+                'snapshot_id' => 'snapshot-001',
+            ],
+        ]
+    ));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->rollbackPlugin(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Rollback should succeed for admin');
+    assertEquals(SEMVER_1_0, $response['data']['plugin']['version'] ?? null, 'Plugin version should be rolled back');
+    assertEquals(SEMVER_2_0, $response['data']['rollback']['from_version'] ?? null, 'from_version should be present');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/rollback returns 404 when plugin is not installed', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(
+        pluginListFixture(),
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        null,
+        null,
+        new OutOfBoundsException('missing')
+    ));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->rollbackPlugin(['slug' => 'missing'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Missing plugin rollback should fail');
+    assertEquals(404, $response['error']['code'] ?? null, 'Error code should be 404');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/rollback returns 409 when no snapshot exists', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(
+        pluginListFixture(),
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        null,
+        null,
+        new DomainException('no snapshot available')
+    ));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->rollbackPlugin(['slug' => 'clients'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Rollback without snapshot should fail');
     assertEquals(409, $response['error']['code'] ?? null, 'Error code should be 409');
 });
 
