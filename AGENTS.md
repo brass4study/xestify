@@ -161,6 +161,21 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 - La exposicion de tests frontend bajo Apache se activa con `SetEnvIf ... ENABLE_TEST=1`.
 - Evitar `tools/dev/frontend-router.php`; ya no forma parte del flujo soportado.
 
+## Politica de finales de linea (CRLF/LF)
+
+- El repositorio usa LF como formato canonico de fin de linea, definido en
+  `.gitattributes`.
+- En Windows, configurar SIEMPRE el repo local con:
+
+```text
+git config --local core.autocrlf false
+git config --local core.eol lf
+```
+
+- No cambiar `.gitattributes` para permitir CRLF globalmente.
+- Si aparece el warning `CRLF will be replaced by LF`, corregir la configuracion
+  local anterior y continuar; no ignorar el warning en commits recurrentes.
+
 ## Arquitectura
 
 - Mantener el pipeline real `Router -> Middleware -> Controller`.
