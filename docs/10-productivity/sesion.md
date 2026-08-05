@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-08-05
 **EPIC activo:** EPIC 8 - Gestión de usuarios (EN PROGRESO)  
-**Próxima story:** STORY 8.2 - Backend - UserController y rutas REST
+**Próxima story:** STORY 8.3 - Frontend - UserMenu dropdown en Navbar
 
 ---
 
@@ -160,6 +160,7 @@
 | Story | Descripción | Estado | Verificación |
 |-------|-------------|--------|--------------|
 | 8.1 | Backend - Migracion de perfil y UserRepository | ✅ Implementada | `php backend/tests/integration/UserRepositoryTest.php` → 5/5 tests |
+| 8.2 | Backend - UserController y rutas REST | ✅ Implementada | `php backend/tests/integration/UserControllerTest.php` → 4/4 tests |
 
 **Detalle de la story 8.1:**
 - `backend/database/migrations/001_users.sql` incorpora `name`, `avatar` y `deleted_at` sobre la tabla `users`.
@@ -167,6 +168,11 @@
 - `backend/tests/integration/UserRepositoryTest.php` añade cobertura de perfil, actualización y borrado lógico.
 - `backend/src/controllers/AuthController.php` bloquea el login para usuarios marcados como borrados.
 - `backend/tests/integration/AuthControllerTest.php` añade un test de regresión para usuarios eliminados.
+
+**Detalle de la story 8.2:**
+- `backend/src/controllers/UserController.php` añade endpoints para ver y actualizar el perfil propio, listar/mostrar/editar usuarios en modo admin y borrar usuarios con protección contra auto-borrado.
+- `backend/src/config/routes.php` y `backend/src/config/app.php` registran las rutas protegidas `/api/v1/users/me`, `/api/v1/users` y `/api/v1/users/{id}`.
+- `backend/tests/integration/UserControllerTest.php` cubre acceso al perfil, validación de cambio de email con password actual, listado admin y borrado lógico con guardas.
 
 ### 🔄 EPIC 6 — Plugins tipo Extension (EN PROGRESO)
 

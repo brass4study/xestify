@@ -257,6 +257,22 @@ Implementa la story 8.1 para Xestify:
 
 ---
 
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.2 — Backend - UserController y rutas REST
+**Prompt:**
+```
+Implementa la story 8.2 para Xestify:
+- Añadir un UserController con endpoints protegidos para /api/v1/users/me, /api/v1/users y /api/v1/users/{id}.
+- Permitir ver y actualizar el perfil propio, listar/mostrar/editar usuarios desde admin y hacer borrado lógico con bloqueo de self-delete.
+- Añadir tests de integración y revisar los hallazgos de calidad del código.
+```
+**Resultado:** Controller funcional con rutas protegidas, lógica de permisos y tests de integración pasando.
+**Iteraciones:** 2
+**Lección:** El flujo de perfil propio debe exigir password actual en cambios de email y el borrado debe ser lógico con guardas explícitas.
+
+---
+
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1 — ValidationService (valida contra schema JSONB)

@@ -279,6 +279,22 @@
 
 ---
 
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.2: Backend - UserController y rutas REST
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Implementó `UserController` con endpoints de perfil propio y administración.
+  - Registró rutas protegidas y wiring del controlador en el container.
+  - Generó tests de integración para perfil, validación de password y borrado lógico.
+- **Iteraciones:** 2 (ajuste de validaciones y revisión de SonarQube)
+- **Decisión manual:** Mantener el borrado lógico y bloquear el auto-borrado para admins.
+
+---
+
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1: ValidationService (valida contra schema JSONB)
