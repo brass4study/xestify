@@ -1,0 +1,39 @@
+{
+  "entity": "demoinventory",
+  "label_singular": "item",
+  "version": "1.0.0",
+  "identities": {
+    "id": {
+      "type": "uuid",
+      "label": "ID",
+      "auto_generated": true,
+      "editable": false
+    }
+  },
+  "fields": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "label": "Nombre"
+    }
+  },
+  "custom_fields": [
+    {
+      "key": "sku",
+      "type": "string",
+      "required": true,
+      "label": "SKU",
+      "origin": "suggested",
+      "summaryView": true
+    },
+    {
+      "key": "is_active",
+      "type": "boolean",
+      "required": false,
+      "label": "Activo",
+      "origin": "suggested",
+      "summaryView": false
+    }
+  ],
+  "relations": []
+}

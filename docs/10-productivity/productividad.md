@@ -916,3 +916,20 @@
   - Actualizó documentación de endpoints y estado de backlog/roadmap/sesión.
 - **Iteraciones:** 3
 - **Decisión manual:** Mantener `onRollback()` como convención opcional detectada por `method_exists`, igual que `onUpdate()`, para preservar compatibilidad con plugins existentes.
+
+---
+
+### STORY 7.5 - Frontend - UI de actualizacion y rollback en PluginManager
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** ~1h 45min
+- **Aceleración:** ~65%
+- **Qué hizo IA:**
+  - Extendió `PluginManager` con sincronización explícita (`POST /plugins/sync`) y recarga de datos con feedback visual.
+  - Integró lectura de updates (`GET /plugins/updates`) para mostrar badge de "update disponible" por plugin.
+  - Añadió acciones `Update` y `Rollback` con confirmación modal previa y mensajes de éxito/error.
+  - Incorporó señal de backend `can_rollback` en `GET /plugins` para mostrar rollback solo cuando existe snapshot compatible.
+  - Actualizó estilos responsive y cobertura de tests frontend para los nuevos flujos.
+  - Verificó regresión con `PluginManagerApiTest` y grupo completo `integration-plugins`.
+- **Iteraciones:** 3
+- **Decisión manual:** Exponer `can_rollback` desde backend en el listado para evitar UI ambigua y cumplir el criterio de mostrar rollback únicamente cuando hay versión previa recuperable.

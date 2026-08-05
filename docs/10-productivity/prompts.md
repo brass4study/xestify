@@ -955,3 +955,18 @@ Implementemos la siguiente Story en el roadmap, la 7.4
 **Iteraciones:** 3
 
 **Leccion:** Guardar snapshots por versión objetivo permite rollback seguro y determinista en cadenas de updates (`v1->v2->v3`), evitando restauraciones ambiguas cuando hay múltiples snapshots históricos del mismo plugin.
+
+---
+
+### STORY 7.5 - Frontend - UI de actualizacion y rollback en PluginManager
+
+**Prompt de implementacion:**
+```text
+Ok, continuemos con la story 7.5
+```
+
+**Resultado:** STORY 7.5 implementada. `PluginManager` ahora muestra botón `Synchronize` (admin) con llamada a `POST /api/v1/plugins/sync`, badge de actualización por plugin usando `GET /api/v1/plugins/updates`, botón `Update` con `POST /api/v1/plugins/{slug}/update`, y botón `Rollback` con `POST /api/v1/plugins/{slug}/rollback` únicamente cuando `can_rollback` es verdadero en `GET /api/v1/plugins`. Tanto update como rollback exigen confirmación modal previa y muestran feedback en pantalla tras completar la acción.
+
+**Iteraciones:** 3
+
+**Leccion:** Para UX operativa de plugins, no basta con exponer endpoints: conviene publicar también señales de estado derivadas (`can_rollback`) para que el frontend ofrezca acciones válidas y evite flujos fallidos por diseño.

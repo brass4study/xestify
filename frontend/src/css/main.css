@@ -745,6 +745,10 @@ body {
 }
 
 .xt-plugin-manager__header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
 }
 
@@ -757,6 +761,47 @@ body {
 .xt-plugin-manager__subtitle {
   font-size: 0.9rem;
   color: #6b7280;
+}
+
+.xt-plugin-manager__sync-btn {
+  border: 1px solid #0f766e;
+  border-radius: 0.45rem;
+  background: #0f766e;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+}
+
+.xt-plugin-manager__sync-btn:hover:not(:disabled) {
+  background: #115e59;
+  border-color: #115e59;
+}
+
+.xt-plugin-manager__sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.xt-plugin-manager__feedback {
+  border-radius: 0.45rem;
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+  margin-bottom: 0.9rem;
+  padding: 0.65rem 0.8rem;
+}
+
+.xt-plugin-manager__feedback--success {
+  background: #ecfdf3;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.xt-plugin-manager__feedback--error {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
 }
 
 .xt-plugin-manager__content {
@@ -811,6 +856,23 @@ body {
   color: #4b5563;
 }
 
+.xt-plugin-manager__version-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.xt-plugin-manager__update-badge {
+  align-self: flex-start;
+  background: #ffedd5;
+  border: 1px solid #fdba74;
+  border-radius: 999px;
+  color: #9a3412;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+}
+
 .xt-plugin-manager__type-badge,
 .xt-plugin-manager__status-badge {
   display: inline-block;
@@ -841,6 +903,10 @@ body {
 }
 
 .xt-plugin-manager__cell-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
   padding: 0.75rem;
 }
 
@@ -882,11 +948,39 @@ body {
 .xt-plugin-manager__action-btn--configure {
   border-color: #2563eb;
   color: #2563eb;
-  margin-left: 0.45rem;
 }
 
 .xt-plugin-manager__action-btn--configure:hover:not(:disabled) {
   background: #dbeafe;
+}
+
+.xt-plugin-manager__action-btn--update {
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+.xt-plugin-manager__action-btn--update:hover:not(:disabled) {
+  background: #ffedd5;
+}
+
+.xt-plugin-manager__action-btn--rollback {
+  border-color: #7c3aed;
+  color: #6d28d9;
+}
+
+.xt-plugin-manager__action-btn--rollback:hover:not(:disabled) {
+  background: #ede9fe;
+}
+
+.xt-plugin-manager__action-btn--confirm {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.xt-plugin-manager__action-btn--confirm:hover:not(:disabled) {
+  border-color: #115e59;
+  background: #115e59;
 }
 
 .xt-plugin-manager__action-btn:disabled {
@@ -908,6 +1002,40 @@ body {
   border: 1px solid #fca5a5;
   border-radius: 0.45rem;
   font-size: 0.9rem;
+}
+
+.xt-plugin-manager__confirm {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.xt-plugin-manager__confirm-text {
+  margin: 0;
+}
+
+.xt-plugin-manager__confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .xt-plugin-manager {
+    padding: 1rem;
+  }
+
+  .xt-plugin-manager__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .xt-plugin-manager__sync-btn {
+    align-self: flex-start;
+  }
+
+  .xt-plugin-manager__cell-actions {
+    min-width: 260px;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

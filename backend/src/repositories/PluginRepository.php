@@ -24,8 +24,21 @@ final class PluginRepository
     public function listInstalled(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT slug, name, plugin_type, version, status, schema_version, installed_at, updated_at
-             FROM plugins
+            'SELECT p.slug,
+                    p.name,
+                    p.plugin_type,
+                    p.version,
+                    p.status,
+                    p.schema_version,
+                    p.installed_at,
+                    p.updated_at,
+                    EXISTS (
+                        SELECT 1
+                        FROM plugin_update_history h
+                        WHERE h.slug = p.slug
+                          AND h.target_version = p.version
+                    ) AS can_rollback
+             FROM plugins p
              ORDER BY slug ASC'
         );
         if ($stmt === false) {

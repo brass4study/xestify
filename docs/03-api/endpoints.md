@@ -28,6 +28,7 @@
 
 > **Notas:**
 > - "Sí" implica autenticación JWT válida (usuario logueado). "Sí (admin)" requiere además rol admin.
+> - `GET /api/v1/plugins` incluye `can_rollback` por plugin para indicar si existe snapshot compatible para rollback.
 > - Los endpoints de plugins de extensión son genéricos y discriminan por plugin_slug y entity.
 > - Ver [contratos](contratos/) para detalles de payload y respuesta.
 

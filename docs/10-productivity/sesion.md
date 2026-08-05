@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-08-05
-**EPIC activo:** EPIC 7 - Actualizaciones de Plugins y Rollback (EN PROGRESO)  
-**Próxima story:** STORY 7.5 - Frontend - UI de actualización y rollback en PluginManager
+**EPIC activo:** EPIC 8 - Sistema UI, Shell Frontend y Arquitectura SPA (EN PREPARACION)  
+**Próxima story:** STORY 8.1 - Fundamentos de diseno, navegacion y anatomia de paginas
 
 ---
 
@@ -560,3 +560,29 @@ Story implementada.
 - Commit de story: pendiente (este commit)
 - Verificacion critica: el rollback restaura versión y schema desde `plugin_update_history`, y devuelve `409` cuando no existe snapshot compatible
 - Backlog alineado: el siguiente punto es STORY 7.5
+
+# Sesion 2026-08-05 - STORY 7.5 Frontend - UI de actualizacion y rollback en PluginManager
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/js/pages/PluginManager.js` - acciones de sincronizacion, update y rollback; lectura de updates; badge de version disponible; confirmacion modal y feedback
+- `frontend/src/css/main.css` - estilos de cabecera, badge de update, botones update/rollback, feedback y responsive movil
+- `frontend/tests/PluginManagerTest.html` - cobertura de sync, badge/update, rollback condicional y confirmacion modal
+
+**Modificados (backend):**
+- `backend/src/repositories/PluginRepository.php` - `GET /plugins` ahora expone `can_rollback` por plugin en base a snapshots compatibles
+
+**Docs actualizadas:**
+- `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` - corte funcional actualizado a STORY 7.5 y cierre de EPIC 7
+- `docs/03-api/endpoints.md` - nota de contrato para `can_rollback` en listado de plugins
+
+**Tests finales:**
+- Backend plugins: `php backend/tests/run.php integration-plugins` -> 15/15 archivos en verde
+- Backend API manager: `php backend/tests/integration/PluginManagerApiTest.php` -> 18/18 ✅
+- Frontend sintaxis: `node --check frontend/src/js/pages/PluginManager.js` y `node --check frontend/src/js/main.js`
+
+**Cierre verificado (2026-08-05):**
+- Commit de story: pendiente (este commit)
+- Verificacion critica: UI admin permite sincronizar, actualizar y hacer rollback con confirmacion modal; rollback solo visible cuando `can_rollback` es verdadero
+- Backlog alineado: el siguiente punto es STORY 8.1

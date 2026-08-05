@@ -1,0 +1,8 @@
+{
+  "slug": "demoinventory",
+  "name": "Demo Inventory",
+  "version": "1.0.0",
+  "type": "entity",
+  "core_version": "1.0.0",
+  "description": "Plugin demo para probar sync/update/rollback desde PluginManager."
+}

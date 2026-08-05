@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-05
-> **Estado del proyecto:** **STORY 7.4 incluida** — EPIC 7 en progreso, próxima story `7.5`
+> **Estado del proyecto:** **STORY 7.5 incluida** — EPIC 7 completado, próxima story `8.1`
 
 ---
 
@@ -27,9 +27,9 @@ Su objetivo es:
 
 El corte funcional vigente del producto queda fijado en:
 
-- `STORY 7.4` completada
-- `EPIC 7` todavía abierto
-- siguiente story funcional: `STORY 7.5`
+- `STORY 7.5` completada
+- `EPIC 7` completado
+- siguiente story funcional: `STORY 8.1`
 
 ### Funcionalidades nucleares (Core)
 
@@ -131,7 +131,7 @@ La estrategia vigente de implementación es:
 | 4 | Plugins y hooks backend | ✅ Completada | Loader, lifecycle y hooks |
 | 5 | Frontend dinámico base | ✅ Completada | Login + EntityList + EntityEdit |
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
-| 7 | Actualizaciones y rollback de plugins | 🔄 En progreso | `7.1` y `7.2` cerradas |
+| 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Sistema UI, shell frontend y arquitectura SPA | ⏭ Pendiente | Nuevo bloque frontend transversal |
 | 9 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 10 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
@@ -237,8 +237,6 @@ avanzada y rollback manual.
 - `7.2` sync/update explícito con schema aditivo, rollback transaccional y snapshots en `plugin_update_history`
 - `7.3` página de configuración del plugin activado
 - `7.4` rollback manual a versión anterior
-
-**Pendiente**
 - `7.5` UI de actualización y rollback en `PluginManager`
 
 **Criterio real de salida**
@@ -390,7 +388,7 @@ Y deja fuera, por ahora:
 | 4 | Sistema de Plugins y Hooks Backend | ✅ | Semanas 8-10 | 28 pts | MUST |
 | 5 | Frontend Dinámico Base | ✅ | Semanas 9-12 | 15 pts | MUST |
 | 6 | Plugins tipo Extension | ✅ | Fase 6 | 19 pts | MUST |
-| 7 | Actualizaciones de Plugins y Rollback | 🔄 | Fase 7 | 21 pts | MUST |
+| 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Sistema UI, Shell Frontend y Arquitectura SPA | ⏭ | Fase 8 | 38 pts | MUST |
 | 9 | Operación Técnica y Observabilidad | ⏭ | Fase 9 | 12 pts | SHOULD |
 | 10 | Marketplace de Plugins | ⏭ | Fase 10 | 16 pts | MUST |
@@ -466,12 +464,7 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Cerrar la Fase 7**
-   - implementar `7.3`
-   - completar `7.4`
-   - cerrar `7.5` en `PluginManager`
-
-2. **Abrir la Fase 8 como siguiente bloque transversal**
+1. **Abrir la Fase 8 como siguiente bloque transversal**
    - sistema UI
    - shell SPA
    - routing

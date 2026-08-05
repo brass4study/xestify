@@ -26,7 +26,16 @@
 
     async get(url) {
       this.calls.push({ method: 'GET', url });
+      if (url === '/plugins/updates' && this.responses[url] === undefined) {
+        return { ok: true, data: { updates: [] } };
+      }
       return this.responses[url] ?? { ok: false, error: { message: 'Not mocked' } };
+    }
+
+    async post(url, body) {
+      this.calls.push({ method: 'POST', url, body });
+      const key = url.split('?')[0];
+      return this.responses[key] ?? { ok: false, error: { message: 'Not mocked' } };
     }
 
     async put(url, body) {
@@ -271,6 +280,194 @@
 
     const configureButtons = container.querySelectorAll('.xt-plugin-manager__action-btn--configure');
     assertEquals(configureButtons.length, 2, 'Active entity and extension plugins should expose Configure button');
+  });
+
+  await test('shows sync button in header', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: { plugins: [] },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const button = container.querySelector('.xt-plugin-manager__sync-btn');
+    assertTrue(button !== null, 'Synchronize button should exist');
+  });
+
+  await test('calls POST /plugins/sync when synchronize is clicked', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: { updates: [] },
+      },
+      '/plugins/sync': {
+        ok: true,
+        data: {
+          summary: { discovered: 1, registered: 0, unchanged: 1, outdated: 0, errors: 0 },
+          plugins: {},
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const syncButton = container.querySelector('.xt-plugin-manager__sync-btn');
+    syncButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/sync'), 'Sync endpoint should be called');
+  });
+
+  await test('shows update badge and update action when update is available', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: {
+          updates: [
+            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const badge = container.querySelector('.xt-plugin-manager__update-badge');
+    const updateBtn = container.querySelector('.xt-plugin-manager__action-btn--update');
+    assertTrue(badge !== null, 'Update badge should be visible');
+    assertTrue(updateBtn !== null, 'Update button should be visible');
+  });
+
+  await test('shows rollback button only when can_rollback is true', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active', can_rollback: false },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: { updates: [] },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const rows = [...container.querySelectorAll('.xt-plugin-manager__row')];
+    const rollbackForClients = rows[0].querySelector('.xt-plugin-manager__action-btn--rollback');
+    const rollbackForComments = rows[1].querySelector('.xt-plugin-manager__action-btn--rollback');
+    assertTrue(rollbackForClients !== null, 'Rollback should exist for clients');
+    assertTrue(rollbackForComments === null, 'Rollback should not exist for comments');
+  });
+
+  await test('asks confirmation before update and calls endpoint on confirm', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: {
+          updates: [
+            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+          ],
+        },
+      },
+      '/plugins/clients/update': {
+        ok: true,
+        data: {
+          plugin: { slug: 'clients', version: '2.0.0', status: 'active' },
+          update: { from_version: '1.0.0', to_version: '2.0.0', schema_changed: false, diff: {} },
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const updateBtn = container.querySelector('.xt-plugin-manager__action-btn--update');
+    updateBtn.click();
+
+    const confirmBtn = container.querySelector('.xt-plugin-manager__action-btn--confirm');
+    assertTrue(confirmBtn !== null, 'Confirm button should exist in modal');
+    confirmBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/clients/update'), 'Update endpoint should be called after confirm');
+  });
+
+  await test('asks confirmation before rollback and calls endpoint on confirm', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: { updates: [] },
+      },
+      '/plugins/clients/rollback': {
+        ok: true,
+        data: {
+          plugin: { slug: 'clients', version: '1.0.0', status: 'active' },
+          rollback: { from_version: '2.0.0', to_version: '1.0.0', snapshot_id: 's1' },
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const rollbackBtn = container.querySelector('.xt-plugin-manager__action-btn--rollback');
+    rollbackBtn.click();
+
+    const confirmBtn = container.querySelector('.xt-plugin-manager__action-btn--confirm');
+    assertTrue(confirmBtn !== null, 'Confirm button should exist in rollback modal');
+    confirmBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/clients/rollback'), 'Rollback endpoint should be called after confirm');
   });
 
   await test('calls onConfigure callback when configure button is clicked', async () => {
