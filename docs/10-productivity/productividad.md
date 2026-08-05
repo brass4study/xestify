@@ -262,6 +262,23 @@
 
 ---
 
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.1: Backend - Migración de perfil y UserRepository
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~75% ⚡
+- **Qué hizo IA:**
+  - Añadió columnas de perfil (`name`, `avatar`, `deleted_at`) a la migración base de usuarios.
+  - Implementó `UserRepository` con CRUD orientado a perfil y borrado lógico.
+  - Añadió tests de integración para lectura, actualización, password y borrado.
+  - Ajustó el login para rechazar usuarios borrados.
+- **Iteraciones:** 2 (ajustes de limpieza de tests y validación de login)
+- **Decisión manual:** Mantener borrado lógico en `users` para conservar trazabilidad y bloquear acceso desde autenticación.
+
+---
+
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1: ValidationService (valida contra schema JSONB)

@@ -88,6 +88,7 @@ const TEST_RECORD   = '00000000-0000-0000-0000-000000000001';
 const TEST_COMMENT_BODY = 'Primer comentario de prueba';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
 const MSG_BODY_MUST_MATCH = 'body must match';
+const MSG_POST_OK_MUST_BE_TRUE = 'POST ok must be true';
 
 function callComments(PluginExtensionController $ctrl, string $method, array $params, array $body = []): array
 {
@@ -169,13 +170,15 @@ function seedParentRecord(): void
 
 function seedUser(string $id, string $email): void
 {
-    Database::connection()->prepare(
+    $pdo = Database::connection();
+    $pdo->prepare('DELETE FROM users WHERE id = :id OR email = :email')->execute([
+        ':id' => $id,
+        ':email' => $email,
+    ]);
+
+    $pdo->prepare(
         'INSERT INTO users (id, email, password_hash, roles)
-         VALUES (:id, :email, :password_hash, :roles::jsonb)
-         ON CONFLICT (id) DO UPDATE
-         SET email = EXCLUDED.email,
-             password_hash = EXCLUDED.password_hash,
-             roles = EXCLUDED.roles'
+         VALUES (:id, :email, :password_hash, :roles::jsonb)'
     )->execute([
         ':id' => $id,
         ':email' => $email,
@@ -194,17 +197,23 @@ function canonicalClientsSchemaJson(): string
     $schemaPath = PLUGINS_PATH . '/clients/schema.json';
     $raw = file_get_contents($schemaPath);
     if ($raw === false) {
-        throw new ValidationException('clients schema fixture is not readable');
+        throw new ValidationException([
+            ['field' => 'schema', 'code' => 'read_error', 'message' => 'clients schema fixture is not readable'],
+        ]);
     }
 
     $schema = json_decode($raw, true);
     if (!is_array($schema) || !isset($schema['fields']['email'], $schema['identities']['id'])) {
-        throw new ValidationException('clients schema fixture is invalid');
+        throw new ValidationException([
+            ['field' => 'schema', 'code' => 'invalid_fixture', 'message' => 'clients schema fixture is invalid'],
+        ]);
     }
 
     $json = json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
-        throw new ValidationException('clients schema fixture cannot be encoded');
+        throw new ValidationException([
+            ['field' => 'schema', 'code' => 'encode_error', 'message' => 'clients schema fixture cannot be encoded'],
+        ]);
     }
 
     return $json;
@@ -342,7 +351,7 @@ TestSuite::run('POST creates a comment and it appears in GET response', function
         ['body' => TEST_COMMENT_BODY, 'author_id' => 'test-user-id', 'stamp' => date('c')]
     );
 
-    assertTrue($createResult['ok'] ?? false, 'POST ok must be true');
+    assertTrue($createResult['ok'] ?? false, MSG_POST_OK_MUST_BE_TRUE);
     assertTrue(isset($createResult['data']['id']), 'Created comment must have id');
     $content = $createResult['data']['content'] ?? [];
     assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, MSG_BODY_MUST_MATCH);
@@ -380,7 +389,7 @@ TestSuite::run('POST auto-generates stamp and author_id from authenticated user 
     $output = ob_get_clean();
     $response = json_decode((string) $output, true);
 
-    assertTrue(($response['ok'] ?? false) === true, 'POST ok must be true');
+    assertTrue(($response['ok'] ?? false) === true, MSG_POST_OK_MUST_BE_TRUE);
     $content = $response['data']['content'] ?? [];
     assertEquals(TEST_COMMENT_BODY, $content['body'] ?? null, MSG_BODY_MUST_MATCH);
     assertEquals('00000000-0000-0000-0000-000000000123', $content['author_id'] ?? null, 'author_id must come from request user sub');
@@ -408,7 +417,7 @@ TestSuite::run('POST does not include author_name when author_id is missing in u
     $output = ob_get_clean();
     $response = json_decode((string) $output, true);
 
-    assertTrue(($response['ok'] ?? false) === true, 'POST ok must be true');
+    assertTrue(($response['ok'] ?? false) === true, MSG_POST_OK_MUST_BE_TRUE);
     $content = $response['data']['content'] ?? [];
     assertFalse(isset($content['author_name']), 'author_name must not be returned when user row is missing');
 
@@ -430,7 +439,7 @@ TestSuite::run('GET comments includes author_name when author_id exists in users
         ['body' => 'Comentario con autor visible', 'author_id' => $authorId]
     );
 
-    assertTrue($createResult['ok'] ?? false, 'POST ok must be true');
+    assertTrue($createResult['ok'] ?? false, MSG_POST_OK_MUST_BE_TRUE);
     $createdContent = $createResult['data']['content'] ?? [];
     assertEquals($authorEmail, $createdContent['author_name'] ?? null, 'create response must include author_name');
 
@@ -451,7 +460,8 @@ TestSuite::run('GET comments resolves UUID author_name to user email', function 
     cleanComments();
     $ctrl = new PluginExtensionController(Database::connection());
 
-    $authorId = 'f19d2d13-10f5-4d02-91b7-b9ce5f1d7a6d';
+    $authorId = sprintf('%08s-%04s-%04s-%04s-%012s', substr(md5('comments-uuid-seed'), 0, 8), substr(md5('comments-uuid-seed'), 8, 4), substr(md5('comments-uuid-seed'), 12, 4), substr(md5('comments-uuid-seed'), 16, 4), substr(md5('comments-uuid-seed'), 20, 12));
+    $authorId = str_replace(' ', '0', $authorId);
     $authorEmail = 'autor.uuid@test.local';
     seedUser($authorId, $authorEmail);
 

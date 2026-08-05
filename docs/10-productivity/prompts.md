@@ -240,6 +240,23 @@ pero los directorios en minúsculas (core/). Corrige todo:
 
 ---
 
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.1 — Backend - Migración de perfil y UserRepository
+**Prompt:**
+```
+Implementa la story 8.1 para Xestify:
+- Añadir columnas de perfil y borrado lógico a users (`name`, `avatar`, `deleted_at`).
+- Crear/actualizar UserRepository con find, all, update, delete y updatePassword.
+- Añadir tests de integración para cubrir el perfil y el borrado lógico.
+- Asegurar que el login rechaza usuarios con deleted_at.
+```
+**Resultado:** Migración y repositorio funcionales, login protegido y tests de integración pasando.
+**Iteraciones:** 2
+**Lección:** El sitio de decisión para el borrado debe ser el login y el repositorio, no solo la capa de datos.
+
+---
+
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1 — ValidationService (valida contra schema JSONB)

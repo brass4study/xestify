@@ -30,8 +30,8 @@ class UserSeeder
         $hash = password_hash('admin123', PASSWORD_BCRYPT);
 
         $stmt = $pdo->prepare(
-            'INSERT INTO users (email, password_hash, roles)
-             VALUES (:email, :hash, :roles)
+            'INSERT INTO users (email, password_hash, roles, name)
+             VALUES (:email, :hash, :roles, :name)
              ON CONFLICT DO NOTHING'
         );
 
@@ -39,6 +39,7 @@ class UserSeeder
             ':email' => 'admin@xestify.local',
             ':hash'  => $hash,
             ':roles' => '["admin"]',
+            ':name' => 'Administrator',
         ]);
     }
 }

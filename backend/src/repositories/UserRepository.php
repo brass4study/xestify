@@ -1,0 +1,184 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Xestify\repositories;
+
+use PDO;
+use PDOException;
+use Xestify\exceptions\RepositoryException;
+
+final class UserRepository
+{
+    private const USER_NOT_FOUND_MESSAGE = 'User not found or already deleted: ';
+
+    public function __construct(private PDO $pdo)
+    {
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function find(string $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, email, password_hash, roles, name, avatar, created_at
+             FROM users
+             WHERE id = :id AND deleted_at IS NULL'
+        );
+        $this->execute($stmt, [':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        if (array_key_exists('avatar', $row)) {
+            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
+        }
+
+        return $row;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function all(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT id, email, password_hash, roles, name, avatar, created_at
+             FROM users
+             WHERE deleted_at IS NULL
+             ORDER BY created_at ASC'
+        );
+
+        if ($stmt === false) {
+            return [];
+        }
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $index => $row) {
+            if (array_key_exists('avatar', $rows[$index])) {
+                $rows[$index]['avatar'] = $this->normalizeBinaryValue($rows[$index]['avatar']);
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $data): array
+    {
+        $allowed = ['name' => 'name', 'email' => 'email', 'avatar' => 'avatar'];
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            if (!isset($allowed[$key])) {
+                continue;
+            }
+
+            $fields[] = $allowed[$key] . ' = :' . $key;
+            $params[':' . $key] = $this->prepareBinaryValue($value, $key);
+        }
+
+        if ($fields === []) {
+            return $this->find($id) ?? [];
+        }
+
+        $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = :id AND deleted_at IS NULL RETURNING id, email, password_hash, roles, name, avatar, created_at';
+        $stmt = $this->pdo->prepare($sql);
+
+        foreach ($params as $placeholder => $value) {
+            $type = PDO::PARAM_STR;
+            if ($placeholder === ':avatar' && is_resource($value)) {
+                $type = PDO::PARAM_LOB;
+            }
+
+            $stmt->bindValue($placeholder, $value, $type);
+        }
+
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            throw new RepositoryException(self::USER_NOT_FOUND_MESSAGE . $id);
+        }
+
+        if (array_key_exists('avatar', $row)) {
+            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
+        }
+
+        return $row;
+    }
+
+    public function delete(string $id): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET deleted_at = NOW() WHERE id = :id AND deleted_at IS NULL'
+        );
+        $this->execute($stmt, [':id' => $id]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new RepositoryException(self::USER_NOT_FOUND_MESSAGE . $id);
+        }
+    }
+
+    public function updatePassword(string $id, string $hash): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET password_hash = :hash WHERE id = :id AND deleted_at IS NULL'
+        );
+        $this->execute($stmt, [':id' => $id, ':hash' => $hash]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new RepositoryException(self::USER_NOT_FOUND_MESSAGE . $id);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function execute(\PDOStatement $stmt, array $params): void
+    {
+        try {
+            $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw new RepositoryException('Query failed: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    private function normalizeBinaryValue(mixed $value): mixed
+    {
+        if (is_resource($value)) {
+            $content = stream_get_contents($value);
+            return $content === false ? '' : $content;
+        }
+
+        if (is_string($value) && str_starts_with($value, 'Resource id #')) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    private function prepareBinaryValue(mixed $value, string $fieldName): mixed
+    {
+        if ($fieldName !== 'avatar' || !is_string($value)) {
+            return $value;
+        }
+
+        $stream = fopen('php://temp', 'r+');
+        if ($stream === false) {
+            return $value;
+        }
+
+        fwrite($stream, $value);
+        rewind($stream);
+
+        return $stream;
+    }
+}

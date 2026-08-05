@@ -159,6 +159,33 @@ TestSuite::run('login does not reveal whether email exists (same 401 for both ca
     );
 });
 
+TestSuite::run('login rejects deleted users', function () use ($controller): void {
+    $pdo = Database::connection();
+    $email = 'deleted-' . uniqid('', true) . '@xestify.test';
+    $password = 'deleted-pass';
+    $hash = password_hash($password, PASSWORD_BCRYPT);
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO users (email, password_hash, roles, name, deleted_at)
+         VALUES (:email, :password_hash, :roles, :name, NOW())'
+    );
+    $stmt->execute([
+        ':email' => $email,
+        ':password_hash' => $hash,
+        ':roles' => '[]',
+        ':name' => 'Deleted User',
+    ]);
+
+    try {
+        $result = callLogin($controller, ['email' => $email, 'password' => $password]);
+
+        assertFalse($result['ok'] ?? true, 'Deleted users should not be able to log in');
+        assertEquals(401, $result['error']['code'] ?? null, 'Deleted users should receive 401');
+    } finally {
+        $pdo->prepare('DELETE FROM users WHERE email = :email')->execute([':email' => $email]);
+    }
+});
+
 // ---------------------------------------------------------------------------
 
 TestSuite::summary();

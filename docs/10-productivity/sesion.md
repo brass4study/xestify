@@ -9,8 +9,8 @@
 ## Última actualización
 
 **Fecha:** 2026-08-05
-**EPIC activo:** EPIC 8 - Sistema UI, Shell Frontend y Arquitectura SPA (EN PREPARACION)  
-**Próxima story:** STORY 8.1 - Fundamentos de diseno, navegacion y anatomia de paginas
+**EPIC activo:** EPIC 8 - Gestión de usuarios (EN PROGRESO)  
+**Próxima story:** STORY 8.2 - Backend - UserController y rutas REST
 
 ---
 
@@ -155,6 +155,19 @@
 | 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
 | 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | `041ba40` | 5/5 ✅ |
 | 5.5 ✅ | Frontend - Mejoras responsive + refinamiento UX navbar/tabla | `84d0b70` | — |
+### ✅ EPIC 8 — Gestión de usuarios (EN PROGRESO)
+
+| Story | Descripción | Estado | Verificación |
+|-------|-------------|--------|--------------|
+| 8.1 | Backend - Migracion de perfil y UserRepository | ✅ Implementada | `php backend/tests/integration/UserRepositoryTest.php` → 5/5 tests |
+
+**Detalle de la story 8.1:**
+- `backend/database/migrations/001_users.sql` incorpora `name`, `avatar` y `deleted_at` sobre la tabla `users`.
+- `backend/src/repositories/UserRepository.php` implementa `find`, `all`, `update`, `delete` y `updatePassword` con filtrado por borrado lógico y cleanup de usuarios de prueba.
+- `backend/tests/integration/UserRepositoryTest.php` añade cobertura de perfil, actualización y borrado lógico.
+- `backend/src/controllers/AuthController.php` bloquea el login para usuarios marcados como borrados.
+- `backend/tests/integration/AuthControllerTest.php` añade un test de regresión para usuarios eliminados.
+
 ### 🔄 EPIC 6 — Plugins tipo Extension (EN PROGRESO)
 
 | Story | Descripción | Commit | Tests |

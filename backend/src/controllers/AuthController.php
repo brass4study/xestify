@@ -40,7 +40,7 @@ class AuthController
         }
 
         $pdo  = Database::connection();
-        $stmt = $pdo->prepare('SELECT id, email, password_hash, roles FROM users WHERE email = :email LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, email, password_hash, roles FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch();
 
