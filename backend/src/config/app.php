@@ -8,6 +8,7 @@ use Xestify\controllers\ExtensionPluginContentService;
 use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
+use Xestify\controllers\UserController;
 use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\core\RequestFactory;
@@ -17,6 +18,7 @@ use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
+use Xestify\repositories\UserRepository;
 use Xestify\plugins\application\InstalledPluginSchemaValidator;
 use Xestify\plugins\application\ExtensionPluginConfigService;
 use Xestify\plugins\application\PluginAdministrationService;
@@ -229,6 +231,10 @@ if (!function_exists('xestifyRegisterControllers')) {
         $container->singleton(PluginManagerController::class, fn() => new PluginManagerController(
             $container->get(PluginAdministrationService::class),
             $container->get(RequestFactory::class)
+        ));
+
+        $container->singleton(UserController::class, fn() => new UserController(
+            $container->get(UserRepository::class)
         ));
     }
 }

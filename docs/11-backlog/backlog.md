@@ -876,17 +876,18 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de administracion de usuarios para el rol admin, con avatar por iniciales, menu emergente en la barra superior y rutas hash propias.
 
-### STORY 8.1: Backend - Migracion de perfil y UserRepository
+### STORY 8.1: Backend - Perfil de usuario, avatar binario y soft delete
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Backend
 - **Criteria:**
-  - ✅ Migracion `007_users_profile.sql`: añade columnas `name VARCHAR(255)` y `avatar_url TEXT` a la tabla `users`
+  - ✅ Migracion `001_users.sql`: añade columnas `name VARCHAR(255)`, `avatar BYTEA` y `deleted_at TIMESTAMPTZ` a la tabla `users`
   - ✅ Migracion idempotente
-  - ✅ `UserRepository` con metodos `find(id)`, `all()`, `update(id, data)`, `delete(id)`, `updatePassword(id, hash)`
+  - ✅ `UserRepository` con metodos `find(id)`, `all()`, `update(id, data)`, `delete(id)` y `updatePassword(id, hash)`
+  - ✅ `delete(id)` implementa borrado logico mediante `deleted_at` y excluye usuarios dados de baja de las lecturas/actualizaciones normales
   - ✅ `UserSeeder` actualizado para incluir `name` en el usuario admin por defecto
-  - ✅ Tests: migracion idempotente, CRUD basico de UserRepository
-- **IA Usage:** SQL de migracion + boilerplate de repositorio + tests
+  - ✅ Tests: migracion idempotente, CRUD basico de UserRepository y regresion de login para usuarios eliminados
+- **IA Usage:** SQL de migracion + boilerplate de repositorio + tests de regresion
 - **Dependencias:** STORY 1.1
 - **Blockers:** Ninguno
 
@@ -896,7 +897,7 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Type:** Backend
 - **Criteria:**
   - ✅ `GET  /api/v1/users/me` — perfil propio (cualquier usuario autenticado)
-  - ✅ `PUT  /api/v1/users/me` — actualizar nombre, email y avatar_url propios (requiere `current_password` si cambia email)
+  - ✅ `PUT  /api/v1/users/me` — actualizar nombre, email y avatar propio (requiere `current_password` si cambia email)
   - ✅ `PUT  /api/v1/users/me/password` — cambiar contraseña propia (requiere `current_password`)
   - ✅ `GET  /api/v1/users` — listar usuarios (solo admin)
   - ✅ `GET  /api/v1/users/{id}` — ver usuario (solo admin)
@@ -913,12 +914,12 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Priority:** MUST
 - **Type:** Frontend
 - **Criteria:**
-  - ✅ Avatar circular con iniciales (1-2 letras) sobre fondo de color determinista (hash del email); si `avatar_url` esta rellena se usa como `<img>`
+  - ✅ Avatar circular con iniciales (1-2 letras) sobre fondo de color determinista (hash del email); si el usuario tiene un `avatar` disponible se usa como contenido visual del avatar
   - ✅ Muestra nombre del usuario (o email como fallback) junto al avatar en la barra superior
   - ✅ Click sobre el avatar/nombre despliega menu emergente con: **Mi Perfil**, **Gestion de Usuarios** (solo admin) y **Cerrar sesion**
   - ✅ Nuevo componente `UserMenu.js` independiente del resto de la navbar
   - ✅ Sustituye el email plano y el boton Logout actuales de `Navbar.js`
-  - ✅ Tests: render avatar con iniciales, render con avatar_url, visibilidad de Gestion de Usuarios segun rol
+  - ✅ Tests: render avatar con iniciales, render con avatar disponible, visibilidad de Gestion de Usuarios segun rol
 - **IA Usage:** Componente UserMenu + logica de avatar por iniciales + tests
 - **Dependencias:** STORY 8.2, STORY 5.2
 - **Blockers:** Ninguno
@@ -929,11 +930,11 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Type:** Frontend
 - **Criteria:**
   - ✅ Ruta hash `#/profile` renderiza la pagina de perfil propio
-  - ✅ Formulario: nombre, email, avatar_url (campo URL opcional con vista previa del avatar en tiempo real)
+  - ✅ Formulario: nombre, email y avatar propio (campo para subir o gestionar la imagen asociada al perfil)
   - ✅ Guardar llama a `PUT /api/v1/users/me` y actualiza el estado global y el UserMenu
   - ✅ Seccion independiente para cambio de contraseña: contraseña actual, nueva y confirmacion
   - ✅ Accesible para cualquier usuario autenticado
-  - ✅ Tests: render formulario, validacion de contraseñas, actualizacion de avatar en tiempo real
+  - ✅ Tests: render formulario, validacion de contraseñas, actualizacion del avatar en tiempo real
 - **IA Usage:** Pagina de perfil + preview de avatar + tests
 - **Dependencias:** STORY 8.2, STORY 8.3
 - **Blockers:** Ninguno

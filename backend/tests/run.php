@@ -47,6 +47,7 @@ $groups = [
         'backend/tests/integration/SystemEntityTest.php',
         'backend/tests/integration/GenericRepositoryTest.php',
         'backend/tests/integration/UserRepositoryTest.php',
+        'backend/tests/integration/UserControllerTest.php',
         'backend/tests/integration/EntityServiceTest.php',
         'backend/tests/integration/EntityControllerTest.php',
     ],

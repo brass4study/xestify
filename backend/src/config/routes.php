@@ -7,13 +7,26 @@ use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
+use Xestify\controllers\UserController;
 
 if (!defined('ROUTE_ENTITY_RECORD')) {
     define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
 }
 
+if (!defined('ROUTE_USER_ITEM')) {
+    define('ROUTE_USER_ITEM', '/api/v1/users/{id}');
+}
+
 $router->get('/health', [HealthController::class, 'index']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
+
+// User endpoints
+$router->get('/api/v1/users/me', [UserController::class, 'me']);
+$router->put('/api/v1/users/me', [UserController::class, 'updateMe']);
+$router->get('/api/v1/users', [UserController::class, 'listUsers']);
+$router->get(ROUTE_USER_ITEM, [UserController::class, 'show']);
+$router->put(ROUTE_USER_ITEM, [UserController::class, 'update']);
+$router->delete(ROUTE_USER_ITEM, [UserController::class, 'destroy']);
 
 // Entity list
 $router->get('/api/v1/entities', [EntityController::class, 'listEntities']);
