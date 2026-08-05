@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>NavbarTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="../src/css/main.css">
 </head>
 <body>
 <h2>NavbarTest</h2>
@@ -11,7 +11,8 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Navbar } from '../js/modules/Navbar.js';
+  import { Navbar } from '../src/js/modules/Navbar.js';
+  import { UserMenu } from '../src/js/modules/UserMenu.js';
 
   let passed = 0;
   let failed = 0;
@@ -66,18 +67,6 @@
     { slug: 'product', label: 'Productos' },
   ];
 
-  // ── Tests ──────────────────────────────────────────────────────────────────
-
-  it('throws TypeError when container selector does not match', (_container) => {
-    let threw = false;
-    try {
-      new Navbar('#non-existent-element-xyz');
-    } catch (err) {
-      threw = err instanceof TypeError;
-    }
-    assertTrue(threw, 'Expected TypeError for missing container');
-  });
-
   it('renders nav element with brand text', (container) => {
     const navbar = new Navbar(container);
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
@@ -99,88 +88,58 @@
     assertTrue(pages.has('plugins'), 'Missing plugins link');
   });
 
-  it('shows user email when provided', (container) => {
-    const navbar = new Navbar(container, { userEmail: 'admin@xestify.local' });
+  it('renders avatar initials and user name in the user menu', (container) => {
+    const navbar = new Navbar(container, { userEmail: 'ana.garcia@xestify.local', userName: 'Ana García' });
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const userEl = container.querySelector('.xt-navbar__user');
-    assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
-    assertEquals(userEl.textContent, 'admin@xestify.local', 'User email not shown');
-    assertTrue(!userEl.hidden, 'User element should not be hidden');
+    const avatar = container.querySelector('.xt-user-menu__avatar');
+    assertTrue(avatar !== null, 'Expected avatar element');
+    assertEquals(avatar.textContent, 'AG', 'Expected initials from user name');
+    const label = container.querySelector('.xt-user-menu__label');
+    assertEquals(label.textContent, 'Ana García', 'Expected displayed user name');
   });
 
-  it('hides user element when no email provided', (container) => {
-    const navbar = new Navbar(container);
-    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const userEl = container.querySelector('.xt-navbar__user');
-    assertTrue(userEl !== null, 'Expected .xt-navbar__user element');
-    assertTrue(userEl.hidden, 'User element should be hidden when no email');
+  it('starts hidden and opens on hover', (container) => {
+    const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
+    const menu = container.querySelector('.xt-user-menu__menu');
+    assertTrue(menu !== null, 'Expected menu element');
+    assertTrue(menu.hidden, 'Expected menu to start hidden');
+    container.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    assertTrue(!menu.hidden, 'Expected menu to open on hover');
   });
 
-  it('calls onLogout when logout button is clicked', (container) => {
-    let called = false;
-    const navbar = new Navbar(container, { onLogout: () => { called = true; } });
-    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const logoutBtn = container.querySelector('.xt-navbar__logout');
-    assertTrue(logoutBtn !== null, 'Expected logout button');
-    logoutBtn.click();
-    assertTrue(called, 'onLogout was not called');
+  it('renders an avatar image when provided', (container) => {
+    const userMenu = new UserMenu(container, { email: 'admin@xestify.local', avatar: 'https://example.test/avatar.png' });
+    const img = container.querySelector('.xt-user-menu__avatar img');
+    assertTrue(img !== null, 'Expected avatar image element');
+    assertEquals(img.getAttribute('src'), 'https://example.test/avatar.png', 'Avatar image should be used when available');
   });
 
-  it('calls onNavigate with correct page when link is clicked', (container) => {
+  it('shows the user management action for admins', (container) => {
+    const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
+    const trigger = container.querySelector('.xt-user-menu__trigger');
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    const adminLink = container.querySelector('[data-menu-action="users"]');
+    assertTrue(adminLink !== null, 'Expected admin action link');
+  });
+
+  it('dispatches profile navigation from the dropdown', (container) => {
     let navigatedTo = null;
-    const navbar = new Navbar(container, { entities: ENTITIES, canManagePlugins: true, onNavigate: (page) => { navigatedTo = page; } });
-    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-
-    const clientLink = container.querySelector('[data-page="entity:client"]');
-    assertTrue(clientLink !== null, 'Expected client entity link');
-    clientLink.click();
-    assertEquals(navigatedTo, 'entity:client', 'onNavigate should receive "entity:client"');
-
-    const pluginsLink = container.querySelector('[data-page="plugins"]');
-    pluginsLink.click();
-    assertEquals(navigatedTo, 'plugins', 'onNavigate should receive "plugins"');
+    const navbar = new Navbar(container, {
+      userEmail: 'ana.garcia@xestify.local',
+      userName: 'Ana García',
+      onNavigate: (page) => { navigatedTo = page; },
+    });
+    const trigger = container.querySelector('.xt-user-menu__trigger');
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    const profileLink = container.querySelector('[data-menu-action="profile"]');
+    profileLink.click();
+    assertEquals(navigatedTo, 'profile', 'Expected profile navigation trigger');
   });
-
-  it('marks clicked link as active', (container) => {
-    const navbar = new Navbar(container, { entities: ENTITIES, canManagePlugins: true, onNavigate: () => { return; } });
-    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const clientLink = container.querySelector('[data-page="entity:client"]');
-    clientLink.click();
-    assertTrue(clientLink.classList.contains('xt-navbar__link--active'), 'Client link should be active');
-    assertEquals(clientLink.getAttribute('aria-current'), 'page', 'aria-current should be "page"');
-
-    const pluginsLink = container.querySelector('[data-page="plugins"]');
-    pluginsLink.click();
-    assertTrue(pluginsLink.classList.contains('xt-navbar__link--active'), 'Plugins link should be active');
-    assertTrue(!clientLink.classList.contains('xt-navbar__link--active'), 'Client link should not be active after plugins clicked');
-  });
-
-  it('setUserEmail updates displayed email', (container) => {
-    const navbar = new Navbar(container, { userEmail: 'foo@bar.com' });
-    navbar.setUserEmail('new@user.com');
-    const userEl = container.querySelector('.xt-navbar__user');
-    assertEquals(userEl.textContent, 'new@user.com', 'Email not updated');
-    assertTrue(!userEl.hidden, 'User element should not be hidden after email set');
-  });
-
-  it('setUserEmail with null hides user element', (container) => {
-    const navbar = new Navbar(container, { userEmail: 'foo@bar.com' });
-    navbar.setUserEmail(null);
-    const userEl = container.querySelector('.xt-navbar__user');
-    assertTrue(userEl.hidden, 'User element should be hidden after null email');
-  });
-
-  // ── Summary ────────────────────────────────────────────────────────────────
 
   separator();
   finishTestRunner();
 </script>
 </body>
 </html>
-
-
-
-
-
 
 

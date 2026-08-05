@@ -10,7 +10,8 @@ El corte funcional actual queda fijado en **STORY 7.5 incluida**.
 - Cerrado en STORY 7.3: pagina de configuracion de plugins activos, campos configurables para plugins `entity`, refuerzo para plugins `extension` y configuracion de `target_entity`.
 - Cerrado en STORY 7.4: rollback manual por API con snapshots en `plugin_update_history` y hook opcional `onRollback()`.
 - Cerrado en STORY 7.5: UI de sincronizacion, actualizacion y rollback en `PluginManager` con confirmacion modal.
-- Pendiente a partir de **EPIC 8**: gestion de usuarios, consolidacion frontend SPA, operacion avanzada, auditoria, permisos finos y marketplace.
+- En progreso dentro del **EPIC 8**: gestión de usuarios, consolidacion frontend SPA, operacion avanzada, auditoria, permisos finos y marketplace.
+- **STORY 8.3** ya implementada: dropdown de usuario en navbar con perfil, gestión de usuarios (admin) y cierre de sesión.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -872,7 +873,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 ---
 
-## EPIC 8: Gestion de Usuarios (Fase 8)
+## EPIC 8: Gestión de usuarios (Fase 8)
 
 Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de administracion de usuarios para el rol admin, con avatar por iniciales, menu emergente en la barra superior y rutas hash propias.
 
@@ -913,13 +914,14 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ Implementada
 - **Criteria:**
   - ✅ Avatar circular con iniciales (1-2 letras) sobre fondo de color determinista (hash del email); si el usuario tiene un `avatar` disponible se usa como contenido visual del avatar
   - ✅ Muestra nombre del usuario (o email como fallback) junto al avatar en la barra superior
-  - ✅ Click sobre el avatar/nombre despliega menu emergente con: **Mi Perfil**, **Gestion de Usuarios** (solo admin) y **Cerrar sesion**
+  - ✅ Hover/Click sobre el avatar/nombre despliega menu emergente con: **Mi Perfil**, **Gestión de usuarios** (solo admin) y **Cerrar sesion**
   - ✅ Nuevo componente `UserMenu.js` independiente del resto de la navbar
   - ✅ Sustituye el email plano y el boton Logout actuales de `Navbar.js`
-  - ✅ Tests: render avatar con iniciales, render con avatar disponible, visibilidad de Gestion de Usuarios segun rol
+  - ✅ Tests: render avatar con iniciales, render con avatar disponible, visibilidad de Gestión de usuarios segun rol
 - **IA Usage:** Componente UserMenu + logica de avatar por iniciales + tests
 - **Dependencias:** STORY 8.2, STORY 5.2
 - **Blockers:** Ninguno
@@ -939,7 +941,7 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Dependencias:** STORY 8.2, STORY 8.3
 - **Blockers:** Ninguno
 
-### STORY 8.5: Frontend - Pagina Gestion de Usuarios (`#/usuarios`)
+### STORY 8.5: Frontend - Pagina gestión de usuarios (`#/usuarios`)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -1045,7 +1047,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Mapa de rutas hash completo implementado:
     - `#/` — Dashboard / inicio
     - `#/profile` — perfil propio
-    - `#/usuarios` — gestion de usuarios (admin)
+    - `#/usuarios` — gestión de usuarios (admin)
     - `#/usuarios/:id` — ficha de usuario (admin)
     - `#/entidades/:slug` — listado de registros de una entidad
     - `#/entidades/:slug/nuevo` — alta de registro

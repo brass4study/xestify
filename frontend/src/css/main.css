@@ -158,6 +158,50 @@ body {
 
 .xt-navbar__user {
   color: #ecfeff;
+  min-width: 0;
+  position: relative;
+}
+
+.xt-user-menu {
+  display: inline-flex;
+  align-items: flex-start;
+  padding-bottom: 0.8rem;
+  position: relative;
+}
+
+.xt-user-menu__trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #ecfeff;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.55rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.xt-user-menu__avatar {
+  align-items: center;
+  background: #2dd4bf;
+  border-radius: 999px;
+  color: #0f172a;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 700;
+  height: 2rem;
+  justify-content: center;
+  min-width: 2rem;
+  overflow: hidden;
+}
+
+.xt-user-menu__avatar img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.xt-user-menu__label {
   font-size: 0.875rem;
   max-width: 180px;
   overflow: hidden;
@@ -165,27 +209,70 @@ body {
   white-space: nowrap;
 }
 
-.xt-navbar__logout {
-  background: #0b5f58;
-  border: 1px solid #34d399;
-  border-radius: 999px;
-  color: #ecfeff;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.3rem 0.8rem;
-  transition: background 0.15s, border-color 0.15s;
+.xt-user-menu__menu {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16);
+  display: none;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.05rem);
+  z-index: 120;
 }
 
-.xt-navbar__logout:hover {
-  background: #115e59;
-  border-color: #6ee7b7;
+.xt-user-menu--open .xt-user-menu__menu,
+.xt-user-menu__menu.is-open,
+.xt-navbar__user:hover .xt-user-menu__menu,
+.xt-navbar__user:focus-within .xt-user-menu__menu {
+  display: flex;
+}
+
+.xt-user-menu__item {
+  background: transparent;
+  border: 0;
+  border-radius: 0.35rem;
+  color: #0f172a;
+  cursor: pointer;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+}
+
+.xt-user-menu__item:hover {
+  background: #f3f4f6;
 }
 
 .xt-placeholder {
   color: #6b7280;
   padding: 2rem 0;
   text-align: center;
+}
+
+.xt-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.xt-page__subtitle {
+  color: #6b7280;
+}
+
+.xt-page__card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.xt-page__list {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  padding-left: 0;
 }
 
 .xt-entity-nav {

@@ -248,15 +248,19 @@ avanzada y rollback manual.
 - Fase 4
 - Fase 6
 
-### Fase 8 - Gestion de usuarios
+### Fase 8 - Gestión de usuarios
 
 **Objetivo**
-Añadir gestion de usuarios en frontend y backend con perfil propio para todos y gestion administrativa para el rol admin.
+Añadir gestión de usuarios en frontend y backend con perfil propio para todos y gestion administrativa para el rol admin.
+
+**Estado real**
+- ✅ Story 8.3 implementada: dropdown de usuario en navbar con perfil, gestión de usuarios y cierre de sesión
+- 🔄 Resto de la fase pendiente de consolidar con las vistas de perfil y administración de usuarios reales
 
 **Alcance**
 - perfil propio (#/profile)
 - menu de usuario en navbar con avatar, nombre y accesos rapidos
-- gestion de usuarios admin (#/usuarios, #/usuarios/:id)
+- gestión de usuarios admin (#/usuarios, #/usuarios/:id)
 - acciones admin: editar, cambiar roles, reset password aleatoria visible una sola vez, borrar
 
 **Dependencias**

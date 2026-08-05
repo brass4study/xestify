@@ -2,11 +2,12 @@
  * Navbar.js - Top navigation bar for the Xestify shell.
  *
  * Responsibilities:
- *   - Show the logged-in user email
+ *   - Show the logged-in user and avatar menu
  *   - Provide navigation links (EntityList, PluginManager)
- *   - Expose Logout button via onLogout callback
  *   - Emit onNavigate(page) when a nav link is clicked
  */
+
+import { UserMenu } from './UserMenu.js';
 
 export class Navbar {
   /** @type {HTMLElement} */
@@ -14,6 +15,15 @@ export class Navbar {
 
   /** @type {string|null} */
   #userEmail;
+
+  /** @type {string|null} */
+  #userName;
+
+  /** @type {string|null} */
+  #avatar;
+
+  /** @type {Array<string>} */
+  #roles;
 
   /** @type {Function|null} */
   #onLogout;
@@ -34,9 +44,12 @@ export class Navbar {
    * @param {string|HTMLElement} container
    * @param {{
    *   userEmail?: string|null,
+   *   userName?: string|null,
+   *   avatar?: string|null,
+   *   roles?: Array<string>,
    *   entities?: Array<object>,
    *   currentPage?: string,
-  *   canManagePlugins?: boolean,
+   *   canManagePlugins?: boolean,
    *   onLogout?: Function,
    *   onNavigate?: Function
    * }} options
@@ -44,6 +57,9 @@ export class Navbar {
   constructor(container, options = {}) {
     this.#container = this.#resolveContainer(container);
     this.#userEmail = typeof options.userEmail === 'string' ? options.userEmail : null;
+    this.#userName = typeof options.userName === 'string' ? options.userName : null;
+    this.#avatar = typeof options.avatar === 'string' ? options.avatar : null;
+    this.#roles = Array.isArray(options.roles) ? options.roles : [];
     this.#entities = Array.isArray(options.entities) ? [...options.entities] : [];
     this.#activePage = typeof options.currentPage === 'string' ? options.currentPage : '';
     this.#canManagePlugins = Boolean(options.canManagePlugins);
@@ -60,11 +76,66 @@ export class Navbar {
    */
   setUserEmail(email) {
     this.#userEmail = typeof email === 'string' ? email : null;
+    this.#renderUserMenu();
+  }
+
+  /**
+   * @param {string|null} name
+   */
+  setUserName(name) {
+    this.#userName = typeof name === 'string' ? name : null;
+    this.#renderUserMenu();
+  }
+
+  /**
+   * @param {string|null} avatar
+   */
+  setAvatar(avatar) {
+    this.#avatar = typeof avatar === 'string' ? avatar : null;
+    this.#renderUserMenu();
+  }
+
+  /**
+   * @param {Array<string>} roles
+   */
+  setRoles(roles) {
+    this.#roles = Array.isArray(roles) ? roles : [];
+    this.#renderUserMenu();
+  }
+
+  #renderUserMenu() {
     const userEl = this.#container.querySelector('.xt-navbar__user');
-    if (userEl !== null) {
-      userEl.textContent = this.#userEmail ?? '';
-      userEl.hidden = this.#userEmail === null;
+    if (userEl === null) {
+      return;
     }
+
+    const hasIdentity = this.#userEmail !== null || this.#userName !== null;
+    userEl.hidden = !hasIdentity;
+    if (!hasIdentity) {
+      userEl.replaceChildren();
+      return;
+    }
+
+    userEl.replaceChildren();
+    const menu = new UserMenu(userEl, {
+      name: this.#userName,
+      email: this.#userEmail,
+      avatar: this.#avatar,
+      roles: this.#roles,
+      onSelect: (action) => {
+        if (action === 'logout' && this.#onLogout !== null) {
+          this.#onLogout();
+          return;
+        }
+        if (action === 'profile' && this.#onNavigate !== null) {
+          this.#onNavigate('profile');
+          return;
+        }
+        if (action === 'users' && this.#onNavigate !== null) {
+          this.#onNavigate('users');
+        }
+      },
+    });
   }
 
   /**
@@ -108,25 +179,13 @@ export class Navbar {
     const right = document.createElement('div');
     right.className = 'xt-navbar__right';
 
-    const userEl = document.createElement('span');
+    const userEl = document.createElement('div');
     userEl.className = 'xt-navbar__user';
-    userEl.textContent = this.#userEmail ?? '';
-    userEl.hidden = this.#userEmail === null;
     right.appendChild(userEl);
-
-    const logoutBtn = document.createElement('button');
-    logoutBtn.type = 'button';
-    logoutBtn.className = 'xt-navbar__logout';
-    logoutBtn.textContent = 'Salir';
-    logoutBtn.addEventListener('click', () => {
-      if (this.#onLogout !== null) {
-        this.#onLogout();
-      }
-    });
-    right.appendChild(logoutBtn);
 
     nav.appendChild(right);
     this.#container.appendChild(nav);
+    this.#renderUserMenu();
 
     if (this.#activePage !== '') {
       this.#setActive(this.#activePage);

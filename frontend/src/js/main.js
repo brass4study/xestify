@@ -7,6 +7,8 @@ import { Login } from './pages/Login.js';
 import { PluginConfig } from './pages/PluginConfig.js';
 import { PluginManager } from './pages/PluginManager.js';
 import { Navbar } from './modules/Navbar.js';
+import { UserProfile } from './pages/UserProfile.js';
+import { UserManagement } from './pages/UserManagement.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
 const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
@@ -104,9 +106,16 @@ async function renderDashboard(container) {
   }
 
   const userEmail = AppState.getUserEmail();
+  const currentUser = AppState.getUser();
+  const userName = currentUser && typeof currentUser === 'object' && typeof currentUser.name === 'string' ? currentUser.name : null;
+  const avatar = currentUser && typeof currentUser === 'object' && typeof currentUser.avatar === 'string' ? currentUser.avatar : null;
+  const userRoles = currentUser && typeof currentUser === 'object' && Array.isArray(currentUser.roles) ? currentUser.roles : [];
 
   const navbar = new Navbar(navbarEl, {
     userEmail,
+    userName,
+    avatar,
+    roles: userRoles,
     entities: entitiesForNav,
     currentPage: initialPage,
     canManagePlugins: isAdmin,
@@ -127,36 +136,84 @@ async function navigateTo(page, content, api) {
   content.replaceChildren();
 
   if (typeof page === 'string' && page.startsWith('entity:')) {
-    const slug = page.slice('entity:'.length);
-    await showEntityList(content, api, slug === '' ? null : slug);
+    await showEntityPage(page, content, api);
     return;
   }
 
   if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
-    const parts = page.split('/');
-    const slug = parts.length >= 4 ? parts[2] : '';
-    if (slug !== '') {
-      await showPluginConfig(content, api, slug);
-      return;
-    }
+    await showPluginConfigPage(page, content, api);
+    return;
   }
 
   if (page === 'plugins') {
-    if (!currentUserIsAdmin()) {
-      showPlaceholder(content, 'Acceso denegado: solo administradores.');
-      return;
-    }
+    await showPluginsPage(content, api);
+    return;
+  }
 
-    const pluginManager = new PluginManager(content, api, {
-      onConfigure: (plugin) => {
-        navigateTo(`/plugins/${plugin.slug}/config`, content, api);
-      },
-    });
-    await pluginManager.init();
+  if (page === 'profile') {
+    showProfilePage(content);
+    return;
+  }
+
+  if (page === 'users') {
+    showUsersPage(content);
     return;
   }
 
   showPlaceholder(content, 'Pagina no encontrada.');
+}
+
+async function showEntityPage(page, content, api) {
+  const slug = page.slice('entity:'.length);
+  await showEntityList(content, api, slug === '' ? null : slug);
+}
+
+async function showPluginConfigPage(page, content, api) {
+  const parts = page.split('/');
+  const slug = parts.length >= 4 ? parts[2] : '';
+  if (slug !== '') {
+    await showPluginConfig(content, api, slug);
+  }
+}
+
+async function showPluginsPage(content, api) {
+  if (!currentUserIsAdmin()) {
+    showPlaceholder(content, 'Acceso denegado: solo administradores.');
+    return;
+  }
+
+  const pluginManager = new PluginManager(content, api, {
+    onConfigure: (plugin) => {
+      navigateTo(`/plugins/${plugin.slug}/config`, content, api);
+    },
+  });
+  await pluginManager.init();
+}
+
+function showProfilePage(content) {
+  const currentUser = AppState.getUser();
+  const displayUser = currentUser && typeof currentUser === 'object'
+    ? {
+        email: typeof currentUser.email === 'string' ? currentUser.email : AppState.getUserEmail(),
+        roles: Array.isArray(currentUser.roles) ? currentUser.roles : [],
+      }
+    : { email: AppState.getUserEmail(), roles: [] };
+  const profilePage = new UserProfile(content, displayUser);
+  return profilePage;
+}
+
+function showUsersPage(content) {
+  if (!currentUserIsAdmin()) {
+    showPlaceholder(content, 'Acceso denegado: solo administradores.');
+    return;
+  }
+
+  const demoUsers = [
+    { name: 'Ana García', email: 'ana.garcia@xestify.local', roles: ['admin'] },
+    { name: 'Luis Pérez', email: 'luis.perez@xestify.local', roles: ['editor'] },
+  ];
+  const userManagementPage = new UserManagement(content, demoUsers);
+  return userManagementPage;
 }
 
 async function loadEntitiesForNav(api, container) {

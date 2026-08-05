@@ -293,6 +293,19 @@
 - **Iteraciones:** 2 (ajuste de validaciones y revisión de SonarQube)
 - **Decisión manual:** Mantener el borrado lógico y bloquear el auto-borrado para admins.
 
+### STORY 8.3: Frontend - UserMenu dropdown en Navbar
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~1h 15m
+- **Aceleración:** ~63% ⚡
+- **Qué hizo IA:**
+  - Implementó el componente `UserMenu` con disparador, hover y acciones de perfil/usuarios/logout.
+  - Integró el menú en el navbar principal y conectó la navegación al shell de la aplicación.
+  - Ajustó estilos para que el dropdown se muestre correctamente y no colapse al pasar el cursor.
+  - Añadió una prueba aislada para validar render, hover y navegación.
+- **Iteraciones:** 3 (ajustes de hover, buffer de transición y revisión del comportamiento real)
+- **Decisión manual:** Mantener el menú como interacción de hover/simple click y dirigir las acciones a vistas reales dentro del shell.
+
 ---
 
 ## EPIC 3 — Motor de Entidades Dinámicas

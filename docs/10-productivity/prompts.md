@@ -271,6 +271,19 @@ Implementa la story 8.2 para Xestify:
 **Iteraciones:** 2
 **Lección:** El flujo de perfil propio debe exigir password actual en cambios de email y el borrado debe ser lógico con guardas explícitas.
 
+### STORY 8.3 — Frontend - UserMenu dropdown en Navbar
+**Prompt:**
+```
+Implementa la story 8.3 para Xestify:
+- Añadir un dropdown de usuario en el navbar para mostrar acciones como Mi perfil, Gestión de usuarios y Cerrar sesión.
+- Hacer que el menú se abra al hover y se mantenga estable al pasar del botón al desplegable.
+- Conectar las acciones al shell principal para que muestren vistas reales en lugar de placeholders.
+- Añadir una prueba HTML de regresión para cubrir el comportamiento del menú.
+```
+**Resultado:** Dropdown funcional, navegación real desde el menú y test aislado de hover/acciones pasando.
+**Iteraciones:** 3
+**Lección:** El hover del menú necesita un buffer visual y un contenedor dedicado para evitar que el cursor lo cierre al cruzar el gap entre botón y desplegable.
+
 ---
 
 ## EPIC 3 — Motor de Entidades Dinámicas
