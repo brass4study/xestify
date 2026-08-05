@@ -416,3 +416,81 @@ sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
 
 > Todo tipo de entidad es un plugin. Todo plugin de tipo `entity` es una entidad.
 > No existen entidades fuera de `plugins`.
+
+---
+
+## DECISION 7: CSS — Tailwind CSS como framework de estilos
+
+**Seleccionado:** Tailwind CSS (sustituye CSS propio actual)
+**Alternativas consideradas:** CSS propio con variables (situación actual), Bootstrap, Bulma
+**Fecha:** Agosto 5, 2026
+
+### Justificacion
+
+- El CSS propio (`main.css`) crecio de forma ad hoc en cada story y acumula reglas inconsistentes.
+- Tailwind proporciona un sistema de utilidades consistente sin necesidad de nombrar clases propias.
+- Compatible con el stack sin build step: modo CDN (Play CDN) para desarrollo local; CLI standalone para produccion sin Node.js.
+- La restriccion "sin build step" del proyecto se mantiene: Tailwind standalone CLI es un unico binario que genera el CSS optimizado sin npm ni bundler.
+
+### Estrategia de integracion
+
+| Entorno | Mecanismo | Notas |
+|---------|-----------|-------|
+| Desarrollo local | `<script src="https://cdn.tailwindcss.com">` en `index.html` | Zero setup, JIT en tiempo real |
+| Produccion / CI | `tailwindcss` standalone CLI | Genera `dist/app.css` desde templates, sin Node |
+
+### Alcance del cambio
+
+- `frontend/src/css/main.css` se elimina o se reduce a overrides absolutamente minimos (animaciones custom, scrollbars, etc.).
+- Todos los componentes nuevos del EPIC 8 se construyen directamente con clases Tailwind.
+- La migracion de componentes existentes (DynamicForm, DynamicTable, Modal, PluginManager) se realiza en STORY 8.3.
+
+### Riesgos mitigados
+
+- Lock-in a nombres de clase propios.
+- Inconsistencia de spacing y colores entre componentes creados en stories distintas.
+
+### Cambio futuro
+
+Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tailwind migra de CDN a plugin PostCSS sin cambios en markup.
+
+---
+
+## DECISION 8: Frontend Routing — Hash routing (`#/ruta`)
+
+**Seleccionado:** Hash-based routing (`window.location.hash` + evento `hashchange`)
+**Alternativa descartada:** HTML5 History API (`pushState` / `popState`)
+**Fecha:** Agosto 5, 2026
+
+### Justificacion
+
+- Hash routing funciona sin configuracion especial en el servidor: Apache no necesita `FallbackResource` ni rewrite rules para deep links.
+- Refresh del navegador nunca rompe la vista: el servidor siempre sirve `index.html` y el hash es resuelto por el cliente.
+- Mas simple de implementar y depurar en el entorno Apache + PHP nativo del proyecto.
+- Compatibilidad total con el servidor de desarrollo `php -S` sin router personalizado.
+
+### Convencion de rutas
+
+```
+#/                              Dashboard / inicio
+#/login                         Pantalla de autenticacion
+#/entidades/:slug               Listado de registros de una entidad
+#/entidades/:slug/nuevo         Alta de registro
+#/entidades/:slug/:id           Detalle / edicion de registro
+#/entidades/:slug/:id/:tab      Tab de un registro (ej: #/.../:id/comentarios)
+#/plugins                       PluginManager
+#/plugins/:slug/config          Configuracion de un plugin
+```
+
+**Nota sobre tabs:** se prefiere subruta (`#/.../comentarios`) sobre query param (`?tab=comentarios`) para mantener consistencia. Query param solo se usa si el tab requiere estado adicional en query string.
+
+### Implicaciones
+
+- El router cliente escucha `hashchange` y parsea `window.location.hash`.
+- Navegacion programatica: `window.location.hash = '#/ruta'` o wrapper `router.navigate('/ruta')`.
+- Back/forward del navegador funcionan de forma nativa al cambiar el hash.
+- No hay necesidad de `<base href>` ni configuracion de servidor para deep links.
+
+### Cambio futuro
+
+Si el proyecto requiere URLs limpias en produccion (EPIC 9+), la migracion a History API es un cambio contenido en el modulo router sin afectar paginas ni componentes.

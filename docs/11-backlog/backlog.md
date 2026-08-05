@@ -881,12 +881,17 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Type:** Frontend
 - **Criteria:**
   - ✅ Principios visuales y de interaccion documentados para una UI enterprise consistente, jerarquica y con feedback inmediato
+  - ✅ Tailwind CSS integrado via CDN Play para desarrollo; CLI standalone documentado para produccion sin build step
+  - ✅ Todos los componentes nuevos usan clases Tailwind; sin CSS custom paralelo
+  - ✅ `main.css` y estilos propios legacy sustituidos por Tailwind; el archivo de estilos custom se elimina o queda reducido a overrides minimos justificados
   - ✅ Tokens y reglas base definidos para spacing, tipografia, color, bordes, sombras, estados, iconografia y densidad
   - ✅ Arquitectura de informacion definida para menu principal, areas, breadcrumbs y tipos de pagina
   - ✅ Plantillas objetivo definidas para login, list page, detail/form page, plugin management, workbench/dashboard y estados result/empty/error
   - ✅ Convenciones de copy y estructura de textos preparadas para futura externalizacion i18n sin hardcodear decisiones de idioma en componentes
-  - ✅ Decision tecnica documentada: SPA con URL routing como opcion por defecto sobre hash, compatible con Apache+PHP y refresh
-- **IA Usage:** Sintesis de sistema UI + mapa de navegacion + definicion de plantillas y reglas base
+  - ✅ Decision tecnica documentada: CSS con Tailwind CSS como framework de estilos, abandonando el CSS propio actual
+  - ✅ Decision tecnica documentada: routing SPA basado en hash (`#/ruta`) como convencion de navegacion, compatible con Apache+PHP y refresh
+  - ✅ Mapa de rutas hash definido para todas las vistas actuales y futuras del EPIC 8
+- **IA Usage:** Integracion Tailwind + migracion CSS a Tailwind + Sintesis de sistema UI + mapa de navegacion + definicion de plantillas y reglas base
 - **Dependencias:** STORY 5.2, STORY 6.5
 - **Blockers:** Ninguno
 
@@ -914,7 +919,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Libreria de componentes frontend con imports estables y convencion clara de composicion
   - ✅ Estructura preparada para crecer sin crear archivos monoliticos
   - ✅ Tests frontend actualizados a la nueva organizacion sin romper ejecucion standalone
-- **IA Usage:** Refactor de arquitectura cliente + modularizacion + ajuste de imports y tests
+- **IA Usage:** Refactor de arquitectura cliente + modularizacion+ ajuste de imports y tests
 - **Dependencias:** STORY 3.6, STORY 5.2, STORY 8.1, STORY 8.2
 - **Blockers:** Ninguno
 
@@ -938,12 +943,22 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Priority:** MUST
 - **Type:** Frontend
 - **Criteria:**
-  - ✅ Implementacion del router cliente acorde a la decision tomada en 8.1, con URL routing como opcion por defecto
-  - ✅ Soporte de deep links para login, listado de entidad, alta/edicion, plugin manager y futuras paginas de configuracion
-  - ✅ Refresh del navegador no rompe la vista actual ni el shell
-  - ✅ Navegacion programatica y soporte de back/forward coherentes con la SPA
-  - ✅ Tests de navegacion: entrada directa, refresh, back/forward y persistencia de contexto
-- **IA Usage:** Implementacion del router cliente + modelado de rutas + tests de navegacion
+  - ✅ Router cliente basado en `hashchange` + `window.location.hash` con convencion `#/segmento/param`
+  - ✅ Mapa de rutas hash completo implementado:
+    - `#/` — Dashboard / inicio
+    - `#/entidades/:slug` — listado de registros de una entidad
+    - `#/entidades/:slug/nuevo` — alta de registro
+    - `#/entidades/:slug/:id` — detalle/edicion de registro
+    - `#/entidades/:slug/:id/comentarios` (o `?tab=comentarios`) — tab de registro
+    - `#/plugins` — PluginManager
+    - `#/plugins/:slug/config` — configuracion de plugin
+    - `#/login` — pantalla de autenticacion
+  - ✅ Navegacion programatica via `router.navigate('#/ruta')` sin recargar pagina
+  - ✅ Refresh del navegador mantiene la vista activa (hash preservado en URL)
+  - ✅ Back/forward del navegador navega correctamente entre vistas
+  - ✅ Tests de navegacion: entrada directa por hash, refresh, back/forward y persistencia de contexto
+- **IA Usage:** Implementacion del router hash + mapa de rutas + navegacion programatica + tests
+- **Nota:** Convencion de tabs: preferir subruta `#/entidades/:slug/:id/:tab` sobre query param para mantener consistencia con el resto del mapa de rutas. Usar `?tab=` solo si un tab necesita estado adicional en query string.
 - **Dependencias:** STORY 8.1, STORY 8.3, STORY 8.4
 - **Blockers:** Ninguno
 
