@@ -1,0 +1,20 @@
+# EditorConfig — https://editorconfig.org
+# Aplica LF a todos los archivos de texto para evitar warnings CRLF->LF en git.
+
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{php,js,json,sql,md,env,yml,yaml,xml,html,css,txt}]
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
