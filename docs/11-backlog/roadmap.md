@@ -51,7 +51,7 @@ El corte funcional vigente del producto queda fijado en:
 
 - frontend dinámico actual para login, listado y edición de entidades
 - `PluginManager` básico para listar, activar y desactivar plugins
-- futura consolidación SPA en el `EPIC 8`
+- nueva gestión de usuarios en el `EPIC 8` y consolidación SPA en el `EPIC 9`
 - shell persistente, librería de componentes, routing SPA, resiliencia y UX transversal
 
 ### Funcionalidades operativas, seguridad y gobierno
@@ -97,7 +97,7 @@ Estas decisiones están cerradas y la implementación futura debe respetarlas:
 | Updates de plugins | Explícitos | `sync` no consume updates; `update` sí los aplica |
 | Boot de runtime | Ligero | Sin autodiscovery de plugins en cada request |
 | Operación local | Apache+PHP + PostgreSQL | Docker/Nginx no son requisito base |
-| Routing SPA futuro | Preferencia por URL routing | A concretar en el `EPIC 8` |
+| Routing SPA futuro | Preferencia por URL routing | A concretar en el `EPIC 9` |
 
 No deben reabrirse como decisiones pendientes:
 
@@ -113,7 +113,7 @@ La estrategia vigente de implementación es:
 - cada fase deja un entregable verificable y demostrable
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
-- el siguiente bloque transversal prioritario es `EPIC 8`
+- el siguiente bloque transversal prioritario es `EPIC 8` (gestión de usuarios), seguido de `EPIC 9` (SPA)
 - después debe abordarse operación, auditoría y permisos antes de marketplace y QA final
 
 ---
@@ -132,10 +132,11 @@ La estrategia vigente de implementación es:
 | 5 | Frontend dinámico base | ✅ Completada | Login + EntityList + EntityEdit |
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
-| 8 | Sistema UI, shell frontend y arquitectura SPA | ⏭ Pendiente | Nuevo bloque frontend transversal |
-| 9 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
-| 10 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
-| 11 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
+| 8 | Gestión de usuarios | ⏭ Pendiente | Perfil propio + administración de usuarios |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | ⏭ Pendiente | Nuevo bloque frontend transversal |
+| 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
+| 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
+| 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
 | A1 | Auditoría funcional | ⏭ Pendiente | Trazabilidad de acciones críticas |
 | A2 | Matriz de permisos fina | ⏭ Pendiente | Autorización granular |
 
@@ -247,30 +248,48 @@ avanzada y rollback manual.
 - Fase 4
 - Fase 6
 
-### Fase 8 - Sistema UI, shell frontend y arquitectura SPA
+### Fase 8 - Gestion de usuarios
 
 **Objetivo**
-Consolidar la capa frontend como una SPA modular, consistente y extensible.
+Añadir gestion de usuarios en frontend y backend con perfil propio para todos y gestion administrativa para el rol admin.
+
+**Alcance**
+- perfil propio (#/profile)
+- menu de usuario en navbar con avatar, nombre y accesos rapidos
+- gestion de usuarios admin (#/usuarios, #/usuarios/:id)
+- acciones admin: editar, cambiar roles, reset password aleatoria visible una sola vez, borrar
+
+**Dependencias**
+- cierre operativo de Fase 7
+- base de autenticacion de Fase 1
+
+### Fase 9 - Sistema UI, shell frontend y arquitectura SPA
+
+**Objetivo**
+Consolidar la capa frontend como una SPA modular, consistente y extensible, con una experiencia WYSIWYG y capacidad de personalizacion visual por cliente.
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas
 - librería de componentes UI base
 - modularización frontend
 - shell SPA
-- routing SPA con preferencia por URL routing
+- routing SPA basado en hash (`#/ruta`) como convencion principal
 - resiliencia, estado global, feedback e infraestructura transversal
+- editor visual WYSIWYG para configurar apariencia sin tocar codigo
+- personalizacion basica por cliente: colores y diseño base alineados con imagen de marca
 - UX, accesibilidad y microinteracciones
 - documentación de arquitectura frontend y testing UI automatizado
 
 **Criterio real de salida**
 - frontend coherente, navegable como SPA, con shell estable, sistema UI común
   y base de testing/documentación suficiente para escalar
+- configuracion visual por cliente aplicable en tiempo real (WYSIWYG) y persistida
 
 **Dependencias**
 - cierre operativo de Fase 7
 - base frontend ya consolidada en Fases 3, 5 y 6
 
-### Fase 9 - Operacion tecnica y observabilidad
+### Fase 10 - Operacion tecnica y observabilidad
 
 **Objetivo**
 Preparar operación real del sistema en entornos locales/productivos ligeros.
@@ -287,7 +306,7 @@ Preparar operación real del sistema en entornos locales/productivos ligeros.
 **Dependencias**
 - Fases 1 a 8
 
-### Fase 10 - Marketplace de plugins
+### Fase 11 - Marketplace de plugins
 
 **Objetivo**
 Permitir descubrir, publicar e instalar plugins desde una experiencia integrada.
@@ -302,7 +321,7 @@ Permitir descubrir, publicar e instalar plugins desde una experiencia integrada.
 - Fase 7
 - Fase 9
 
-### Fase 11 - QA y calidad
+### Fase 12 - QA y calidad
 
 **Objetivo**
 Completar la base de calidad del proyecto antes de una beta más formal.
@@ -345,7 +364,7 @@ Permisos granulares por recurso y acción más allá de `admin/no-admin`.
 
 El backlog vigente considera **in scope del MVP académico**:
 
-- `EPIC 0` a `EPIC 11`
+- `EPIC 0` a `EPIC 12`
 - `EPIC A1`
 - `EPIC A2`
 
@@ -389,10 +408,11 @@ Y deja fuera, por ahora:
 | 5 | Frontend Dinámico Base | ✅ | Semanas 9-12 | 15 pts | MUST |
 | 6 | Plugins tipo Extension | ✅ | Fase 6 | 19 pts | MUST |
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
-| 8 | Sistema UI, Shell Frontend y Arquitectura SPA | ⏭ | Fase 8 | 38 pts | MUST |
-| 9 | Operación Técnica y Observabilidad | ⏭ | Fase 9 | 12 pts | SHOULD |
-| 10 | Marketplace de Plugins | ⏭ | Fase 10 | 16 pts | MUST |
-| 11 | QA y Calidad | ⏭ | Fase 11 | 16 pts | MUST |
+| 8 | Gestión de Usuarios | ⏭ | Fase 8 | 19 pts | MUST |
+| 9 | Sistema UI, Shell Frontend y Arquitectura SPA | ⏭ | Fase 9 | 38 pts | MUST |
+| 10 | Operación Técnica y Observabilidad | ⏭ | Fase 10 | 12 pts | SHOULD |
+| 11 | Marketplace de Plugins | ⏭ | Fase 11 | 16 pts | MUST |
+| 12 | QA y Calidad | ⏭ | Fase 12 | 16 pts | MUST |
 | A1 | Auditoría Funcional | ⏭ | Adición MVP | 16 pts | MUST |
 | A2 | Matriz de Permisos Fina | ⏭ | Adición MVP | 18 pts | MUST |
 
@@ -408,15 +428,16 @@ Y deja fuera, por ahora:
 - las operaciones de plugin deben seguir siendo explícitas, no mágicas en boot
 - las correcciones puntuales de instalaciones locales no deben convertirse en
   automatismos permanentes del producto
-- el `EPIC 8` es prioritario para evitar deriva visual y de arquitectura frontend
+- el `EPIC 8` (usuarios) y `EPIC 9` (SPA) son prioritarios para evitar deriva funcional y visual en frontend
 
 ### Riesgos actuales y mitigaciones
 
 | Riesgo | Impacto | Mitigación recomendada |
 |--------|---------|------------------------|
 | Complejidad creciente del ecosistema de plugins | Puede encarecer updates y rollback | Mantener contratos explícitos, snapshots y tests de integración |
-| Retrasar el `EPIC 8` | Puede fragmentar UX y arquitectura frontend | Abrir shell, sistema UI y modularización cuanto antes tras Fase 7 |
-| Crecimiento de deuda frontend | Dificulta mantenimiento y testing UI | Consolidar componentes, routing y resiliencia en Fase 8 |
+| Retrasar el `EPIC 8` | Mantiene sin resolver la gestión de usuarios en frontend | Priorizar perfil y administración de usuarios justo tras Fase 7 |
+| Retrasar el `EPIC 9` | Puede fragmentar UX y arquitectura frontend | Abrir shell, sistema UI y modularización justo tras cerrar EPIC 8 |
+| Crecimiento de deuda frontend | Dificulta mantenimiento y testing UI | Consolidar componentes, routing y resiliencia en Fase 9 |
 | Posponer observabilidad | Riesgo operativo al acercarse a despliegue real | No retrasar en exceso Fase 9 |
 
 ---
