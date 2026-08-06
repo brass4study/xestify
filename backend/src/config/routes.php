@@ -26,6 +26,7 @@ $router->put('/api/v1/users/me', [UserController::class, 'updateMe']);
 $router->get('/api/v1/users', [UserController::class, 'listUsers']);
 $router->get(ROUTE_USER_ITEM, [UserController::class, 'show']);
 $router->put(ROUTE_USER_ITEM, [UserController::class, 'update']);
+$router->put('/api/v1/users/{id}/password', [UserController::class, 'resetPassword']);
 $router->delete(ROUTE_USER_ITEM, [UserController::class, 'destroy']);
 
 // Entity list

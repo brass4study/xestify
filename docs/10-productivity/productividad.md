@@ -989,3 +989,17 @@
   - Registró el estado final de la story en los documentos de seguimiento de productividad para que la implementación quede trazada y reproducible.
 - **Iteraciones:** 4 (ajustes de validación, estado global, sincronización navbar y limpieza de hallazgos)
 - **Decisión manual:** Mantener el flujo de guardado simple y coherente con la arquitectura actual, sin introducir un segundo mecanismo de estado paralelo.
+
+### STORY 8.5: Frontend - Página gestión de usuarios (`#/usuarios`)
+- **Fecha:** 2026-08-06
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** ~2h 45m
+- **Aceleración:** ~54% ⚡
+- **Qué hizo IA:**
+  - Reemplazó la página demo de usuarios por una vista real con carga desde API y tabla completa (avatar, nombre, email, roles, alta y acciones).
+  - Implementó modales de editar usuario, reset password y borrado con confirmación y guard de auto-borrado.
+  - Añadió soporte de rutas hash `#/usuarios` y `#/usuarios/:id` con navegación directa y selección de ficha de usuario.
+  - Extendió backend para edición de roles y endpoint admin de reset (`PUT /api/v1/users/{id}/password`) más pruebas de integración.
+  - Añadió test frontend dedicado `UserManagementTest.html` con cobertura de flujos clave.
+- **Iteraciones:** 4 (ajustes de test reset, refactor por reglas de calidad y refinado de UX en modales)
+- **Decisión manual:** Mantener la generación de contraseña temporal en backend y mostrarla una sola vez en modal, priorizando seguridad operativa sin persistencia en frontend.

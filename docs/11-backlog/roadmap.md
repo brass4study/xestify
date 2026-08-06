@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-05
-> **Estado del proyecto:** **STORY 8.4 incluida** — EPIC 8 en progreso, próxima story `8.5`
+> **Última actualización:** 2026-08-06
+> **Estado del proyecto:** **STORY 8.5 incluida** — EPIC 8 cerrada, siguiente foco `EPIC 9` y operación avanzada
 
 ---
 
@@ -27,9 +27,9 @@ Su objetivo es:
 
 El corte funcional vigente del producto queda fijado en:
 
-- `STORY 8.4` completada
-- `EPIC 8` en progreso
-- siguiente story funcional: `STORY 8.5`
+- `STORY 8.5` completada
+- `EPIC 8` cerrada
+- siguiente foco funcional: `EPIC 9` (SPA y sistema UI)
 
 ### Funcionalidades nucleares (Core)
 
@@ -132,7 +132,7 @@ La estrategia vigente de implementación es:
 | 5 | Frontend dinámico base | ✅ Completada | Login + EntityList + EntityEdit |
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
-| 8 | Gestión de usuarios | ⏭ Pendiente | Perfil propio + administración de usuarios |
+| 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | ⏭ Pendiente | Nuevo bloque frontend transversal |
 | 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
@@ -258,7 +258,7 @@ Añadir gestión de usuarios en frontend y backend con perfil propio para todos 
 - ✅ Story 8.2 implementada: `UserController` y rutas REST protegidas
 - ✅ Story 8.3 implementada: dropdown de usuario en navbar con perfil, gestión de usuarios y cierre de sesión
 - ✅ Story 8.4 implementada: página de perfil propio con formulario, validación inline, guardado y sincronización con navbar/estado global
-- 🔄 Story 8.5 pendiente: consolidación de gestión administrativa real en la UI y flujos de usuarios
+- ✅ Story 8.5 implementada: consolidación de gestión administrativa real en la UI y flujos de usuarios
 
 **Alcance**
 - perfil propio (#/profile)

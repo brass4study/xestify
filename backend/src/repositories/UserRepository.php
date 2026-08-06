@@ -72,7 +72,7 @@ final class UserRepository
      */
     public function update(string $id, array $data): array
     {
-        $allowed = ['name' => 'name', 'email' => 'email', 'avatar' => 'avatar'];
+        $allowed = ['name' => 'name', 'email' => 'email', 'avatar' => 'avatar', 'roles' => 'roles'];
         $fields = [];
         $params = [':id' => $id];
 
@@ -82,7 +82,7 @@ final class UserRepository
             }
 
             $fields[] = $allowed[$key] . ' = :' . $key;
-            $params[':' . $key] = $this->prepareBinaryValue($value, $key);
+            $params[':' . $key] = $this->prepareValue($value, $key);
         }
 
         if ($fields === []) {
@@ -165,20 +165,30 @@ final class UserRepository
         return $value;
     }
 
-    private function prepareBinaryValue(mixed $value, string $fieldName): mixed
+    private function prepareValue(mixed $value, string $fieldName): mixed
     {
-        if ($fieldName !== 'avatar' || !is_string($value)) {
-            return $value;
+        $result = $value;
+
+        if ($fieldName === 'roles') {
+            if (is_array($value)) {
+                $json = json_encode($value);
+                $result = $json === false ? '[]' : $json;
+            } elseif (is_string($value)) {
+                $result = $value;
+            } else {
+                $result = '[]';
+            }
         }
 
-        $stream = fopen('php://temp', 'r+');
-        if ($stream === false) {
-            return $value;
+        if ($fieldName === 'avatar' && is_string($value)) {
+            $stream = fopen('php://temp', 'r+');
+            if ($stream !== false) {
+                fwrite($stream, $value);
+                rewind($stream);
+                $result = $stream;
+            }
         }
 
-        fwrite($stream, $value);
-        rewind($stream);
-
-        return $stream;
+        return $result;
     }
 }

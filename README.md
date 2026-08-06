@@ -6,11 +6,11 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** STORY 7.3 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 8 cerrada hasta STORY 8.5 incluida (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
-- **Frontend:** UI dinámica basada en metadata y plugins
+- **Frontend:** UI dinámica basada en metadata y plugins, con perfil propio y gestión administrativa de usuarios
 - **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
@@ -159,21 +159,19 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 7.3 incluida**:
+MVP implementado hasta **STORY 8.5 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
-- CRUD dinamico de entidades sobre `plugin_entity_data`.
-- Catalogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
-- Plugin `clients` como entidad base canonica.
-- Plugin `comments` como extension con tab "Comentarios" y datos en `plugin_extension_data`.
-- PluginManager, deteccion de actualizaciones disponibles y flujo explicito de
-  sync/update desde servicios especializados del subsistema de plugins.
-- Pagina de configuracion de plugins activos con campos configurables, schema
-  versionado y soporte de `target_entity` para plugins `extension`.
-- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
+- CRUD dinámico de entidades sobre `plugin_entity_data`.
+- Catálogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
+- Plugin `clients` como entidad base canónica.
+- Plugin `comments` como extensión con tab "Comentarios" y datos en `plugin_extension_data`.
+- PluginManager, detección de actualizaciones disponibles y flujo explícito de sync/update desde servicios especializados del subsistema de plugins.
+- Página de configuración de plugins activos con campos configurables, schema versionado y soporte de `target_entity` para plugins `extension`.
+- Gestión de perfil propio y administración de usuarios con rutas hash `#/profile`, `#/usuarios` y `#/usuarios/:id`.
+- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios y perfil.
 
-Pendiente desde STORY 7.4: rollback manual, UI de actualizacion/rollback,
-operacion avanzada, auditoria, permisos finos y marketplace.
+Pendiente desde la consolidación de la Epic 8: operación avanzada, auditoría, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 

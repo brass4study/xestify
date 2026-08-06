@@ -7,8 +7,9 @@ import { Login } from './pages/Login.js';
 import { PluginConfig } from './pages/PluginConfig.js';
 import { PluginManager } from './pages/PluginManager.js';
 import { Navbar } from './modules/Navbar.js';
+import { UserConfig } from './pages/UserConfig.js';
 import { UserProfile } from './pages/UserProfile.js';
-import { UserManagement } from './pages/UserManagement.js';
+import { UserManager } from './pages/UserManager.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
 const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
@@ -19,6 +20,7 @@ const API_BASE = buildAppUrl('/api/v1');
 const app = document.getElementById('app');
 let currentNavbar = null;
 let navbarSubscription = null;
+let hashNavigationHandler = null;
 
 if (app instanceof HTMLElement) {
   bootstrap(app);
@@ -106,12 +108,13 @@ async function renderDashboard(container) {
   }
   const isAdmin = currentUserIsAdmin();
   const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
-  let initialPage = '';
+  let fallbackPage = '';
   if (firstEntitySlug !== '') {
-    initialPage = `entity:${firstEntitySlug}`;
+    fallbackPage = `entity:${firstEntitySlug}`;
   } else if (isAdmin) {
-    initialPage = 'plugins';
+    fallbackPage = 'plugins';
   }
+  const initialPage = getPageFromHash(window.location.hash, fallbackPage);
 
   const userEmail = AppState.getUserEmail();
   const currentUser = AppState.getUser();
@@ -136,8 +139,8 @@ async function renderDashboard(container) {
       clearAuth();
       renderLogin(container);
     },
-    onNavigate: (page) => {
-      navigateTo(page, content, dashboardApi);
+    onNavigate: async (page) => {
+      await navigateTo(page, content, dashboardApi, { updateHash: true });
     },
   });
   syncNavbarFromState(currentNavbar);
@@ -145,11 +148,17 @@ async function renderDashboard(container) {
     syncNavbarFromState(currentNavbar);
   });
 
-  await navigateTo(initialPage, content, dashboardApi);
+  setupHashRouting(content, dashboardApi, fallbackPage);
+  await navigateTo(initialPage, content, dashboardApi, { updateHash: true });
 }
 
-async function navigateTo(page, content, api) {
+async function navigateTo(page, content, api, options = {}) {
+  const shouldUpdateHash = options.updateHash === true;
   content.replaceChildren();
+
+  if (shouldUpdateHash) {
+    updateHashForPage(page);
+  }
 
   if (typeof page === 'string' && page.startsWith('entity:')) {
     await showEntityPage(page, content, api);
@@ -172,7 +181,13 @@ async function navigateTo(page, content, api) {
   }
 
   if (page === 'users') {
-    showUsersPage(content, api);
+    await showUsersPage(content, api);
+    return;
+  }
+
+  if (typeof page === 'string' && page.startsWith('users:')) {
+    const userId = page.slice('users:'.length);
+    await showUserConfigPage(content, api, userId);
     return;
   }
 
@@ -220,18 +235,60 @@ function showProfilePage(content, api) {
   return profilePage;
 }
 
-function showUsersPage(content, api) {
+async function showUsersPage(content, api) {
   if (!currentUserIsAdmin()) {
     showPlaceholder(content, 'Acceso denegado: solo administradores.');
     return;
   }
 
-  const demoUsers = [
-    { name: 'Ana García', email: 'ana.garcia@xestify.local', roles: ['admin'] },
-    { name: 'Luis Pérez', email: 'luis.perez@xestify.local', roles: ['editor'] },
-  ];
-  const userManagementPage = new UserManagement(content, demoUsers);
+  const userManagementPage = new UserManager(content, {
+    api,
+  });
+  await userManagementPage.init();
   return userManagementPage;
+}
+
+async function showUserConfigPage(content, api, userId) {
+  if (!currentUserIsAdmin()) {
+    showPlaceholder(content, 'Acceso denegado: solo administradores.');
+    return;
+  }
+
+  if (typeof userId !== 'string' || userId === '') {
+    await showUsersPage(content, api);
+    return;
+  }
+
+  let selectedUser = null;
+  try {
+    const response = await api.get(`/users/${userId}`);
+    selectedUser = response?.data ?? null;
+  } catch {
+    showPlaceholder(content, 'No se pudo cargar la ficha de usuario.');
+    return;
+  }
+
+  const currentUser = AppState.getUser();
+  const currentUserId = currentUser && typeof currentUser === 'object' && typeof currentUser.id === 'string'
+    ? currentUser.id
+    : null;
+
+  const userConfigPage = new UserConfig(content, {
+    mode: 'admin',
+    user: selectedUser,
+    api,
+    currentUserId,
+    title: 'Configuración de usuario',
+    subtitle: 'Página de configuración del usuario seleccionado.',
+    onBack: () => {
+      navigateTo('users', content, api, { updateHash: true });
+    },
+    onDeleted: () => {
+      navigateTo('users', content, api, { updateHash: true });
+    },
+  });
+
+  return userConfigPage;
 }
 
 async function loadEntitiesForNav(api, container) {
@@ -352,6 +409,11 @@ function setAuthToken(token) {
 }
 
 function clearAuth() {
+  if (hashNavigationHandler !== null) {
+    window.removeEventListener('hashchange', hashNavigationHandler);
+    hashNavigationHandler = null;
+  }
+
   AppState.reset();
   localStorage.removeItem(STORAGE_TOKEN_KEY);
   localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
@@ -406,6 +468,7 @@ function normalizeUserProfile(profile, fallbackUser = null) {
     email: null,
     name: null,
     avatar: null,
+    created_at: null,
     roles: [],
   };
 
@@ -413,6 +476,12 @@ function normalizeUserProfile(profile, fallbackUser = null) {
   normalizedUser.email = resolveUserString(baseUser.email, fallback.email);
   normalizedUser.name = resolveUserString(baseUser.name, fallback.name);
   normalizedUser.avatar = resolveUserString(baseUser.avatar, fallback.avatar);
+  normalizedUser.created_at = resolveDateField(
+    baseUser.created_at,
+    baseUser.creation_stamp,
+    fallback.created_at,
+    fallback.creation_stamp
+  );
   normalizedUser.roles = resolveUserRoles(baseUser.roles, fallback.roles);
 
   return normalizedUser;
@@ -432,6 +501,15 @@ function resolveUserString(value, fallbackValue) {
   }
 
   return null;
+}
+
+function resolveDateField(primaryValue, secondaryValue, fallbackPrimaryValue, fallbackSecondaryValue) {
+  const direct = resolveUserString(primaryValue, secondaryValue);
+  if (direct !== null) {
+    return direct;
+  }
+
+  return resolveUserString(fallbackPrimaryValue, fallbackSecondaryValue);
 }
 
 function resolveUserRoles(value, fallbackValue) {
@@ -481,4 +559,129 @@ function currentUserIsAdmin() {
 
   const roles = user.roles;
   return Array.isArray(roles) && roles.includes('admin');
+}
+
+function setupHashRouting(content, api, fallbackPage) {
+  if (hashNavigationHandler !== null) {
+    window.removeEventListener('hashchange', hashNavigationHandler);
+  }
+
+  hashNavigationHandler = () => {
+    const nextPage = getPageFromHash(window.location.hash, fallbackPage);
+    void navigateTo(nextPage, content, api, { updateHash: false });
+  };
+
+  window.addEventListener('hashchange', hashNavigationHandler);
+}
+
+function getPageFromHash(hashValue, fallbackPage) {
+  const hash = typeof hashValue === 'string' ? hashValue : '';
+  if (hash === '' || hash === '#') {
+    return fallbackPage;
+  }
+
+  const rawPath = hash.startsWith('#') ? hash.slice(1) : hash;
+  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  const parts = normalizedPath.split('/').filter(Boolean);
+
+  if (parts.length === 0) {
+    return fallbackPage;
+  }
+
+  const section = parts[0];
+  if (section === 'profile') {
+    return 'profile';
+  }
+
+  const usersPage = resolveUsersPage(parts);
+  if (usersPage !== null) {
+    return usersPage;
+  }
+
+  const pluginsPage = resolvePluginsPage(parts);
+  if (pluginsPage !== null) {
+    return pluginsPage;
+  }
+
+  const entityPage = resolveEntityPage(parts);
+  if (entityPage !== null) {
+    return entityPage;
+  }
+
+  return fallbackPage;
+}
+
+function resolveUsersPage(parts) {
+  if (parts[0] !== 'usuarios') {
+    return null;
+  }
+
+  if (parts.length >= 2 && parts[1] !== '') {
+    return `users:${decodeURIComponent(parts[1])}`;
+  }
+
+  return 'users';
+}
+
+function resolvePluginsPage(parts) {
+  if (parts[0] !== 'plugins') {
+    return null;
+  }
+
+  if (parts.length >= 3 && parts[2] === 'config') {
+    return `/plugins/${parts[1]}/config`;
+  }
+
+  return 'plugins';
+}
+
+function resolveEntityPage(parts) {
+  if (parts[0] !== 'entidades') {
+    return null;
+  }
+
+  if (parts.length >= 2 && parts[1] !== '') {
+    return `entity:${decodeURIComponent(parts[1])}`;
+  }
+
+  return null;
+}
+
+function updateHashForPage(page) {
+  const targetHash = hashFromPage(page);
+  if (targetHash === '' || window.location.hash === targetHash) {
+    return;
+  }
+
+  window.location.hash = targetHash;
+}
+
+function hashFromPage(page) {
+  if (page === 'profile') {
+    return '#/profile';
+  }
+
+  if (page === 'users') {
+    return '#/usuarios';
+  }
+
+  if (typeof page === 'string' && page.startsWith('users:')) {
+    const userId = page.slice('users:'.length);
+    return userId === '' ? '#/usuarios' : `#/usuarios/${encodeURIComponent(userId)}`;
+  }
+
+  if (page === 'plugins') {
+    return '#/plugins';
+  }
+
+  if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
+    return `#${page}`;
+  }
+
+  if (typeof page === 'string' && page.startsWith('entity:')) {
+    const slug = page.slice('entity:'.length);
+    return slug === '' ? '#/' : `#/entidades/${encodeURIComponent(slug)}`;
+  }
+
+  return '';
 }

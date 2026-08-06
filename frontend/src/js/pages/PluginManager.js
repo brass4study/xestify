@@ -62,6 +62,15 @@ export class PluginManager {
         this.#api.get('/plugins'),
         this.#api.get('/plugins/updates'),
       ]);
+
+      if (pluginsResponse?.ok === false) {
+        throw new Error(pluginsResponse?.error?.message ?? 'Error loading plugins');
+      }
+
+      if (updatesResponse?.ok === false) {
+        throw new Error(updatesResponse?.error?.message ?? 'Error loading plugin updates');
+      }
+
       const pluginsPayload = pluginsResponse?.data ?? pluginsResponse;
       const updatesPayload = updatesResponse?.data ?? updatesResponse;
 
@@ -93,37 +102,38 @@ export class PluginManager {
    */
   #render() {
     const wrapper = document.createElement('div');
-    wrapper.className = 'xt-plugin-manager';
+    wrapper.className = 'xt-page__card';
     wrapper.innerHTML = `
-      <div class="xt-plugin-manager__header">
+      <div class="xt-page__toolbar">
         <div>
-          <h2>Plugin Manager</h2>
-          <p class="xt-plugin-manager__subtitle">Manage installed plugins</p>
+          <h2 class="xt-page__title">Plugin Manager</h2>
+          <p class="xt-page__meta">Manage installed plugins</p>
         </div>
-        <button class="xt-plugin-manager__sync-btn" data-action="sync">Synchronize</button>
+        <button class="xt-btn xt-btn--primary xt-btn--sm" data-action="sync">Synchronize</button>
       </div>
-      ${this.#feedbackMessage === null ? '' : `<div class="xt-plugin-manager__feedback xt-plugin-manager__feedback--${this.#feedbackType}">${this.#escapeHtml(this.#feedbackMessage)}</div>`}
-      <div class="xt-plugin-manager__content"></div>
+      ${this.#feedbackMessage === null ? '' : `<div class="xt-page__feedback xt-page__feedback--${this.#feedbackType}">${this.#escapeHtml(this.#feedbackMessage)}</div>`}
+      <div class="xt-table-wrapper" data-role="plugin-content"></div>
     `;
 
-    const syncButton = wrapper.querySelector('.xt-plugin-manager__sync-btn');
+    const syncButton = wrapper.querySelector('[data-action="sync"]');
     if (syncButton instanceof HTMLButtonElement) {
       syncButton.addEventListener('click', () => {
         this.#handleSync(syncButton);
       });
     }
 
-    const content = wrapper.querySelector('.xt-plugin-manager__content');
+    const content = wrapper.querySelector('[data-role="plugin-content"]');
 
     if (this.#plugins.length === 0) {
-      content.innerHTML = '<p class="xt-plugin-manager__empty">No plugins installed.</p>';
+      content.innerHTML = '<p class="xt-placeholder" data-role="plugin-empty">No plugins installed.</p>';
       this.#container.innerHTML = '';
       this.#container.appendChild(wrapper);
       return;
     }
 
     const table = document.createElement('table');
-    table.className = 'xt-plugin-manager__table';
+    table.className = 'xt-table';
+    table.dataset.role = 'plugin-table';
     table.innerHTML = `
       <thead>
         <tr>
@@ -141,51 +151,53 @@ export class PluginManager {
 
     this.#plugins.forEach((plugin) => {
       const row = document.createElement('tr');
-      row.className = `xt-plugin-manager__row xt-plugin-manager__row--${plugin.status}`;
+      row.className = `xt-table__row xt-table__row--${plugin.status}`;
+      row.dataset.role = 'plugin-row';
       row.dataset.slug = plugin.slug;
       const updateInfo = this.#updatesBySlug[String(plugin.slug)] ?? null;
 
       const statusBadgeClass = plugin.status === 'active'
-        ? 'xt-plugin-manager__status-badge--active'
-        : 'xt-plugin-manager__status-badge--inactive';
+        ? 'xt-badge--success'
+        : 'xt-badge--warning';
 
       const typeBadgeClass = plugin.plugin_type === 'entity'
-        ? 'xt-plugin-manager__type-badge--entity'
-        : 'xt-plugin-manager__type-badge--extension';
+        ? 'xt-badge--info'
+        : 'xt-badge--accent';
 
       const canConfigure = plugin.status === 'active' && (plugin.plugin_type === 'entity' || plugin.plugin_type === 'extension');
       row.innerHTML = `
-        <td class="xt-plugin-manager__cell-name">${this.#escapeHtml(plugin.name || plugin.slug)}</td>
-        <td class="xt-plugin-manager__cell-type">
-          <span class="xt-plugin-manager__type-badge ${typeBadgeClass}">
+        <td>${this.#escapeHtml(plugin.name || plugin.slug)}</td>
+        <td>
+          <span class="xt-badge ${typeBadgeClass}" data-role="plugin-type-badge">
             ${plugin.plugin_type}
           </span>
         </td>
-        <td class="xt-plugin-manager__cell-version">
-          <div class="xt-plugin-manager__version-stack">
+        <td>
+          <div class="xt-stack-vertical-sm">
             <span>${this.#escapeHtml(plugin.version)}</span>
-            ${updateInfo === null ? '' : `<span class="xt-plugin-manager__update-badge">Update available: ${this.#escapeHtml(updateInfo.available_version)}</span>`}
+            ${updateInfo === null ? '' : `<span class="xt-badge xt-badge--warning" data-role="plugin-update-badge">Update available: ${this.#escapeHtml(updateInfo.available_version)}</span>`}
           </div>
         </td>
-        <td class="xt-plugin-manager__cell-status">
-          <span class="xt-plugin-manager__status-badge ${statusBadgeClass}">
+        <td>
+          <span class="xt-badge ${statusBadgeClass}" data-role="plugin-status-badge">
             ${plugin.status}
           </span>
         </td>
-        <td class="xt-plugin-manager__cell-actions">
-          <button class="xt-plugin-manager__action-btn ${plugin.status === 'active' ? 'xt-plugin-manager__action-btn--deactivate' : 'xt-plugin-manager__action-btn--activate'}"
+        <td class="xt-table__actions">
+          <button class="xt-action-btn xt-btn xt-btn--sm ${plugin.status === 'active' ? 'xt-action-btn--deactivate' : 'xt-action-btn--activate'}"
+                  data-role="plugin-action"
                   data-action="${plugin.status === 'active' ? 'deactivate' : 'activate'}">
             ${plugin.status === 'active' ? 'Deactivate' : 'Activate'}
           </button>
-          ${updateInfo === null ? '' : '<button class="xt-plugin-manager__action-btn xt-plugin-manager__action-btn--update" data-action="update">Update</button>'}
+          ${updateInfo === null ? '' : '<button class="xt-action-btn xt-btn xt-btn--sm xt-action-btn--update" data-role="plugin-action" data-action="update">Update</button>'}
           ${plugin.can_rollback === true || plugin.can_rollback === 't' || plugin.can_rollback === 1 || plugin.can_rollback === '1'
-    ? '<button class="xt-plugin-manager__action-btn xt-plugin-manager__action-btn--rollback" data-action="rollback">Rollback</button>'
+    ? '<button class="xt-action-btn xt-btn xt-btn--sm xt-action-btn--rollback" data-role="plugin-action" data-action="rollback">Rollback</button>'
     : ''}
-          ${canConfigure ? '<button class="xt-plugin-manager__action-btn xt-plugin-manager__action-btn--configure" data-action="configure">Configure</button>' : ''}
+          ${canConfigure ? '<button class="xt-action-btn xt-btn xt-btn--sm xt-action-btn--configure" data-role="plugin-action" data-action="configure">Configure</button>' : ''}
         </td>
       `;
 
-      const actionButtons = row.querySelectorAll('.xt-plugin-manager__action-btn');
+      const actionButtons = row.querySelectorAll('[data-role="plugin-action"]');
       actionButtons.forEach((button) => {
         button.addEventListener('click', () => {
           if (button.dataset.action === 'configure') {
@@ -353,23 +365,25 @@ export class PluginManager {
     return new Promise((resolve) => {
       const modal = new Modal(this.#container, { title });
       const body = document.createElement('div');
-      body.className = 'xt-plugin-manager__confirm';
+      body.className = 'xt-confirm';
 
       const text = document.createElement('p');
-      text.className = 'xt-plugin-manager__confirm-text';
+      text.className = 'xt-confirm__text';
       text.textContent = message;
 
       const actions = document.createElement('div');
-      actions.className = 'xt-plugin-manager__confirm-actions';
+      actions.className = 'xt-confirm__actions';
 
       const cancelButton = document.createElement('button');
       cancelButton.type = 'button';
-      cancelButton.className = 'xt-plugin-manager__action-btn';
+      cancelButton.className = 'xt-action-btn xt-btn xt-btn--sm';
+      cancelButton.dataset.action = 'cancel-modal';
       cancelButton.textContent = 'Cancel';
 
       const confirmButton = document.createElement('button');
       confirmButton.type = 'button';
-      confirmButton.className = 'xt-plugin-manager__action-btn xt-plugin-manager__action-btn--confirm';
+      confirmButton.className = 'xt-action-btn xt-btn xt-btn--sm xt-action-btn--confirm';
+      confirmButton.dataset.action = 'confirm-modal';
       confirmButton.textContent = confirmLabel;
 
       const closeWith = (result) => {
@@ -397,7 +411,8 @@ export class PluginManager {
    */
   #renderError(message) {
     const banner = document.createElement('div');
-    banner.className = 'xt-plugin-manager__error-banner';
+    banner.className = 'xt-page__feedback xt-page__feedback--error';
+    banner.dataset.role = 'plugin-error';
     banner.textContent = message;
     this.#container.innerHTML = '';
     this.#container.appendChild(banner);

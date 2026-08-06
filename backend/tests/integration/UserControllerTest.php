@@ -73,6 +73,14 @@ function cleanupUserRow(PDO $pdo, string $id): void
     $stmt->execute([':id' => $id]);
 }
 
+function fetchUserPasswordHash(PDO $pdo, string $id): ?string
+{
+    $stmt = $pdo->prepare('SELECT password_hash FROM users WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $value = $stmt->fetchColumn();
+    return is_string($value) ? $value : null;
+}
+
 function captureControllerResponse(callable $callback): array
 {
     ob_start();
@@ -182,6 +190,76 @@ TestSuite::run('UserController::listUsers allows admins and returns active users
     } finally {
         cleanupUserRow($pdo, (string) $admin['id']);
         cleanupUserRow($pdo, (string) $user['id']);
+    }
+});
+
+TestSuite::run('UserController::update lets admins edit user roles', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'update-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $target = insertUserRow($pdo, 'update-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador']);
+
+    try {
+        $request = new Request([], ['name' => 'Gestor', 'roles' => ['admin', 'operador']], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(function () use ($controller, $target, $request): void {
+            $controller->update(['id' => (string) $target['id']], $request);
+        });
+
+        assertTrue(($response['ok'] ?? false) === true, 'Admin update should succeed');
+        assertEquals('Gestor', (string) ($response['data']['name'] ?? ''), 'Updated name should be persisted');
+        assertEquals(['admin', 'operador'], $response['data']['roles'] ?? [], 'Roles should be updated');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
+TestSuite::run('UserController::resetPassword allows admins and stores new hash', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'reset-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $target = insertUserRow($pdo, 'reset-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'initial-secret');
+
+    try {
+        $beforeHash = fetchUserPasswordHash($pdo, (string) $target['id']);
+        assertTrue(is_string($beforeHash) && $beforeHash !== '', 'Initial hash should exist');
+
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(function () use ($controller, $target, $request): void {
+            $controller->resetPassword(['id' => (string) $target['id']], $request);
+        });
+
+        assertTrue(($response['ok'] ?? false) === true, 'Admin password reset should succeed');
+        $temporaryPassword = (string) ($response['data']['temporary_password'] ?? '');
+        assertTrue($temporaryPassword !== '', 'Temporary password must be returned once');
+
+        $afterHash = fetchUserPasswordHash($pdo, (string) $target['id']);
+        assertTrue(is_string($afterHash) && $afterHash !== '', 'Updated hash should exist');
+        assertTrue($beforeHash !== $afterHash, 'Password hash should change after reset');
+        assertTrue(password_verify($temporaryPassword, $afterHash), 'Returned temporary password should match stored hash');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
+TestSuite::run('UserController::resetPassword forbids non-admin users', function () use ($pdo, $controller): void {
+    $operator = insertUserRow($pdo, 'reset-operator-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador']);
+    $target = insertUserRow($pdo, 'reset-non-admin-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador']);
+
+    try {
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $operator['id'], 'roles' => ['operador']]);
+
+        $response = captureControllerResponse(function () use ($controller, $target, $request): void {
+            $controller->resetPassword(['id' => (string) $target['id']], $request);
+        });
+
+        assertFalse(($response['ok'] ?? true) === true, 'Non-admin reset should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Non-admin reset should return 403');
+    } finally {
+        cleanupUserRow($pdo, (string) $operator['id']);
+        cleanupUserRow($pdo, (string) $target['id']);
     }
 });
 

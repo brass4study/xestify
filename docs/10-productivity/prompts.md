@@ -518,16 +518,16 @@ STORY 4.3 — Integrar HookDispatcher en EntityService:
 
 ---
 
-### STORY 4.4 ï¿½ Crear plugin entity_client
-
+### STORY 4.4 Crear plugin entity_client
 **Prompt:**
-`````n STORY 4.4 ï¿½ Crear plugin de entidad base entity_client:
+```
+ STORY 4.4 ï¿½ Crear plugin de entidad base entity_client:
  - Estructura: manifest.json (slug, name, version, type, core_version)
  - schema.json con campos nombre (required), email (required), telï¿½fono (optional), activo (boolean, default true)
  - Hooks.php: hook beforeSave que valida email ï¿½nico en entity_data
  - Installer.php: registra entidad en system_entities + siembra schema en entity_metadata (idempotente)
  - Tests unitarios con stubs PDO
-`````n
+```
 **Resultado:** 13/13 tests unitarios pasando al primer intento
 **Iteraciones:** 1
 
@@ -1026,3 +1026,13 @@ Implementa la story 8.4 para Xestify:
 **Iteraciones:** 4
 **Lección:** El estado global debe ser la fuente de verdad para la UI y el navbar, no un valor duplicado en cada vista.
 **Estado final:** Documentado en sesión, productividad y prompts para cerrar la historia con trazabilidad completa.
+
+### STORY 8.5 — Frontend - Página gestión de usuarios (`#/usuarios`)
+**Prompt:**
+```
+Ok, ahora continuemos con la story 8.5
+```
+**Resultado:** Story 8.5 implementada con gestión real de usuarios. Se sustituyó la vista demo por una tabla conectada a `/api/v1/users` con acciones por fila: editar (modal con nombre/email/roles), reset password (modal que llama a `PUT /api/v1/users/{id}/password` y muestra contraseña temporal una sola vez con opción copiar), y borrado con confirmación (deshabilitado para el usuario autenticado). Además, se añadió navegación hash `#/usuarios` y `#/usuarios/:id` para acceso directo a ficha de usuario y se amplió backend para soportar actualización de roles y reset admin de contraseña.
+**Iteraciones:** 4
+**Lección:** Para cerrar una story frontend operativa, conviene validar de extremo a extremo: contrato backend (roles/reset), navegación hash y pruebas UI de modales para evitar regressiones de interacción.
+**Estado final:** Validación visual en navegador con `frontend/tests/UserManagementTest.html` (4 passed, 0 failed) y trazabilidad actualizada en documentación de productividad.

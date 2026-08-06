@@ -11,10 +11,12 @@ use Xestify\repositories\UserRepository;
 
 class UserController
 {
+    private const ADMIN_RESET_PASSWORD_LENGTH = 14;
     private const MSG_AUTH_REQUIRED = 'Se requiere autenticación.';
     private const MSG_USER_NOT_FOUND = 'No se encontró el usuario.';
     private const MSG_ADMIN_REQUIRED = 'Se requiere rol de administrador.';
     private const MSG_USER_ID_REQUIRED = 'Se requiere el id del usuario.';
+    private const MSG_ROLES_INVALID = 'El campo roles debe ser una lista de strings no vacíos.';
     private const MSG_EMAIL_CHANGE_SECRET_REQUIRED = 'Se requiere la contraseña actual al cambiar la dirección de correo.';
     private const MSG_SECRET_CHANGE_REQUIRED = 'Se requiere la contraseña actual al cambiar la contraseña.';
     private const MSG_SECRET_MISMATCH = 'La contraseña actual es incorrecta.';
@@ -135,9 +137,50 @@ class UserController
         if (array_key_exists('avatar', $payload)) {
             $data['avatar'] = $payload['avatar'];
         }
+        if (array_key_exists('roles', $payload)) {
+            $roles = $this->normalizeRolesPayload($payload['roles']);
+            if ($roles === null) {
+                Response::make()->unprocessable(self::MSG_ROLES_INVALID, [
+                    'roles' => ['Formato inválido.'],
+                ]);
+                return;
+            }
+
+            $data['roles'] = $roles;
+        }
 
         $updated = $this->repository->update($id, $data);
         Response::make()->json($updated);
+    }
+
+    public function resetPassword(array $params, ?Request $request = null): void
+    {
+        $this->ignoreParams($params);
+        $request ??= new Request();
+        if (!$this->isAdmin($request)) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        $id = (string) ($params['id'] ?? '');
+        if ($id === '') {
+            Response::make()->notFound(self::MSG_USER_ID_REQUIRED);
+            return;
+        }
+
+        $plainPassword = $this->generateTemporaryPassword(self::ADMIN_RESET_PASSWORD_LENGTH);
+
+        try {
+            $this->repository->updatePassword($id, password_hash($plainPassword, PASSWORD_BCRYPT));
+        } catch (RepositoryException $e) {
+            Response::make()->notFound($e->getMessage());
+            return;
+        }
+
+        Response::make()->json([
+            'id' => $id,
+            'temporary_password' => $plainPassword,
+        ]);
     }
 
     public function destroy(array $params, ?Request $request = null): void
@@ -268,6 +311,53 @@ class UserController
         }
 
         return $data;
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function normalizeRolesPayload(mixed $roles): ?array
+    {
+        $cleanRoles = [];
+        $isValid = is_array($roles);
+
+        if ($isValid) {
+            foreach ($roles as $role) {
+                if (!is_string($role)) {
+                    $isValid = false;
+                    break;
+                }
+
+                $normalizedRole = trim($role);
+                if ($normalizedRole === '') {
+                    $isValid = false;
+                    break;
+                }
+
+                if (!in_array($normalizedRole, $cleanRoles, true)) {
+                    $cleanRoles[] = $normalizedRole;
+                }
+            }
+        }
+
+        if ($cleanRoles === []) {
+            $isValid = false;
+        }
+
+        return $isValid ? $cleanRoles : null;
+    }
+
+    private function generateTemporaryPassword(int $length): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+        $maxIndex = strlen($alphabet) - 1;
+        $password = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $alphabet[random_int(0, $maxIndex)];
+        }
+
+        return $password;
     }
 
     private function isAdmin(?Request $request): bool

@@ -80,33 +80,33 @@ export class PluginConfig {
       : 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
 
     const wrapper = document.createElement('section');
-    wrapper.className = 'xt-plugin-config';
+    wrapper.className = 'xt-page__card';
     wrapper.innerHTML = `
-      <header class="xt-plugin-config__header">
+      <header class="xt-page__toolbar">
         <div>
-          <h2>Configurar plugin: ${this.#escapeHtml(plugin.name || plugin.slug || this.#slug)}</h2>
-          <p class="xt-plugin-config__meta">
+          <h2 class="xt-page__title">Configurar plugin: ${this.#escapeHtml(plugin.name || plugin.slug || this.#slug)}</h2>
+          <p class="xt-page__meta">
             slug: ${this.#escapeHtml(plugin.slug || this.#slug)} | version: ${this.#escapeHtml(plugin.version || '-')} | schema v${this.#escapeHtml(String(plugin.schema_version ?? '-'))}
           </p>
         </div>
       </header>
 
-      ${this.#message === '' ? '' : `<div class="xt-plugin-config__notice xt-plugin-config__notice--${this.#messageType}">${this.#escapeHtml(this.#message)}</div>`}
+      ${this.#message === '' ? '' : `<div class="xt-page__feedback xt-page__feedback--${this.#messageType}">${this.#escapeHtml(this.#message)}</div>`}
 
-      <section class="xt-plugin-config__section">
+      <section class="xt-panel">
         ${isExtension
           ? `<h3>Relacion de extension</h3>
-        <p class="xt-plugin-config__help">Selecciona la entidad destino o <strong>Todos</strong> para aplicar la extension globalmente.</p>
-        <select class="xt-plugin-config__input" data-name="target-entity">
+        <p class="xt-help-text">Selecciona la entidad destino o <strong>Todos</strong> para aplicar la extension globalmente.</p>
+        <select class="xt-input xt-input--compact" data-name="target-entity">
             <option value="*" ${this.#selectedAttr('*', targetEntity)}>Todos</option>
             ${allTargetOptionsHtml}
         </select>`
           : ''}
 
         <h3>Campos</h3>
-        <p class="xt-plugin-config__help">${fieldsHelp}</p>
-        <div class="xt-plugin-config__table-wrap">
-          <table class="xt-plugin-config__table">
+        <p class="xt-help-text">${fieldsHelp}</p>
+        <div class="xt-table-wrapper">
+          <table class="xt-table xt-table--compact" data-role="plugin-config-table">
             <thead>
               <tr>
                 <th>Activo</th>
@@ -122,12 +122,12 @@ export class PluginConfig {
             <tbody data-role="fields-body"></tbody>
           </table>
         </div>
-        <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--secondary" data-action="add-field">Anadir campo</button>
+        <button type="button" class="xt-btn xt-btn--secondary" data-action="add-field" data-role="plugin-config-action">Anadir campo</button>
       </section>
 
-      <footer class="xt-plugin-config__actions">
-        <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--secondary" data-action="back">Volver</button>
-        <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--primary" data-action="save">Guardar</button>
+      <footer class="xt-form__actions">
+        <button type="button" class="xt-btn xt-btn--secondary" data-action="back" data-role="plugin-config-action">Volver</button>
+        <button type="button" class="xt-btn xt-btn--primary" data-action="save" data-role="plugin-config-action">Guardar</button>
       </footer>
     `;
 
@@ -150,11 +150,11 @@ export class PluginConfig {
     const editable = !immutableField;
     const summaryViewChecked = field.summaryView === false ? '' : 'checked';
 
-    let sourceBadge = '<span class="xt-plugin-config__badge xt-plugin-config__badge--additional">adicional</span>';
+    let sourceBadge = '<span class="xt-badge xt-badge--success" data-role="field-source">adicional</span>';
     if (source === 'base') {
-      sourceBadge = '<span class="xt-plugin-config__badge xt-plugin-config__badge--base">base</span>';
+      sourceBadge = '<span class="xt-badge xt-badge--danger" data-role="field-source">base</span>';
     } else if (source === 'suggested') {
-      sourceBadge = '<span class="xt-plugin-config__badge xt-plugin-config__badge--suggested">sugerido</span>';
+      sourceBadge = '<span class="xt-badge xt-badge--info" data-role="field-source">sugerido</span>';
     }
 
     return `
@@ -182,12 +182,12 @@ export class PluginConfig {
         <td>
           <input type="checkbox" data-name="summaryView" ${summaryViewChecked} ${editable ? '' : 'disabled'}>
         </td>
-        <td class="xt-plugin-config__actions-cell">
-          <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--icon" data-action="move-up" data-row-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-          <button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--icon" data-action="move-down" data-row-index="${index}" ${index === this.#state.config.fields.length - 1 ? 'disabled' : ''}>↓</button>
+        <td class="xt-table__actions-cell">
+          <button type="button" class="xt-btn xt-btn--icon" data-action="move-up" data-row-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" class="xt-btn xt-btn--icon" data-action="move-down" data-row-index="${index}" ${index === this.#state.config.fields.length - 1 ? 'disabled' : ''}>↓</button>
           ${immutableField
             ? ''
-            : `<button type="button" class="xt-plugin-config__btn xt-plugin-config__btn--danger" data-action="remove-row" data-row-index="${index}">Eliminar</button>`}
+            : `<button type="button" class="xt-btn xt-btn--secondary xt-btn--danger" data-action="remove-row" data-row-index="${index}">Eliminar</button>`}
         </td>
       </tr>
     `;
@@ -256,7 +256,7 @@ export class PluginConfig {
 
   #renderError(message) {
     const banner = document.createElement('div');
-    banner.className = 'xt-plugin-config__notice xt-plugin-config__notice--error';
+    banner.className = 'xt-page__feedback xt-page__feedback--error';
     banner.textContent = message;
     this.#container.innerHTML = '';
     this.#container.appendChild(banner);
@@ -339,7 +339,7 @@ export class PluginConfig {
 
   #collectRowsFromDom(wrapper) {
     const rows = [];
-    wrapper.querySelectorAll('.xt-plugin-config__table tbody tr[data-row-index]').forEach((rowEl) => {
+    wrapper.querySelectorAll('[data-role="plugin-config-table"] tbody tr[data-row-index]').forEach((rowEl) => {
       rows.push(this.#readRowFromDom(rowEl));
     });
 

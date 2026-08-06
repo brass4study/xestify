@@ -11,7 +11,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { PluginManager } from '../js/pages/PluginManager.js';
+  import { PluginManager } from '../src/js/pages/PluginManager.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -99,7 +99,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const rows = container.querySelectorAll('.xt-plugin-manager__row');
+    const rows = container.querySelectorAll('[data-role="plugin-row"]');
     assertEquals(rows.length, 2, 'Should render 2 rows');
     assertEquals(rows[0].dataset.slug, 'clients', 'First row slug');
     assertEquals(rows[1].dataset.slug, 'comments', 'Second row slug');
@@ -117,7 +117,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const empty = container.querySelector('.xt-plugin-manager__empty');
+    const empty = container.querySelector('[data-role="plugin-empty"]');
     assertTrue(empty !== null, 'Empty state should be displayed');
   });
 
@@ -138,7 +138,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const badges = container.querySelectorAll('.xt-plugin-manager__type-badge');
+    const badges = container.querySelectorAll('[data-role="plugin-type-badge"]');
     assertEquals(badges.length, 2, 'Should have 2 type badges');
     assertTrue(badges[0].textContent.includes('entity'), 'First badge is entity');
     assertTrue(badges[1].textContent.includes('extension'), 'Second badge is extension');
@@ -160,7 +160,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    const btn = container.querySelector('[data-role="plugin-action"]');
     assertTrue(btn !== null, 'Action button should exist');
     assertEquals(btn.dataset.action, 'activate', 'Button action should be activate');
     assertTrue(btn.textContent.includes('Activate'), 'Button text should say Activate');
@@ -182,7 +182,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    const btn = container.querySelector('[data-role="plugin-action"]');
     assertEquals(btn.dataset.action, 'deactivate', 'Button action should be deactivate');
     assertTrue(btn.textContent.includes('Deactivate'), 'Button text should say Deactivate');
   });
@@ -207,7 +207,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    const btn = container.querySelector('[data-role="plugin-action"]');
     btn.click();
 
     // Wait for async operation
@@ -236,12 +236,12 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('.xt-plugin-manager__action-btn');
+    const btn = container.querySelector('[data-role="plugin-action"]');
     btn.click();
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const statusBadge = container.querySelector('.xt-plugin-manager__status-badge');
+    const statusBadge = container.querySelector('[data-role="plugin-status-badge"]');
     assertTrue(statusBadge.textContent.includes('active'), 'Status badge should show active');
   });
 
@@ -257,7 +257,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const error = container.querySelector('.xt-plugin-manager__error-banner');
+    const error = container.querySelector('[data-role="plugin-error"]');
     assertTrue(error !== null, 'Error banner should be displayed');
   });
 
@@ -278,7 +278,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const configureButtons = container.querySelectorAll('.xt-plugin-manager__action-btn--configure');
+    const configureButtons = container.querySelectorAll('[data-action="configure"]');
     assertEquals(configureButtons.length, 2, 'Active entity and extension plugins should expose Configure button');
   });
 
@@ -294,7 +294,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const button = container.querySelector('.xt-plugin-manager__sync-btn');
+    const button = container.querySelector('[data-action="sync"]');
     assertTrue(button !== null, 'Synchronize button should exist');
   });
 
@@ -325,7 +325,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const syncButton = container.querySelector('.xt-plugin-manager__sync-btn');
+    const syncButton = container.querySelector('[data-action="sync"]');
     syncButton.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -356,8 +356,8 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const badge = container.querySelector('.xt-plugin-manager__update-badge');
-    const updateBtn = container.querySelector('.xt-plugin-manager__action-btn--update');
+    const badge = container.querySelector('[data-role="plugin-update-badge"]');
+    const updateBtn = container.querySelector('[data-action="update"]');
     assertTrue(badge !== null, 'Update badge should be visible');
     assertTrue(updateBtn !== null, 'Update button should be visible');
   });
@@ -383,9 +383,9 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const rows = [...container.querySelectorAll('.xt-plugin-manager__row')];
-    const rollbackForClients = rows[0].querySelector('.xt-plugin-manager__action-btn--rollback');
-    const rollbackForComments = rows[1].querySelector('.xt-plugin-manager__action-btn--rollback');
+    const rows = [...container.querySelectorAll('[data-role="plugin-row"]')];
+    const rollbackForClients = rows[0].querySelector('[data-action="rollback"]');
+    const rollbackForComments = rows[1].querySelector('[data-action="rollback"]');
     assertTrue(rollbackForClients !== null, 'Rollback should exist for clients');
     assertTrue(rollbackForComments === null, 'Rollback should not exist for comments');
   });
@@ -421,10 +421,10 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const updateBtn = container.querySelector('.xt-plugin-manager__action-btn--update');
+    const updateBtn = container.querySelector('[data-action="update"]');
     updateBtn.click();
 
-    const confirmBtn = container.querySelector('.xt-plugin-manager__action-btn--confirm');
+    const confirmBtn = container.querySelector('[data-action="confirm-modal"]');
     assertTrue(confirmBtn !== null, 'Confirm button should exist in modal');
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -459,10 +459,10 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const rollbackBtn = container.querySelector('.xt-plugin-manager__action-btn--rollback');
+    const rollbackBtn = container.querySelector('[data-action="rollback"]');
     rollbackBtn.click();
 
-    const confirmBtn = container.querySelector('.xt-plugin-manager__action-btn--confirm');
+    const confirmBtn = container.querySelector('[data-action="confirm-modal"]');
     assertTrue(confirmBtn !== null, 'Confirm button should exist in rollback modal');
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -491,7 +491,7 @@
     });
     await manager.init();
 
-    const configureBtn = container.querySelector('.xt-plugin-manager__action-btn--configure');
+    const configureBtn = container.querySelector('[data-action="configure"]');
     assertTrue(configureBtn !== null, 'Configure button should exist');
     configureBtn.click();
 
@@ -514,6 +514,7 @@
 </script>
 </body>
 </html>
+
 
 
 

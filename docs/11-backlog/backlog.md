@@ -2,11 +2,12 @@
 
 ## Estado implementado auditado (2026-08-05)
 
-El corte funcional actual queda fijado en **STORY 8.4 incluida**.
+El corte funcional actual queda fijado en **STORY 8.5 incluida**.
 
-- En progreso dentro del **EPIC 8**: gestión de usuarios, consolidacion frontend SPA, operacion avanzada, auditoria, permisos finos y marketplace.
+- **EPIC 8 cerrada** con perfil propio y gestión administrativa de usuarios en frontend/backend.
 - **STORY 8.3** ya implementada: dropdown de usuario en navbar con perfil, gestión de usuarios (admin) y cierre de sesión.
 - **STORY 8.4** ya implementada: página de perfil propio con formulario, validación inline, guardado y sincronización con navbar/estado global.
+- **STORY 8.5** ya implementada: tabla administrativa de usuarios, editar roles, reset password admin y borrado con guardas.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -870,7 +871,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 ## EPIC 8: Gestión de usuarios (Fase 8)
 
-> Estado de avance: las stories 8.1 a 8.4 ya están implementadas en el repo; la story 8.5 queda pendiente como siguiente paso de consolidación administrativa.
+> Estado de avance: las stories 8.1 a 8.5 ya están implementadas en el repo; la Epic 8 queda cerrada y el siguiente foco pasa a la consolidación SPA y operación avanzada.
 
 Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de administracion de usuarios para el rol admin, con avatar por iniciales, menu emergente en la barra superior y rutas hash propias.
 

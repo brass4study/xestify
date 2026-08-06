@@ -11,7 +11,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { PluginConfig } from '../js/pages/PluginConfig.js';
+  import { PluginConfig } from '../src/js/pages/PluginConfig.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -167,9 +167,9 @@
     const page = new PluginConfig(container, { slug: 'clients', api });
     await page.init();
 
-    const headers = [...container.querySelectorAll('.xt-plugin-config__table thead th')].map((th) => th.textContent.trim());
+    const headers = [...container.querySelectorAll('[data-role="plugin-config-table"] thead th')].map((th) => th.textContent.trim());
     assertEquals(headers.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Requerido|Cabecera|Acciones', 'Debe renderizar columnas de tabla esperadas');
-    const rows = container.querySelectorAll('.xt-plugin-config__table tbody tr');
+    const rows = container.querySelectorAll('[data-role="plugin-config-table"] tbody tr');
     assertEquals(rows.length, 3, 'Debe renderizar 3 filas iniciales');
   });
 
@@ -275,7 +275,7 @@
     await page.init();
 
     const bodyRow = container.querySelector('[data-row-index="0"]');
-    const bodyBadge = bodyRow.querySelector('.xt-plugin-config__badge');
+    const bodyBadge = bodyRow.querySelector('[data-role="field-source"]');
     const bodyActive = bodyRow.querySelector('[data-name="active"]');
     const bodyKeyInput = bodyRow.querySelector('[data-name="key"]');
     const bodyLabelInput = bodyRow.querySelector('[data-name="label"]');
@@ -304,3 +304,4 @@
 </script>
 </body>
 </html>
+

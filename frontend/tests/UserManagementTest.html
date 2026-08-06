@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>UserManagerTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<h2>UserManagerTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { UserManager } from '../src/js/pages/UserManager.js';
+  import { UserConfig } from '../src/js/pages/UserConfig.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
+
+  initTestRunner('output');
+
+  class MockApi {
+    constructor() {
+      this.calls = [];
+      this.users = [
+        {
+          id: 'u-admin',
+          name: 'Admin User',
+          email: 'admin@xestify.local',
+          roles: ['admin'],
+          avatar: '',
+          created_at: '2026-08-01T10:00:00Z',
+        },
+        {
+          id: 'u-operator',
+          name: 'Operador Uno',
+          email: 'operador@xestify.local',
+          roles: ['user'],
+          avatar: '',
+          created_at: '2026-08-02T11:00:00Z',
+        },
+      ];
+    }
+
+    async get(url) {
+      this.calls.push({ method: 'GET', url });
+      if (url === '/users') {
+        return { data: this.users.map((user) => ({ ...user })) };
+      }
+      throw new Error('Not mocked');
+    }
+
+    async put(url, body = {}) {
+      this.calls.push({ method: 'PUT', url, body });
+      if (url === '/users/u-operator') {
+        const nextRoles = Array.isArray(body.roles) ? body.roles : ['operador'];
+        const updated = {
+          ...this.users[1],
+          name: body.name,
+          email: body.email,
+          roles: nextRoles,
+        };
+        this.users[1] = updated;
+        return { data: updated };
+      }
+
+      if (url === '/users/u-operator/password') {
+        return { data: { id: 'u-operator', temporary_password: 'Tmp-Pass-1234' } };
+      }
+
+      throw new Error('Not mocked');
+    }
+
+    async delete(url) {
+      this.calls.push({ method: 'DELETE', url });
+      if (url === '/users/u-operator') {
+        this.users = this.users.filter((entry) => entry.id !== 'u-operator');
+        return { data: { deleted: true } };
+      }
+
+      throw new Error('Not mocked');
+    }
+  }
+
+  separator();
+
+  await test('renderiza la tabla de usuarios con filas y columnas esperadas', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const page = new UserManager(container, { api, currentUserId: 'u-admin' });
+    await page.init();
+
+    const headers = Array.from(container.querySelectorAll('th')).map((th) => th.textContent.trim());
+    assertEquals(headers, ['Avatar', 'Nombre', 'Email', 'Roles', 'Fecha alta', 'Acciones']);
+
+    const rows = container.querySelectorAll('tbody tr');
+    assertEquals(rows.length, 2, 'Debe mostrar dos filas de usuarios');
+
+    const hasResetInTable = Array.from(container.querySelectorAll('tbody button')).some((button) => button.textContent.includes('Reset'));
+    assertTrue(!hasResetInTable, 'La tabla no debe incluir acción de reset');
+  });
+
+  await test('navega a ficha de usuario al pulsar Editar', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const pageWithNav = new UserManager(container, { api });
+    await pageWithNav.init();
+
+    window.location.hash = '#/usuarios';
+    const openButton = Array.from(container.querySelectorAll('tbody button')).find((button) => button.textContent.trim().includes('Editar'));
+    assertTrue(Boolean(openButton), 'Debe existir acción Editar');
+    const icon = openButton.querySelector('i.fa-solid.fa-pencil');
+    assertTrue(icon !== null, 'La acción Editar debe incluir icono de lápiz');
+    openButton.click();
+
+    assertEquals(window.location.hash, '#/usuarios/u-admin', 'Debe navegar por hash a la página UserConfig del usuario');
+
+    const tableAfterOpen = container.querySelector('.xt-table');
+    assertTrue(tableAfterOpen !== null, 'La tabla sigue siendo responsabilidad de UserManager');
+  });
+
+  await test('UserConfig admin edita y actualiza nombre/email/rol', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const detail = new UserConfig(container, {
+      mode: 'admin',
+      api,
+      currentUserId: 'u-admin',
+      user: { ...api.users[1] },
+    });
+    assertTrue(detail instanceof UserConfig, 'Debe crear la ficha admin de UserConfig');
+
+    const nameInput = container.querySelector('input[name="name"]');
+    const emailInput = container.querySelector('input[name="email"]');
+    const roleSelect = container.querySelector('select[name="role"]');
+    nameInput.value = 'Operador Editado';
+    emailInput.value = 'operador.editado@xestify.local';
+    roleSelect.value = 'admin';
+
+    const form = container.querySelector('.xt-form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const updateCall = api.calls.find((call) => call.method === 'PUT' && call.url === '/users/u-operator');
+    assertTrue(Boolean(updateCall), 'Debe llamar al endpoint de actualización');
+    assertEquals(updateCall.body.roles, ['admin'], 'Debe enviar el rol seleccionado');
+  });
+
+  await test('UserConfig admin genera reset y muestra contraseña temporal', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const configPage = new UserConfig(container, {
+      mode: 'admin',
+      api,
+      currentUserId: 'u-admin',
+      user: { ...api.users[1] },
+    });
+    assertTrue(configPage instanceof UserConfig, 'Debe crear la ficha admin de UserConfig');
+
+    const resetButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Reset password');
+    assertTrue(Boolean(resetButton), 'Debe existir botón reset dentro de la ficha');
+    resetButton.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const hasResetCall = api.calls.some((call) => call.method === 'PUT' && call.url === '/users/u-operator/password');
+    assertTrue(hasResetCall, 'Debe llamar al endpoint de reset password');
+
+    const output = container.querySelector('.xt-form__output');
+    assertEquals(output.value, 'Tmp-Pass-1234', 'Debe mostrar la password devuelta por backend');
+  });
+
+  await test('UserConfig admin deshabilita borrar propio dentro de la ficha', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const configPage = new UserConfig(container, {
+      mode: 'admin',
+      api,
+      currentUserId: 'u-admin',
+      user: { ...api.users[0] },
+    });
+    assertTrue(configPage instanceof UserConfig, 'Debe crear la ficha admin de UserConfig');
+
+    const deleteButton = container.querySelector('[data-userconfig-delete]');
+    assertTrue(deleteButton.disabled === true, 'El borrado propio debe estar deshabilitado');
+  });
+
+  finishTestRunner('output');
+</script>
+</body>
+</html>
+

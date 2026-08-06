@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-08-05
-**EPIC activo:** EPIC 8 - Gestión de usuarios (EN PROGRESO)  
-**Próxima story:** STORY 8.5 - Frontend - Página gestión de usuarios (`#/usuarios`)
+**Fecha:** 2026-08-06
+**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
+**Próxima story:** STORY 9.1 - Fundamentos de diseño
 
 ---
 
@@ -182,7 +182,7 @@
 - `PluginManager` expone acciones admin para sincronizar, actualizar y hacer rollback con feedback visual.
 - `plugin_update_history` permite restauraciones transaccionales y evita mutaciones implícitas en el boot.
 
-### ✅ EPIC 8 — Gestión de usuarios (EN PROGRESO)
+### ✅ EPIC 8 — Gestión de usuarios (CERRADA)
 
 | Story | Descripción | Estado | Verificación |
 |-------|-------------|--------|--------------|
@@ -190,6 +190,7 @@
 | 8.2 | Backend - UserController y rutas REST | ✅ Implementada | `php backend/tests/integration/UserControllerTest.php` → 4/4 tests |
 | 8.3 | Frontend - UserMenu dropdown en Navbar | ✅ Implementada | `frontend/tests/NavbarTest.html` + validación visual del menú |
 | 8.4 | Frontend - Página Mi Perfil (`#/profile`) | ✅ Implementada | `node --check frontend/src/js/pages/UserProfile.js` + `php backend/tests/integration/UserControllerTest.php` |
+| 8.5 | Frontend - Página gestión de usuarios (`#/usuarios`) | ✅ Implementada | `frontend/tests/UserManagementTest.html` → 4/4 tests |
 
 **Detalle de la story 8.1:**
 - `backend/database/migrations/001_users.sql` incorpora `name`, `avatar` y `deleted_at` sobre la tabla `users`.
@@ -213,6 +214,14 @@
 - `frontend/src/js/modules/State.js` y `frontend/src/js/modules/Navbar.js` sincronizan el estado global del usuario para que los cambios se reflejen sin recargar el shell.
 - `frontend/src/css/main.css` añade estilos para estados de error, fuerza de contraseña y feedback del formulario.
 - Verificación aplicada: `node --check frontend/src/js/pages/UserProfile.js` y `php backend/tests/integration/UserControllerTest.php`.
+
+**Detalle de la story 8.5:**
+- `frontend/src/js/pages/UserManagement.js` sustituye la vista demo por gestión real de usuarios con tabla, acciones y modales.
+- `frontend/src/js/main.js` incorpora routing hash para `#/usuarios` y `#/usuarios/:id`, y navegación bidireccional con selección de usuario.
+- `backend/src/controllers/UserController.php` y `backend/src/config/routes.php` incorporan reset admin (`PUT /api/v1/users/{id}/password`) y edición de roles.
+- `backend/src/repositories/UserRepository.php` permite persistir `roles` junto a nombre/email/avatar.
+- `frontend/tests/UserManagementTest.html` añade cobertura de render tabla, modal editar, modal reset y restricción de borrado propio (4/4).
+- Verificación aplicada: test frontend 4/4 en navegador; `php backend/tests/integration/UserControllerTest.php` quedó `SKIP` por PostgreSQL no disponible en el entorno.
 
 ---
 

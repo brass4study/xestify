@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>UserProfileTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<h2>UserProfileTest</h2>
+<div id="sandbox" style="display:none"></div>
+<pre id="output"></pre>
+
+<script type="module">
+  import { UserProfile } from '../src/js/pages/UserProfile.js';
+  import { AppState } from '../src/js/modules/State.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
+
+  initTestRunner('output');
+
+  class MockApi {
+    constructor() {
+      this.calls = [];
+      this.user = {
+        id: 'u-admin',
+        name: 'Admin User',
+        email: 'admin@xestify.local',
+        roles: ['admin'],
+        avatar: '',
+        created_at: '2026-05-15T12:00:00Z',
+      };
+    }
+
+    async put(url, body = {}) {
+      this.calls.push({ method: 'PUT', url, body });
+      if (url === '/users/me') {
+        this.user = { ...this.user, ...body };
+        return { data: this.user };
+      }
+      throw new Error('Not mocked');
+    }
+  }
+
+  separator();
+
+  await test('renderiza campos de contraseña y no muestra reset/borrado', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    assertTrue(container.querySelector('input[name="currentPassword"]') !== null, 'Debe mostrar contraseña actual');
+    assertTrue(container.querySelector('input[name="newPassword"]') !== null, 'Debe mostrar nueva contraseña');
+    assertTrue(container.querySelector('input[name="confirmPassword"]') !== null, 'Debe mostrar repetir contraseña');
+    assertTrue(container.querySelector('[data-password-strength]') !== null, 'Debe mostrar medidor de contraseña');
+    assertTrue(container.querySelector('[data-userconfig-reset]') === null, 'No debe mostrar botón reset en perfil');
+    assertTrue(container.querySelector('[data-userconfig-delete]') === null, 'No debe mostrar botón borrar en perfil');
+    assertTrue(container.querySelector('[data-userconfig-avatar-file]') !== null, 'Debe mostrar control para subir/cambiar avatar');
+
+    const createdAtInput = container.querySelector('input[name="createdAt"]');
+    assertEquals(createdAtInput.value, '2026-05-15', 'Debe mostrar la fecha de alta real');
+  });
+
+  await test('usa utilidades genéricas para el bloque de avatar', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    const avatarEditor = container.querySelector('.xt-avatar-editor');
+    assertTrue(avatarEditor !== null, 'Debe renderizar el editor de avatar con clase genérica');
+    assertTrue(container.querySelector('.xt-avatar-editor__circle') !== null, 'Debe renderizar el círculo del avatar con clase genérica');
+    assertTrue(container.querySelector('.xt-avatar-editor__actions') !== null, 'Debe renderizar las acciones del avatar con clase genérica');
+    assertTrue(container.querySelector('.xt-profile-form__avatar') === null, 'No debe usar clases específicas de la vista');
+  });
+
+  await test('permite limpiar avatar y lo envía al guardar', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    api.user.avatar = 'data:image/png;base64,abc';
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    const removeAvatarButton = container.querySelector('[data-userconfig-remove-avatar]');
+    assertTrue(removeAvatarButton !== null, 'Debe mostrar botón para quitar avatar cuando existe');
+
+    removeAvatarButton.click();
+
+    const form = container.querySelector('.xt-form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const putCall = api.calls.find((call) => call.method === 'PUT' && call.url === '/users/me');
+    assertTrue(Boolean(putCall), 'Debe enviar PUT /users/me');
+    assertEquals(putCall.body.avatar, '', 'Debe enviar avatar vacío al quitarlo');
+  });
+
+  await test('rechaza cambio de contraseña si falta la contraseña actual', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    const newPassword = container.querySelector('input[name="newPassword"]');
+    const confirmPassword = container.querySelector('input[name="confirmPassword"]');
+    const form = container.querySelector('.xt-form');
+
+    newPassword.value = 'ValidPass!123';
+    confirmPassword.value = 'ValidPass!123';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const hasPutCall = api.calls.some((call) => call.method === 'PUT' && call.url === '/users/me');
+    assertTrue(!hasPutCall, 'No debe enviar PUT si falta la contraseña actual');
+
+    const feedback = container.querySelector('.xt-page__feedback');
+    assertTrue(feedback !== null, 'Debe mostrar feedback de error');
+    assertTrue(feedback.textContent.includes('contraseña actual'), 'Debe indicar que falta contraseña actual');
+  });
+
+  await test('envía current_password y password cuando cumple complejidad y confirmación', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    const currentPassword = container.querySelector('input[name="currentPassword"]');
+    const newPassword = container.querySelector('input[name="newPassword"]');
+    const confirmPassword = container.querySelector('input[name="confirmPassword"]');
+    const form = container.querySelector('.xt-form');
+
+    currentPassword.value = 'OldPass!123';
+    newPassword.value = 'NewPass!123';
+    confirmPassword.value = 'NewPass!123';
+
+    newPassword.dispatchEvent(new Event('input', { bubbles: true }));
+
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const putCall = api.calls.find((call) => call.method === 'PUT' && call.url === '/users/me');
+    assertTrue(Boolean(putCall), 'Debe enviar PUT /users/me');
+    assertEquals(putCall.body.current_password, 'OldPass!123', 'Debe enviar current_password');
+    assertEquals(putCall.body.password, 'NewPass!123', 'Debe enviar password nueva');
+  });
+
+  finishTestRunner('output');
+</script>
+</body>
+</html>
+
