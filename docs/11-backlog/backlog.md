@@ -2,16 +2,11 @@
 
 ## Estado implementado auditado (2026-08-05)
 
-El corte funcional actual queda fijado en **STORY 7.5 incluida**.
+El corte funcional actual queda fijado en **STORY 8.4 incluida**.
 
-- Cerrado en esta correccion: pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`, lectura y validacion de `schema.json` para plugins `entity`, `clients` como slug canonico y validacion de extensiones para evitar datos huerfanos.
-- Cerrado en STORY 6.5: PluginManager con listado de plugins, activacion/desactivacion, control admin, API `GET /api/v1/plugins` y `PUT /api/v1/plugins/{slug}/status`.
-- Cerrado en STORY 7.1: deteccion de actualizaciones disponibles con el servicio de plugins y API `GET /api/v1/plugins/updates`.
-- Cerrado en STORY 7.3: pagina de configuracion de plugins activos, campos configurables para plugins `entity`, refuerzo para plugins `extension` y configuracion de `target_entity`.
-- Cerrado en STORY 7.4: rollback manual por API con snapshots en `plugin_update_history` y hook opcional `onRollback()`.
-- Cerrado en STORY 7.5: UI de sincronizacion, actualizacion y rollback en `PluginManager` con confirmacion modal.
 - En progreso dentro del **EPIC 8**: gestión de usuarios, consolidacion frontend SPA, operacion avanzada, auditoria, permisos finos y marketplace.
 - **STORY 8.3** ya implementada: dropdown de usuario en navbar con perfil, gestión de usuarios (admin) y cierre de sesión.
+- **STORY 8.4** ya implementada: página de perfil propio con formulario, validación inline, guardado y sincronización con navbar/estado global.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -875,6 +870,8 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 ## EPIC 8: Gestión de usuarios (Fase 8)
 
+> Estado de avance: las stories 8.1 a 8.4 ya están implementadas en el repo; la story 8.5 queda pendiente como siguiente paso de consolidación administrativa.
+
 Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de administracion de usuarios para el rol admin, con avatar por iniciales, menu emergente en la barra superior y rutas hash propias.
 
 ### STORY 8.1: Backend - Perfil de usuario, avatar binario y soft delete
@@ -930,6 +927,7 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ Implementada
 - **Criteria:**
   - ✅ Ruta hash `#/profile` renderiza la pagina de perfil propio
   - ✅ Formulario: nombre, email y avatar propio (campo para subir o gestionar la imagen asociada al perfil)

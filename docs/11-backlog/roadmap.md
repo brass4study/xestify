@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-05
-> **Estado del proyecto:** **STORY 7.5 incluida** — EPIC 7 completado, próxima story `8.1`
+> **Estado del proyecto:** **STORY 8.4 incluida** — EPIC 8 en progreso, próxima story `8.5`
 
 ---
 
@@ -27,9 +27,9 @@ Su objetivo es:
 
 El corte funcional vigente del producto queda fijado en:
 
-- `STORY 7.5` completada
-- `EPIC 7` completado
-- siguiente story funcional: `STORY 8.1`
+- `STORY 8.4` completada
+- `EPIC 8` en progreso
+- siguiente story funcional: `STORY 8.5`
 
 ### Funcionalidades nucleares (Core)
 
@@ -254,8 +254,11 @@ avanzada y rollback manual.
 Añadir gestión de usuarios en frontend y backend con perfil propio para todos y gestion administrativa para el rol admin.
 
 **Estado real**
+- ✅ Story 8.1 implementada: perfil y borrado lógico en `users`
+- ✅ Story 8.2 implementada: `UserController` y rutas REST protegidas
 - ✅ Story 8.3 implementada: dropdown de usuario en navbar con perfil, gestión de usuarios y cierre de sesión
-- 🔄 Resto de la fase pendiente de consolidar con las vistas de perfil y administración de usuarios reales
+- ✅ Story 8.4 implementada: página de perfil propio con formulario, validación inline, guardado y sincronización con navbar/estado global
+- 🔄 Story 8.5 pendiente: consolidación de gestión administrativa real en la UI y flujos de usuarios
 
 **Alcance**
 - perfil propio (#/profile)
