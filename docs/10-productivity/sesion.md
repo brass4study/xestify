@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-08-06
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.1 - Fundamentos de diseño
+**Próxima story:** STORY 9.2 - Fundamentos de navegacion y anatomia de paginas
 
 ---
 
@@ -218,6 +218,48 @@
 **Detalle de la story 8.5:**
 - `frontend/src/js/pages/UserManagement.js` sustituye la vista demo por gestión real de usuarios con tabla, acciones y modales.
 - `frontend/src/js/main.js` incorpora routing hash para `#/usuarios` y `#/usuarios/:id`, y navegación bidireccional con selección de usuario.
+
+### 🔄 EPIC 9 — Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)
+
+| Story | Descripción | Commit | Verificación |
+|-------|-------------|--------|--------------|
+| 9.1 ✅ | Fundamentos de diseño | `pendiente (este commit)` | `node --check frontend/src/js/modules/DynamicTable.js`; `node --check frontend/src/js/modules/DynamicTabs.js`; `node --check frontend/src/js/pages/EntityEdit.js`; diagnósticos frontend en verde ✅ |
+
+**Detalle de la story 9.1:**
+- Se consolidó una base visual enterprise inspirada en Ant Design sobre Tailwind, con tipografía IBM Plex, tokens `brand/slateui`, sombras y criterios de densidad comunes.
+- `DynamicTable` pasó a ser la clase única de tablas para entidades, plugins, usuarios y configuración de plugins, con columnas extra y acciones semánticas compartidas.
+- `DynamicTabs` se alineó al patrón visual `line tabs` de Ant Design y `EntityEdit` ajustó su wrapper para evitar separación superior cuando las tabs van en primera posición.
+- Se eliminó la dependencia runtime del Play CDN de Tailwind: `frontend/src/index.html` carga ahora `frontend/src/css/tailwind.generated.css`, con fuente en `frontend/src/css/tailwind.src.css` y configuración en `frontend/tailwind.config.cjs`.
+- Los estilos residuales necesarios dejaron de vivir en `main.css` y pasaron a capas `@layer base` / `@layer utilities` dentro de Tailwind.
+
+## Sesion 2026-08-06 - STORY 9.1 Fundamentos de diseño
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/index.html` - fuentes, favicon inline y carga de CSS Tailwind generado localmente
+- `frontend/tailwind.config.cjs`, `frontend/src/css/tailwind.src.css`, `frontend/src/css/tailwind.generated.css` - configuración, fuente y salida Tailwind para sustituir el CDN runtime
+- `frontend/src/js/modules/DynamicTable.js` - tabla base unificada con columnas extra, decorado de filas y helper común de acciones
+- `frontend/src/js/modules/DynamicTabs.js` - tabs tipo Ant Design con `ink bar` y barra de navegación más fiel al patrón actual
+- `frontend/src/js/pages/EntityList.js`, `frontend/src/js/pages/UserManager.js`, `frontend/src/js/pages/PluginManager.js`, `frontend/src/js/pages/PluginConfig.js` - tablas migradas a `DynamicTable`
+- `frontend/src/js/pages/EntityEdit.js` - wrapper ajustado para tabs en primera posición sin padding superior
+- `frontend/src/js/modules/DynamicForm.js`, `frontend/src/js/pages/Login.js`, `frontend/src/js/pages/UserConfig.js`, `frontend/src/js/pages/UserProfile.js`, `plugins/comments/plugin.js` y tests HTML asociados - endurecimiento visual, consistencia y regresiones UI
+
+**Docs actualizadas:**
+- `docs/05-frontend/ui-foundations-ant.md` - fundamentos visuales y tokens base de la UI
+- `docs/09-history/decisiones-tecnicas.md` - decisión técnica de Tailwind sin dependencia runtime del CDN
+- `docs/11-backlog/backlog.md` - story 9.1 alineada con el estado real del frontend
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/DynamicTable.js`
+- `node --check frontend/src/js/modules/DynamicTabs.js`
+- `node --check frontend/src/js/pages/EntityEdit.js`
+- diagnósticos sin errores en los archivos frontend tocados
+
+**Cierre verificado (2026-08-06):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: tablas, tabs, formularios y shell cargan desde una base visual unificada sin CDN runtime de Tailwind
+- Backlog alineado: el siguiente punto es STORY 9.2
 - `backend/src/controllers/UserController.php` y `backend/src/config/routes.php` incorporan reset admin (`PUT /api/v1/users/{id}/password`) y edición de roles.
 - `backend/src/repositories/UserRepository.php` permite persistir `roles` junto a nombre/email/avatar.
 - `frontend/tests/UserManagementTest.html` añade cobertura de render tabla, modal editar, modal reset y restricción de borrado propio (4/4).

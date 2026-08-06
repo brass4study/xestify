@@ -1,3 +1,5 @@
+import { DynamicTable } from '../modules/DynamicTable.js';
+
 export class UserManager {
   /** @type {HTMLElement} */
   #container;
@@ -64,30 +66,31 @@ export class UserManager {
     this.#container.replaceChildren();
 
     const wrapper = document.createElement('section');
-    wrapper.className = 'xt-page xt-page--users';
+    wrapper.className = 'grid gap-4';
 
     const heading = document.createElement('h2');
+    heading.className = 'text-2xl font-semibold tracking-tight text-slateui-950';
     heading.textContent = 'Gestión de usuarios';
     wrapper.appendChild(heading);
 
     const subtitle = document.createElement('p');
-    subtitle.className = 'xt-page__subtitle';
+    subtitle.className = 'text-sm text-slate-500';
     subtitle.textContent = 'Administra usuarios, roles, accesos y recuperación de contraseña.';
     wrapper.appendChild(subtitle);
 
     if (this.#message !== null) {
       const feedback = document.createElement('div');
-      feedback.className = `xt-page__feedback xt-page__feedback--${this.#messageType ?? 'success'}`;
+      feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
       feedback.textContent = this.#message;
       wrapper.appendChild(feedback);
     }
 
     const card = document.createElement('div');
-    card.className = 'xt-page__card';
+    card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
 
     if (this.#users.length === 0) {
       const empty = document.createElement('p');
-      empty.className = 'xt-placeholder';
+      empty.className = 'rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500';
       empty.textContent = 'No hay usuarios disponibles todavía.';
       card.appendChild(empty);
     } else {
@@ -101,45 +104,45 @@ export class UserManager {
 
   #renderTable() {
     const wrap = document.createElement('div');
-    wrap.className = 'xt-table-wrapper';
 
-    const table = document.createElement('table');
-    table.className = 'xt-table';
+    const rows = this.#users.map((user) => ({
+      __raw: user,
+      name: this.#displayName(user),
+      email: this.#displayEmail(user),
+      roles: this.#displayRoles(user),
+      created_at: this.#formatDate(user?.created_at),
+    }));
 
-    const thead = document.createElement('thead');
-    const tr = document.createElement('tr');
-    ['Avatar', 'Nombre', 'Email', 'Roles', 'Fecha alta', 'Acciones'].forEach((label) => {
-      const th = document.createElement('th');
-      th.textContent = label;
-      tr.appendChild(th);
+    const schema = {
+      fields: [
+        { name: 'name', label: 'Nombre' },
+        { name: 'email', label: 'Email' },
+        { name: 'roles', label: 'Roles' },
+        { name: 'created_at', label: 'Fecha alta' },
+      ],
+    };
+
+    const table = new DynamicTable(rows, schema, wrap, {
+      extraColumns: [
+        {
+          label: 'Avatar',
+          position: 'start',
+          renderCell: (row) => this.#avatarContent(row.__raw),
+        },
+        {
+          label: 'Acciones',
+          renderCell: (row) => this.#buildEditAction(row.__raw),
+        },
+      ],
     });
-    thead.appendChild(tr);
 
-    const tbody = document.createElement('tbody');
-    this.#users.forEach((user) => {
-      const row = document.createElement('tr');
-
-      row.appendChild(this.#avatarCell(user));
-      row.appendChild(this.#textCell(this.#displayName(user)));
-      row.appendChild(this.#textCell(this.#displayEmail(user)));
-      row.appendChild(this.#textCell(this.#displayRoles(user)));
-      row.appendChild(this.#textCell(this.#formatDate(user?.created_at)));
-      row.appendChild(this.#actionsCell(user));
-
-      tbody.appendChild(row);
-    });
-
-    table.appendChild(thead);
-    table.appendChild(tbody);
-    wrap.appendChild(table);
-
+    table.render();
     return wrap;
   }
 
-  #avatarCell(user) {
-    const td = document.createElement('td');
+  #avatarContent(user) {
     const avatar = document.createElement('span');
-    avatar.className = 'xt-user-avatar';
+    avatar.className = 'inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-bold text-brand-700';
 
     if (typeof user?.avatar === 'string' && user.avatar !== '') {
       const image = document.createElement('img');
@@ -150,43 +153,24 @@ export class UserManager {
       avatar.textContent = this.#getInitials(this.#displayName(user), this.#displayEmail(user));
     }
 
-    td.appendChild(avatar);
-    return td;
+    return avatar;
   }
 
-  #textCell(value) {
-    const td = document.createElement('td');
-    td.textContent = value;
-    return td;
-  }
-
-  #actionsCell(user) {
-    const td = document.createElement('td');
+  #buildEditAction(user) {
     const actions = document.createElement('div');
-    actions.className = 'xt-table__actions';
+    actions.className = 'flex flex-wrap gap-1.5';
 
-    const view = this.#makeActionButton('Editar', 'xt-btn xt-btn--sm xt-row-edit-btn', () => {
+    const view = DynamicTable.buildActionButton({
+      label: 'Editar',
+      icon: 'fa-pen',
+      tone: 'sky',
+      onClick: () => {
       this.#openUserDetail(user);
+      },
     });
 
-    const icon = document.createElement('i');
-    icon.className = 'fa-solid fa-pencil xt-row-edit-btn__icon';
-    icon.setAttribute('aria-hidden', 'true');
-    view.prepend(icon);
-
     actions.appendChild(view);
-    td.appendChild(actions);
-
-    return td;
-  }
-
-  #makeActionButton(label, className, onClick) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = className;
-    button.textContent = label;
-    button.addEventListener('click', onClick);
-    return button;
+    return actions;
   }
 
   #openUserDetail(user) {

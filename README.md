@@ -6,11 +6,11 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 8 cerrada hasta STORY 8.5 incluida (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 8 cerrada y STORY 9.1 implementada (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
-- **Frontend:** UI dinámica basada en metadata y plugins, con perfil propio y gestión administrativa de usuarios
+- **Frontend:** UI dinámica basada en metadata y plugins, con perfil propio, gestión administrativa de usuarios y base visual unificada inspirada en Ant Design
 - **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
@@ -48,6 +48,7 @@ Con este enfoque, una misma entidad base puede usarse en varios sectores con dis
 
 - Backend: PHP orientado a API REST ([docs/01-architecture/overview.md](docs/01-architecture/overview.md))
 - Frontend: JavaScript con renderizado dinámico por metadata ([docs/05-frontend/README.md](docs/05-frontend/README.md))
+- Estilos UI: Tailwind CSS generado localmente desde `frontend/tailwind.config.cjs` y `frontend/src/css/tailwind.src.css`
 - Persistencia: PostgreSQL con modelo híbrido relacional + JSONB ([docs/02-entities/README.md](docs/02-entities/README.md))
 - Extensión: sistema de plugins y hooks por eventos ([docs/04-plugins/README.md](docs/04-plugins/README.md))
 - Operacion: Apache+PHP como runtime canonico y despliegue local en Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
@@ -159,7 +160,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 8.5 incluida**:
+MVP implementado hasta **STORY 9.1 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -169,9 +170,10 @@ MVP implementado hasta **STORY 8.5 incluida**:
 - PluginManager, detección de actualizaciones disponibles y flujo explícito de sync/update desde servicios especializados del subsistema de plugins.
 - Página de configuración de plugins activos con campos configurables, schema versionado y soporte de `target_entity` para plugins `extension`.
 - Gestión de perfil propio y administración de usuarios con rutas hash `#/profile`, `#/usuarios` y `#/usuarios/:id`.
+- Base visual frontend consolidada: tablas unificadas vía `DynamicTable`, tabs alineadas con patrón Ant Design y hoja Tailwind generada localmente sin CDN runtime.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios y perfil.
 
-Pendiente desde la consolidación de la Epic 8: operación avanzada, auditoría, permisos finos y marketplace.
+Pendiente tras STORY 9.1: navegación/shell SPA avanzada, operación técnica, auditoría, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 

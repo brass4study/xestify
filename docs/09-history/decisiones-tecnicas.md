@@ -128,6 +128,38 @@ Si UX crece explosivamente, transición a Vue 3 es factible sin reescribir lógi
 
 ---
 
+## DECISION 7: Sistema UI base - concepto Ant Design con Tailwind CSS
+
+**Seleccionado:** Tailwind CSS vía CDN Play + implementación propia en Vanilla JS
+**Alternativas consideradas:** CSS propio completo, Ant Design React (descartado por stack), Bootstrap
+**Fecha:** Agosto 6, 2026
+
+### Justificación
+
+- Se necesita una base visual enterprise y coherente para la EPIC 9.
+- El proyecto debe mantenerse sin build step y sin migrar a React.
+- Tailwind permite acelerar la construcción de componentes manteniendo control total del DOM generado por nuestras clases JS.
+- El sistema de diseño se alinea conceptualmente con Ant Design (valores, patrones, categorías de componentes) sin acoplarse a su implementación React.
+
+### Implicaciones
+
+- `frontend/src/index.html` define `tailwind.config` y tokens base (tipografía, color, sombras).
+- `frontend/src/css/main.css` queda reducido a overrides mínimos de compatibilidad.
+- Los anclajes semánticos y de test pasan a `data-role`/`data-*`, y el estilo principal pasa a utilidades Tailwind.
+- Los componentes nuevos de frontend deben nacer ya sobre esta base.
+
+### Riesgos mitigados
+
+- Evitar divergencia visual entre módulos/páginas.
+- Evitar deuda de CSS ad hoc al escalar shell, rutas y librería de componentes.
+- Mantener compatibilidad con plugins de UI existentes.
+
+### Cambio futuro
+
+Si en producción se requiere pipeline optimizado (purge/minificado), se podrá migrar de CDN Play a Tailwind CLI standalone sin alterar la arquitectura Vanilla ni los contratos de componentes.
+
+---
+
 ## DECISION 4: Autenticación - JWT
 
 **Seleccionado:** JWT (JSON Web Token)
@@ -429,15 +461,15 @@ sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
 
 - El CSS propio (`main.css`) crecio de forma ad hoc en cada story y acumula reglas inconsistentes.
 - Tailwind proporciona un sistema de utilidades consistente sin necesidad de nombrar clases propias.
-- Compatible con el stack sin build step: modo CDN (Play CDN) para desarrollo local; CLI standalone para produccion sin Node.js.
-- La restriccion "sin build step" del proyecto se mantiene: Tailwind standalone CLI es un unico binario que genera el CSS optimizado sin npm ni bundler.
+- Compatible con el stack sin bundler: la app carga una hoja CSS Tailwind generada localmente y el frontend sigue siendo Vanilla JS + HTML servido por Apache/PHP.
+- La restriccion de no introducir un bundler se mantiene: Tailwind se genera offline y el runtime no depende del Play CDN.
 
 ### Estrategia de integracion
 
 | Entorno | Mecanismo | Notas |
 |---------|-----------|-------|
-| Desarrollo local | `<script src="https://cdn.tailwindcss.com">` en `index.html` | Zero setup, JIT en tiempo real |
-| Produccion / CI | `tailwindcss` standalone CLI | Genera `dist/app.css` desde templates, sin Node |
+| Desarrollo local | CSS generado localmente (`frontend/src/css/tailwind.generated.css`) | Sin warning del navegador ni dependencia runtime del Play CDN |
+| Produccion / CI | Tailwind CLI | Regenera la misma hoja desde `frontend/tailwind.config.cjs` y `frontend/src/css/tailwind.src.css` |
 
 ### Alcance del cambio
 

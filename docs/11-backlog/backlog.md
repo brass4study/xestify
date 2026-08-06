@@ -963,20 +963,21 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 
 Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consolidar la navegacion y el shell SPA, y dejar el frontend preparado para crecer con una arquitectura modular, resiliente y consistente antes de escalar operacion, marketplace y QA avanzada, incluyendo edicion visual WYSIWYG y personalizacion basica de marca por cliente.
 
-### STORY 9.1: Fundamentos de diseno
+### STORY 9.1: Fundamentos de diseño
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ Implementada
 - **Criteria:**
   - ✅ Principios visuales y de interaccion documentados para una UI enterprise consistente, jerarquica y con feedback inmediato
-  - ✅ Tailwind CSS integrado via CDN Play para desarrollo; CLI standalone documentado para produccion sin build step
+  - ✅ Tailwind CSS servido como hoja local generada (`tailwind.generated.css`) a partir de `tailwind.src.css` y `tailwind.config.cjs`, sin dependencia runtime del Play CDN
   - ✅ Decision tecnica documentada: CSS con Tailwind CSS como framework de estilos, abandonando el CSS propio actual
-  - ✅ `main.css` y estilos propios legacy sustituidos por Tailwind; el archivo de estilos custom se elimina o queda reducido a overrides minimos justificados
+  - ✅ `main.css` deja de participar en runtime y los overrides necesarios pasan a capas `@layer` dentro del pipeline de Tailwind
   - ✅ Tokens y reglas base definidos para spacing, tipografia, color, bordes, sombras, estados, iconografia y densidad
   - ✅ Requisito funcional documentado: nueva UI con enfoque WYSIWYG para que cambios visuales se previsualicen de forma inmediata
   - ✅ Requisito funcional documentado: personalizacion por cliente de colores y diseno basico alineado con su imagen de marca
   - ✅ Todos los componentes nuevos usan clases Tailwind; sin CSS custom paralelo
-- **IA Usage:** Integracion Tailwind + migracion CSS a Tailwind + UI WYSIWYG
+- **IA Usage:** Integracion Tailwind + migracion a CSS generado localmente + unificacion visual de tablas/tabs/formularios + UI WYSIWYG
 - **Dependencias:** STORY 5.2, STORY 6.5, STORY 8.3
 - **Blockers:** Ninguno
 

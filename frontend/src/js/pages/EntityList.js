@@ -62,7 +62,8 @@ export class EntityList {
 
       if (entities.length === 0) {
         const empty = document.createElement('p');
-        empty.className = 'xt-placeholder';
+        empty.className = 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500';
+        empty.dataset.role = 'entity-empty';
         empty.textContent = 'No hay entidades disponibles.';
         this.#container.appendChild(empty);
       }
@@ -108,30 +109,34 @@ export class EntityList {
    * @param {string} slug
    */
   #renderRecords(records, schema, slug) {
-    let recordsSection = this.#container.querySelector('.xt-records-section');
+    let recordsSection = this.#container.querySelector('[data-role="records-section"]');
 
     if (recordsSection === null) {
       recordsSection = document.createElement('section');
-      recordsSection.className = 'xt-records-section';
+      recordsSection.className = 'mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel';
+      recordsSection.dataset.role = 'records-section';
       this.#container.appendChild(recordsSection);
     }
 
     recordsSection.replaceChildren();
 
     const header = document.createElement('div');
-    header.className = 'xt-records-section__header';
+    header.className = 'flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between';
+    header.dataset.role = 'records-header';
 
     const heading = document.createElement('h3');
-    heading.className = 'xt-records-section__title';
+    heading.className = 'text-base font-semibold tracking-tight text-slateui-950';
+    heading.dataset.role = 'records-title';
     const entityLabel = this.#entityLabelForSlug(slug);
     heading.textContent = entityLabel;
     header.appendChild(heading);
 
     const createBtn = document.createElement('button');
     createBtn.type = 'button';
-    createBtn.className = 'xt-btn xt-btn--primary xt-create-btn';
+    createBtn.className = 'inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300';
+    createBtn.dataset.role = 'record-create';
     const createIcon = document.createElement('i');
-    createIcon.className = 'fa-solid fa-circle-plus xt-create-btn__icon';
+    createIcon.className = 'fa-solid fa-circle-plus text-xs';
     createIcon.setAttribute('aria-hidden', 'true');
     const createLabel = document.createElement('span');
     createLabel.textContent = this.#createLabelForSlug(slug);
@@ -146,66 +151,31 @@ export class EntityList {
     recordsSection.appendChild(header);
 
     const tableContainer = document.createElement('div');
-    tableContainer.className = 'xt-records-section__table';
+    tableContainer.className = 'p-3';
+    tableContainer.dataset.role = 'records-table-wrap';
     recordsSection.appendChild(tableContainer);
 
-    this.#table = new DynamicTable(records, schema, tableContainer);
+    const extraColumns = this.#onEdit === null
+      ? []
+      : [
+          {
+            label: 'Acciones',
+            renderCell: (record) => DynamicTable.buildActionButton({
+              label: 'Editar',
+              icon: 'fa-pen',
+              tone: 'sky',
+              dataRole: 'record-edit',
+              onClick: () => {
+                if (this.#onEdit !== null) {
+                  this.#onEdit(slug, record.id ?? null, record);
+                }
+              },
+            }),
+          },
+        ];
+
+    this.#table = new DynamicTable(records, schema, tableContainer, { extraColumns });
     this.#table.render();
-
-    if (this.#onEdit !== null) {
-      this.#injectEditColumn(tableContainer, records, slug);
-    }
-  }
-
-  /**
-   * Inject an "Acciones" column into the rendered DynamicTable.
-   *
-   * @param {HTMLElement} tableContainer
-   * @param {Array<object>} records
-   * @param {string} slug
-   */
-  #injectEditColumn(tableContainer, records, slug) {
-    const table = tableContainer.querySelector('table');
-    if (table === null) {
-      return;
-    }
-
-    const theadRow = table.querySelector('thead tr');
-    if (theadRow !== null) {
-      const th = document.createElement('th');
-      th.textContent = 'Acciones';
-      theadRow.appendChild(th);
-    }
-
-    const tbodyRows = table.querySelectorAll('tbody tr');
-    const pageRecords = this.#table === null
-      ? records
-      : this.#table.getCurrentPageRecords();
-
-    tbodyRows.forEach((row, index) => {
-      const record = pageRecords[index];
-      if (record === undefined) {
-        return;
-      }
-      const td = document.createElement('td');
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'xt-btn xt-btn--sm xt-row-edit-btn';
-      const editIcon = document.createElement('i');
-      editIcon.className = 'fa-solid fa-pencil xt-row-edit-btn__icon';
-      editIcon.setAttribute('aria-hidden', 'true');
-      const editLabel = document.createElement('span');
-      editLabel.textContent = 'Editar';
-      editBtn.appendChild(editIcon);
-      editBtn.appendChild(editLabel);
-      editBtn.addEventListener('click', () => {
-        if (this.#onEdit !== null) {
-          this.#onEdit(slug, record.id ?? null, record);
-        }
-      });
-      td.appendChild(editBtn);
-      row.appendChild(td);
-    });
   }
 
   // ---------------------------------------------------------------------------
@@ -318,11 +288,12 @@ export class EntityList {
   #setLoading(loading) {
     AppState.loading = loading;
 
-    let indicator = this.#container.querySelector('.xt-loading');
+    let indicator = this.#container.querySelector('[data-role="entity-loading"]');
     if (loading) {
       if (indicator === null) {
         indicator = document.createElement('p');
-        indicator.className = 'xt-loading';
+        indicator.className = 'mb-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500';
+        indicator.dataset.role = 'entity-loading';
         indicator.textContent = 'Cargando…';
         this.#container.prepend(indicator);
       }
@@ -333,7 +304,7 @@ export class EntityList {
 
   #clearError() {
     AppState.error = null;
-    const errorEl = this.#container.querySelector('.xt-error');
+    const errorEl = this.#container.querySelector('[data-role="entity-error"]');
     if (errorEl !== null) {
       errorEl.remove();
     }
@@ -347,7 +318,8 @@ export class EntityList {
     AppState.error = { message };
 
     const errorEl = document.createElement('p');
-    errorEl.className = 'xt-error';
+    errorEl.className = 'mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+    errorEl.dataset.role = 'entity-error';
     errorEl.textContent = message;
     this.#container.appendChild(errorEl);
   }

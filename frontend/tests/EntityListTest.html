@@ -69,7 +69,7 @@
     const page = new EntityList(container);
     await page.init();
 
-    const empty = container.querySelector('.xt-placeholder');
+    const empty = container.querySelector('[data-role="entity-empty"]');
     assertTrue(empty !== null, 'Should render empty paragraph');
   });
 
@@ -84,10 +84,10 @@
     await page.init();
     await page.loadEntity('clients');
 
-    const section = container.querySelector('.xt-records-section');
+    const section = container.querySelector('[data-role="records-section"]');
     assertTrue(section !== null, 'Records section should exist');
 
-    const heading = section.querySelector('.xt-records-section__title');
+    const heading = section.querySelector('[data-role="records-title"]');
     assertTrue(heading !== null, 'Should render section heading');
     assertTrue(heading.textContent.includes('Clientes'), 'Heading should contain entity label');
 
@@ -128,7 +128,7 @@
     await page.init();
     await page.loadEntity('clients');
 
-    const createBtn = container.querySelector('.xt-btn--primary');
+    const createBtn = container.querySelector('[data-role="record-create"]');
     assertTrue(createBtn !== null, '"Crear nuevo registro" button should exist');
     createBtn.click();
 

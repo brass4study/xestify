@@ -47,16 +47,19 @@ export class UserMenu {
 
   #render() {
     this.#container.replaceChildren();
-    this.#container.classList.add('xt-user-menu');
+    this.#container.className = 'relative inline-flex items-center';
+    this.#container.dataset.role = 'user-menu';
 
     const trigger = document.createElement('button');
     trigger.type = 'button';
-    trigger.className = 'xt-user-menu__trigger';
+    trigger.className = 'inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm text-white transition hover:bg-white/20';
+    trigger.dataset.role = 'user-menu-trigger';
     trigger.setAttribute('aria-haspopup', 'menu');
     trigger.setAttribute('aria-expanded', 'false');
 
     const avatarWrap = document.createElement('div');
-    avatarWrap.className = 'xt-user-menu__avatar';
+    avatarWrap.className = 'inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-brand-700';
+    avatarWrap.dataset.role = 'user-menu-avatar';
 
     if (this.#avatar !== null && this.#avatar !== '') {
       const img = document.createElement('img');
@@ -68,7 +71,8 @@ export class UserMenu {
     }
 
     const label = document.createElement('span');
-    label.className = 'xt-user-menu__label';
+    label.className = 'max-w-[180px] truncate text-left text-xs font-medium sm:text-sm';
+    label.dataset.role = 'user-menu-label';
     label.textContent = this.#getDisplayName();
 
     trigger.appendChild(avatarWrap);
@@ -76,8 +80,9 @@ export class UserMenu {
     this.#container.appendChild(trigger);
 
     const menu = document.createElement('div');
-    menu.className = 'xt-user-menu__menu';
+    menu.className = 'absolute right-0 top-[calc(100%+2px)] z-[120] hidden min-w-56 flex-col rounded-xl border border-slate-200 bg-white p-1.5 shadow-float';
     menu.hidden = true;
+    menu.dataset.role = 'user-menu-items';
     menu.setAttribute('role', 'menu');
 
     const actions = [
@@ -93,7 +98,7 @@ export class UserMenu {
       }
       const item = document.createElement('button');
       item.type = 'button';
-      item.className = 'xt-user-menu__item';
+      item.className = 'rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100';
       item.dataset.menuAction = action.key;
       item.textContent = action.label;
       item.addEventListener('click', () => {
@@ -125,8 +130,12 @@ export class UserMenu {
       this.#setOpen(true);
     });
 
-    trigger.addEventListener('blur', () => {
-      this.#setOpen(false);
+    this.#container.addEventListener('focusout', () => {
+      queueMicrotask(() => {
+        if (!this.#container.contains(document.activeElement)) {
+          this.#setOpen(false);
+        }
+      });
     });
 
     document.addEventListener('click', (event) => {
@@ -141,17 +150,17 @@ export class UserMenu {
 
   #setOpen(isOpen) {
     this.#open = Boolean(isOpen);
-    this.#container.classList.toggle('xt-user-menu--open', this.#open);
 
-    const trigger = this.#container.querySelector('.xt-user-menu__trigger');
+    const trigger = this.#container.querySelector('[data-role="user-menu-trigger"]');
     if (trigger instanceof HTMLElement) {
       trigger.setAttribute('aria-expanded', String(this.#open));
     }
 
-    const menu = this.#container.querySelector('.xt-user-menu__menu');
+    const menu = this.#container.querySelector('[data-role="user-menu-items"]');
     if (menu instanceof HTMLElement) {
       menu.hidden = !this.#open;
-      menu.classList.toggle('is-open', this.#open);
+      menu.classList.toggle('hidden', !this.#open);
+      menu.classList.toggle('flex', this.#open);
     }
   }
 

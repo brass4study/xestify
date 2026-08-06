@@ -34,12 +34,12 @@ Esta regla es mandatoria. No hay excepciones. Nunca omitirla.
 Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar
 los tres archivos siguientes en este orden:
 
-1. `docs/10-productivity/sesion.md`: marcar la story como completada, anadir commit hash,
+1. `docs/10-productivity/sesion.md`: marcar la story como completada, añadir commit hash,
   actualizar "Ultima actualizacion" y "Proxima story".
-2. `docs/10-productivity/productividad.md`: anadir entrada de la story con fecha, estimado
+2. `docs/10-productivity/productividad.md`: añadir entrada de la story con fecha, estimado
   sin IA, tiempo real con IA, aceleracion, que hizo la IA, iteraciones y
   decision manual.
-3. `docs/10-productivity/prompts.md`: anadir el prompt exacto que se uso para la story,
+3. `docs/10-productivity/prompts.md`: añadir el prompt exacto que se uso para la story,
   resultado e iteraciones.
 
 Flujo obligatorio para cada story:
@@ -144,7 +144,7 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Base de datos local
 
-- No anadir migraciones, seeders ni automatismos permanentes para arreglos
+- No añadir migraciones, seeders ni automatismos permanentes para arreglos
   puntuales de una instalacion local salvo peticion explicita.
 - Si hay que corregir datos locales puntuales, hacerlo como operacion puntual y
   documentarlo en la respuesta.
@@ -187,7 +187,7 @@ git config --local core.eol lf
 ## Tests
 
 - Seguir la estrategia de verificacion definida en `CONTRIBUTING.md`.
-- Anadir tests cuando se corrija una regresion para evitar que reaparezca.
+- Añadir tests cuando se corrija una regresion para evitar que reaparezca.
 
 ## Documentacion
 

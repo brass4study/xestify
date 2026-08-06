@@ -70,17 +70,17 @@
   it('renders nav element with brand text', (container) => {
     const navbar = new Navbar(container);
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const nav = container.querySelector('.xt-navbar');
-    assertTrue(nav !== null, 'Expected .xt-navbar element');
-    const brand = container.querySelector('.xt-navbar__brand');
-    assertTrue(brand !== null, 'Expected .xt-navbar__brand');
+    const nav = container.querySelector('[data-role="navbar"]');
+    assertTrue(nav !== null, 'Expected [data-role="navbar"] element');
+    const brand = container.querySelector('[data-role="navbar-brand"]');
+    assertTrue(brand !== null, 'Expected [data-role="navbar-brand"]');
     assertEquals(brand.textContent, 'Xestify', 'Brand text should be Xestify');
   });
 
   it('renders one nav link per entity and Plugins', (container) => {
     const navbar = new Navbar(container, { entities: ENTITIES, canManagePlugins: true });
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const links = container.querySelectorAll('.xt-navbar__link');
+    const links = container.querySelectorAll('[data-role="navbar-link"]');
     assertEquals(links.length, 3, 'Expected 3 nav links');
     const pages = new Set(Array.from(links).map((l) => l.dataset.page));
     assertTrue(pages.has('entity:client'), 'Missing client entity link');
@@ -91,17 +91,17 @@
   it('renders avatar initials and user name in the user menu', (container) => {
     const navbar = new Navbar(container, { userEmail: 'ana.garcia@xestify.local', userName: 'Ana García' });
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const avatar = container.querySelector('.xt-user-menu__avatar');
+    const avatar = container.querySelector('[data-role="user-menu-avatar"]');
     assertTrue(avatar !== null, 'Expected avatar element');
     assertEquals(avatar.textContent, 'AG', 'Expected initials from user name');
-    const label = container.querySelector('.xt-user-menu__label');
+    const label = container.querySelector('[data-role="user-menu-label"]');
     assertEquals(label.textContent, 'Ana García', 'Expected displayed user name');
   });
 
   it('starts hidden and opens on hover', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
     assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
-    const menu = container.querySelector('.xt-user-menu__menu');
+    const menu = container.querySelector('[data-role="user-menu-items"]');
     assertTrue(menu !== null, 'Expected menu element');
     assertTrue(menu.hidden, 'Expected menu to start hidden');
     container.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
@@ -111,7 +111,7 @@
   it('renders an avatar image when provided', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', avatar: 'https://example.test/avatar.png' });
     assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
-    const img = container.querySelector('.xt-user-menu__avatar img');
+    const img = container.querySelector('[data-role="user-menu-avatar"] img');
     assertTrue(img !== null, 'Expected avatar image element');
     assertEquals(img.getAttribute('src'), 'https://example.test/avatar.png', 'Avatar image should be used when available');
   });
@@ -119,7 +119,7 @@
   it('shows the user management action for admins', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
     assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
-    const trigger = container.querySelector('.xt-user-menu__trigger');
+    const trigger = container.querySelector('[data-role="user-menu-trigger"]');
     trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     const adminLink = container.querySelector('[data-menu-action="users"]');
     assertTrue(adminLink !== null, 'Expected admin action link');
@@ -134,7 +134,7 @@
     });
     navbar.setUserEmail('ana.garcia@xestify.local');
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
-    const trigger = container.querySelector('.xt-user-menu__trigger');
+    const trigger = container.querySelector('[data-role="user-menu-trigger"]');
     trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     const profileLink = container.querySelector('[data-menu-action="profile"]');
     profileLink.click();

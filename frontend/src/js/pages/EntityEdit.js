@@ -119,22 +119,25 @@ export class EntityEdit {
 
     // Title outside the form wrapper.
     const title = document.createElement('h3');
-    title.className = 'xt-edit-wrapper__title';
+    title.className = 'mb-3 text-lg font-semibold tracking-tight text-slateui-950';
+    title.dataset.role = 'entity-edit-title';
     title.textContent = this.#recordId === null
       ? `Nuevo registro: ${this.#slug}`
       : `Editar registro: ${this.#slug}`;
     this.#container.appendChild(title);
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'xt-edit-wrapper';
+    wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
+    wrapper.dataset.role = 'entity-edit-wrapper';
 
     const errorBanner = document.createElement('p');
-    errorBanner.className = 'xt-edit-error-banner';
+    errorBanner.className = 'mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+    errorBanner.dataset.role = 'entity-edit-error';
     errorBanner.hidden = true;
     wrapper.appendChild(errorBanner);
 
     const formContainer = document.createElement('div');
-    formContainer.className = 'xt-edit-form';
+    formContainer.dataset.role = 'entity-edit-form-wrap';
     wrapper.appendChild(formContainer);
 
     const schemaWithDefaults = this.#applyInitialData(this.#schema, initialData);
@@ -145,11 +148,13 @@ export class EntityEdit {
 
     // Actions stay outside the wrapper so they remain below tabs.
     const actions = document.createElement('div');
-    actions.className = 'xt-edit-actions';
+    actions.className = 'mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end';
+    actions.dataset.role = 'entity-edit-actions';
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
-    saveBtn.className = 'xt-btn xt-btn--primary';
+    saveBtn.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
+    saveBtn.dataset.role = 'entity-edit-save';
     saveBtn.textContent = 'Guardar';
     saveBtn.addEventListener('click', () => {
       this.submit();
@@ -159,7 +164,8 @@ export class EntityEdit {
     if (this.#onCancel !== null) {
       const cancelBtn = document.createElement('button');
       cancelBtn.type = 'button';
-      cancelBtn.className = 'xt-btn xt-btn--secondary';
+      cancelBtn.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
+      cancelBtn.dataset.role = 'entity-edit-cancel';
       cancelBtn.textContent = 'Cancelar';
       cancelBtn.addEventListener('click', () => {
         this.#onCancel();
@@ -177,8 +183,8 @@ export class EntityEdit {
    * When tabs exist, the form fields are moved into a "Datos" tab and plugin
    * tabs are added alongside it, all inside a single DynamicTabs component.
    *
-   * @param {HTMLElement} wrapper   The .xt-edit-wrapper that holds the form
-   * @param {HTMLElement} actionsEl The .xt-edit-actions bar (outside wrapper)
+  * @param {HTMLElement} wrapper   Wrapper principal que contiene el formulario
+  * @param {HTMLElement} actionsEl Barra de acciones fuera del wrapper
    * @returns {Promise<void>}
    */
   async #loadAndRenderTabs(wrapper, actionsEl) {
@@ -234,6 +240,9 @@ export class EntityEdit {
         }),
       ];
 
+      wrapper.classList.remove('p-4');
+      wrapper.classList.add('px-4', 'pb-4', 'pt-0');
+
       // Replace the wrapper contents with the DynamicTabs component.
       const dynamicTabs = new DynamicTabs(wrapper, { tabs: tabDefs });
       dynamicTabs.render();
@@ -267,9 +276,11 @@ export class EntityEdit {
    */
   #buildFallbackPanel(label) {
     const el = document.createElement('div');
-    el.className = 'xt-tab-panel';
+    el.className = 'flex flex-col gap-3';
+    el.dataset.role = 'plugin-tab-fallback';
     const placeholder = document.createElement('p');
-    placeholder.className = 'xt-placeholder';
+    placeholder.className = 'rounded-lg border border-dashed border-slate-300 px-3 py-6 text-sm text-slate-500';
+    placeholder.dataset.role = 'placeholder';
     placeholder.textContent = `Plugin "${label}" no disponible.`;
     el.appendChild(placeholder);
     return el;
@@ -357,7 +368,8 @@ export class EntityEdit {
    * @param {Record<string, string|string[]>|Array<object>} errors
    */
   #showErrors(errors) {
-    const formEl = this.#container.querySelector('.xt-edit-form form');
+    const formWrap = this.#container.querySelector('[data-role="entity-edit-form-wrap"]');
+    const formEl = formWrap instanceof HTMLElement ? formWrap.querySelector('form') : null;
     const normalizedErrors = this.#normalizeErrors(errors);
 
     for (const [fieldName, messages] of Object.entries(normalizedErrors)) {
@@ -368,7 +380,8 @@ export class EntityEdit {
 
       const msgList = Array.isArray(messages) ? messages : [String(messages)];
       const errorEl = document.createElement('ul');
-      errorEl.className = 'xt-field-errors';
+      errorEl.className = 'mt-1 list-disc pl-5 text-xs text-red-700';
+      errorEl.dataset.role = 'field-errors';
       errorEl.dataset.field = fieldName;
 
       for (const msg of msgList) {
@@ -423,7 +436,7 @@ export class EntityEdit {
    * @param {string} message
    */
   #showGlobalError(message) {
-    const banner = this.#container.querySelector('.xt-edit-error-banner');
+    const banner = this.#container.querySelector('[data-role="entity-edit-error"]');
     if (banner !== null) {
       banner.textContent = message;
       banner.hidden = false;
@@ -431,13 +444,13 @@ export class EntityEdit {
   }
 
   #clearErrors() {
-    const banner = this.#container.querySelector('.xt-edit-error-banner');
+    const banner = this.#container.querySelector('[data-role="entity-edit-error"]');
     if (banner !== null) {
       banner.textContent = '';
       banner.hidden = true;
     }
 
-    const errorLists = this.#container.querySelectorAll('.xt-field-errors');
+    const errorLists = this.#container.querySelectorAll('[data-role="field-errors"]');
     for (const el of errorLists) {
       el.remove();
     }
@@ -447,7 +460,7 @@ export class EntityEdit {
    * @param {boolean} loading
    */
   #setLoading(loading) {
-    const saveBtn = this.#container.querySelector('.xt-edit-actions .xt-btn--primary');
+    const saveBtn = this.#container.querySelector('[data-role="entity-edit-save"]');
     if (saveBtn !== null) {
       saveBtn.disabled = loading;
       saveBtn.textContent = loading ? 'Guardando…' : 'Guardar';

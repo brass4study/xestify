@@ -44,8 +44,8 @@
 
     await page.submit();
 
-    const emailErrors = container.querySelector('.xt-login__field-errors[data-field="email"]');
-    const passwordErrors = container.querySelector('.xt-login__field-errors[data-field="password"]');
+    const emailErrors = container.querySelector('[data-role="login-field-errors"][data-field="email"]');
+    const passwordErrors = container.querySelector('[data-role="login-field-errors"][data-field="password"]');
     assertTrue(emailErrors !== null, 'Email errors should exist');
     assertTrue(passwordErrors !== null, 'Password errors should exist');
   });
@@ -84,7 +84,7 @@
     container.querySelector('[name="password"]').value = 'wrong';
     await page.submit();
 
-    const banner = container.querySelector('.xt-login__error');
+    const banner = container.querySelector('[data-role="login-error"]');
     assertTrue(banner !== null && !banner.hidden, 'Global error should be visible');
     assertTrue(banner.textContent.includes('Error desconocido'), 'Should show fallback error text');
   });

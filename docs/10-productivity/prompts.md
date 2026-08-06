@@ -737,7 +737,7 @@ Revisa toda la documentación, analízala y actualízala allí donde sea necesar
 ```
 arranca el story 6.1
 ```
-**Resultado:** `DynamicTabs.js` con API completa (`registerTab`, `render`, `setActiveTab`, `getActiveTab`, `destroy`), hash persistence, deduplicación. `DynamicTabsTest.html` con 6 tests en estilo del proyecto. Estilos `.xt-tabs` en `main.css`. Fix en `frontend-router.php` para servir `/tests/` y `/src/` (bloqueante de módulos JS).
+**Resultado:** `DynamicTabs.js` con API completa (`registerTab`, `render`, `setActiveTab`, `getActiveTab`, `destroy`), hash persistence, deduplicación. `DynamicTabsTest.html` con 6 tests en estilo del proyecto. Estilos de tabs en `main.css`. Fix en `frontend-router.php` para servir `/tests/` y `/src/` (bloqueante de módulos JS).
 **Iteraciones:** 3 (MIME type error, estilo tests incorrecto, router incompleto)
 **Lección:** El router de desarrollo no cubría las rutas de tests — es una infraestructura que hay que verificar al añadir nuevas carpetas servidas. El estilo de los tests debe compararse visualmente antes de dar por bueno.
 
@@ -1036,3 +1036,13 @@ Ok, ahora continuemos con la story 8.5
 **Iteraciones:** 4
 **Lección:** Para cerrar una story frontend operativa, conviene validar de extremo a extremo: contrato backend (roles/reset), navegación hash y pruebas UI de modales para evitar regressiones de interacción.
 **Estado final:** Validación visual en navegador con `frontend/tests/UserManagementTest.html` (4 passed, 0 failed) y trazabilidad actualizada en documentación de productividad.
+
+### STORY 9.1 — Fundamentos de diseño
+**Prompt:**
+```
+Empecemos con la implementacion del EPIC 9. Quiero una base visual enterprise inspirada en Ant Design, con Tailwind como sistema de estilos y componentes frontend unificados.
+```
+**Resultado:** STORY 9.1 quedó implementada como base visual común del frontend. Se unificó la construcción de tablas en `DynamicTable`, se alinearon las tabs con el patrón `line` de Ant Design, se endurecieron formularios, acciones y estados visuales, y se sustituyó el Play CDN de Tailwind por una hoja local generada (`tailwind.generated.css`) servida como asset estático. También se documentaron los fundamentos visuales y la decisión técnica asociada.
+**Iteraciones:** 11
+**Lección:** En una story de fundamentos UI, la mayor parte del trabajo no está en “crear un componente”, sino en cerrar consistencia transversal: tablas, tabs, formularios, estados disabled, iconografía y pipeline real de estilos deben converger en un único punto de verdad.
+**Estado final:** Story preparada para commit con trazabilidad actualizada en `sesion.md`, `productividad.md` y `prompts.md`; el siguiente paso del backlog pasa a STORY 9.2.

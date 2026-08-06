@@ -67,8 +67,8 @@
     const modal = new Modal(container, { title: 'Confirmar', content: 'Texto inicial' });
     modal.show();
 
-    const overlay = container.querySelector('.xt-modal');
-    assertTrue(overlay !== null, 'Expected .xt-modal to exist');
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay !== null, 'Expected [data-role="modal-overlay"] to exist');
     assertTrue(!overlay.hidden, 'Modal should be visible after show()');
     assertTrue(modal.isOpen(), 'Modal state should be open');
   });
@@ -78,8 +78,8 @@
     modal.show();
     modal.close();
 
-    const overlay = container.querySelector('.xt-modal');
-    assertTrue(overlay !== null, 'Expected .xt-modal to exist');
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay !== null, 'Expected [data-role="modal-overlay"] to exist');
     assertTrue(overlay.hidden, 'Modal should be hidden after close()');
     assertTrue(!modal.isOpen(), 'Modal state should be closed');
   });
@@ -89,7 +89,7 @@
     modal.setContent('Nuevo contenido');
     modal.show();
 
-    const content = container.querySelector('.xt-modal__content');
+    const content = container.querySelector('[data-role="modal-content"]');
     assertEquals(content.textContent, 'Nuevo contenido', 'Unexpected text content');
   });
 
@@ -101,7 +101,7 @@
     modal.setContent(node);
     modal.show();
 
-    const strong = container.querySelector('.xt-modal__content strong');
+    const strong = container.querySelector('[data-role="modal-content"] strong');
     assertTrue(strong !== null, 'Expected strong element in modal content');
     assertEquals(strong.textContent, 'Error crítico', 'Unexpected element content');
   });
@@ -110,7 +110,7 @@
     const modal = new Modal(container);
     modal.show();
 
-    const overlay = container.querySelector('.xt-modal');
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
     overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     assertTrue(overlay.hidden, 'Modal should close on backdrop click');

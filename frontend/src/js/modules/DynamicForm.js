@@ -34,13 +34,16 @@ export class DynamicForm {
     this.#container.replaceChildren();
 
     const form = document.createElement('form');
+    form.className = 'grid gap-4';
     form.setAttribute('novalidate', 'novalidate');
 
     for (const field of this.#fields) {
       const row = document.createElement('div');
-      row.className = 'xf-field';
+      row.className = 'grid gap-1.5';
+      row.dataset.role = 'form-field';
 
       const label = document.createElement('label');
+      label.className = 'text-sm font-medium text-slate-700';
       label.setAttribute('for', this.#fieldId(field.name));
       label.textContent = field.label ?? field.name;
 
@@ -103,16 +106,19 @@ export class DynamicForm {
     }
 
     if (field.type === 'boolean' && input instanceof HTMLInputElement) {
+      input.className = 'h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500';
       result.value = input.checked;
       return result;
     }
 
     if (field.type === 'select' && input instanceof HTMLSelectElement) {
+      input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
       result.value = input.value;
       return result;
     }
 
     if (input instanceof HTMLTextAreaElement) {
+      input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
       result.value = input.value;
       return result;
     }
@@ -241,6 +247,7 @@ export class DynamicForm {
       textarea.id = this.#fieldId(field.name);
       textarea.name = field.name;
       textarea.rows = Number.isInteger(field.rows) ? field.rows : 4;
+      textarea.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
 
       if (field.default !== undefined && field.default !== null) {
         textarea.value = String(field.default);
@@ -254,6 +261,7 @@ export class DynamicForm {
     input.name = field.name;
 
     input.type = this.#toInputType(type);
+    input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
 
     if (field.default !== undefined && field.default !== null) {
       input.value = String(field.default);
@@ -266,6 +274,7 @@ export class DynamicForm {
     const select = document.createElement('select');
     select.id = this.#fieldId(field.name);
     select.name = field.name;
+    select.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
 
     const placeholder = document.createElement('option');
     placeholder.value = '';
@@ -340,8 +349,7 @@ export class DynamicForm {
 
   #validateStringLike(field, value, errors) {
     if (field.type === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
+      if (!this.#isValidEmail(value)) {
         errors.push('Must be a valid email');
       }
     }
@@ -389,5 +397,27 @@ export class DynamicForm {
     if (typeof field.max === 'number' && value > field.max) {
       errors.push(`Maximum value is ${field.max}`);
     }
+  }
+
+  #isValidEmail(value) {
+    if (typeof value !== 'string') {
+      return false;
+    }
+
+    if (value.includes(' ')) {
+      return false;
+    }
+
+    const at = value.indexOf('@');
+    if (at <= 0 || at !== value.lastIndexOf('@')) {
+      return false;
+    }
+
+    const domain = value.slice(at + 1);
+    if (domain.length < 3 || domain.startsWith('.') || domain.endsWith('.')) {
+      return false;
+    }
+
+    return domain.includes('.');
   }
 }

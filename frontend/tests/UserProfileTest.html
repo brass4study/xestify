@@ -70,11 +70,11 @@
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
-    const avatarEditor = container.querySelector('.xt-avatar-editor');
+    const avatarEditor = container.querySelector('[data-userconfig-avatar-file]');
     assertTrue(avatarEditor !== null, 'Debe renderizar el editor de avatar con clase genérica');
-    assertTrue(container.querySelector('.xt-avatar-editor__circle') !== null, 'Debe renderizar el círculo del avatar con clase genérica');
-    assertTrue(container.querySelector('.xt-avatar-editor__actions') !== null, 'Debe renderizar las acciones del avatar con clase genérica');
-    assertTrue(container.querySelector('.xt-profile-form__avatar') === null, 'No debe usar clases específicas de la vista');
+    assertTrue(container.querySelector('[data-userconfig-avatar-value]') !== null, 'Debe renderizar el valor oculto del avatar');
+    assertTrue(container.querySelector('[data-userconfig-select-avatar]') !== null, 'Debe renderizar las acciones del avatar');
+    assertTrue(container.querySelector('[data-role="profile-avatar-legacy"]') === null, 'No debe usar clases específicas de la vista');
   });
 
   await test('permite limpiar avatar y lo envía al guardar', async () => {
@@ -91,7 +91,7 @@
 
     removeAvatarButton.click();
 
-    const form = container.querySelector('.xt-form');
+    const form = container.querySelector('form');
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -110,7 +110,7 @@
 
     const newPassword = container.querySelector('input[name="newPassword"]');
     const confirmPassword = container.querySelector('input[name="confirmPassword"]');
-    const form = container.querySelector('.xt-form');
+    const form = container.querySelector('form');
 
     newPassword.value = 'ValidPass!123';
     confirmPassword.value = 'ValidPass!123';
@@ -120,7 +120,7 @@
     const hasPutCall = api.calls.some((call) => call.method === 'PUT' && call.url === '/users/me');
     assertTrue(!hasPutCall, 'No debe enviar PUT si falta la contraseña actual');
 
-    const feedback = container.querySelector('.xt-page__feedback');
+    const feedback = container.querySelector('div.rounded-lg.border.px-3.py-2.text-sm');
     assertTrue(feedback !== null, 'Debe mostrar feedback de error');
     assertTrue(feedback.textContent.includes('contraseña actual'), 'Debe indicar que falta contraseña actual');
   });
@@ -136,7 +136,7 @@
     const currentPassword = container.querySelector('input[name="currentPassword"]');
     const newPassword = container.querySelector('input[name="newPassword"]');
     const confirmPassword = container.querySelector('input[name="confirmPassword"]');
-    const form = container.querySelector('.xt-form');
+    const form = container.querySelector('form');
 
     currentPassword.value = 'OldPass!123';
     newPassword.value = 'NewPass!123';

@@ -33,6 +33,12 @@ export class DynamicTabs {
   #tabBar = null;
 
   /** @type {HTMLElement|null} */
+  #tabList = null;
+
+  /** @type {HTMLElement|null} */
+  #inkBar = null;
+
+  /** @type {HTMLElement|null} */
   #tabContent = null;
 
   /** @type {boolean} */
@@ -81,19 +87,32 @@ export class DynamicTabs {
     }
 
     this.#root = document.createElement('div');
-    this.#root.className = 'xt-tabs';
+    this.#root.className = 'flex flex-col';
+    this.#root.dataset.role = 'tabs-root';
 
     this.#tabBar = document.createElement('nav');
-    this.#tabBar.className = 'xt-tabs__bar';
+    this.#tabBar.className = 'relative mb-4 flex items-center';
+    this.#tabBar.dataset.role = 'tabs-bar';
     this.#tabBar.setAttribute('role', 'tablist');
 
+    this.#tabList = document.createElement('div');
+    this.#tabList.className = 'relative flex flex-wrap gap-8 border-b border-[#f0f0f0]';
+    this.#tabList.dataset.role = 'tabs-list';
+
+    this.#inkBar = document.createElement('div');
+    this.#inkBar.className = 'pointer-events-none absolute bottom-[-1px] left-0 h-[2px] rounded-full bg-[#1677ff] transition-[width,transform] duration-300 ease-out';
+    this.#inkBar.dataset.role = 'tabs-ink-bar';
+
     this.#tabContent = document.createElement('div');
-    this.#tabContent.className = 'xt-tabs__content';
+    this.#tabContent.className = 'pt-4 text-[14px] text-[rgba(0,0,0,0.88)]';
+    this.#tabContent.dataset.role = 'tabs-content';
 
     for (const tab of this.#tabs) {
       this.#appendTabButton(tab);
     }
 
+    this.#tabList.appendChild(this.#inkBar);
+    this.#tabBar.appendChild(this.#tabList);
     this.#root.appendChild(this.#tabBar);
     this.#root.appendChild(this.#tabContent);
     this.#container.appendChild(this.#root);
@@ -139,6 +158,8 @@ export class DynamicTabs {
       this.#root.remove();
       this.#root = null;
       this.#tabBar = null;
+      this.#tabList = null;
+      this.#inkBar = null;
       this.#tabContent = null;
     }
     this.#rendered = false;
@@ -153,32 +174,71 @@ export class DynamicTabs {
   #appendTabButton(tab) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'xt-tabs__btn';
+    btn.className = this.#tabButtonClass(false);
+    btn.dataset.role = 'tabs-button';
     btn.dataset.tabId = tab.id;
     btn.setAttribute('role', 'tab');
     btn.textContent = tab.label;
 
     if (tab.id === this.#activeId) {
-      btn.classList.add('xt-tabs__btn--active');
-      btn.setAttribute('aria-selected', 'true');
+      this.#applyButtonState(btn, true);
     } else {
-      btn.setAttribute('aria-selected', 'false');
+      this.#applyButtonState(btn, false);
     }
 
     btn.addEventListener('click', () => this.setActiveTab(tab.id));
-    this.#tabBar.appendChild(btn);
+    this.#tabList.appendChild(btn);
   }
 
   /**
    * @param {string} activeId
    */
   #updateTabBar(activeId) {
-    const buttons = this.#tabBar.querySelectorAll('.xt-tabs__btn');
+    const buttons = this.#tabBar.querySelectorAll('[data-role="tabs-button"]');
+    let activeButton = null;
     for (const btn of buttons) {
       const isActive = btn.dataset.tabId === activeId;
-      btn.classList.toggle('xt-tabs__btn--active', isActive);
-      btn.setAttribute('aria-selected', String(isActive));
+      this.#applyButtonState(btn, isActive);
+      if (isActive) {
+        activeButton = btn;
+      }
     }
+
+    if (activeButton instanceof HTMLElement) {
+      this.#syncInkBar(activeButton);
+    }
+  }
+
+  /**
+   * @param {boolean} isActive
+   * @returns {string}
+   */
+  #tabButtonClass(isActive) {
+    const baseClass = 'relative inline-flex items-center bg-transparent px-0 py-3 text-[14px] font-normal leading-[1.5715] transition-colors duration-300 focus:outline-none focus:ring-0';
+    const activeClass = 'text-[#1677ff]';
+    const inactiveClass = 'text-[rgba(0,0,0,0.88)] hover:text-[#4096ff]';
+    return `${baseClass} ${isActive ? activeClass : inactiveClass}`;
+  }
+
+  /**
+   * @param {HTMLElement} button
+   * @param {boolean} isActive
+   */
+  #applyButtonState(button, isActive) {
+    button.className = this.#tabButtonClass(isActive);
+    button.setAttribute('aria-selected', String(isActive));
+  }
+
+  /**
+   * @param {HTMLElement} button
+   */
+  #syncInkBar(button) {
+    if (this.#inkBar === null) {
+      return;
+    }
+
+    this.#inkBar.style.width = `${button.offsetWidth}px`;
+    this.#inkBar.style.transform = `translateX(${button.offsetLeft}px)`;
   }
 
   /**

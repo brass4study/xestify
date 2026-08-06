@@ -8,6 +8,7 @@
  */
 
 import { Api } from '../modules/Api.js';
+import { DynamicTable } from '../modules/DynamicTable.js';
 
 export class PluginConfig {
   /** @type {HTMLElement} */
@@ -68,7 +69,6 @@ export class PluginConfig {
     }
 
     const plugin = this.#state.plugin;
-    const rows = this.#state.config.fields;
     const isExtension = this.#isExtensionPlugin();
     const targetEntity = String(this.#state.config.target_entity ?? '*');
     const entityOptions = Array.isArray(this.#state.config.entity_options)
@@ -78,61 +78,53 @@ export class PluginConfig {
     const fieldsHelp = isExtension
       ? 'Define los campos de la extension y a que entidad se aplica. Desactiva una fila para excluirla del schema activo.'
       : 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
+    const feedbackTone = this.#messageType === 'error'
+      ? 'border-red-200 bg-red-50 text-red-700'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    const feedbackHtml = this.#message === ''
+      ? ''
+      : `<div class="${feedbackTone} mt-3 rounded-lg border px-3 py-2 text-sm">${this.#escapeHtml(this.#message)}</div>`;
 
     const wrapper = document.createElement('section');
-    wrapper.className = 'xt-page__card';
+    wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
     wrapper.innerHTML = `
-      <header class="xt-page__toolbar">
+      <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="xt-page__title">Configurar plugin: ${this.#escapeHtml(plugin.name || plugin.slug || this.#slug)}</h2>
-          <p class="xt-page__meta">
+          <h2 class="text-xl font-semibold tracking-tight text-slateui-950">Configurar plugin: ${this.#escapeHtml(plugin.name || plugin.slug || this.#slug)}</h2>
+          <p class="mt-1 text-sm text-slate-500">
             slug: ${this.#escapeHtml(plugin.slug || this.#slug)} | version: ${this.#escapeHtml(plugin.version || '-')} | schema v${this.#escapeHtml(String(plugin.schema_version ?? '-'))}
           </p>
         </div>
       </header>
 
-      ${this.#message === '' ? '' : `<div class="xt-page__feedback xt-page__feedback--${this.#messageType}">${this.#escapeHtml(this.#message)}</div>`}
+      ${feedbackHtml}
 
-      <section class="xt-panel">
+      <section class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
         ${isExtension
           ? `<h3>Relacion de extension</h3>
-        <p class="xt-help-text">Selecciona la entidad destino o <strong>Todos</strong> para aplicar la extension globalmente.</p>
-        <select class="xt-input xt-input--compact" data-name="target-entity">
+        <p class="mt-1 text-sm text-slate-600">Selecciona la entidad destino o <strong>Todos</strong> para aplicar la extension globalmente.</p>
+        <select class="mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm" data-name="target-entity">
             <option value="*" ${this.#selectedAttr('*', targetEntity)}>Todos</option>
             ${allTargetOptionsHtml}
         </select>`
           : ''}
 
-        <h3>Campos</h3>
-        <p class="xt-help-text">${fieldsHelp}</p>
-        <div class="xt-table-wrapper">
-          <table class="xt-table xt-table--compact" data-role="plugin-config-table">
-            <thead>
-              <tr>
-                <th>Activo</th>
-                <th>Clase</th>
-                <th>Clave</th>
-                <th>Tipo</th>
-                <th>Etiqueta</th>
-                <th>Requerido</th>
-                <th>Cabecera</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody data-role="fields-body"></tbody>
-          </table>
-        </div>
-        <button type="button" class="xt-btn xt-btn--secondary" data-action="add-field" data-role="plugin-config-action">Anadir campo</button>
+        <h3 class="${isExtension ? 'mt-5' : 'mt-0'} text-base font-semibold text-slateui-950">Campos</h3>
+        <p class="mt-1 text-sm text-slate-600">${fieldsHelp}</p>
+        <div class="mt-3" data-role="fields-table-host"></div>
+        <button type="button" class="mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-action="add-field" data-role="plugin-config-action">Añadir campo</button>
       </section>
 
-      <footer class="xt-form__actions">
-        <button type="button" class="xt-btn xt-btn--secondary" data-action="back" data-role="plugin-config-action">Volver</button>
-        <button type="button" class="xt-btn xt-btn--primary" data-action="save" data-role="plugin-config-action">Guardar</button>
+      <footer class="mt-4 flex flex-wrap gap-2">
+        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-action="back" data-role="plugin-config-action">Volver</button>
+        <button type="button" class="inline-flex items-center rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" data-action="save" data-role="plugin-config-action">Guardar</button>
       </footer>
     `;
 
-    const tbody = wrapper.querySelector('[data-role="fields-body"]');
-    tbody.innerHTML = rows.map((field, index) => this.#renderRow(field, index)).join('');
+    const tableHost = wrapper.querySelector('[data-role="fields-table-host"]');
+    if (tableHost instanceof HTMLElement) {
+      this.#renderFieldsTable(tableHost);
+    }
 
     this.#bindTableEvents(wrapper);
     this.#bindPageActions(wrapper);
@@ -141,56 +133,204 @@ export class PluginConfig {
     this.#container.appendChild(wrapper);
   }
 
-  #renderRow(field, index) {
+  #renderFieldsTable(container) {
+    const rows = this.#state?.config?.fields ?? [];
+    const records = rows.map((field, index) => ({
+      ...field,
+      __rowIndex: index,
+    }));
+
+    const headerClassName = 'border-b border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600';
+    const baseCellClassName = 'border-b border-slate-100 px-2 py-2';
+    const centeredCellClassName = 'border-b border-slate-100 px-2 py-2 text-center';
+    const actionsCellClassName = 'border-b border-slate-100 px-2 py-2 whitespace-nowrap';
+
+    const table = new DynamicTable(records, { fields: [] }, container, {
+      showPagination: false,
+      wrapperClassName: 'overflow-x-auto rounded-xl border border-slate-200 bg-white',
+      tableClassName: 'min-w-[920px] w-full border-separate border-spacing-0 text-left',
+      tableDataRole: 'plugin-config-table',
+      extraColumns: [
+        {
+          label: 'Activo',
+          headerClassName,
+          cellClassName: centeredCellClassName,
+          renderCell: (field) => this.#renderActiveInput(field),
+        },
+        {
+          label: 'Clase',
+          headerClassName,
+          cellClassName: baseCellClassName,
+          renderCell: (field) => this.#renderSourceBadge(field),
+        },
+        {
+          label: 'Clave',
+          headerClassName,
+          cellClassName: baseCellClassName,
+          renderCell: (field) => this.#renderKeyInput(field),
+        },
+        {
+          label: 'Tipo',
+          headerClassName,
+          cellClassName: baseCellClassName,
+          renderCell: (field) => this.#renderTypeSelect(field),
+        },
+        {
+          label: 'Etiqueta',
+          headerClassName,
+          cellClassName: baseCellClassName,
+          renderCell: (field) => this.#renderLabelInput(field),
+        },
+        {
+          label: 'Requerido',
+          headerClassName,
+          cellClassName: centeredCellClassName,
+          renderCell: (field) => this.#renderRequiredInput(field),
+        },
+        {
+          label: 'Cabecera',
+          headerClassName,
+          cellClassName: centeredCellClassName,
+          renderCell: (field) => this.#renderSummaryViewInput(field),
+        },
+        {
+          label: 'Acciones',
+          headerClassName,
+          cellClassName: actionsCellClassName,
+          renderCell: (field) => this.#renderActions(field),
+        },
+      ],
+      rowDecorator: (row, field) => {
+        row.dataset.rowIndex = String(field.__rowIndex ?? 0);
+        row.className = (field.__rowIndex ?? 0) % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
+      },
+    });
+
+    table.render();
+  }
+
+  #fieldMeta(field) {
     const locked = field.locked === true;
     const source = String(field.source ?? 'additional');
     const isBase = source === 'base';
     const immutableField = locked || isBase;
     const keyReadonly = immutableField || source === 'suggested';
     const editable = !immutableField;
-    const summaryViewChecked = field.summaryView === false ? '' : 'checked';
+    return { source, immutableField, keyReadonly, editable };
+  }
 
-    let sourceBadge = '<span class="xt-badge xt-badge--success" data-role="field-source">adicional</span>';
+  #renderSourceBadge(field) {
+    const { source } = this.#fieldMeta(field);
+    const badge = document.createElement('span');
+    badge.dataset.role = 'field-source';
+    badge.className = 'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide';
+
     if (source === 'base') {
-      sourceBadge = '<span class="xt-badge xt-badge--danger" data-role="field-source">base</span>';
+      badge.classList.add('bg-red-100', 'text-red-700');
+      badge.textContent = 'base';
     } else if (source === 'suggested') {
-      sourceBadge = '<span class="xt-badge xt-badge--info" data-role="field-source">sugerido</span>';
+      badge.classList.add('bg-sky-100', 'text-sky-700');
+      badge.textContent = 'sugerido';
+    } else {
+      badge.classList.add('bg-emerald-100', 'text-emerald-700');
+      badge.textContent = 'adicional';
     }
 
-    return `
-      <tr data-row-index="${index}">
-        <td>
-          <input type="checkbox" data-name="active" ${field.active ? 'checked' : ''} ${immutableField ? 'disabled' : ''}>
-        </td>
-        <td>
-          ${sourceBadge}
-        </td>
-        <td>
-          <input type="text" data-name="key" value="${this.#escapeHtml(field.key || '')}" ${keyReadonly ? 'readonly' : ''}>
-        </td>
-        <td>
-          <select data-name="type" ${editable ? '' : 'disabled'}>
-            ${this.#typeOptions(field.type || 'string')}
-          </select>
-        </td>
-        <td>
-          <input type="text" data-name="label" value="${this.#escapeHtml(field.label || '')}" ${editable ? '' : 'readonly'}>
-        </td>
-        <td>
-          <input type="checkbox" data-name="required" ${field.required ? 'checked' : ''} ${editable ? '' : 'disabled'}>
-        </td>
-        <td>
-          <input type="checkbox" data-name="summaryView" ${summaryViewChecked} ${editable ? '' : 'disabled'}>
-        </td>
-        <td class="xt-table__actions-cell">
-          <button type="button" class="xt-btn xt-btn--icon" data-action="move-up" data-row-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-          <button type="button" class="xt-btn xt-btn--icon" data-action="move-down" data-row-index="${index}" ${index === this.#state.config.fields.length - 1 ? 'disabled' : ''}>↓</button>
-          ${immutableField
-            ? ''
-            : `<button type="button" class="xt-btn xt-btn--secondary xt-btn--danger" data-action="remove-row" data-row-index="${index}">Eliminar</button>`}
-        </td>
-      </tr>
-    `;
+    return badge;
+  }
+
+  #renderActiveInput(field) {
+    const { immutableField } = this.#fieldMeta(field);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.name = 'active';
+    input.checked = field.active === true;
+    input.disabled = immutableField;
+    return input;
+  }
+
+  #renderKeyInput(field) {
+    const { keyReadonly } = this.#fieldMeta(field);
+    const input = document.createElement('input');
+    input.className = 'w-full rounded-md border-slate-300 text-sm';
+    input.type = 'text';
+    input.dataset.name = 'key';
+    input.value = String(field.key ?? '');
+    input.readOnly = keyReadonly;
+    return input;
+  }
+
+  #renderTypeSelect(field) {
+    const { editable } = this.#fieldMeta(field);
+    const select = document.createElement('select');
+    select.className = 'w-full rounded-md border-slate-300 text-sm';
+    select.dataset.name = 'type';
+    select.disabled = !editable;
+    select.innerHTML = this.#typeOptions(field.type || 'string');
+    return select;
+  }
+
+  #renderLabelInput(field) {
+    const { editable } = this.#fieldMeta(field);
+    const input = document.createElement('input');
+    input.className = 'w-full rounded-md border-slate-300 text-sm';
+    input.type = 'text';
+    input.dataset.name = 'label';
+    input.value = String(field.label ?? '');
+    input.readOnly = !editable;
+    return input;
+  }
+
+  #renderRequiredInput(field) {
+    const { editable } = this.#fieldMeta(field);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.name = 'required';
+    input.checked = field.required === true;
+    input.disabled = !editable;
+    return input;
+  }
+
+  #renderSummaryViewInput(field) {
+    const { editable } = this.#fieldMeta(field);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.name = 'summaryView';
+    input.checked = field.summaryView !== false;
+    input.disabled = !editable;
+    return input;
+  }
+
+  #renderActions(field) {
+    const { immutableField } = this.#fieldMeta(field);
+    const actions = document.createElement('div');
+    actions.className = 'flex flex-wrap items-center gap-2';
+    const rowIndex = Number(field.__rowIndex ?? 0);
+    const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
+
+    actions.appendChild(this.#buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0));
+    actions.appendChild(this.#buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex));
+
+    if (!immutableField) {
+      const removeButton = this.#buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false);
+      removeButton.classList.add('ml-2');
+      actions.appendChild(removeButton);
+    }
+
+    return actions;
+  }
+
+  #buildRowActionButton(label, icon, tone, action, rowIndex, disabled) {
+    const button = DynamicTable.buildActionButton({
+      label,
+      icon,
+      tone,
+      dataAction: action,
+      disabled,
+      onClick: () => {},
+    });
+    button.dataset.rowIndex = String(rowIndex);
+    return button;
   }
 
   #bindTableEvents(wrapper) {
@@ -256,7 +396,7 @@ export class PluginConfig {
 
   #renderError(message) {
     const banner = document.createElement('div');
-    banner.className = 'xt-page__feedback xt-page__feedback--error';
+    banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
     banner.textContent = message;
     this.#container.innerHTML = '';
     this.#container.appendChild(banner);

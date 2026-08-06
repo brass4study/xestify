@@ -104,7 +104,7 @@ export class Navbar {
   }
 
   #renderUserMenu() {
-    const userEl = this.#container.querySelector('.xt-navbar__user');
+    const userEl = this.#container.querySelector('[data-role="navbar-user"]');
     if (userEl === null) {
       return;
     }
@@ -150,16 +150,19 @@ export class Navbar {
     this.#container.replaceChildren();
 
     const nav = document.createElement('nav');
-    nav.className = 'xt-navbar';
+    nav.className = 'flex flex-wrap items-center gap-3 border border-brand-200 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white';
+    nav.dataset.role = 'navbar';
     nav.setAttribute('aria-label', 'Navegación principal');
 
     const brand = document.createElement('span');
-    brand.className = 'xt-navbar__brand';
+    brand.className = 'pr-2 text-xl font-semibold tracking-tight';
+    brand.dataset.role = 'navbar-brand';
     brand.textContent = 'Xestify';
     nav.appendChild(brand);
 
     const links = document.createElement('ul');
-    links.className = 'xt-navbar__links';
+    links.className = 'order-3 flex w-full flex-wrap gap-1.5 pt-1 sm:order-2 sm:w-auto sm:pt-0';
+    links.dataset.role = 'navbar-links';
 
     for (const entity of this.#entities) {
       const slug = typeof entity?.slug === 'string' ? entity.slug : '';
@@ -177,10 +180,12 @@ export class Navbar {
     nav.appendChild(links);
 
     const right = document.createElement('div');
-    right.className = 'xt-navbar__right';
+    right.className = 'order-2 ml-auto flex items-center gap-2 sm:order-3';
+    right.dataset.role = 'navbar-right';
 
     const userEl = document.createElement('div');
-    userEl.className = 'xt-navbar__user';
+    userEl.className = 'relative min-w-0';
+    userEl.dataset.role = 'navbar-user';
     right.appendChild(userEl);
 
     nav.appendChild(right);
@@ -201,7 +206,8 @@ export class Navbar {
     const li = document.createElement('li');
     const a = document.createElement('a');
     a.href = '#';
-    a.className = 'xt-navbar__link';
+    a.className = 'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-white/85 transition hover:bg-white/15 hover:text-white';
+    a.dataset.role = 'navbar-link';
     a.dataset.page = page;
     a.textContent = label;
     a.addEventListener('click', (event) => {
@@ -222,11 +228,12 @@ export class Navbar {
    */
   #setActive(page) {
     this.#activePage = page;
-    const links = this.#container.querySelectorAll('.xt-navbar__link');
+    const links = this.#container.querySelectorAll('[data-role="navbar-link"]');
     for (const link of links) {
       if (link instanceof HTMLElement) {
         const isActive = link.dataset.page === page;
-        link.classList.toggle('xt-navbar__link--active', isActive);
+        link.classList.toggle('bg-white/20', isActive);
+        link.classList.toggle('text-white', isActive);
         link.setAttribute('aria-current', isActive ? 'page' : 'false');
       }
     }

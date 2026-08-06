@@ -94,45 +94,59 @@ export class Login {
     this.#container.replaceChildren();
 
     const wrapper = document.createElement('section');
-    wrapper.className = 'xt-login';
+    wrapper.className = 'mx-auto mt-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-panel sm:mt-16 sm:p-8';
+    wrapper.dataset.role = 'login-card';
 
     const title = document.createElement('h2');
-    title.className = 'xt-login__title';
+    title.className = 'text-2xl font-semibold tracking-tight text-slateui-950';
+    title.dataset.role = 'login-title';
     title.textContent = 'Iniciar sesión';
     wrapper.appendChild(title);
 
+    const subtitle = document.createElement('p');
+    subtitle.className = 'mt-2 text-sm text-slate-500';
+    subtitle.textContent = 'Accede a tu espacio de trabajo para gestionar entidades y plugins.';
+    wrapper.appendChild(subtitle);
+
     const banner = document.createElement('p');
-    banner.className = 'xt-login__error';
+    banner.className = 'mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+    banner.dataset.role = 'login-error';
     banner.hidden = true;
     wrapper.appendChild(banner);
 
     const form = document.createElement('form');
-    form.className = 'xt-login__form';
+    form.className = 'mt-6 grid gap-4';
+    form.dataset.role = 'login-form';
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       this.submit();
     });
 
     const emailLabel = document.createElement('label');
+    emailLabel.className = 'grid gap-1.5 text-sm font-medium text-slate-700';
     emailLabel.textContent = 'Email';
     const emailInput = document.createElement('input');
     emailInput.type = 'email';
     emailInput.name = 'email';
     emailInput.autocomplete = 'email';
+    emailInput.className = 'w-full rounded-lg border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-brand-500';
     emailLabel.appendChild(emailInput);
     form.appendChild(emailLabel);
 
     const passwordLabel = document.createElement('label');
+    passwordLabel.className = 'grid gap-1.5 text-sm font-medium text-slate-700';
     passwordLabel.textContent = 'Password';
     const passwordInput = document.createElement('input');
     passwordInput.type = 'password';
     passwordInput.name = 'password';
+    passwordInput.className = 'w-full rounded-lg border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-brand-500';
     passwordLabel.appendChild(passwordInput);
     form.appendChild(passwordLabel);
 
     const submit = document.createElement('button');
     submit.type = 'submit';
-    submit.className = 'xt-btn xt-btn--primary';
+    submit.className = 'mt-2 inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
+    submit.dataset.role = 'login-submit';
     submit.textContent = 'Entrar';
     form.appendChild(submit);
 
@@ -144,7 +158,7 @@ export class Login {
    * @param {Record<string, string|string[]>} errors
    */
   #showFieldErrors(errors) {
-    const form = this.#container.querySelector('.xt-login__form');
+    const form = this.#container.querySelector('[data-role="login-form"]');
     if (form === null) {
       return;
     }
@@ -154,7 +168,8 @@ export class Login {
       const msgList = Array.isArray(messages) ? messages : [String(messages)];
 
       const errorEl = document.createElement('ul');
-      errorEl.className = 'xt-login__field-errors';
+      errorEl.className = 'mt-1 list-disc pl-5 text-xs text-red-700';
+      errorEl.dataset.role = 'login-field-errors';
       errorEl.dataset.field = fieldName;
 
       for (const msg of msgList) {
@@ -175,7 +190,7 @@ export class Login {
    * @param {string} message
    */
   #showGlobalError(message) {
-    const banner = this.#container.querySelector('.xt-login__error');
+    const banner = this.#container.querySelector('[data-role="login-error"]');
     if (banner !== null) {
       banner.textContent = message;
       banner.hidden = false;
@@ -183,13 +198,13 @@ export class Login {
   }
 
   #clearErrors() {
-    const banner = this.#container.querySelector('.xt-login__error');
+    const banner = this.#container.querySelector('[data-role="login-error"]');
     if (banner !== null) {
       banner.textContent = '';
       banner.hidden = true;
     }
 
-    const fieldErrors = this.#container.querySelectorAll('.xt-login__field-errors');
+    const fieldErrors = this.#container.querySelectorAll('[data-role="login-field-errors"]');
     for (const error of fieldErrors) {
       error.remove();
     }
@@ -199,7 +214,7 @@ export class Login {
    * @param {boolean} loading
    */
   #setLoading(loading) {
-    const button = this.#container.querySelector('.xt-btn--primary');
+    const button = this.#container.querySelector('[data-role="login-submit"]');
     if (button instanceof HTMLButtonElement) {
       button.disabled = loading;
       button.textContent = loading ? 'Entrando...' : 'Entrar';

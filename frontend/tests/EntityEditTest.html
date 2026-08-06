@@ -74,7 +74,7 @@
     const page = new EntityEdit(container, 'client', SCHEMA);
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const title = container.querySelector('.xt-edit-wrapper__title');
+    const title = container.querySelector('[data-role="entity-edit-title"]');
     assertTrue(title !== null, 'Title element should exist');
     assertTrue(title.textContent.includes('Nuevo'), 'Title should say Nuevo registro');
   });
@@ -84,7 +84,7 @@
     const page = new EntityEdit(container, 'client', SCHEMA, { recordId: '42' });
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const title = container.querySelector('.xt-edit-wrapper__title');
+    const title = container.querySelector('[data-role="entity-edit-title"]');
     assertTrue(title.textContent.includes('Editar'), 'Title should say Editar registro');
   });
 
@@ -229,7 +229,7 @@
     container.querySelector('[name="name"]').value = 'X';
     await page.submit();
 
-    const errorList = container.querySelector('.xt-field-errors[data-field="name"]');
+    const errorList = container.querySelector('[data-role="field-errors"][data-field="name"]');
     assertTrue(errorList !== null, 'Field error list should be rendered');
     assertTrue(errorList.textContent.includes('Too short'), 'Error message should be shown');
   });
@@ -261,7 +261,7 @@
     container.querySelector('[name="description"]').value = 'Descripcion';
     await page.submit();
 
-    const errorList = container.querySelector('.xt-field-errors[data-field="description"]');
+    const errorList = container.querySelector('[data-role="field-errors"][data-field="description"]');
     assertTrue(errorList !== null, 'Structured field error list should be rendered');
     assertTrue(errorList.textContent.includes('Expected text'), 'Structured error message should be shown');
     assertTrue(!errorList.textContent.includes('[object Object]'), 'Structured errors must not render as object text');
@@ -278,7 +278,7 @@
     container.querySelector('[name="name"]').value = 'ACME';
     await page.submit();
 
-    const banner = container.querySelector('.xt-edit-error-banner');
+    const banner = container.querySelector('[data-role="entity-edit-error"]');
     assertTrue(banner !== null && !banner.hidden, 'Error banner should be visible');
     assertTrue(banner.textContent.includes('Server error'), 'Banner should show error message');
   });
@@ -289,7 +289,7 @@
     const page = new EntityEdit(container, 'client', SCHEMA, { onCancel: () => { cancelled = true; } });
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    const cancelBtn = container.querySelector('[data-role="entity-edit-cancel"]');
     assertTrue(cancelBtn !== null, 'Cancel button should exist when onCancel is provided');
     cancelBtn.click();
     assertTrue(cancelled, 'onCancel should have been called');
@@ -300,7 +300,7 @@
     const page = new EntityEdit(container, 'client', SCHEMA);
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    const cancelBtn = container.querySelector('[data-role="entity-edit-cancel"]');
     assertTrue(cancelBtn === null, 'Cancel button should not exist without onCancel');
   });
 

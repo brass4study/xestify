@@ -113,7 +113,7 @@
 
     assertEquals(window.location.hash, '#/usuarios/u-admin', 'Debe navegar por hash a la página UserConfig del usuario');
 
-    const tableAfterOpen = container.querySelector('.xt-table');
+    const tableAfterOpen = container.querySelector('table');
     assertTrue(tableAfterOpen !== null, 'La tabla sigue siendo responsabilidad de UserManager');
   });
 
@@ -135,7 +135,7 @@
     emailInput.value = 'operador.editado@xestify.local';
     roleSelect.value = 'admin';
 
-    const form = container.querySelector('.xt-form');
+    const form = container.querySelector('form');
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -164,7 +164,7 @@
     const hasResetCall = api.calls.some((call) => call.method === 'PUT' && call.url === '/users/u-operator/password');
     assertTrue(hasResetCall, 'Debe llamar al endpoint de reset password');
 
-    const output = container.querySelector('.xt-form__output');
+    const output = container.querySelector('input[readonly]');
     assertEquals(output.value, 'Tmp-Pass-1234', 'Debe mostrar la password devuelta por backend');
   });
 

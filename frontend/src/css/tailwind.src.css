@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	#app {
+		min-height: 100vh;
+	}
+
+	button,
+	[role="button"],
+	a[href],
+	input[type="button"],
+	input[type="submit"],
+	input[type="reset"] {
+		cursor: pointer;
+	}
+
+	button:disabled,
+	button[disabled],
+	input:disabled,
+	input[disabled],
+	[aria-disabled="true"] {
+		cursor: default;
+		pointer-events: none;
+		opacity: 0.65;
+		color: rgb(51 65 85);
+		background-color: rgb(229 231 235);
+		border-color: rgb(156 163 175);
+		filter: grayscale(1);
+		box-shadow: none;
+		transform: none;
+		transition: none;
+	}
+
+	button:disabled:hover,
+	button[disabled]:hover,
+	input:disabled:hover,
+	input[disabled]:hover,
+	[aria-disabled="true"]:hover {
+		box-shadow: none;
+		transform: none;
+		transition: none;
+	}
+
+	form input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+	form select,
+	form textarea {
+		width: 100%;
+		border: 1px solid rgb(203 213 225);
+		border-radius: 0.5rem;
+		background-color: rgb(255 255 255);
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: rgb(15 23 42);
+	}
+
+	form input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):focus,
+	form select:focus,
+	form textarea:focus {
+		outline: 2px solid transparent;
+		outline-offset: 2px;
+		border-color: rgb(30 121 255);
+		box-shadow: 0 0 0 1px rgb(30 121 255 / 0.35);
+	}
+
+	form input[type="checkbox"],
+	form input[type="radio"] {
+		border: 1px solid rgb(203 213 225);
+		color: rgb(30 121 255);
+	}
+}
+
+@layer utilities {
+	[data-role="user-menu-items"][hidden] {
+		display: none !important;
+	}
+
+	[data-role="modal-overlay"][hidden] {
+		display: none !important;
+	}
+
+	[data-role="password-fill"] {
+		transition: width 180ms ease;
+	}
+
+	[data-role="password-rule-icon"] {
+		transition: color 180ms ease;
+	}
+}

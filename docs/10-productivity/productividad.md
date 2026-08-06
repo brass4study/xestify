@@ -699,7 +699,7 @@
 - **Qué hizo IA:**
   - Generó la clase `DynamicTabs` con API completa: `registerTab()`, `render()`, `setActiveTab()`, `getActiveTab()`, `destroy()`, persistencia de tab activa en URL hash, deduplicación por id
   - Generó 6 tests completos con el estilo del proyecto (✅/❌, separadores, `.pass`/`.fail`)
-  - Añadió estilos `.xt-tabs` a `main.css` (barra, botones, estado activo, responsive)
+  - Añadió estilos de tabs en `main.css` (barra, botones, estado activo, responsive)
   - Corrigió `tools/dev/frontend-router.php` para servir rutas `/tests/` y `/src/` (fix bloqueante: módulos JS no se cargaban)
 - **Iteraciones:** 3 (MIME type error en servidor, ajuste estilo tests, refactoring router)
 - **Decisión manual:** La corrección del router fue identificada por el usuario; la API plugin-first de `DynamicTabs` se mantuvo sin cambios del diseño inicial
@@ -1003,3 +1003,17 @@
   - Añadió test frontend dedicado `UserManagementTest.html` con cobertura de flujos clave.
 - **Iteraciones:** 4 (ajustes de test reset, refactor por reglas de calidad y refinado de UX en modales)
 - **Decisión manual:** Mantener la generación de contraseña temporal en backend y mostrarla una sola vez en modal, priorizando seguridad operativa sin persistencia en frontend.
+
+### STORY 9.1: Fundamentos de diseño
+- **Fecha:** 2026-08-06
+- **Estimado sin IA:** 12h
+- **Tiempo real con IA:** ~6h 30m
+- **Aceleración:** ~46% ⚡
+- **Qué hizo IA:**
+  - Consolidó la base visual enterprise inspirada en Ant Design con Tailwind, tokens `brand/slateui`, tipografía IBM Plex y componentes homogéneos.
+  - Refactorizó `DynamicTable` para convertirlo en la clase única de tablas y migró Entidades, Plugins, Usuarios y PluginConfig al mismo constructor.
+  - Ajustó `DynamicTabs` y `EntityEdit` para alinear tabs y layout con el patrón esperado, incluyendo `ink bar` y control del padding superior del wrapper.
+  - Sustituyó el Play CDN de Tailwind por una hoja local generada (`tailwind.generated.css`) a partir de `tailwind.src.css` y `tailwind.config.cjs`, eliminando warnings de runtime.
+  - Recolocó los overrides residuales necesarios dentro de capas Tailwind (`@layer base` / `@layer utilities`) para evitar CSS paralelo fuera del pipeline.
+- **Iteraciones:** 11 (refinado visual incremental, unificación de acciones/tablas, migración de Tailwind y ajustes tras validación manual)
+- **Decisión manual:** Mantener Tailwind como fuente única de estilos en runtime, pero sin CDN y sin bundler, generando la hoja final offline y sirviéndola como asset estático.

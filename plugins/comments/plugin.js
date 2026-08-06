@@ -51,7 +51,7 @@ export class CommentsPanel {
    */
   #build(endpointTemplate, recordId, api) {
     const panel = document.createElement('div');
-    panel.className = 'xt-tab-panel';
+    panel.className = 'flex flex-col gap-3';
 
     // In-memory state.
     /** @type {Array<object>} */
@@ -69,10 +69,10 @@ export class CommentsPanel {
 
     // Lists.
     const existingList = document.createElement('ul');
-    existingList.className = 'xt-tab-panel__list';
+    existingList.className = 'flex flex-col gap-2';
 
     const newList = document.createElement('ul');
-    newList.className = 'xt-tab-panel__pending';
+    newList.className = 'flex flex-col gap-2';
 
     // Render helpers.
     const renderExistingList = () => {
@@ -183,23 +183,23 @@ export class CommentsPanel {
 
     // Add-comment form.
     const addForm = document.createElement('form');
-    addForm.className = 'xt-comment-form';
+    addForm.className = 'mt-2 flex flex-col gap-2 border-t border-slate-200 pt-3';
 
     const textarea = document.createElement('textarea');
-    textarea.className = 'xt-comment-form__body';
+    textarea.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
     textarea.rows = 3;
     textarea.placeholder = 'Escribe un comentario...';
     addForm.appendChild(textarea);
 
     const addErrorEl = document.createElement('p');
-    addErrorEl.className = 'xt-comment-form__error';
+    addErrorEl.className = 'text-xs text-red-700';
     addErrorEl.hidden = true;
     addForm.appendChild(addErrorEl);
 
     const addBtn = document.createElement('button');
     addBtn.type = 'submit';
-    addBtn.className = 'xt-btn xt-btn--secondary';
-    addBtn.textContent = 'Anadir';
+    addBtn.className = 'inline-flex w-fit items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
+    addBtn.textContent = 'Añadir';
     addForm.appendChild(addBtn);
 
     addForm.addEventListener('submit', (e) => {
@@ -214,7 +214,7 @@ export class CommentsPanel {
       textarea.value = '';
       toCreate.push({ tempId: ++tempCounter, body, author_id: null, stamp: null });
       renderNewList();
-      const placeholder = existingList.querySelector('.xt-placeholder');
+      const placeholder = existingList.querySelector('[data-role="placeholder"]');
       if (placeholder !== null) {
         placeholder.remove();
       }
@@ -228,7 +228,7 @@ export class CommentsPanel {
     if (recordId === null) {
       this.#setListMessage(existingList, 'Sin comentarios aun.');
     } else {
-      this.#setListMessage(existingList, 'Cargando...', 'xt-loading');
+      this.#setListMessage(existingList, 'Cargando...', 'text-sm text-slate-500');
       api.get(endpointTemplate.replace('{id}', recordId))
         .then(({ data }) => {
           existing = Array.isArray(data)
@@ -267,17 +267,17 @@ export class CommentsPanel {
    */
   #buildItem(item, isNew, onEditApply, onDelete) {
     const li = document.createElement('li');
-    li.className = 'xt-tab-panel__item';
+    li.className = 'relative rounded-lg border border-slate-200 bg-slate-50 px-3 pb-8 pt-6 text-sm text-slate-700';
     if (isNew) {
-      li.classList.add('xt-tab-panel__item--pending');
+      li.className += ' border-amber-300 bg-amber-50';
     } else if (item.pendingBody !== undefined) {
-      li.classList.add('xt-tab-panel__item--edited');
+      li.className += ' border-sky-300 bg-sky-50';
     }
 
     const displayBody = item.pendingBody ?? item.body;
 
     const bodyEl = document.createElement('span');
-    bodyEl.className = 'xt-tab-panel__item-body';
+    bodyEl.className = 'break-words';
     bodyEl.textContent = displayBody;
     li.appendChild(bodyEl);
 
@@ -302,76 +302,84 @@ export class CommentsPanel {
         parts.push(`por ${authorDisplay}`);
       }
       const metaEl = document.createElement('span');
-      metaEl.className = 'xt-tab-panel__item-meta';
+      metaEl.className = 'absolute left-3 right-3 top-1 text-[11px] text-slate-400';
       metaEl.textContent = parts.join(' ');
       li.appendChild(metaEl);
     }
 
     if (isNew) {
       const badge = document.createElement('span');
-      badge.className = 'xt-badge xt-badge--pending';
+      badge.className = 'absolute right-3 top-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700';
       badge.textContent = 'Nuevo';
       li.appendChild(badge);
     } else if (item.pendingBody !== undefined) {
       const badge = document.createElement('span');
-      badge.className = 'xt-badge xt-badge--edited';
+      badge.className = 'absolute right-3 top-1 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700';
       badge.textContent = 'Editado';
       li.appendChild(badge);
     }
 
     const editInput = document.createElement('textarea');
-    editInput.className = 'xt-comment-form__body';
+    editInput.className = 'mb-5 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
     editInput.rows = 2;
     editInput.value = displayBody;
     editInput.hidden = true;
     li.appendChild(editInput);
 
     const actions = document.createElement('div');
-    actions.className = 'xt-tab-panel__item-actions';
+    actions.className = 'absolute bottom-3 right-2 flex gap-1';
 
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
-    editBtn.className = 'xt-btn xt-btn--icon';
+    editBtn.className = 'inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 transition duration-150 hover:bg-sky-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-200';
     editBtn.title = 'Editar';
-    editBtn.appendChild(this.#buildIcon('fa-pencil'));
+    editBtn.appendChild(this.#buildGlyph('✎', 'text-sky-700'));
 
     const applyBtn = document.createElement('button');
     applyBtn.type = 'button';
-    applyBtn.className = 'xt-btn xt-btn--primary xt-btn--sm';
-    applyBtn.title = 'Aplicar';
-    applyBtn.textContent = 'Aplicar';
-    applyBtn.hidden = true;
+    applyBtn.className = 'inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 transition duration-150 hover:bg-emerald-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-200';
+    applyBtn.title = 'Guardar cambios';
+    applyBtn.appendChild(this.#buildGlyph('✓', 'text-emerald-700'));
 
     const cancelEditBtn = document.createElement('button');
     cancelEditBtn.type = 'button';
-    cancelEditBtn.className = 'xt-btn xt-btn--secondary xt-btn--sm';
+    cancelEditBtn.className = 'inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-200 bg-white text-amber-700 transition duration-150 hover:bg-amber-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200';
     cancelEditBtn.title = 'Cancelar';
-    cancelEditBtn.textContent = 'Cancelar';
-    cancelEditBtn.hidden = true;
+    cancelEditBtn.appendChild(this.#buildGlyph('✕', 'text-amber-700'));
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.className = 'xt-btn xt-btn--icon xt-btn--danger';
+    deleteBtn.className = 'inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-white text-red-700 transition duration-150 hover:bg-red-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200';
     deleteBtn.title = 'Eliminar';
-    deleteBtn.appendChild(this.#buildIcon('fa-trash'));
+    deleteBtn.appendChild(this.#buildGlyph('🗑', 'text-red-700'));
+
+    const setEditingMode = (isEditing) => {
+      bodyEl.hidden = isEditing;
+      editInput.hidden = !isEditing;
+
+      editBtn.hidden = isEditing;
+      editBtn.classList.toggle('hidden', isEditing);
+
+      deleteBtn.hidden = isEditing;
+      deleteBtn.classList.toggle('hidden', isEditing);
+
+      applyBtn.hidden = !isEditing;
+      applyBtn.classList.toggle('hidden', !isEditing);
+
+      cancelEditBtn.hidden = !isEditing;
+      cancelEditBtn.classList.toggle('hidden', !isEditing);
+    };
+
+    // Estado inicial: solo Editar + Eliminar.
+    setEditingMode(false);
 
     editBtn.addEventListener('click', () => {
-      bodyEl.hidden = true;
-      editInput.hidden = false;
-      editBtn.hidden = true;
-      deleteBtn.hidden = true;
-      applyBtn.hidden = false;
-      cancelEditBtn.hidden = false;
+      setEditingMode(true);
       editInput.focus();
     });
 
     const closeEditMode = () => {
-      editInput.hidden = true;
-      bodyEl.hidden = false;
-      editBtn.hidden = false;
-      deleteBtn.hidden = false;
-      applyBtn.hidden = true;
-      cancelEditBtn.hidden = true;
+      setEditingMode(false);
     };
 
     cancelEditBtn.addEventListener('click', () => {
@@ -406,9 +414,10 @@ export class CommentsPanel {
    * @param {string} message
    * @param {string} [className]
    */
-  #setListMessage(list, message, className = 'xt-placeholder') {
+  #setListMessage(list, message, className = '') {
     const item = document.createElement('li');
-    item.className = className;
+    item.className = `${className} rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500`.trim();
+    item.dataset.role = 'placeholder';
     item.textContent = message;
     list.replaceChildren(item);
   }
@@ -452,13 +461,15 @@ export class CommentsPanel {
   }
 
   /**
-   * @param {string} icon
+   * @param {string} glyph
+   * @param {string} className
    * @returns {HTMLElement}
    */
-  #buildIcon(icon) {
-    const el = document.createElement('i');
-    el.className = `fa-solid ${icon}`;
+  #buildGlyph(glyph, className = '') {
+    const el = document.createElement('span');
+    el.className = `pointer-events-none text-base font-semibold leading-none ${className}`.trim();
     el.setAttribute('aria-hidden', 'true');
+    el.textContent = glyph;
     return el;
   }
 

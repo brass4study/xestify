@@ -137,7 +137,7 @@
     const page = new EntityList(container);
     await page.init();
     await page.loadEntity('clients');
-    const createBtn = container.querySelector('.xt-btn--primary');
+    const createBtn = container.querySelector('[data-role="record-create"]');
     assertTrue(createBtn !== null, 'Expected primary button');
     assertTrue(createBtn.textContent.includes('Crear'), 'Button should say "Crear"');
     container.remove();
@@ -152,7 +152,7 @@
     const page = new EntityList(container, { onEdit: () => { return; } });
     await page.init();
     await page.loadEntity('clients');
-    const editBtns = container.querySelectorAll('.xt-btn--sm');
+    const editBtns = container.querySelectorAll('[data-role="record-edit"]');
     assertEquals(editBtns.length, RECORDS.length, `Expected ${RECORDS.length} edit buttons`);
     container.remove();
   });
@@ -174,7 +174,7 @@
     await page.init();
     await page.loadEntity('clients');
 
-    const createBtn = container.querySelector('.xt-btn--primary');
+    const createBtn = container.querySelector('[data-role="record-create"]');
     createBtn.click();
     assertEquals(receivedSlug, 'clients', 'onCreateNew should be called with "clients"');
     container.remove();
@@ -194,7 +194,7 @@
     await page.init();
     await page.loadEntity('clients');
 
-    const firstEditBtn = container.querySelector('.xt-btn--sm');
+    const firstEditBtn = container.querySelector('[data-role="record-edit"]');
     assertTrue(firstEditBtn !== null, 'Expected at least one edit button');
     firstEditBtn.click();
     assertTrue(editArgs !== null, 'onEdit should have been called');
@@ -238,7 +238,7 @@
     });
     await page.submit();
     assertTrue(!savedCalled, 'onSaved should not be called when validation fails');
-    const errors = container.querySelectorAll('.xt-field-errors');
+    const errors = container.querySelectorAll('[data-role="field-errors"]');
     assertTrue(errors.length > 0, 'Expected validation error elements');
     container.remove();
   });
@@ -281,7 +281,7 @@
 
     await page.submit();
 
-    const banner = container.querySelector('.xt-edit-error-banner');
+    const banner = container.querySelector('[data-role="entity-edit-error"]');
     assertTrue(banner !== null && !banner.hidden, 'Error banner should be visible');
     container.remove();
   });
@@ -294,7 +294,7 @@
       onCancel: () => { cancelCalled = true; },
     });
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const cancelBtn = container.querySelector('.xt-btn--secondary');
+    const cancelBtn = container.querySelector('[data-role="entity-edit-cancel"]');
     assertTrue(cancelBtn !== null, 'Expected cancel button');
     cancelBtn.click();
     assertTrue(cancelCalled, 'onCancel should be called on cancel click');
@@ -338,14 +338,14 @@
             if (phoneInput) phoneInput.value = '+34 600 000 000';
           }
           // EntityEdit listens to click on the save button, not form submit
-          const saveBtn = container.querySelector('.xt-btn--primary');
+          const saveBtn = container.querySelector('[data-role="entity-edit-save"]');
           if (saveBtn) saveBtn.click();
         },
       });
       entityListPage.init().then(() => {
         entityListPage.loadEntity('clients').then(() => {
           // Click "Crear nuevo registro" to trigger onCreateNew
-          const btn = container.querySelector('.xt-create-btn');
+          const btn = container.querySelector('[data-role="record-create"]');
           if (btn) btn.click();
         });
       });

@@ -35,30 +35,30 @@ export class UserProfile extends UserConfig {
 
     return `
       <label>
-        <span>Contraseña actual</span>
-        <input type="password" name="currentPassword" value="${this.escapeHtml(initialCurrentPassword)}" class="${this.fieldErrorClass('currentPassword')}" />
+        <span class="text-sm font-medium text-slate-700">Contraseña actual</span>
+        <input type="password" name="currentPassword" value="${this.escapeHtml(initialCurrentPassword)}" class="w-full rounded-lg text-sm text-slate-900 ${this.fieldErrorClass('currentPassword')}" />
         ${this.fieldErrorMarkup('currentPassword')}
       </label>
       <label>
-        <span>Nueva contraseña</span>
-        <input type="password" name="newPassword" value="${this.escapeHtml(initialNewPassword)}" class="${this.fieldErrorClass('newPassword')}" />
+        <span class="text-sm font-medium text-slate-700">Nueva contraseña</span>
+        <input type="password" name="newPassword" value="${this.escapeHtml(initialNewPassword)}" class="w-full rounded-lg text-sm text-slate-900 ${this.fieldErrorClass('newPassword')}" />
         ${this.fieldErrorMarkup('newPassword')}
       </label>
-      <div class="xt-password-strength" data-password-strength>
-        <div class="xt-password-strength__meter">
-          <div class="xt-password-strength__fill"></div>
+      <div class="grid gap-2" data-password-strength>
+        <div class="h-2 overflow-hidden rounded-full bg-slate-200" data-role="password-meter">
+          <div class="h-full w-0 bg-slate-400" data-role="password-fill"></div>
         </div>
-        <div class="xt-password-strength__legend">
-          <div class="xt-password-strength__legend-item" data-rule="length"><span class="xt-password-strength__legend-icon">•</span><span>Más de 9 caracteres</span></div>
-          <div class="xt-password-strength__legend-item" data-rule="upper"><span class="xt-password-strength__legend-icon">•</span><span>Al menos una mayúscula</span></div>
-          <div class="xt-password-strength__legend-item" data-rule="lower"><span class="xt-password-strength__legend-icon">•</span><span>Al menos una minúscula</span></div>
-          <div class="xt-password-strength__legend-item" data-rule="symbol"><span class="xt-password-strength__legend-icon">•</span><span>Al menos un símbolo</span></div>
-          <div class="xt-password-strength__legend-item" data-rule="different"><span class="xt-password-strength__legend-icon">•</span><span>No puede ser igual a la contraseña actual</span></div>
+        <div class="grid gap-1 text-xs text-slate-600" data-role="password-rules">
+          <div class="flex items-center gap-2" data-role="password-rule" data-rule="length"><span data-role="password-rule-icon" class="text-slate-400">•</span><span>Más de 9 caracteres</span></div>
+          <div class="flex items-center gap-2" data-role="password-rule" data-rule="upper"><span data-role="password-rule-icon" class="text-slate-400">•</span><span>Al menos una mayúscula</span></div>
+          <div class="flex items-center gap-2" data-role="password-rule" data-rule="lower"><span data-role="password-rule-icon" class="text-slate-400">•</span><span>Al menos una minúscula</span></div>
+          <div class="flex items-center gap-2" data-role="password-rule" data-rule="symbol"><span data-role="password-rule-icon" class="text-slate-400">•</span><span>Al menos un símbolo</span></div>
+          <div class="flex items-center gap-2" data-role="password-rule" data-rule="different"><span data-role="password-rule-icon" class="text-slate-400">•</span><span>No puede ser igual a la contraseña actual</span></div>
         </div>
       </div>
       <label>
-        <span>Repetir nueva contraseña</span>
-        <input type="password" name="confirmPassword" value="${this.escapeHtml(initialConfirmPassword)}" class="${this.fieldErrorClass('confirmPassword')}" />
+        <span class="text-sm font-medium text-slate-700">Repetir nueva contraseña</span>
+        <input type="password" name="confirmPassword" value="${this.escapeHtml(initialConfirmPassword)}" class="w-full rounded-lg text-sm text-slate-900 ${this.fieldErrorClass('confirmPassword')}" />
         ${this.fieldErrorMarkup('confirmPassword')}
       </label>
     `;
@@ -181,8 +181,8 @@ export class UserProfile extends UserConfig {
 
   updatePasswordStrengthWidget(strengthWidget, value, currentPassword) {
     const complexity = this.evaluateProfilePasswordComplexity(value, currentPassword);
-    const fill = strengthWidget.querySelector('.xt-password-strength__fill');
-    const items = strengthWidget.querySelectorAll('.xt-password-strength__legend-item');
+    const fill = strengthWidget.querySelector('[data-role="password-fill"]');
+    const items = strengthWidget.querySelectorAll('[data-role="password-rule"]');
 
     if (fill instanceof HTMLElement) {
       fill.style.width = `${complexity.score}%`;
@@ -192,10 +192,13 @@ export class UserProfile extends UserConfig {
     items.forEach((item) => {
       const ruleName = item.dataset.rule;
       const ruleState = complexity.rules[ruleName];
-      item.classList.toggle('xt-password-strength__legend-item--ok', ruleState === true);
-      item.classList.toggle('xt-password-strength__legend-item--fail', ruleState === false);
-      const icon = item.querySelector('.xt-password-strength__legend-icon');
+      item.classList.toggle('text-emerald-700', ruleState === true);
+      item.classList.toggle('text-red-700', ruleState === false);
+      const icon = item.querySelector('[data-role="password-rule-icon"]');
       if (icon instanceof HTMLElement) {
+        icon.classList.toggle('text-emerald-600', ruleState === true);
+        icon.classList.toggle('text-red-600', ruleState === false);
+        icon.classList.toggle('text-slate-400', ruleState !== true && ruleState !== false);
         icon.textContent = this.profileRuleIcon(ruleState);
       }
     });

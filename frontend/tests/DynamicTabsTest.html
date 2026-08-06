@@ -76,16 +76,16 @@
     });
     tabs.render();
 
-    const bar = container.querySelector('.xt-tabs__bar');
-    assertTrue(bar !== null, 'Expected .xt-tabs__bar');
+    const bar = container.querySelector('[data-role="tabs-bar"]');
+    assertTrue(bar !== null, 'Expected [data-role="tabs-bar"]');
 
-    const buttons = bar.querySelectorAll('.xt-tabs__btn');
+    const buttons = bar.querySelectorAll('[data-role="tabs-button"]');
     assertEquals(buttons.length, 2, 'Expected 2 tab buttons');
     assertEquals(buttons[0].textContent, 'General', 'First tab label');
     assertEquals(buttons[1].textContent, 'Notas', 'Second tab label');
 
-    const content = container.querySelector('.xt-tabs__content');
-    assertTrue(content !== null, 'Expected .xt-tabs__content');
+    const content = container.querySelector('[data-role="tabs-content"]');
+    assertTrue(content !== null, 'Expected [data-role="tabs-content"]');
     assertTrue(content.textContent.includes('Contenido general'), 'First tab content visible on render');
 
     tabs.destroy();
@@ -104,10 +104,10 @@
 
     assertEquals(tabs.getActiveTab(), 'b', 'Active tab should be b');
 
-    const content = container.querySelector('.xt-tabs__content');
+    const content = container.querySelector('[data-role="tabs-content"]');
     assertTrue(content.textContent.includes('Contenido B'), 'Content B should be visible');
 
-    const activeBtn = container.querySelector('.xt-tabs__btn--active');
+    const activeBtn = container.querySelector('[data-role="tabs-button"]--active');
     assertTrue(activeBtn !== null, 'Should have an active button');
     assertEquals(activeBtn.dataset.tabId, 'b', 'Active button should be b');
     assertEquals(activeBtn.getAttribute('aria-selected'), 'true', 'aria-selected true on active');
@@ -142,8 +142,8 @@
 
     tabs.registerTab({ id: 'plugin-tab', label: 'Plugin', content: () => 'Plugin content' });
 
-    const bar = container.querySelector('.xt-tabs__bar');
-    const buttons = bar.querySelectorAll('.xt-tabs__btn');
+    const bar = container.querySelector('[data-role="tabs-bar"]');
+    const buttons = bar.querySelectorAll('[data-role="tabs-button"]');
     assertEquals(buttons.length, 2, 'Should have 2 tabs after registerTab');
 
     const pluginBtn = container.querySelector('[data-tab-id="plugin-tab"]');
@@ -152,7 +152,7 @@
 
     pluginBtn.click();
     assertEquals(tabs.getActiveTab(), 'plugin-tab', 'Active tab should be plugin-tab after click');
-    const content = container.querySelector('.xt-tabs__content');
+    const content = container.querySelector('[data-role="tabs-content"]');
     assertTrue(content.textContent.includes('Plugin content'), 'Plugin content visible after click');
 
     tabs.destroy();
@@ -168,7 +168,7 @@
 
     tabs.registerTab({ id: 'dup', label: 'Dup2', content: () => 'D2' });
 
-    const buttons = container.querySelectorAll('.xt-tabs__btn');
+    const buttons = container.querySelectorAll('[data-role="tabs-button"]');
     assertEquals(buttons.length, 1, 'Duplicate tab should be ignored');
 
     tabs.destroy();
@@ -181,10 +181,10 @@
       ],
     });
     tabs.render();
-    assertTrue(container.querySelector('.xt-tabs') !== null, 'DOM should exist before destroy');
+    assertTrue(container.querySelector('[data-role="tabs-root"]') !== null, 'DOM should exist before destroy');
 
     tabs.destroy();
-    assertTrue(container.querySelector('.xt-tabs') === null, 'DOM should be removed after destroy');
+    assertTrue(container.querySelector('[data-role="tabs-root"]') === null, 'DOM should be removed after destroy');
     assertEquals(tabs.getActiveTab(), null, 'Active tab should be null after destroy');
   });
 

@@ -10,7 +10,7 @@ define los estandares tecnicos que deben aplicar personas, agentes y herramienta
 - Preferir los patrones existentes del proyecto antes de introducir nuevas
   abstracciones.
 - Evitar refactors no relacionados con la tarea en curso.
-- Anadir o ajustar tests cuando se corrija una regresion o se toque un flujo con
+- Añadir o ajustar tests cuando se corrija una regresion o se toque un flujo con
   riesgo funcional.
 - No dejar codigo de depuracion, comentarios obsoletos ni archivos generados de
   runtime en control de versiones.
@@ -109,7 +109,7 @@ SonarQube lo detecte.
 - Sin codigo comentado; el historial de git conserva el codigo antiguo.
 - Sin parametros de funcion no usados; si la firma es fija por interfaz, suprimir
   con `// NOSONAR`.
-- Sin bloques de codigo vacios; usar `fn() => null` para handlers no-op o anadir
+- Sin bloques de codigo vacios; usar `fn() => null` para handlers no-op o añadir
   un `return;` con comentario.
 - Usar clases de caracteres abreviadas en regex cuando aplique: `\w`, `\d`, `\s`.
 

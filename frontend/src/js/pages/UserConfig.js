@@ -142,7 +142,9 @@ export class UserConfig {
   }
 
   fieldErrorClass(fieldName) {
-    return this.isFieldError(fieldName) ? 'xt-form__input--error' : '';
+    return this.isFieldError(fieldName)
+      ? 'border-red-300 ring-2 ring-red-200 focus:border-red-400 focus:ring-red-200'
+      : 'border-slate-300 focus:border-brand-500 focus:ring-brand-500';
   }
 
   fieldErrorMarkup(fieldName) {
@@ -151,7 +153,7 @@ export class UserConfig {
       return '';
     }
 
-    return `<p class="xt-form__field-error">${this.escapeHtml(message)}</p>`;
+    return `<p class="mt-1 text-xs font-medium text-red-700">${this.escapeHtml(message)}</p>`;
   }
 
   setPageMessage(message, type) {
@@ -226,22 +228,23 @@ export class UserConfig {
     this.#container.replaceChildren();
 
     const wrapper = document.createElement('section');
-    wrapper.className = 'xt-page xt-page--profile xt-page--user-config';
+    wrapper.className = 'grid gap-4';
     wrapper.dataset.page = 'user-config';
 
     const heading = document.createElement('h2');
+    heading.className = 'text-2xl font-semibold tracking-tight text-slateui-950';
     heading.textContent = this.#title;
     wrapper.appendChild(heading);
 
     const subtitle = document.createElement('p');
-    subtitle.className = 'xt-page__subtitle';
+    subtitle.className = 'text-sm text-slate-500';
     subtitle.textContent = this.#subtitle;
     wrapper.appendChild(subtitle);
 
     const top = document.createElement('div');
-    top.className = 'xt-page__toolbar';
+    top.className = 'flex flex-wrap items-center justify-between gap-2';
     if (this.#onBack !== null) {
-      const back = this.#makeButton('Volver al listado', 'xt-btn xt-btn--secondary xt-btn--sm', () => {
+      const back = this.#makeButton('Volver al listado', '', () => {
         this.#onBack();
       });
       top.appendChild(back);
@@ -254,12 +257,12 @@ export class UserConfig {
     }
 
     const card = document.createElement('div');
-    card.className = 'xt-page__card';
+    card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
 
     const user = this.#resolveUser();
     if (user === null || typeof user !== 'object') {
       const empty = document.createElement('p');
-      empty.className = 'xt-placeholder';
+      empty.className = 'rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500';
       empty.textContent = 'No se encontró el usuario solicitado.';
       card.appendChild(empty);
       wrapper.appendChild(card);
@@ -268,7 +271,7 @@ export class UserConfig {
     }
 
     const form = document.createElement('form');
-    form.className = 'xt-form';
+    form.className = 'grid gap-4';
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       void this.#submitForm(form);
@@ -293,7 +296,7 @@ export class UserConfig {
     let avatarMarkup = `<span>${this.escapeHtml(this.#getInitials(initialName, initialEmail))}</span>`;
     const avatarImage = this.#stringValue(initialAvatar);
     if (avatarImage !== '') {
-      avatarMarkup = `<img class="xt-avatar-editor__image" src="${this.escapeHtml(avatarImage)}" alt="Avatar actual" />`;
+      avatarMarkup = `<img class="h-full w-full object-cover" src="${this.escapeHtml(avatarImage)}" alt="Avatar actual" />`;
     }
 
     const adminSelected = initialRole === 'admin' ? 'selected' : '';
@@ -302,8 +305,8 @@ export class UserConfig {
     const roleMarkup = this.showRoleField()
       ? `
       <label>
-        <span>Rol</span>
-        <select name="role">
+        <span class="text-sm font-medium text-slate-700">Rol</span>
+        <select class="w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500" name="role">
           <option value="admin" ${adminSelected}>Administrador</option>
           <option value="user" ${userSelected}>Usuario</option>
         </select>
@@ -314,11 +317,11 @@ export class UserConfig {
     const additionalFieldsMarkup = this.renderAdditionalFields();
 
     const resetButtonMarkup = this.showResetButton()
-      ? '<button class="xt-btn xt-btn--secondary" type="button" data-userconfig-reset>Reset password</button>'
+      ? '<button class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" type="button" data-userconfig-reset>Reset password</button>'
       : '';
 
     const deleteButtonMarkup = this.showDeleteButton()
-      ? '<button class="xt-btn xt-btn--secondary xt-btn--danger" type="button" data-userconfig-delete>Borrar usuario</button>'
+      ? '<button class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50" type="button" data-userconfig-delete>Borrar usuario</button>'
       : '';
 
     const temporaryPasswordMarkup = this.#temporaryPassword !== null
@@ -328,39 +331,41 @@ export class UserConfig {
     const uploadLabel = avatarImage === '' ? 'Subir avatar' : 'Cambiar avatar';
     const removeAvatarMarkup = avatarImage === ''
       ? ''
-      : '<button class="xt-btn xt-btn--secondary" type="button" data-userconfig-remove-avatar>Quitar avatar</button>';
+      : '<button class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" type="button" data-userconfig-remove-avatar>Quitar avatar</button>';
 
     return `
-      <div class="xt-avatar-editor">
-        <div class="xt-avatar-editor__circle">${avatarMarkup}</div>
-        <div class="xt-avatar-editor__meta">
-          <p class="xt-avatar-editor__title">Avatar</p>
-          <p class="xt-avatar-editor__help">JPG/PNG hasta 2MB.</p>
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-sm font-bold text-brand-700">${avatarMarkup}</div>
+        <div class="grid gap-0.5">
+          <p class="text-sm font-semibold text-slateui-950">Avatar</p>
+          <p class="text-xs text-slate-500">JPG/PNG hasta 2MB.</p>
         </div>
-        <div class="xt-avatar-editor__actions">
-          <button class="xt-btn xt-btn--secondary" type="button" data-userconfig-select-avatar>${uploadLabel}</button>
+        <div class="inline-flex flex-wrap items-center gap-2">
+          <button class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" type="button" data-userconfig-select-avatar>${uploadLabel}</button>
           ${removeAvatarMarkup}
         </div>
         <input type="file" accept="image/png,image/jpeg,image/webp" data-userconfig-avatar-file hidden />
         <input type="hidden" name="avatar" value="${this.escapeHtml(avatarImage)}" data-userconfig-avatar-value />
       </div>
       <label>
-        <span>Nombre</span>
-        <input type="text" name="name" value="${this.escapeHtml(initialName)}" />
+        <span class="text-sm font-medium text-slate-700">Nombre</span>
+        <input class="w-full rounded-lg ${this.fieldErrorClass('name')} text-sm text-slate-900" type="text" name="name" value="${this.escapeHtml(initialName)}" />
+        ${this.fieldErrorMarkup('name')}
       </label>
       <label>
-        <span>Email</span>
-        <input type="email" name="email" value="${this.escapeHtml(initialEmail)}" />
+        <span class="text-sm font-medium text-slate-700">Email</span>
+        <input class="w-full rounded-lg ${this.fieldErrorClass('email')} text-sm text-slate-900" type="email" name="email" value="${this.escapeHtml(initialEmail)}" />
+        ${this.fieldErrorMarkup('email')}
       </label>
       ${roleMarkup}
       ${additionalFieldsMarkup}
       <label>
-        <span>Fecha alta</span>
-        <input type="date" name="createdAt" value="${this.escapeHtml(createdAt)}" disabled />
+        <span class="text-sm font-medium text-slate-700">Fecha alta</span>
+        <input class="w-full rounded-lg border-slate-300 bg-slate-100 text-sm text-slate-500" type="date" name="createdAt" value="${this.escapeHtml(createdAt)}" disabled />
       </label>
-      <p class="xt-form__error" hidden data-userconfig-error></p>
-      <div class="xt-form__actions">
-        <button class="xt-btn xt-btn--primary" type="submit">Guardar cambios</button>
+      <p class="text-sm text-red-700" hidden data-userconfig-error></p>
+      <div class="flex flex-wrap gap-2">
+        <button class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" type="submit">Guardar cambios</button>
         ${resetButtonMarkup}
         ${deleteButtonMarkup}
       </div>
@@ -642,7 +647,7 @@ export class UserConfig {
     }
 
     const feedback = document.createElement('div');
-    feedback.className = `xt-page__feedback xt-page__feedback--${this.#messageType ?? 'success'}`;
+    feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
     feedback.textContent = this.#message;
     return feedback;
   }
@@ -660,9 +665,9 @@ export class UserConfig {
 
   #temporaryPasswordMarkup(temporaryPassword) {
     return `
-      <div class="xt-form__result">
-        <input type="text" readonly value="${this.escapeHtml(temporaryPassword)}" class="xt-form__output" />
-        <button class="xt-btn xt-btn--secondary xt-btn--sm" type="button" data-userconfig-copy-password>Copiar</button>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input type="text" readonly value="${this.escapeHtml(temporaryPassword)}" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-sm text-slate-700" />
+        <button class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" type="button" data-userconfig-copy-password>Copiar</button>
       </div>
     `;
   }
@@ -670,7 +675,7 @@ export class UserConfig {
   #makeButton(label, className, onClick) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = className;
+    button.className = `${className} inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100`;
     button.textContent = label;
     button.addEventListener('click', onClick);
     return button;

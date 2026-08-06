@@ -88,14 +88,17 @@ async function renderDashboard(container) {
   container.replaceChildren();
 
   const shell = document.createElement('section');
-  shell.className = 'xt-shell';
+  shell.className = 'mx-auto flex min-h-screen w-full max-w-[1280px] flex-col';
+  shell.dataset.role = 'app-shell';
 
   const navbarEl = document.createElement('div');
-  navbarEl.className = 'xt-shell__navbar';
+  navbarEl.className = 'sticky top-0 z-50';
+  navbarEl.dataset.role = 'shell-navbar';
   shell.appendChild(navbarEl);
 
   const content = document.createElement('main');
-  content.className = 'xt-shell__content';
+  content.className = 'flex-1 px-3 py-4 sm:px-4 sm:py-6';
+  content.dataset.role = 'shell-content';
   shell.appendChild(content);
 
   container.appendChild(shell);
@@ -526,7 +529,8 @@ function resolveUserRoles(value, fallbackValue) {
 
 function showPlaceholder(container, message) {
   const msg = document.createElement('p');
-  msg.className = 'xt-placeholder';
+  msg.className = 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500';
+  msg.dataset.role = 'placeholder';
   msg.textContent = message;
   container.replaceChildren(msg);
 }
