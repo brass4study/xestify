@@ -98,6 +98,9 @@ if (!function_exists('xestifyRegisterEntityServices')) {
         $container->singleton(GenericRepository::class, fn() => new GenericRepository(
             $container->get(Database::class)
         ));
+        $container->singleton(UserRepository::class, fn() => new UserRepository(
+            $container->get(Database::class)
+        ));
         $container->singleton(EntityService::class, fn() => new EntityService(
             $container->get(GenericRepository::class),
             $container->get(ValidationService::class),

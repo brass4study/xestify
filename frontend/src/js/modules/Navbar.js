@@ -117,7 +117,7 @@ export class Navbar {
     }
 
     userEl.replaceChildren();
-    const menu = new UserMenu(userEl, {
+    new UserMenu(userEl, {
       name: this.#userName,
       email: this.#userEmail,
       avatar: this.#avatar,

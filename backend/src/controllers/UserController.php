@@ -11,13 +11,15 @@ use Xestify\repositories\UserRepository;
 
 class UserController
 {
-    private const MSG_AUTH_REQUIRED = 'Authentication required.';
-    private const MSG_USER_NOT_FOUND = 'User not found.';
-    private const MSG_ADMIN_REQUIRED = 'Admin role is required.';
-    private const MSG_USER_ID_REQUIRED = 'User id is required.';
-    private const MSG_EMAIL_CHANGE_PASSWORD_REQUIRED = 'Current password is required when changing email.';
-    private const MSG_SELF_DELETE_FORBIDDEN = 'You cannot delete your own account.';
-    private const MSG_SELF_DELETE_DETAIL = 'Self-deletion is not allowed.';
+    private const MSG_AUTH_REQUIRED = 'Se requiere autenticación.';
+    private const MSG_USER_NOT_FOUND = 'No se encontró el usuario.';
+    private const MSG_ADMIN_REQUIRED = 'Se requiere rol de administrador.';
+    private const MSG_USER_ID_REQUIRED = 'Se requiere el id del usuario.';
+    private const MSG_EMAIL_CHANGE_SECRET_REQUIRED = 'Se requiere la contraseña actual al cambiar la dirección de correo.';
+    private const MSG_SECRET_CHANGE_REQUIRED = 'Se requiere la contraseña actual al cambiar la contraseña.';
+    private const MSG_SECRET_MISMATCH = 'La contraseña actual es incorrecta.';
+    private const MSG_SELF_DELETE_FORBIDDEN = 'No puedes eliminar tu propia cuenta.';
+    private const MSG_SELF_DELETE_DETAIL = 'No está permitido eliminarse a sí mismo.';
 
     public function __construct(private UserRepository $repository)
     {
@@ -48,31 +50,26 @@ class UserController
         $this->ignoreParams($params);
         $request ??= new Request();
         $user = $this->authenticatedUser($request);
-
         if ($user === null) {
-            Response::make()->unauthorized('Authentication required.');
+            Response::make()->unauthorized(self::MSG_AUTH_REQUIRED);
             return;
         }
 
         $payload = $request->allBody();
-        $id = (string) $user['sub'];
-
-        if (isset($payload['email']) && (string) $payload['email'] !== '') {
-            $currentPassword = (string) ($payload['current_password'] ?? '');
-            if ($currentPassword === '') {
-                Response::make()->unprocessable(self::MSG_EMAIL_CHANGE_PASSWORD_REQUIRED, [
-                    'current_password' => ['Required.'],
-                ]);
-                return;
-            }
+        $id = (string) ($user['sub'] ?? '');
+        if ($id === '') {
+            Response::make()->unauthorized(self::MSG_AUTH_REQUIRED);
+            return;
         }
 
-        $updated = $this->repository->update($id, [
-            'name' => $payload['name'] ?? null,
-            'email' => $payload['email'] ?? null,
-            'avatar' => $payload['avatar'] ?? null,
-        ]);
+        $isEmailChange = $this->isEmailChange($payload);
+        $isPasswordChange = $this->isPasswordChange($payload);
+        if (!$this->validateCurrentSecret($payload, $id, $isEmailChange, $isPasswordChange)) {
+            return;
+        }
 
+        $updated = $this->repository->update($id, $this->buildProfileUpdateData($payload));
+        $this->updatePasswordIfNeeded($payload, $id);
         Response::make()->json($updated);
     }
 
@@ -186,6 +183,91 @@ class UserController
     private function ignoreParams(array $params): void
     {
         unset($params);
+    }
+
+    private function validateCurrentSecret(array $payload, string $id, bool $isEmailChange, bool $isPasswordChange): bool
+    {
+        if (!$isEmailChange && !$isPasswordChange) {
+            return true;
+        }
+
+        $profile = $this->repository->find($id);
+        if ($profile === null) {
+            Response::make()->notFound(self::MSG_USER_NOT_FOUND);
+            return false;
+        }
+
+        $requiresVerification = $this->requiresCurrentSecretVerification($payload, $profile, $isEmailChange, $isPasswordChange);
+        $currentPassword = (string) ($payload['current_password'] ?? '');
+        $isValid = true;
+
+        if ($requiresVerification && $currentPassword === '') {
+            $message = $isEmailChange ? self::MSG_EMAIL_CHANGE_SECRET_REQUIRED : self::MSG_SECRET_CHANGE_REQUIRED;
+            Response::make()->unprocessable($message, [
+                'current_password' => ['Requerido.'],
+            ]);
+            $isValid = false;
+        } elseif ($requiresVerification && !$this->passwordMatches($currentPassword, $profile)) {
+            Response::make()->unprocessable(self::MSG_SECRET_MISMATCH, [
+                'current_password' => ['Incorrecto.'],
+            ]);
+            $isValid = false;
+        }
+
+        return $isValid;
+    }
+
+    private function requiresCurrentSecretVerification(array $payload, array $profile, bool $isEmailChange, bool $isPasswordChange): bool
+    {
+        if ($isPasswordChange) {
+            return true;
+        }
+
+        return $isEmailChange && (string) ($payload['email'] ?? '') !== (string) ($profile['email'] ?? '');
+    }
+
+    private function isEmailChange(array $payload): bool
+    {
+        return isset($payload['email']) && (string) $payload['email'] !== '';
+    }
+
+    private function isPasswordChange(array $payload): bool
+    {
+        return isset($payload['password']) && (string) $payload['password'] !== '';
+    }
+
+    private function passwordMatches(string $currentPassword, array $profile): bool
+    {
+        $storedHash = (string) ($profile['password_hash'] ?? '');
+        return $storedHash !== '' && password_verify($currentPassword, $storedHash);
+    }
+
+    private function updatePasswordIfNeeded(array $payload, string $id): void
+    {
+        if (!isset($payload['password']) || (string) $payload['password'] === '') {
+            return;
+        }
+
+        $this->repository->updatePassword($id, password_hash((string) $payload['password'], PASSWORD_BCRYPT));
+    }
+
+    private function buildProfileUpdateData(array $payload): array
+    {
+        $data = [];
+
+        if (array_key_exists('name', $payload)) {
+            $data['name'] = $payload['name'];
+        }
+
+        if (array_key_exists('email', $payload) && (string) $payload['email'] !== '') {
+            $data['email'] = $payload['email'];
+        }
+
+        if (array_key_exists('avatar', $payload)) {
+            $data['avatar'] = $payload['avatar'];
+        }
+
+        return $data;
     }
 
     private function isAdmin(?Request $request): bool

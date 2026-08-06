@@ -116,7 +116,6 @@ export class UserMenu {
     });
 
     this.#container.style.position = 'relative';
-    this.#container.style.paddingBottom = '0.4rem';
 
     trigger.addEventListener('click', () => {
       this.#setOpen(!this.#open);

@@ -131,6 +131,41 @@ TestSuite::run('UserController::updateMe requires current password when changing
     }
 });
 
+TestSuite::run('UserController::updateMe updates the password when current password is valid', function () use ($pdo, $controller): void {
+    $user = insertUserRow($pdo, 'update-password-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'secret');
+
+    try {
+        $request = new Request([], ['password' => 'new-secret-123', 'current_password' => 'secret'], [], []);
+        $request->setUser(['sub' => (string) $user['id'], 'roles' => ['operador']]);
+
+        $response = captureControllerResponse(fn() => $controller->updateMe([], $request));
+
+        assertTrue(($response['ok'] ?? false) === true, 'Password update should succeed');
+        $meResponse = captureControllerResponse(function () use ($controller, $request): void {
+            $controller->me([], $request);
+        });
+        assertTrue(($meResponse['ok'] ?? false) === true, 'Profile call completed after password update');
+    } finally {
+        cleanupUserRow($pdo, (string) $user['id']);
+    }
+});
+
+TestSuite::run('UserController::updateMe allows name-only updates without current password when email is unchanged', function () use ($pdo, $controller): void {
+    $user = insertUserRow($pdo, 'name-only-' . uniqid('', true) . TEST_EMAIL_DOMAIN);
+
+    try {
+        $request = new Request([], ['name' => 'Updated Name', 'email' => $user['email']], [], []);
+        $request->setUser(['sub' => (string) $user['id'], 'roles' => ['operador']]);
+
+        $response = captureControllerResponse(fn() => $controller->updateMe([], $request));
+
+        assertTrue(($response['ok'] ?? false) === true, 'Name-only updates should succeed without current password');
+        assertEquals('Updated Name', (string) ($response['data']['name'] ?? ''), 'The name should be updated');
+    } finally {
+        cleanupUserRow($pdo, (string) $user['id']);
+    }
+});
+
 TestSuite::run('UserController::listUsers allows admins and returns active users', function () use ($pdo, $controller): void {
     $admin = insertUserRow($pdo, 'admin-list-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
     $user = insertUserRow($pdo, 'user-list-' . uniqid('', true) . TEST_EMAIL_DOMAIN);

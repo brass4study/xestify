@@ -12,41 +12,47 @@ import { UserManagement } from './pages/UserManagement.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
 const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
+const STORAGE_USER_NAME_KEY = 'xestify_user_name';
+const STORAGE_USER_AVATAR_KEY = 'xestify_user_avatar';
 const API_BASE = buildAppUrl('/api/v1');
 
 const app = document.getElementById('app');
+let currentNavbar = null;
+let navbarSubscription = null;
 
 if (app instanceof HTMLElement) {
   bootstrap(app);
 }
 
 function bootstrap(container) {
-  const token = localStorage.getItem(STORAGE_TOKEN_KEY);
-  const storedEmail = localStorage.getItem(STORAGE_USER_EMAIL_KEY);
+  return (async () => {
+    const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+    const storedEmail = localStorage.getItem(STORAGE_USER_EMAIL_KEY);
+    const storedName = localStorage.getItem(STORAGE_USER_NAME_KEY);
+    const storedAvatar = localStorage.getItem(STORAGE_USER_AVATAR_KEY);
 
-  if (token !== null && token !== '') {
-    setAuthToken(token);
-    const payload = decodeJwtPayload(token);
-    if (storedEmail !== null && storedEmail !== '') {
-      AppState.setUser({
-        email: storedEmail,
+    if (token !== null && token !== '') {
+      setAuthToken(token);
+      const payload = decodeJwtPayload(token);
+      const fallbackUser = {
+        email: storedEmail ?? (typeof payload?.email === 'string' ? payload.email : null),
+        name: storedName ?? null,
+        avatar: storedAvatar ?? null,
         roles: Array.isArray(payload?.roles) ? payload.roles : [],
-      });
-    } else if (typeof payload?.email === 'string') {
-      AppState.setUser({
-        email: payload.email,
-        roles: Array.isArray(payload?.roles) ? payload.roles : [],
-      });
+      };
+
+      AppState.setUser(fallbackUser);
+      await loadCurrentUserProfile(container, token, fallbackUser);
+      renderDashboard(container);
+      return;
     }
-    renderDashboard(container);
-    return;
-  }
 
-  if (storedEmail !== null && storedEmail !== '') {
-    AppState.setUser({ email: storedEmail, roles: [] });
-  }
+    if (storedEmail !== null && storedEmail !== '') {
+      AppState.setUser({ email: storedEmail, name: storedName ?? null, avatar: storedAvatar ?? null, roles: [] });
+    }
 
-  renderLogin(container);
+    renderLogin(container);
+  })();
 }
 
 function renderLogin(container) {
@@ -54,19 +60,21 @@ function renderLogin(container) {
 
   const loginPage = new Login(container, {
     api: loginApi,
-    onSuccess: ({ accessToken, email }) => {
+    onSuccess: async ({ accessToken, email }) => {
       localStorage.setItem(STORAGE_TOKEN_KEY, accessToken);
       setAuthToken(accessToken);
       const payload = decodeJwtPayload(accessToken);
+      const fallbackUser = {
+        email: typeof email === 'string' ? email : null,
+        roles: Array.isArray(payload?.roles) ? payload.roles : [],
+      };
       if (typeof email === 'string') {
-        AppState.setUser({
-          email,
-          roles: Array.isArray(payload?.roles) ? payload.roles : [],
-        });
+        AppState.setUser(fallbackUser);
         localStorage.setItem(STORAGE_USER_EMAIL_KEY, email);
       } else {
         localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
       }
+      await loadCurrentUserProfile(container, accessToken, fallbackUser);
       renderDashboard(container);
     },
   });
@@ -111,7 +119,12 @@ async function renderDashboard(container) {
   const avatar = currentUser && typeof currentUser === 'object' && typeof currentUser.avatar === 'string' ? currentUser.avatar : null;
   const userRoles = currentUser && typeof currentUser === 'object' && Array.isArray(currentUser.roles) ? currentUser.roles : [];
 
-  const navbar = new Navbar(navbarEl, {
+  if (navbarSubscription !== null) {
+    navbarSubscription();
+    navbarSubscription = null;
+  }
+
+  currentNavbar = new Navbar(navbarEl, {
     userEmail,
     userName,
     avatar,
@@ -127,7 +140,10 @@ async function renderDashboard(container) {
       navigateTo(page, content, dashboardApi);
     },
   });
-  navbar.setUserEmail(userEmail);
+  syncNavbarFromState(currentNavbar);
+  navbarSubscription = AppState.subscribe(() => {
+    syncNavbarFromState(currentNavbar);
+  });
 
   await navigateTo(initialPage, content, dashboardApi);
 }
@@ -151,12 +167,12 @@ async function navigateTo(page, content, api) {
   }
 
   if (page === 'profile') {
-    showProfilePage(content);
+    showProfilePage(content, api);
     return;
   }
 
   if (page === 'users') {
-    showUsersPage(content);
+    showUsersPage(content, api);
     return;
   }
 
@@ -190,19 +206,21 @@ async function showPluginsPage(content, api) {
   await pluginManager.init();
 }
 
-function showProfilePage(content) {
+function showProfilePage(content, api) {
   const currentUser = AppState.getUser();
   const displayUser = currentUser && typeof currentUser === 'object'
     ? {
         email: typeof currentUser.email === 'string' ? currentUser.email : AppState.getUserEmail(),
+        name: typeof currentUser.name === 'string' ? currentUser.name : null,
+        avatar: typeof currentUser.avatar === 'string' ? currentUser.avatar : null,
         roles: Array.isArray(currentUser.roles) ? currentUser.roles : [],
       }
     : { email: AppState.getUserEmail(), roles: [] };
-  const profilePage = new UserProfile(content, displayUser);
+  const profilePage = new UserProfile(content, displayUser, api);
   return profilePage;
 }
 
-function showUsersPage(content) {
+function showUsersPage(content, api) {
   if (!currentUserIsAdmin()) {
     showPlaceholder(content, 'Acceso denegado: solo administradores.');
     return;
@@ -337,6 +355,95 @@ function clearAuth() {
   AppState.reset();
   localStorage.removeItem(STORAGE_TOKEN_KEY);
   localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
+  localStorage.removeItem(STORAGE_USER_NAME_KEY);
+  localStorage.removeItem(STORAGE_USER_AVATAR_KEY);
+}
+
+function syncNavbarFromState(navbar) {
+  if (!(navbar instanceof Navbar)) {
+    return;
+  }
+
+  const currentUser = AppState.getUser();
+  const userEmail = AppState.getUserEmail();
+  const userName = currentUser && typeof currentUser === 'object' && typeof currentUser.name === 'string' ? currentUser.name : null;
+  const avatar = currentUser && typeof currentUser === 'object' && typeof currentUser.avatar === 'string' ? currentUser.avatar : null;
+  const userRoles = currentUser && typeof currentUser === 'object' && Array.isArray(currentUser.roles) ? currentUser.roles : [];
+
+  navbar.setUserEmail(userEmail);
+  navbar.setUserName(userName);
+  navbar.setAvatar(avatar);
+  navbar.setRoles(userRoles);
+}
+
+async function loadCurrentUserProfile(container, token, fallbackUser = null) {
+  const api = new Api(API_BASE);
+  api.setToken(token);
+
+  try {
+    const { data } = await api.get('/users/me');
+    const profile = normalizeUserProfile(data ?? {}, fallbackUser);
+    AppState.setUser(profile);
+    return profile;
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 401) {
+      clearAuth();
+      renderLogin(container);
+      return null;
+    }
+
+    const fallbackProfile = normalizeUserProfile(null, fallbackUser);
+    AppState.setUser(fallbackProfile);
+    return fallbackProfile;
+  }
+}
+
+function normalizeUserProfile(profile, fallbackUser = null) {
+  const baseUser = getUserObject(profile);
+  const fallback = getUserObject(fallbackUser);
+  const normalizedUser = {
+    id: null,
+    email: null,
+    name: null,
+    avatar: null,
+    roles: [],
+  };
+
+  normalizedUser.id = resolveUserString(baseUser.id, fallback.id);
+  normalizedUser.email = resolveUserString(baseUser.email, fallback.email);
+  normalizedUser.name = resolveUserString(baseUser.name, fallback.name);
+  normalizedUser.avatar = resolveUserString(baseUser.avatar, fallback.avatar);
+  normalizedUser.roles = resolveUserRoles(baseUser.roles, fallback.roles);
+
+  return normalizedUser;
+}
+
+function getUserObject(value) {
+  return value && typeof value === 'object' ? value : {};
+}
+
+function resolveUserString(value, fallbackValue) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof fallbackValue === 'string') {
+    return fallbackValue;
+  }
+
+  return null;
+}
+
+function resolveUserRoles(value, fallbackValue) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (Array.isArray(fallbackValue)) {
+    return fallbackValue;
+  }
+
+  return [];
 }
 
 function showPlaceholder(container, message) {

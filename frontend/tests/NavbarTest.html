@@ -100,6 +100,7 @@
 
   it('starts hidden and opens on hover', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
+    assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
     const menu = container.querySelector('.xt-user-menu__menu');
     assertTrue(menu !== null, 'Expected menu element');
     assertTrue(menu.hidden, 'Expected menu to start hidden');
@@ -109,6 +110,7 @@
 
   it('renders an avatar image when provided', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', avatar: 'https://example.test/avatar.png' });
+    assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
     const img = container.querySelector('.xt-user-menu__avatar img');
     assertTrue(img !== null, 'Expected avatar image element');
     assertEquals(img.getAttribute('src'), 'https://example.test/avatar.png', 'Avatar image should be used when available');
@@ -116,6 +118,7 @@
 
   it('shows the user management action for admins', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
+    assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
     const trigger = container.querySelector('.xt-user-menu__trigger');
     trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     const adminLink = container.querySelector('[data-menu-action="users"]');
@@ -129,6 +132,8 @@
       userName: 'Ana García',
       onNavigate: (page) => { navigatedTo = page; },
     });
+    navbar.setUserEmail('ana.garcia@xestify.local');
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const trigger = container.querySelector('.xt-user-menu__trigger');
     trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     const profileLink = container.querySelector('[data-menu-action="profile"]');
