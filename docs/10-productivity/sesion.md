@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-08-05
 **EPIC activo:** EPIC 8 - Gestión de usuarios (EN PROGRESO)  
-**Próxima story:** STORY 8.3 - Frontend - UserMenu dropdown en Navbar
+**Próxima story:** STORY 8.5 - Frontend - Página gestión de usuarios (`#/usuarios`)
 
 ---
 
@@ -107,8 +107,6 @@
 - `backend/tests/integration/GenericRepositoryTest.php` — 7 tests
 - `backend/tests/integration/MigrationIdempotenceTest.php` — 3 tests (idempotencia 001-005)
 
-### ⏭ EPIC 3-5 — Pendiente
-
 ### ✅ EPIC 3 — Motor de Entidades Dinámicas (COMPLETADO)
 
 | Story | Descripción | Commit | Tests |
@@ -155,24 +153,6 @@
 | 5.3c ✅ | Fix: Router params `{slug}` + tabla registros (tamaño y datos) | `722990c` | — |
 | 5.4 ✅ | Frontend - Crear Modal/Dialog reutilizable | `041ba40` | 5/5 ✅ |
 | 5.5 ✅ | Frontend - Mejoras responsive + refinamiento UX navbar/tabla | `84d0b70` | — |
-### ✅ EPIC 8 — Gestión de usuarios (EN PROGRESO)
-
-| Story | Descripción | Estado | Verificación |
-|-------|-------------|--------|--------------|
-| 8.1 | Backend - Migracion de perfil y UserRepository | ✅ Implementada | `php backend/tests/integration/UserRepositoryTest.php` → 5/5 tests |
-| 8.2 | Backend - UserController y rutas REST | ✅ Implementada | `php backend/tests/integration/UserControllerTest.php` → 4/4 tests |
-
-**Detalle de la story 8.1:**
-- `backend/database/migrations/001_users.sql` incorpora `name`, `avatar` y `deleted_at` sobre la tabla `users`.
-- `backend/src/repositories/UserRepository.php` implementa `find`, `all`, `update`, `delete` y `updatePassword` con filtrado por borrado lógico y cleanup de usuarios de prueba.
-- `backend/tests/integration/UserRepositoryTest.php` añade cobertura de perfil, actualización y borrado lógico.
-- `backend/src/controllers/AuthController.php` bloquea el login para usuarios marcados como borrados.
-- `backend/tests/integration/AuthControllerTest.php` añade un test de regresión para usuarios eliminados.
-
-**Detalle de la story 8.2:**
-- `backend/src/controllers/UserController.php` añade endpoints para ver y actualizar el perfil propio, listar/mostrar/editar usuarios en modo admin y borrar usuarios con protección contra auto-borrado.
-- `backend/src/config/routes.php` y `backend/src/config/app.php` registran las rutas protegidas `/api/v1/users/me`, `/api/v1/users` y `/api/v1/users/{id}`.
-- `backend/tests/integration/UserControllerTest.php` cubre acceso al perfil, validación de cambio de email con password actual, listado admin y borrado lógico con guardas.
 
 ### 🔄 EPIC 6 — Plugins tipo Extension (EN PROGRESO)
 
@@ -186,6 +166,54 @@
 | 6.5-fix-b ✅ | Fix general: arquitectura plana de plugins + UI comments + documentación | `e97b3bf` | 9/9 + 3/3 ✅ |
 | sonar-fix ✅ | Fix SonarQube: 44 hallazgos (complejidad, literales, tipos, imports, parámetros) | `01e6041` | 9/9 + 3/3 ✅ |
 | 6.5 ✅ | Frontend - Página PluginManager | `7d2d313` | 28/28 backend + 12/12 E2E ✅ |
+
+### ✅ EPIC 7 — Actualizaciones de plugins y rollback (COMPLETADO)
+
+| Story | Descripción | Estado | Verificación |
+|-------|-------------|--------|--------------|
+| 7.1 | Detección de actualizaciones disponibles en PluginLoader | ✅ Implementada | `php backend/tests/run.php integration-plugins` |
+| 7.2 | Sync/update explícito con schema aditivo y snapshots | ✅ Implementada | `php backend/tests/run.php integration-db` |
+| 7.3 | Página de configuración de plugins activados | ✅ Implementada | `node --check frontend/src/js/pages/PluginConfig.js` |
+| 7.4 | Rollback manual de plugin a versión anterior | ✅ Implementada | `php backend/tests/integration/PluginManagerApiTest.php` |
+| 7.5 | UI de sincronización, update y rollback en PluginManager | ✅ Implementada | `node --check frontend/src/js/pages/PluginManager.js` |
+
+**Detalle del cierre de la EPIC 7:**
+- `PluginLoader` separa claramente `sync` y `update`, preservando runtime y registrando snapshots previos.
+- `PluginManager` expone acciones admin para sincronizar, actualizar y hacer rollback con feedback visual.
+- `plugin_update_history` permite restauraciones transaccionales y evita mutaciones implícitas en el boot.
+
+### ✅ EPIC 8 — Gestión de usuarios (EN PROGRESO)
+
+| Story | Descripción | Estado | Verificación |
+|-------|-------------|--------|--------------|
+| 8.1 | Backend - Migracion de perfil y UserRepository | ✅ Implementada | `php backend/tests/integration/UserRepositoryTest.php` → 5/5 tests |
+| 8.2 | Backend - UserController y rutas REST | ✅ Implementada | `php backend/tests/integration/UserControllerTest.php` → 4/4 tests |
+| 8.3 | Frontend - UserMenu dropdown en Navbar | ✅ Implementada | `frontend/tests/NavbarTest.html` + validación visual del menú |
+| 8.4 | Frontend - Página Mi Perfil (`#/profile`) | ✅ Implementada | `node --check frontend/src/js/pages/UserProfile.js` + `php backend/tests/integration/UserControllerTest.php` |
+
+**Detalle de la story 8.1:**
+- `backend/database/migrations/001_users.sql` incorpora `name`, `avatar` y `deleted_at` sobre la tabla `users`.
+- `backend/src/repositories/UserRepository.php` implementa `find`, `all`, `update`, `delete` y `updatePassword` con filtrado por borrado lógico y cleanup de usuarios de prueba.
+- `backend/tests/integration/UserRepositoryTest.php` añade cobertura de perfil, actualización y borrado lógico.
+- `backend/src/controllers/AuthController.php` bloquea el login para usuarios marcados como borrados.
+- `backend/tests/integration/AuthControllerTest.php` añade un test de regresión para usuarios eliminados.
+
+**Detalle de la story 8.2:**
+- `backend/src/controllers/UserController.php` añade endpoints para ver y actualizar el perfil propio, listar/mostrar/editar usuarios en modo admin y borrar usuarios con protección contra auto-borrado.
+- `backend/src/config/routes.php` y `backend/src/config/app.php` registran las rutas protegidas `/api/v1/users/me`, `/api/v1/users` y `/api/v1/users/{id}`.
+- `backend/tests/integration/UserControllerTest.php` cubre acceso al perfil, validación de cambio de email con password actual, listado admin y borrado lógico con guardas.
+
+**Detalle de la story 8.3:**
+- `frontend/src/js/modules/UserMenu.js` implementa el dropdown del usuario con avatar, nombre, actions de perfil/usuarios/logout y soporte para roles admin.
+- `frontend/src/js/modules/Navbar.js` integra el menú de usuario en la barra superior y enlaza las acciones con el shell principal.
+- `frontend/tests/NavbarTest.html` cubre render, hover y navegación desde el menu.
+
+**Detalle de la story 8.4:**
+- `frontend/src/js/pages/UserProfile.js` implementa la vista de perfil editable con carga desde `/api/v1/users/me`, validación inline, feedback visual y preservación de valores en errores.
+- `frontend/src/js/modules/State.js` y `frontend/src/js/modules/Navbar.js` sincronizan el estado global del usuario para que los cambios se reflejen sin recargar el shell.
+- `frontend/src/css/main.css` añade estilos para estados de error, fuerza de contraseña y feedback del formulario.
+- Verificación aplicada: `node --check frontend/src/js/pages/UserProfile.js` y `php backend/tests/integration/UserControllerTest.php`.
+
 ---
 
 ## Stack decidido

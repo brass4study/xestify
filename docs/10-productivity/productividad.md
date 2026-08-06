@@ -262,52 +262,6 @@
 
 ---
 
-## EPIC 8 — Gestión de usuarios
-
-### STORY 8.1: Backend - Migración de perfil y UserRepository
-- **Fecha:** 2026-08-05
-- **Estimado sin IA:** 3h
-- **Tiempo real con IA:** ~45 min
-- **Aceleración:** ~75% ⚡
-- **Qué hizo IA:**
-  - Añadió columnas de perfil (`name`, `avatar`, `deleted_at`) a la migración base de usuarios.
-  - Implementó `UserRepository` con CRUD orientado a perfil y borrado lógico.
-  - Añadió tests de integración para lectura, actualización, password y borrado.
-  - Ajustó el login para rechazar usuarios borrados.
-- **Iteraciones:** 2 (ajustes de limpieza de tests y validación de login)
-- **Decisión manual:** Mantener borrado lógico en `users` para conservar trazabilidad y bloquear acceso desde autenticación.
-
----
-
-## EPIC 8 — Gestión de usuarios
-
-### STORY 8.2: Backend - UserController y rutas REST
-- **Fecha:** 2026-08-05
-- **Estimado sin IA:** 3h
-- **Tiempo real con IA:** ~45 min
-- **Aceleración:** ~85% ⚡
-- **Qué hizo IA:**
-  - Implementó `UserController` con endpoints de perfil propio y administración.
-  - Registró rutas protegidas y wiring del controlador en el container.
-  - Generó tests de integración para perfil, validación de password y borrado lógico.
-- **Iteraciones:** 2 (ajuste de validaciones y revisión de SonarQube)
-- **Decisión manual:** Mantener el borrado lógico y bloquear el auto-borrado para admins.
-
-### STORY 8.3: Frontend - UserMenu dropdown en Navbar
-- **Fecha:** 2026-08-05
-- **Estimado sin IA:** 2h
-- **Tiempo real con IA:** ~1h 15m
-- **Aceleración:** ~63% ⚡
-- **Qué hizo IA:**
-  - Implementó el componente `UserMenu` con disparador, hover y acciones de perfil/usuarios/logout.
-  - Integró el menú en el navbar principal y conectó la navegación al shell de la aplicación.
-  - Ajustó estilos para que el dropdown se muestre correctamente y no colapse al pasar el cursor.
-  - Añadió una prueba aislada para validar render, hover y navegación.
-- **Iteraciones:** 3 (ajustes de hover, buffer de transición y revisión del comportamiento real)
-- **Decisión manual:** Mantener el menú como interacción de hover/simple click y dirigir las acciones a vistas reales dentro del shell.
-
----
-
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1: ValidationService (valida contra schema JSONB)
@@ -979,3 +933,59 @@
   - Verificó regresión con `PluginManagerApiTest` y grupo completo `integration-plugins`.
 - **Iteraciones:** 3
 - **Decisión manual:** Exponer `can_rollback` desde backend en el listado para evitar UI ambigua y cumplir el criterio de mostrar rollback únicamente cuando hay versión previa recuperable.
+
+---
+
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.1: Backend - Migración de perfil y UserRepository
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~75% ⚡
+- **Qué hizo IA:**
+  - Añadió columnas de perfil (`name`, `avatar`, `deleted_at`) a la migración base de usuarios.
+  - Implementó `UserRepository` con CRUD orientado a perfil y borrado lógico.
+  - Añadió tests de integración para lectura, actualización, password y borrado.
+  - Ajustó el login para rechazar usuarios borrados.
+- **Iteraciones:** 2 (ajustes de limpieza de tests y validación de login)
+- **Decisión manual:** Mantener borrado lógico en `users` para conservar trazabilidad y bloquear acceso desde autenticación.
+
+### STORY 8.2: Backend - UserController y rutas REST
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 3h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~85% ⚡
+- **Qué hizo IA:**
+  - Implementó `UserController` con endpoints de perfil propio y administración.
+  - Registró rutas protegidas y wiring del controlador en el container.
+  - Generó tests de integración para perfil, validación de password y borrado lógico.
+- **Iteraciones:** 2 (ajuste de validaciones y revisión de SonarQube)
+- **Decisión manual:** Mantener el borrado lógico y bloquear el auto-borrado para admins.
+
+### STORY 8.3: Frontend - UserMenu dropdown en Navbar
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 2h
+- **Tiempo real con IA:** ~1h 15m
+- **Aceleración:** ~63% ⚡
+- **Qué hizo IA:**
+  - Implementó el componente `UserMenu` con disparador, hover y acciones de perfil/usuarios/logout.
+  - Integró el menú en el navbar principal y conectó la navegación al shell de la aplicación.
+  - Ajustó estilos para que el dropdown se muestre correctamente y no colapse al pasar el cursor.
+  - Añadió una prueba aislada para validar render, hover y navegación.
+- **Iteraciones:** 3 (ajustes de hover, buffer de transición y revisión del comportamiento real)
+- **Decisión manual:** Mantener el menú como interacción de hover/simple click y dirigir las acciones a vistas reales dentro del shell.
+
+### STORY 8.4: Frontend - Página Mi Perfil (`#/profile`)
+- **Fecha:** 2026-08-05
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~2h 30m
+- **Aceleración:** ~62% ⚡
+- **Qué hizo IA:**
+  - Implementó la vista de perfil con formulario editable, carga de datos del usuario autenticado y guardado hacia el endpoint propio.
+  - Añadió validación inline para email y password, incluyendo feedback de fuerza de contraseña y preservación de valores en errores.
+  - Conectó la actualización del estado global con el navbar para que el cambio se refleje en tiempo real sin recargar.
+  - Ajustó mensajes de respuesta al español y cubrió la ruta con pruebas de integración y de UI.
+  - Registró el estado final de la story en los documentos de seguimiento de productividad para que la implementación quede trazada y reproducible.
+- **Iteraciones:** 4 (ajustes de validación, estado global, sincronización navbar y limpieza de hallazgos)
+- **Decisión manual:** Mantener el flujo de guardado simple y coherente con la arquitectura actual, sin introducir un segundo mecanismo de estado paralelo.

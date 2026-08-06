@@ -240,52 +240,6 @@ pero los directorios en minúsculas (core/). Corrige todo:
 
 ---
 
-## EPIC 8 — Gestión de usuarios
-
-### STORY 8.1 — Backend - Migración de perfil y UserRepository
-**Prompt:**
-```
-Implementa la story 8.1 para Xestify:
-- Añadir columnas de perfil y borrado lógico a users (`name`, `avatar`, `deleted_at`).
-- Crear/actualizar UserRepository con find, all, update, delete y updatePassword.
-- Añadir tests de integración para cubrir el perfil y el borrado lógico.
-- Asegurar que el login rechaza usuarios con deleted_at.
-```
-**Resultado:** Migración y repositorio funcionales, login protegido y tests de integración pasando.
-**Iteraciones:** 2
-**Lección:** El sitio de decisión para el borrado debe ser el login y el repositorio, no solo la capa de datos.
-
----
-
-## EPIC 8 — Gestión de usuarios
-
-### STORY 8.2 — Backend - UserController y rutas REST
-**Prompt:**
-```
-Implementa la story 8.2 para Xestify:
-- Añadir un UserController con endpoints protegidos para /api/v1/users/me, /api/v1/users y /api/v1/users/{id}.
-- Permitir ver y actualizar el perfil propio, listar/mostrar/editar usuarios desde admin y hacer borrado lógico con bloqueo de self-delete.
-- Añadir tests de integración y revisar los hallazgos de calidad del código.
-```
-**Resultado:** Controller funcional con rutas protegidas, lógica de permisos y tests de integración pasando.
-**Iteraciones:** 2
-**Lección:** El flujo de perfil propio debe exigir password actual en cambios de email y el borrado debe ser lógico con guardas explícitas.
-
-### STORY 8.3 — Frontend - UserMenu dropdown en Navbar
-**Prompt:**
-```
-Implementa la story 8.3 para Xestify:
-- Añadir un dropdown de usuario en el navbar para mostrar acciones como Mi perfil, Gestión de usuarios y Cerrar sesión.
-- Hacer que el menú se abra al hover y se mantenga estable al pasar del botón al desplegable.
-- Conectar las acciones al shell principal para que muestren vistas reales en lugar de placeholders.
-- Añadir una prueba HTML de regresión para cubrir el comportamiento del menú.
-```
-**Resultado:** Dropdown funcional, navegación real desde el menú y test aislado de hover/acciones pasando.
-**Iteraciones:** 3
-**Lección:** El hover del menú necesita un buffer visual y un contenedor dedicado para evitar que el cursor lo cierre al cruzar el gap entre botón y desplegable.
-
----
-
 ## EPIC 3 — Motor de Entidades Dinámicas
 
 ### STORY 3.1 — ValidationService (valida contra schema JSONB)
@@ -1016,3 +970,59 @@ Ok, continuemos con la story 7.5
 **Iteraciones:** 3
 
 **Leccion:** Para UX operativa de plugins, no basta con exponer endpoints: conviene publicar también señales de estado derivadas (`can_rollback`) para que el frontend ofrezca acciones válidas y evite flujos fallidos por diseño.
+
+---
+
+## EPIC 8 — Gestión de usuarios
+
+### STORY 8.1 — Backend - Migración de perfil y UserRepository
+**Prompt:**
+```
+Implementa la story 8.1 para Xestify:
+- Añadir columnas de perfil y borrado lógico a users (`name`, `avatar`, `deleted_at`).
+- Crear/actualizar UserRepository con find, all, update, delete y updatePassword.
+- Añadir tests de integración para cubrir el perfil y el borrado lógico.
+- Asegurar que el login rechaza usuarios con deleted_at.
+```
+**Resultado:** Migración y repositorio funcionales, login protegido y tests de integración pasando.
+**Iteraciones:** 2
+**Lección:** El sitio de decisión para el borrado debe ser el login y el repositorio, no solo la capa de datos.
+
+### STORY 8.2 — Backend - UserController y rutas REST
+**Prompt:**
+```
+Implementa la story 8.2 para Xestify:
+- Añadir un UserController con endpoints protegidos para /api/v1/users/me, /api/v1/users y /api/v1/users/{id}.
+- Permitir ver y actualizar el perfil propio, listar/mostrar/editar usuarios desde admin y hacer borrado lógico con bloqueo de self-delete.
+- Añadir tests de integración y revisar los hallazgos de calidad del código.
+```
+**Resultado:** Controller funcional con rutas protegidas, lógica de permisos y tests de integración pasando.
+**Iteraciones:** 2
+**Lección:** El flujo de perfil propio debe exigir password actual en cambios de email y el borrado debe ser lógico con guardas explícitas.
+
+### STORY 8.3 — Frontend - UserMenu dropdown en Navbar
+**Prompt:**
+```
+Implementa la story 8.3 para Xestify:
+- Añadir un dropdown de usuario en el navbar para mostrar acciones como Mi perfil, Gestión de usuarios y Cerrar sesión.
+- Hacer que el menú se abra al hover y se mantenga estable al pasar del botón al desplegable.
+- Conectar las acciones al shell principal para que muestren vistas reales en lugar de placeholders.
+- Añadir una prueba HTML de regresión para cubrir el comportamiento del menú.
+```
+**Resultado:** Dropdown funcional, navegación real desde el menú y test aislado de hover/acciones pasando.
+**Iteraciones:** 3
+**Lección:** El hover del menú necesita un buffer visual y un contenedor dedicado para evitar que el cursor lo cierre al cruzar el gap entre botón y desplegable.
+
+### STORY 8.4 — Frontend - Página Mi Perfil (`#/profile`)
+**Prompt:**
+```
+Implementa la story 8.4 para Xestify:
+- Crear la página de perfil accesible desde `#/profile` con formulario para nombre, email y password.
+- Conectar la vista con el endpoint `/api/v1/users/me` para leer y actualizar el perfil propio.
+- Añadir validación inline para email y password, preservando valores en errores y mostrando feedback visual.
+- Sincronizar el estado global del usuario con el navbar para que los cambios se reflejen en tiempo real.
+```
+**Resultado:** Página de perfil funcional, validaciones inline y navbar actualizado al guardar cambios; tests de integración y de UI pasaron.
+**Iteraciones:** 4
+**Lección:** El estado global debe ser la fuente de verdad para la UI y el navbar, no un valor duplicado en cada vista.
+**Estado final:** Documentado en sesión, productividad y prompts para cerrar la historia con trazabilidad completa.
