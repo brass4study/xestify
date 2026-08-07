@@ -1,20 +1,17 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-08-05)
+## Estado implementado auditado (2026-08-07)
 
-El corte funcional actual queda fijado en **STORY 8.5 incluida**.
+El corte funcional actual queda fijado en **STORY 9.2 incluida**.
 
-- **EPIC 8 cerrada** con perfil propio y gestión administrativa de usuarios en frontend/backend.
-- **STORY 8.3** ya implementada: dropdown de usuario en navbar con perfil, gestión de usuarios (admin) y cierre de sesión.
-- **STORY 8.4** ya implementada: página de perfil propio con formulario, validación inline, guardado y sincronización con navbar/estado global.
-- **STORY 8.5** ya implementada: tabla administrativa de usuarios, editar roles, reset password admin y borrado con guardas.
+- **EPIC 9 en progreso** con `STORY 9.1` y `STORY 9.2` implementadas.
+- **STORY 9.2** ya implementada: contrato central de navegación hash en inglés, sin aliases legacy, y documentación alineada para breadcrumbs y copy/i18n.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
 
 Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de Master en Desarrollo con IA.
 
-**Escala de estimación:** Puntos Fibonacci (1, 2, 3, 5, 8, 13)  
 **Columnas clave:**
 - **Puntos:** Complejidad
 - **Sin IA (horas):** Tiempo sin asistencia
@@ -985,15 +982,18 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ Implementada
 - **Criteria:**
-  - ✅ Arquitectura de informacion definida para menu principal, areas, breadcrumbs y tipos de pagina
+  - ✅ Arquitectura de informacion definida para menu principal, areas y tipos de pagina
   - ✅ Plantillas objetivo definidas para login, list page, detail/form page, plugin management, workbench/dashboard y estados result/empty/error
-  - ✅ Convenciones de copy y estructura de textos preparadas para futura externalizacion i18n sin hardcodear decisiones de idioma en componentes
+  - ✅ Preparados los contratos base para breadcrumbs y copy/i18n, dejando definida la estructura que consumiran STORY 9.5 y STORY 9.7
   - ✅ Decision tecnica documentada: routing SPA basado en hash (`#/ruta`) como convencion de navegacion, compatible con Apache+PHP y refresh
-  - ✅ Mapa de rutas hash definido para todas las vistas actuales y futuras (incluidas `#/profile`, `#/usuarios` y `#/usuarios/:id`)
+  - ✅ Mapa de rutas hash definido para todas las vistas actuales y futuras (incluidas `#/profile`, `#/users` y `#/users/:id`)
 - **IA Usage:** Sintesis de sistema UI + mapa de navegacion + definicion de plantillas y reglas base
 - **Dependencias:** STORY 9.1
 - **Blockers:** Ninguno
+
+**Nota de alcance:** STORY 9.2 deja listos los contratos base de breadcrumbs y copy/i18n para que STORY 9.5 y STORY 9.7 los implementen en UI y shell; aqui no se completa el render final ni la externalizacion real de textos.
 
 ### STORY 9.3: Libreria de componentes UI base
 - **Points:** 5
@@ -1001,7 +1001,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Type:** Frontend
 - **Criteria:**
   - ✅ Libreria base de controles reutilizables con categorias tipo Ant: general, layout, navigation, data entry, data display y feedback
-  - ✅ Componentes base definidos al menos para Button, Typography, Page, PageHeader, Section, Breadcrumb, Tabs, Input, FormField, Table, Empty, Alert, Modal y Spinner/Skeleton
+  - ✅ Componentes base definidos al menos para Button, Typography, Page, PageHeader, Section, Breadcrumb, Tabs, Inputs, FormFields, Table, Empty, Alert, Modal y Spinner/Skeleton
   - ✅ API estable de componentes y clases/tokens comunes para estilo, composicion y variantes de tema
   - ✅ DynamicForm, DynamicTable, Modal y PluginManager pueden migrar a esta base sin patrones visuales paralelos
   - ✅ Tests o smoke checks de componentes base y estados visuales principales
@@ -1047,12 +1047,12 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Mapa de rutas hash completo implementado:
     - `#/` — Dashboard / inicio
     - `#/profile` — perfil propio
-    - `#/usuarios` — gestión de usuarios (admin)
-    - `#/usuarios/:id` — ficha de usuario (admin)
-    - `#/entidades/:slug` — listado de registros de una entidad
-    - `#/entidades/:slug/nuevo` — alta de registro
-    - `#/entidades/:slug/:id` — detalle/edicion de registro
-    - `#/entidades/:slug/:id/comentarios` (o `?tab=comentarios`) — tab de registro
+    - `#/users` — gestión de usuarios (admin)
+    - `#/users/:id` — ficha de usuario (admin)
+    - `#/entity/:slug` — listado de registros de una entidad
+    - `#/entity/:slug/new` — alta de registro
+    - `#/entity/:slug/:id` — detalle/edicion de registro
+    - `#/entity/:slug/:id/:tab` — tab de registro
     - `#/plugins` — PluginManager
     - `#/plugins/:slug/config` — configuracion de plugin
     - `#/login` — pantalla de autenticacion
@@ -1061,7 +1061,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Back/forward del navegador navega correctamente entre vistas
   - ✅ Tests de navegacion: entrada directa por hash, refresh, back/forward y persistencia de contexto
 - **IA Usage:** Implementacion del router hash + mapa de rutas + navegacion programatica + tests
-- **Nota:** Convencion de tabs: preferir subruta `#/entidades/:slug/:id/:tab` sobre query param para mantener consistencia con el resto del mapa de rutas. Usar `?tab=` solo si un tab necesita estado adicional en query string.
+- **Nota:** Convencion de tabs: preferir subruta `#/entity/:slug/:id/:tab` sobre query param para mantener consistencia con el resto del mapa de rutas. Usar `?tab=` solo si un tab necesita estado adicional en query string.
 - **Dependencias:** STORY 9.1, STORY 9.3, STORY 9.4
 - **Blockers:** Ninguno
 

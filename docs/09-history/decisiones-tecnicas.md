@@ -506,22 +506,32 @@ Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tai
 ```
 #/                              Dashboard / inicio
 #/login                         Pantalla de autenticacion
-#/entidades/:slug               Listado de registros de una entidad
-#/entidades/:slug/nuevo         Alta de registro
-#/entidades/:slug/:id           Detalle / edicion de registro
-#/entidades/:slug/:id/:tab      Tab de un registro (ej: #/.../:id/comentarios)
+#/profile                       Perfil del usuario autenticado
+#/users                         Gestion administrativa de usuarios
+#/users/:id                     Ficha/configuracion de usuario
+#/entity/:slug                  Listado de registros de una entidad
+#/entity/:slug/new              Alta de registro
+#/entity/:slug/:id              Detalle / edicion de registro
+#/entity/:slug/:id/:tab         Tab de un registro (ej: #/.../:id/comentarios)
 #/plugins                       PluginManager
 #/plugins/:slug/config          Configuracion de un plugin
+#/workbench                     Alias futuro de dashboard/home operativa
+#/result/empty                  Estado vacio reutilizable
+#/result/error                  Estado de error recuperable
 ```
 
 **Nota sobre tabs:** se prefiere subruta (`#/.../comentarios`) sobre query param (`?tab=comentarios`) para mantener consistencia. Query param solo se usa si el tab requiere estado adicional en query string.
 
+**Fuente de verdad actual:** `frontend/src/js/modules/Routes.js` centraliza el mapa de hashes y la traduccion entre URL visible e identificadores internos de pagina.
+**Contrato canónico:** el frontend solo acepta el mapa de rutas en inglés; los aliases legacy ya no forman parte del contrato ni de la implementación.
+
 ### Implicaciones
 
 - El router cliente escucha `hashchange` y parsea `window.location.hash`.
-- Navegacion programatica: `window.location.hash = '#/ruta'` o wrapper `router.navigate('/ruta')`.
+- Navegacion programatica: `window.location.hash = '#/ruta'` o wrapper equivalente apoyado en `Routes.js`.
 - Back/forward del navegador funcionan de forma nativa al cambiar el hash.
 - No hay necesidad de `<base href>` ni configuracion de servidor para deep links.
+- El contrato de pagina separa URL, plantilla y copy: las vistas futuras deben poder resolver `template`, `titleKey` y `descriptionKey` sin hardcodear idioma en la estructura del componente.
 
 ### Cambio futuro
 

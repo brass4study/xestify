@@ -1,4 +1,5 @@
 import { DynamicTable } from '../modules/DynamicTable.js';
+import { hashFromPage, userDetailPage } from '../modules/Routes.js';
 
 export class UserManager {
   /** @type {HTMLElement} */
@@ -180,7 +181,7 @@ export class UserManager {
     }
 
     if (typeof window !== 'undefined' && typeof window.location?.hash === 'string') {
-      window.location.hash = `#/usuarios/${encodeURIComponent(id)}`;
+      window.location.hash = hashFromPage(userDetailPage(id));
       return;
     }
 

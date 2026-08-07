@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-08-06
+**Fecha:** 2026-08-07
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.2 - Fundamentos de navegacion y anatomia de paginas
+**Próxima story:** STORY 9.3 - Libreria de componentes UI base
 
 ---
 
@@ -259,11 +259,35 @@ Story implementada.
 **Cierre verificado (2026-08-06):**
 - Commit de story: pendiente (este commit)
 - Verificación crítica: tablas, tabs, formularios y shell cargan desde una base visual unificada sin CDN runtime de Tailwind
-- Backlog alineado: el siguiente punto es STORY 9.2
+- Backlog alineado: STORY 9.2 queda cerrada; el siguiente punto es STORY 9.3
 - `backend/src/controllers/UserController.php` y `backend/src/config/routes.php` incorporan reset admin (`PUT /api/v1/users/{id}/password`) y edición de roles.
 - `backend/src/repositories/UserRepository.php` permite persistir `roles` junto a nombre/email/avatar.
 - `frontend/tests/UserManagementTest.html` añade cobertura de render tabla, modal editar, modal reset y restricción de borrado propio (4/4).
 - Verificación aplicada: test frontend 4/4 en navegador; `php backend/tests/integration/UserControllerTest.php` quedó `SKIP` por PostgreSQL no disponible en el entorno.
+
+### Sesion 2026-08-07 - STORY 9.2 Fundamentos de navegacion y anatomia de paginas
+
+Story implementada.
+
+**Modificados (frontend/docs):**
+- `frontend/src/js/modules/Routes.js` - contrato central de navegación hash en inglés, con parseo y generación para perfil, usuarios, plugins y entidades.
+- `frontend/src/js/main.js` - integración del contrato de rutas con navegación y carga de formularios de entidad.
+- `frontend/src/js/modules/DynamicTabs.js` - tabs sin mutación de hash para no romper la navegación SPA.
+- `frontend/src/js/pages/EntityEdit.js` - guardas de render para evitar escrituras tardías y botones duplicados.
+- `frontend/src/js/pages/UserManager.js` - navegación a `#/users/:id` con contrato compartido.
+- `frontend/tests/UserManagementTest.html` - adaptación de la cobertura a rutas canónicas.
+- `docs/05-frontend/navegacion-anatomia.md`, `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md`, `docs/11-backlog/roadmap.md` - alineación del contrato de navegación y del alcance de la story.
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/Routes.js`
+- `node --check frontend/src/js/main.js`
+- `node --check frontend/src/js/modules/DynamicTabs.js`
+- `node --check frontend/src/js/pages/EntityEdit.js`
+
+**Cierre verificado (2026-08-07):**
+- Contrato canónico de rutas ya cerrado en inglés, sin aliases legacy en español.
+- La navegación directa a entidades y usuarios queda coordinada desde un único módulo.
+- Backlog y roadmap ya reflejan que STORY 9.2 está implementada y que el siguiente foco es STORY 9.3.
 
 ---
 

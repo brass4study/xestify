@@ -11,7 +11,7 @@
  * Tab definition:
  *  { id: string, label: string, content: () => HTMLElement|string }
  *
- * Active tab persists in URL hash: #tab-<id>
+ * Active tab stays local to the component and never overrides SPA route hashes.
  */
 
 /** @typedef {{ id: string, label: string, content: () => HTMLElement|string }} TabDef */
@@ -140,7 +140,6 @@ export class DynamicTabs {
     if (this.#rendered) {
       this.#updateTabBar(id);
       this.#renderContent(tab);
-      this.#persistHash(id);
     }
   }
 
@@ -257,30 +256,20 @@ export class DynamicTabs {
   }
 
   /**
-   * @param {string} id
-   */
-  #persistHash(id) {
-    if (typeof history !== 'undefined' && history.replaceState) {
-      history.replaceState(null, '', `#tab-${id}`);
-    }
-  }
-
-  /**
    * @returns {string|null}
    */
   #resolveInitialTab() {
     if (this.#tabs.length === 0) {
       return null;
     }
-    const hash = typeof location === 'undefined' ? '' : location.hash;
-    const match = /^#tab-(.+)$/.exec(hash);
-    if (match) {
-      const fromHash = match[1];
-      const found = this.#tabs.find((t) => t.id === fromHash);
-      if (found) {
+
+    if (typeof this.#activeId === 'string' && this.#activeId !== '') {
+      const found = this.#tabs.find((t) => t.id === this.#activeId);
+      if (found !== undefined) {
         return found.id;
       }
     }
+
     return this.#tabs[0].id;
   }
 

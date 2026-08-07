@@ -104,14 +104,14 @@
     const pageWithNav = new UserManager(container, { api });
     await pageWithNav.init();
 
-    window.location.hash = '#/usuarios';
+    window.location.hash = '#/users';
     const openButton = Array.from(container.querySelectorAll('tbody button')).find((button) => button.textContent.trim().includes('Editar'));
     assertTrue(Boolean(openButton), 'Debe existir acción Editar');
     const icon = openButton.querySelector('i.fa-solid.fa-pencil');
     assertTrue(icon !== null, 'La acción Editar debe incluir icono de lápiz');
     openButton.click();
 
-    assertEquals(window.location.hash, '#/usuarios/u-admin', 'Debe navegar por hash a la página UserConfig del usuario');
+    assertEquals(window.location.hash, '#/users/u-admin', 'Debe navegar por hash a la página UserConfig del usuario');
 
     const tableAfterOpen = container.querySelector('table');
     assertTrue(tableAfterOpen !== null, 'La tabla sigue siendo responsabilidad de UserManager');

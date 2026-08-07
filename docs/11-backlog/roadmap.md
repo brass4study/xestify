@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-06
-> **Estado del proyecto:** **STORY 9.1 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.2`
+> **Última actualización:** 2026-08-07
+> **Estado del proyecto:** **STORY 9.2 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.3`
 
 ---
 
@@ -30,7 +30,7 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.1` completada
 - `EPIC 8` cerrada
 - `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.2` (navegación y anatomía de páginas)
+- siguiente foco funcional: `STORY 9.3` (librería de componentes UI base)
 
 ### Funcionalidades nucleares (Core)
 
@@ -53,7 +53,7 @@ El corte funcional vigente del producto queda fijado en:
 - frontend dinámico actual para login, listado y edición de entidades
 - `PluginManager` básico para listar, activar y desactivar plugins
 - nueva gestión de usuarios en el `EPIC 8` y consolidación visual/SPA iniciada en el `EPIC 9`
-- shell persistente, librería de componentes, routing SPA, resiliencia y UX transversal
+- shell persistente, librería de componentes, routing SPA con mapa canónico en inglés, resiliencia y UX transversal
 
 ### Funcionalidades operativas, seguridad y gobierno
 
@@ -98,7 +98,7 @@ Estas decisiones están cerradas y la implementación futura debe respetarlas:
 | Updates de plugins | Explícitos | `sync` no consume updates; `update` sí los aplica |
 | Boot de runtime | Ligero | Sin autodiscovery de plugins en cada request |
 | Operación local | Apache+PHP + PostgreSQL | Docker/Nginx no son requisito base |
-| Routing SPA futuro | Preferencia por URL routing | A concretar en el `EPIC 9` |
+| Routing SPA futuro | Mapa hash canónico en inglés | Ya concretado en `EPIC 9` |
 
 No deben reabrirse como decisiones pendientes:
 
@@ -134,7 +134,7 @@ La estrategia vigente de implementación es:
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
-| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 cerrada; siguiente foco 9.2 |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.2 cerrada; siguiente foco 9.3 |
 | 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
 | 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
@@ -278,14 +278,14 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 
 **Estado real**
 - ✅ Story 9.1 implementada: fundamentos visuales, tablas unificadas, tabs alineadas con Ant Design y pipeline Tailwind sin CDN runtime
-- ⏭ Siguiente punto: Story 9.2 para navegación y anatomía de páginas
+- ⏭ Siguiente punto: Story 9.3 para librería de componentes UI base
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas
 - librería de componentes UI base
 - modularización frontend
 - shell SPA
-- routing SPA basado en hash (`#/ruta`) como convencion principal
+- routing SPA basado en hash (`#/ruta`) como convencion principal, con mapa canónico en inglés y sin aliases legacy
 - resiliencia, estado global, feedback e infraestructura transversal
 - editor visual WYSIWYG para configurar apariencia sin tocar codigo
 - personalizacion basica por cliente: colores y diseño base alineados con imagen de marca
@@ -447,7 +447,7 @@ Y deja fuera, por ahora:
 | Riesgo | Impacto | Mitigación recomendada |
 |--------|---------|------------------------|
 | Complejidad creciente del ecosistema de plugins | Puede encarecer updates y rollback | Mantener contratos explícitos, snapshots y tests de integración |
-| Retrasar el `EPIC 9` | Puede fragmentar UX y arquitectura frontend | Continuar inmediatamente con 9.2, shell y modularización tras cerrar 9.1 |
+| Retrasar el `EPIC 9` | Puede fragmentar UX y arquitectura frontend | Continuar inmediatamente con 9.3, shell y modularización tras cerrar 9.2 |
 | Crecimiento de deuda frontend | Dificulta mantenimiento y testing UI | Consolidar componentes, routing y resiliencia en Fase 9 |
 | Posponer observabilidad | Riesgo operativo al acercarse a despliegue real | No retrasar en exceso Fase 9 |
 

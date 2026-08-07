@@ -7,6 +7,14 @@ import { Login } from './pages/Login.js';
 import { PluginConfig } from './pages/PluginConfig.js';
 import { PluginManager } from './pages/PluginManager.js';
 import { Navbar } from './modules/Navbar.js';
+import {
+  entityCreatePage,
+  entityPage,
+  entityRecordPage,
+  getPageFromHash,
+  hashFromPage,
+  pluginConfigPage,
+} from './modules/Routes.js';
 import { UserConfig } from './pages/UserConfig.js';
 import { UserProfile } from './pages/UserProfile.js';
 import { UserManager } from './pages/UserManager.js';
@@ -21,6 +29,7 @@ const app = document.getElementById('app');
 let currentNavbar = null;
 let navbarSubscription = null;
 let hashNavigationHandler = null;
+let suppressNextHashNavigation = false;
 
 if (app instanceof HTMLElement) {
   bootstrap(app);
@@ -113,7 +122,7 @@ async function renderDashboard(container) {
   const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
   let fallbackPage = '';
   if (firstEntitySlug !== '') {
-    fallbackPage = `entity:${firstEntitySlug}`;
+    fallbackPage = entityPage(firstEntitySlug);
   } else if (isAdmin) {
     fallbackPage = 'plugins';
   }
@@ -168,6 +177,16 @@ async function navigateTo(page, content, api, options = {}) {
     return;
   }
 
+  if (typeof page === 'string' && page.startsWith('entity-create:')) {
+    await showEntityCreatePage(page, content, api);
+    return;
+  }
+
+  if (typeof page === 'string' && page.startsWith('entity-record:')) {
+    await showEntityRecordPage(page, content, api);
+    return;
+  }
+
   if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
     await showPluginConfigPage(page, content, api);
     return;
@@ -202,6 +221,26 @@ async function showEntityPage(page, content, api) {
   await showEntityList(content, api, slug === '' ? null : slug);
 }
 
+async function showEntityCreatePage(page, content, api) {
+  const slug = page.slice('entity-create:'.length);
+  if (slug === '') {
+    showPlaceholder(content, 'No se pudo abrir el formulario de alta.');
+    return;
+  }
+
+  await showEntityEdit(content, api, slug, null, null);
+}
+
+async function showEntityRecordPage(page, content, api) {
+  const parsed = parseEntityRecordPageToken(page);
+  if (parsed === null) {
+    showPlaceholder(content, 'No se pudo abrir la ficha del registro.');
+    return;
+  }
+
+  await showEntityEdit(content, api, parsed.slug, parsed.recordId, null);
+}
+
 async function showPluginConfigPage(page, content, api) {
   const parts = page.split('/');
   const slug = parts.length >= 4 ? parts[2] : '';
@@ -218,7 +257,7 @@ async function showPluginsPage(content, api) {
 
   const pluginManager = new PluginManager(content, api, {
     onConfigure: (plugin) => {
-      navigateTo(`/plugins/${plugin.slug}/config`, content, api);
+      navigateTo(pluginConfigPage(plugin.slug), content, api);
     },
   });
   await pluginManager.init();
@@ -325,10 +364,10 @@ async function showEntityList(content, api, preloadSlug) {
   entityListPage = new EntityList(content, {
     api,
     onCreateNew: (slug) => {
-      showEntityEdit(content, api, slug, null, {});
+      navigateTo(entityCreatePage(slug), content, api, { updateHash: true });
     },
-    onEdit: (slug, recordId, record) => {
-      showEntityEdit(content, api, slug, recordId, record);
+    onEdit: (slug, recordId) => {
+      navigateTo(entityRecordPage(slug, recordId), content, api, { updateHash: true });
     },
   });
 
@@ -362,17 +401,32 @@ async function showEntityEdit(content, api, slug, recordId, initialData) {
     return null;
   }
 
+  const hasInitialData = initialData !== null
+    && typeof initialData === 'object'
+    && Object.keys(initialData).length > 0;
+
+  let dataForForm = hasInitialData ? initialData : {};
+  if (recordId !== null && !hasInitialData) {
+    const recordData = await loadEntityRecord(api, slug, recordId);
+    if (recordData === null) {
+      showPlaceholder(content, 'No se pudo cargar la ficha del registro.');
+      return null;
+    }
+
+    dataForForm = recordData;
+  }
+
   content.replaceChildren();
 
   const entityEdit = new EntityEdit(content, slug, schema, {
     api,
     recordId: recordId ?? null,
-    initialData: initialData ?? {},
+    initialData: dataForForm,
     onSaved: async () => {
-      await showEntityList(content, api, slug);
+      await navigateTo(entityPage(slug), content, api, { updateHash: true });
     },
     onCancel: async () => {
-      await showEntityList(content, api, slug);
+      await navigateTo(entityPage(slug), content, api, { updateHash: true });
     },
   });
 
@@ -390,6 +444,83 @@ async function loadEntitySchema(api, slug) {
   }
 
   return null;
+}
+
+async function loadEntityRecord(api, slug, recordId) {
+  try {
+    const { data } = await api.get(`/entities/${slug}/records/${recordId}`);
+    return normalizeRecordContent(data);
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function normalizeRecordContent(row) {
+  if (row === null || typeof row !== 'object') {
+    return null;
+  }
+
+  const source = /** @type {Record<string, unknown>} */ (row);
+  const content = extractRecordContentObject(source.content);
+  if (Object.keys(content).length > 0) {
+    return content;
+  }
+
+  return extractRecordFields(source);
+}
+
+function extractRecordContentObject(rawContent) {
+  if (rawContent !== null && typeof rawContent === 'object' && !Array.isArray(rawContent)) {
+    return /** @type {Record<string, unknown>} */ (rawContent);
+  }
+
+  if (typeof rawContent === 'string') {
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return /** @type {Record<string, unknown>} */ (parsed);
+      }
+    } catch {
+      return {};
+    }
+  }
+
+  return {};
+}
+
+function extractRecordFields(source) {
+  const result = {};
+  const candidateKeys = ['name', 'email', 'phone', 'creation_stamp', 'is_active', 'title', 'description'];
+
+  for (const key of candidateKeys) {
+    if (Object.hasOwn(source, key)) {
+      result[key] = source[key];
+    }
+  }
+
+  return result;
+}
+
+function parseEntityRecordPageToken(page) {
+  if (typeof page !== 'string' || !page.startsWith('entity-record:')) {
+    return null;
+  }
+
+  const raw = page.slice('entity-record:'.length);
+  const separatorIndex = raw.indexOf(':');
+  if (separatorIndex <= 0 || separatorIndex >= raw.length - 1) {
+    return null;
+  }
+
+  const slug = raw.slice(0, separatorIndex);
+  const recordId = raw.slice(separatorIndex + 1);
+  if (slug === '' || recordId === '') {
+    return null;
+  }
+
+  return { slug, recordId };
 }
 
 async function showPluginConfig(content, api, slug) {
@@ -571,84 +702,16 @@ function setupHashRouting(content, api, fallbackPage) {
   }
 
   hashNavigationHandler = () => {
+    if (suppressNextHashNavigation) {
+      suppressNextHashNavigation = false;
+      return;
+    }
+
     const nextPage = getPageFromHash(window.location.hash, fallbackPage);
     void navigateTo(nextPage, content, api, { updateHash: false });
   };
 
   window.addEventListener('hashchange', hashNavigationHandler);
-}
-
-function getPageFromHash(hashValue, fallbackPage) {
-  const hash = typeof hashValue === 'string' ? hashValue : '';
-  if (hash === '' || hash === '#') {
-    return fallbackPage;
-  }
-
-  const rawPath = hash.startsWith('#') ? hash.slice(1) : hash;
-  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
-  const parts = normalizedPath.split('/').filter(Boolean);
-
-  if (parts.length === 0) {
-    return fallbackPage;
-  }
-
-  const section = parts[0];
-  if (section === 'profile') {
-    return 'profile';
-  }
-
-  const usersPage = resolveUsersPage(parts);
-  if (usersPage !== null) {
-    return usersPage;
-  }
-
-  const pluginsPage = resolvePluginsPage(parts);
-  if (pluginsPage !== null) {
-    return pluginsPage;
-  }
-
-  const entityPage = resolveEntityPage(parts);
-  if (entityPage !== null) {
-    return entityPage;
-  }
-
-  return fallbackPage;
-}
-
-function resolveUsersPage(parts) {
-  if (parts[0] !== 'usuarios') {
-    return null;
-  }
-
-  if (parts.length >= 2 && parts[1] !== '') {
-    return `users:${decodeURIComponent(parts[1])}`;
-  }
-
-  return 'users';
-}
-
-function resolvePluginsPage(parts) {
-  if (parts[0] !== 'plugins') {
-    return null;
-  }
-
-  if (parts.length >= 3 && parts[2] === 'config') {
-    return `/plugins/${parts[1]}/config`;
-  }
-
-  return 'plugins';
-}
-
-function resolveEntityPage(parts) {
-  if (parts[0] !== 'entidades') {
-    return null;
-  }
-
-  if (parts.length >= 2 && parts[1] !== '') {
-    return `entity:${decodeURIComponent(parts[1])}`;
-  }
-
-  return null;
 }
 
 function updateHashForPage(page) {
@@ -657,35 +720,6 @@ function updateHashForPage(page) {
     return;
   }
 
+  suppressNextHashNavigation = true;
   window.location.hash = targetHash;
-}
-
-function hashFromPage(page) {
-  if (page === 'profile') {
-    return '#/profile';
-  }
-
-  if (page === 'users') {
-    return '#/usuarios';
-  }
-
-  if (typeof page === 'string' && page.startsWith('users:')) {
-    const userId = page.slice('users:'.length);
-    return userId === '' ? '#/usuarios' : `#/usuarios/${encodeURIComponent(userId)}`;
-  }
-
-  if (page === 'plugins') {
-    return '#/plugins';
-  }
-
-  if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
-    return `#${page}`;
-  }
-
-  if (typeof page === 'string' && page.startsWith('entity:')) {
-    const slug = page.slice('entity:'.length);
-    return slug === '' ? '#/' : `#/entidades/${encodeURIComponent(slug)}`;
-  }
-
-  return '';
 }

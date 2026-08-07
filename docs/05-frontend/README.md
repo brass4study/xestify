@@ -83,5 +83,6 @@ form.render();
 
 - [renderizado-dinamico.md](renderizado-dinamico.md): Guía detallada de renderizado y mapeo de tipos
 - [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño de STORY 9.1 inspirados en Ant Design
+- [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy de STORY 9.2
 - [../backend/](../../backend/): Contratos de API y ejemplos de payload
 - [../04-plugins/](../04-plugins/): Plantillas y ejemplos de plugins

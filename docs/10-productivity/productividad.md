@@ -1017,3 +1017,18 @@
   - Recolocó los overrides residuales necesarios dentro de capas Tailwind (`@layer base` / `@layer utilities`) para evitar CSS paralelo fuera del pipeline.
 - **Iteraciones:** 11 (refinado visual incremental, unificación de acciones/tablas, migración de Tailwind y ajustes tras validación manual)
 - **Decisión manual:** Mantener Tailwind como fuente única de estilos en runtime, pero sin CDN y sin bundler, generando la hoja final offline y sirviéndola como asset estático.
+
+### STORY 9.2: Fundamentos de navegacion y anatomia de paginas
+- **Fecha:** 2026-08-07
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~40 min
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Extrajo la convención de rutas a `frontend/src/js/modules/Routes.js` como fuente única de hashes actuales y reservados.
+  - Centralizó el parseo y generación de URLs para perfil, usuarios, plugins y entidades desde un contrato compartido.
+  - Eliminó los aliases legacy en español (`#/usuarios`, `#/entidades`, `nuevo`) para dejar el mapa estrictamente canónico en inglés.
+  - Documentó arquitectura de información, plantillas de página, breadcrumbs y reglas de copy en `docs/05-frontend/navegacion-anatomia.md`.
+  - Alineó backlog, roadmap y sesión con el nuevo estado de la story.
+  - Eliminó un hash hardcodeado en `UserManager.js` para preparar el terreno a la modularización y al router formal.
+- **Iteraciones:** 2 (contrato inicial + limpieza de aliases legacy y docs finales)
+- **Decisión manual:** Mantener el routing hash actual y posponer el router formal a STORY 9.6, usando en 9.2 solo un contrato compartido de navegación en inglés.

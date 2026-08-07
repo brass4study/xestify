@@ -1046,3 +1046,14 @@ Empecemos con la implementacion del EPIC 9. Quiero una base visual enterprise in
 **Iteraciones:** 11
 **Lección:** En una story de fundamentos UI, la mayor parte del trabajo no está en “crear un componente”, sino en cerrar consistencia transversal: tablas, tabs, formularios, estados disabled, iconografía y pipeline real de estilos deben converger en un único punto de verdad.
 **Estado final:** Story preparada para commit con trazabilidad actualizada en `sesion.md`, `productividad.md` y `prompts.md`; el siguiente paso del backlog pasa a STORY 9.2.
+
+### STORY 9.2 — Fundamentos de navegacion y anatomia de paginas
+**Prompt:**
+```
+Empecemos la implementacion del epic 9.2.
+La convencion de rutas esta mal, deberia ser en ingles.
+```
+**Resultado:** Se creó `frontend/src/js/modules/Routes.js` como contrato central de navegación hash, se conectó a `main.js` y `UserManager.js`, se documentaron arquitectura de información, plantillas de página y convenciones de copy para i18n futuro, y luego se cerró la limpieza estricta eliminando aliases legacy para dejar el mapa solo en inglés.
+**Iteraciones:** 2
+**Lección:** Antes de construir un router formal, conviene fijar una única traducción entre estado interno y hash visible; así 9.4 y 9.6 pueden refactorizar sin perseguir rutas hardcodeadas por la UI.
+**Estado final:** Story 9.2 documentada y verificada con checks de sintaxis sobre el módulo de rutas y sus consumidores directos; backlog, roadmap y sesión quedaron alineados.

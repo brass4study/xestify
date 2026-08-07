@@ -17,6 +17,9 @@ import { DynamicTabs } from '../modules/DynamicTabs.js';
 import { PluginPanelRegistry } from '../modules/PluginPanelRegistry.js';
 
 export class EntityEdit {
+  /** @type {number} */
+  static #renderSequence = 0;
+
   /** @type {Api} */
   #api;
 
@@ -47,6 +50,9 @@ export class EntityEdit {
    * @type {Array<{element: HTMLElement, flush: (id: string) => Promise<void>}>}
    */
   #pluginPanels = [];
+
+  /** @type {number} */
+  #renderToken = 0;
 
   /**
    * @param {string|HTMLElement} container
@@ -115,6 +121,7 @@ export class EntityEdit {
    * @param {object} initialData
    */
   #render(initialData) {
+    const renderToken = this.#nextRenderToken();
     this.#container.replaceChildren();
 
     // Title outside the form wrapper.
@@ -175,7 +182,7 @@ export class EntityEdit {
 
     this.#container.appendChild(actions);
 
-    this.#loadAndRenderTabs(wrapper, actions);
+    void this.#loadAndRenderTabs(wrapper, actions, renderToken);
   }
 
   /**
@@ -187,9 +194,13 @@ export class EntityEdit {
   * @param {HTMLElement} actionsEl Barra de acciones fuera del wrapper
    * @returns {Promise<void>}
    */
-  async #loadAndRenderTabs(wrapper, actionsEl) {
+  async #loadAndRenderTabs(wrapper, actionsEl, renderToken) {
     try {
       const { data } = await this.#api.get(`/entities/${this.#slug}/tabs`);
+      if (!this.#isCurrentRender(renderToken)) {
+        return;
+      }
+
       const rawTabs = Array.isArray(data?.tabs) ? data.tabs : [];
 
       if (rawTabs.length === 0) {
@@ -205,6 +216,10 @@ export class EntityEdit {
       // Dynamically load each plugin's frontend module so it self-registers
       // in PluginPanelRegistry before we build the tab panels.
       await this.#loadPluginModules(rawTabs);
+
+      if (!this.#isCurrentRender(renderToken)) {
+        return;
+      }
 
       // Move the existing form content (errorBanner + formContainer) into a
       // detached element so it can be used as the "Datos" tab content.
@@ -247,10 +262,18 @@ export class EntityEdit {
       const dynamicTabs = new DynamicTabs(wrapper, { tabs: tabDefs });
       dynamicTabs.render();
 
+      if (!this.#isCurrentRender(renderToken)) {
+        return;
+      }
+
       // Move the actions bar to be the last child of #container so it stays
       // below the tabs (it was appended before this async call resolved).
       this.#container.appendChild(actionsEl);
     } catch {
+      if (!this.#isCurrentRender(renderToken)) {
+        return;
+      }
+
       this.#showGlobalError('No se pudieron cargar las extensiones.');
     }
   }
@@ -356,6 +379,20 @@ export class EntityEdit {
     }
 
     return null;
+  }
+
+  #nextRenderToken() {
+    EntityEdit.#renderSequence += 1;
+    this.#renderToken = EntityEdit.#renderSequence;
+    return this.#renderToken;
+  }
+
+  /**
+   * @param {number} renderToken
+   * @returns {boolean}
+   */
+  #isCurrentRender(renderToken) {
+    return this.#renderToken === renderToken;
   }
 
   // ---------------------------------------------------------------------------
