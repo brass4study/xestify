@@ -17,6 +17,7 @@ Apache, por ejemplo `http://localhost/xestify/`, sin hardcodear `/api` ni
 
 ## Componentes principales
 
+- **ComponentFactory**: Entrada pública única del sistema UI. Expone `component.create(name, options)` y `component.getCatalog()`, mantiene el registro canónico de componentes y rechaza nombres no registrados.
 - **DynamicForm**: Renderiza formularios a partir de un schema declarativo. Soporta tipos string, number, email, date, select, boolean, etc. Permite validación básica y recolección de datos para POST/PUT.
 - **DynamicTable**: Renderiza tablas dinámicas según el schema y los registros obtenidos vía API. Incluye paginación básica.
 - **DynamicTabs**: Permite la composición de pestañas, incluyendo tabs inyectados por plugins de extensión.
@@ -32,7 +33,7 @@ Apache, por ejemplo `http://localhost/xestify/`, sin hardcodear `/api` ni
 
 1. El usuario inicia sesión y selecciona una entidad.
 2. El frontend solicita el schema de la entidad al backend (`GET /entities/{slug}/schema`).
-3. DynamicForm y DynamicTable renderizan la UI según el schema recibido.
+3. DynamicForm y DynamicTable solicitan controles registrados mediante `component.create()` y renderizan la UI según el schema recibido.
 4. Si existen plugins de extensión activos, DynamicTabs monta los tabs adicionales y PluginPanelRegistry integra los paneles personalizados.
 5. Las acciones del usuario (crear, editar, eliminar) se validan primero en frontend y luego en backend.
 

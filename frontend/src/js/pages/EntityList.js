@@ -11,6 +11,7 @@
 import { Api, ApiError } from '../modules/Api.js';
 import { AppState } from '../modules/State.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class EntityList {
   /** @type {Api} */
@@ -33,7 +34,7 @@ export class EntityList {
    * @param {{api?: Api, onCreateNew?: Function, onEdit?: Function}} options
    */
   constructor(container, options = {}) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#api = (options.api !== null && options.api !== undefined && typeof options.api.get === 'function')
       ? options.api
       : new Api();
@@ -61,10 +62,11 @@ export class EntityList {
       AppState.setEntities(entities);
 
       if (entities.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500';
+        const empty = component.create('emptyState', {
+          title: 'Sin entidades',
+          description: 'No hay entidades disponibles.',
+        });
         empty.dataset.role = 'entity-empty';
-        empty.textContent = 'No hay entidades disponibles.';
         this.#container.appendChild(empty);
       }
     } catch (err) {
@@ -112,47 +114,44 @@ export class EntityList {
     let recordsSection = this.#container.querySelector('[data-role="records-section"]');
 
     if (recordsSection === null) {
-      recordsSection = document.createElement('section');
+      recordsSection = component.create('section', {
+        dataRole: 'records-section',
+        children: component.create('div'),
+      });
       recordsSection.className = 'mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel';
-      recordsSection.dataset.role = 'records-section';
       this.#container.appendChild(recordsSection);
     }
 
     recordsSection.replaceChildren();
 
-    const header = document.createElement('div');
-    header.className = 'flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between';
-    header.dataset.role = 'records-header';
-
-    const heading = document.createElement('h3');
-    heading.className = 'text-base font-semibold tracking-tight text-slateui-950';
-    heading.dataset.role = 'records-title';
-    const entityLabel = this.#entityLabelForSlug(slug);
-    heading.textContent = entityLabel;
-    header.appendChild(heading);
-
-    const createBtn = document.createElement('button');
-    createBtn.type = 'button';
-    createBtn.className = 'inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300';
-    createBtn.dataset.role = 'record-create';
-    const createIcon = document.createElement('i');
-    createIcon.className = 'fa-solid fa-circle-plus text-xs';
-    createIcon.setAttribute('aria-hidden', 'true');
-    const createLabel = document.createElement('span');
-    createLabel.textContent = this.#createLabelForSlug(slug);
-    createBtn.appendChild(createIcon);
-    createBtn.appendChild(createLabel);
-    createBtn.addEventListener('click', () => {
-      if (this.#onCreateNew !== null) {
-        this.#onCreateNew(slug);
-      }
+    const createBtn = component.create('button', {
+      label: this.#createLabelForSlug(slug),
+      variant: 'primary',
+      dataRole: 'record-create',
+      onClick: () => {
+        if (this.#onCreateNew !== null) {
+          this.#onCreateNew(slug);
+        }
+      },
     });
-    header.appendChild(createBtn);
+    createBtn.className = 'inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300';
+    const header = component.create('pageHeader', {
+      title: this.#entityLabelForSlug(slug),
+      subtitle: this.#createLabelForSlug(slug),
+      actions: [createBtn],
+    });
+    header.dataset.role = 'records-header';
+    header.className = 'flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between';
+    const heading = header.querySelector('[data-role="page-title"]');
+    if (heading instanceof HTMLElement) {
+      heading.dataset.role = 'records-title';
+    }
     recordsSection.appendChild(header);
 
-    const tableContainer = document.createElement('div');
-    tableContainer.className = 'p-3';
-    tableContainer.dataset.role = 'records-table-wrap';
+    const tableContainer = component.create('div', {
+      className: 'p-3',
+      dataset: { role: 'records-table-wrap' },
+    });
     recordsSection.appendChild(tableContainer);
 
     const extraColumns = this.#onEdit === null
@@ -291,10 +290,11 @@ export class EntityList {
     let indicator = this.#container.querySelector('[data-role="entity-loading"]');
     if (loading) {
       if (indicator === null) {
-        indicator = document.createElement('p');
-        indicator.className = 'mb-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500';
-        indicator.dataset.role = 'entity-loading';
-        indicator.textContent = 'Cargando…';
+        indicator = component.create('p', {
+          className: 'mb-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500',
+          dataset: { role: 'entity-loading' },
+          text: 'Cargando…',
+        });
         this.#container.prepend(indicator);
       }
     } else if (indicator !== null) {
@@ -317,10 +317,11 @@ export class EntityList {
     const message = err instanceof ApiError ? err.message : 'Error desconocido';
     AppState.error = { message };
 
-    const errorEl = document.createElement('p');
-    errorEl.className = 'mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
-    errorEl.dataset.role = 'entity-error';
-    errorEl.textContent = message;
+    const errorEl = component.create('p', {
+      className: 'mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700',
+      dataset: { role: 'entity-error' },
+      text: message,
+    });
     this.#container.appendChild(errorEl);
   }
 
@@ -328,7 +329,7 @@ export class EntityList {
    * @param {string|HTMLElement} container
    * @returns {HTMLElement}
    */
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

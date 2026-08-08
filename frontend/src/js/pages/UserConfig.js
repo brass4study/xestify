@@ -1,5 +1,6 @@
 import { Api } from '../modules/Api.js';
 import { AppState } from '../modules/State.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class UserConfig {
   /** @type {HTMLElement} */
@@ -62,7 +63,7 @@ export class UserConfig {
    * }} [options]
    */
   constructor(container, options = {}) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#mode = options.mode === 'profile' ? 'profile' : 'admin';
     this.#user = options.user ?? null;
     this.#api = options.api ?? new Api();
@@ -227,50 +228,41 @@ export class UserConfig {
   #render() {
     this.#container.replaceChildren();
 
-    const wrapper = document.createElement('section');
-    wrapper.className = 'grid gap-4';
-    wrapper.dataset.page = 'user-config';
-
-    const heading = document.createElement('h2');
-    heading.className = 'text-2xl font-semibold tracking-tight text-slateui-950';
-    heading.textContent = this.#title;
-    wrapper.appendChild(heading);
-
-    const subtitle = document.createElement('p');
-    subtitle.className = 'text-sm text-slate-500';
-    subtitle.textContent = this.#subtitle;
-    wrapper.appendChild(subtitle);
-
-    const top = document.createElement('div');
-    top.className = 'flex flex-wrap items-center justify-between gap-2';
-    if (this.#onBack !== null) {
-      const back = this.#makeButton('Volver al listado', '', () => {
+    const page = component.create('page', { dataRole: 'user-config-page' });
+    const backButton = this.#onBack === null ? null : component.create('button', {
+      label: 'Volver al listado',
+      dataRole: 'user-config-back',
+      onClick: () => {
         this.#onBack();
-      });
-      top.appendChild(back);
-    }
-    wrapper.appendChild(top);
+      },
+    });
+    const header = component.create('pageHeader', {
+      title: this.#title,
+      subtitle: this.#subtitle,
+      actions: backButton === null ? [] : [backButton],
+    });
+    page.appendChild(header);
 
     const feedback = this.#feedbackNode();
     if (feedback !== null) {
-      wrapper.appendChild(feedback);
+      page.appendChild(feedback);
     }
 
-    const card = document.createElement('div');
+    const card = component.create('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
 
     const user = this.#resolveUser();
     if (user === null || typeof user !== 'object') {
-      const empty = document.createElement('p');
-      empty.className = 'rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500';
-      empty.textContent = 'No se encontró el usuario solicitado.';
-      card.appendChild(empty);
-      wrapper.appendChild(card);
-      this.#container.appendChild(wrapper);
+      card.appendChild(component.create('emptyState', {
+        title: 'Usuario no encontrado',
+        description: 'No se encontró el usuario solicitado.',
+      }));
+      page.appendChild(card);
+      this.#container.appendChild(page);
       return;
     }
 
-    const form = document.createElement('form');
+    const form = component.create('formTag');
     form.className = 'grid gap-4';
     form.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -282,8 +274,8 @@ export class UserConfig {
     this.attachAdditionalInteractions(form);
 
     card.appendChild(form);
-    wrapper.appendChild(card);
-    this.#container.appendChild(wrapper);
+    page.appendChild(card);
+    this.#container.appendChild(page);
   }
 
   #buildFormMarkup(user) {
@@ -646,9 +638,14 @@ export class UserConfig {
       return null;
     }
 
-    const feedback = document.createElement('div');
-    feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
-    feedback.textContent = this.#message;
+    const feedback = component.create('alert', {
+      type: this.#messageType === 'error' ? 'error' : 'success',
+      message: this.#message,
+    });
+    feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error'
+      ? 'border-red-200 bg-red-50 text-red-800'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`;
+    feedback.dataset.role = 'user-config-feedback';
     return feedback;
   }
 
@@ -673,10 +670,8 @@ export class UserConfig {
   }
 
   #makeButton(label, className, onClick) {
-    const button = document.createElement('button');
-    button.type = 'button';
+    const button = component.create('button', { label });
     button.className = `${className} inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100`;
-    button.textContent = label;
     button.addEventListener('click', onClick);
     return button;
   }
@@ -771,7 +766,7 @@ export class UserConfig {
     return `${words[0][0]}${words[1][0]}`.toUpperCase();
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

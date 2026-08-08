@@ -11,6 +11,7 @@
 import { Api } from '../modules/Api.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { Modal } from '../modules/Modal.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class PluginManager {
   /** @type {HTMLElement} */
@@ -40,7 +41,7 @@ export class PluginManager {
    * @param {{ onConfigure?: (plugin: Object) => void }} options
    */
   constructor(container, api = undefined, options = {}) {
-    const resolved = this.#resolveContainer(container);
+    const resolved = this.resolveContainer(container);
     this.#container = resolved;
     this.#api = api ?? new Api();
     this.#onConfigure = typeof options.onConfigure === 'function' ? options.onConfigure : () => {};
@@ -79,7 +80,7 @@ export class PluginManager {
       this.#updatesBySlug = this.#indexUpdates(Array.isArray(updatesPayload?.updates) ? updatesPayload.updates : []);
       this.#render();
     } catch (error) {
-      this.#renderError(`Error loading plugins: ${error.message}`);
+      this.renderError(`Error loading plugins: ${error.message}`);
     }
   }
 
@@ -102,44 +103,52 @@ export class PluginManager {
    * @private
    */
   #render() {
-    const feedbackTone = this.#feedbackType === 'error'
-      ? 'border-red-200 bg-red-50 text-red-700'
-      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
-    const feedbackHtml = this.#feedbackMessage === null
-      ? ''
-      : `<div class="${feedbackTone} mt-3 rounded-lg border px-3 py-2 text-sm">${this.#escapeHtml(this.#feedbackMessage)}</div>`;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
-    wrapper.innerHTML = `
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 class="text-xl font-semibold tracking-tight text-slateui-950">Plugin Manager</h2>
-          <p class="mt-1 text-sm text-slate-500">Manage installed plugins</p>
-        </div>
-        <button class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700" data-action="sync">Synchronize</button>
-      </div>
-      ${feedbackHtml}
-      <div class="mt-4 overflow-x-auto rounded-xl border border-slate-200" data-role="plugin-content"></div>
-    `;
-
-    const syncButton = wrapper.querySelector('[data-action="sync"]');
-    if (syncButton instanceof HTMLButtonElement) {
-      syncButton.addEventListener('click', () => {
+    const page = component.create('page', { dataRole: 'plugin-manager-page' });
+    const syncButton = component.create('button', {
+      label: 'Synchronize',
+      variant: 'primary',
+      dataRole: 'plugin-sync',
+      dataAction: 'sync',
+      onClick: () => {
         this.#handleSync(syncButton);
+      },
+    });
+    syncButton.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700';
+
+    const header = component.create('pageHeader', {
+      title: 'Plugin Manager',
+      subtitle: 'Manage installed plugins',
+      actions: [syncButton],
+    });
+    page.appendChild(header);
+
+    if (this.#feedbackMessage !== null) {
+      const feedback = component.create('alert', {
+        type: this.#feedbackType === 'error' ? 'error' : 'success',
+        message: this.#feedbackMessage,
       });
+      feedback.dataset.role = 'plugin-feedback';
+      page.appendChild(feedback);
     }
 
-    const content = wrapper.querySelector('[data-role="plugin-content"]');
+    const content = component.create('div');
+    content.className = 'mt-4 overflow-x-auto rounded-xl border border-slate-200';
+    content.dataset.role = 'plugin-content';
 
     if (this.#plugins.length === 0) {
-      content.innerHTML = '<p class="px-4 py-8 text-center text-sm text-slate-500" data-role="plugin-empty">No plugins installed.</p>';
-      this.#container.innerHTML = '';
-      this.#container.appendChild(wrapper);
+      const emptyState = component.create('emptyState', {
+        title: 'No plugins installed',
+        description: 'No plugins installed.',
+      });
+      emptyState.dataset.role = 'plugin-empty';
+      content.appendChild(emptyState);
+      page.appendChild(content);
+      this.#container.replaceChildren();
+      this.#container.appendChild(page);
       return;
     }
 
-    const tableHost = document.createElement('div');
+    const tableHost = component.create('div');
     content.appendChild(tableHost);
 
     const rows = this.#plugins.map((plugin) => ({
@@ -220,8 +229,9 @@ export class PluginManager {
       });
     });
 
-    this.#container.innerHTML = '';
-    this.#container.appendChild(wrapper);
+    page.appendChild(content);
+    this.#container.replaceChildren();
+    this.#container.appendChild(page);
   }
 
   /**
@@ -229,7 +239,7 @@ export class PluginManager {
    * @returns {HTMLElement}
    */
   #renderTypeBadge(plugin) {
-    const badge = document.createElement('span');
+    const badge = component.create('span');
     const isEntity = plugin.plugin_type === 'entity';
     badge.className = `${isEntity ? 'bg-sky-100 text-sky-700' : 'bg-fuchsia-100 text-fuchsia-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`;
     badge.dataset.role = 'plugin-type-badge';
@@ -243,15 +253,15 @@ export class PluginManager {
    * @returns {HTMLElement}
    */
   #renderVersionCell(plugin, updateInfo) {
-    const container = document.createElement('div');
+    const container = component.create('div');
     container.className = 'flex flex-col gap-1';
 
-    const current = document.createElement('span');
+    const current = component.create('span');
     current.textContent = String(plugin.version ?? '');
     container.appendChild(current);
 
     if (updateInfo !== null) {
-      const badge = document.createElement('span');
+      const badge = component.create('span');
       badge.className = 'inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide';
       badge.dataset.role = 'plugin-update-badge';
       badge.textContent = `Update available: ${String(updateInfo.available_version ?? '')}`;
@@ -266,7 +276,7 @@ export class PluginManager {
    * @returns {HTMLElement}
    */
   #renderStatusBadge(plugin) {
-    const badge = document.createElement('span');
+    const badge = component.create('span');
     const isActive = plugin.status === 'active';
     badge.className = `${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`;
     badge.dataset.role = 'plugin-status-badge';
@@ -280,7 +290,7 @@ export class PluginManager {
    * @returns {HTMLElement}
    */
   #renderActionsCell(plugin, updateInfo) {
-    const actions = document.createElement('div');
+    const actions = component.create('div');
     actions.className = 'flex flex-wrap gap-1.5';
 
     const isActive = plugin.status === 'active';
@@ -373,7 +383,7 @@ export class PluginManager {
       .catch((error) => {
         button.disabled = false;
         button.textContent = newStatus === 'active' ? 'Activate' : 'Deactivate';
-        this.#renderError(`Failed to update plugin: ${error.message}`);
+        this.renderError(`Failed to update plugin: ${error.message}`);
       });
   }
 
@@ -395,7 +405,7 @@ export class PluginManager {
       this.#feedbackMessage = `Synchronization complete. ${outdated} plugin(s) with updates available.`;
       await this.#refreshData();
     } catch (error) {
-      this.#renderError(`Failed to synchronize plugins: ${error.message}`);
+      this.renderError(`Failed to synchronize plugins: ${error.message}`);
     } finally {
       button.disabled = false;
       button.textContent = 'Synchronize';
@@ -429,7 +439,7 @@ export class PluginManager {
       this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" updated successfully.`;
       await this.#refreshData();
     } catch (error) {
-      this.#renderError(`Failed to update plugin: ${error.message}`);
+      this.renderError(`Failed to update plugin: ${error.message}`);
     } finally {
       button.disabled = false;
       button.textContent = 'Update';
@@ -463,7 +473,7 @@ export class PluginManager {
       this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" rolled back successfully.`;
       await this.#refreshData();
     } catch (error) {
-      this.#renderError(`Failed to rollback plugin: ${error.message}`);
+      this.renderError(`Failed to rollback plugin: ${error.message}`);
     } finally {
       button.disabled = false;
       button.textContent = 'Rollback';
@@ -479,27 +489,23 @@ export class PluginManager {
   #confirmAction(title, message, confirmLabel) {
     return new Promise((resolve) => {
       const modal = new Modal(this.#container, { title });
-      const body = document.createElement('div');
+      const body = component.create('div');
       body.className = 'grid gap-3';
 
-      const text = document.createElement('p');
+      const text = component.create('p');
       text.className = 'text-sm text-slate-700';
       text.textContent = message;
 
-      const actions = document.createElement('div');
+      const actions = component.create('div');
       actions.className = 'flex justify-end gap-2';
 
-      const cancelButton = document.createElement('button');
-      cancelButton.type = 'button';
+      const cancelButton = component.create('button', { label: 'Cancel' });
       cancelButton.className = 'inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700';
       cancelButton.dataset.action = 'cancel-modal';
-      cancelButton.textContent = 'Cancel';
 
-      const confirmButton = document.createElement('button');
-      confirmButton.type = 'button';
+      const confirmButton = component.create('button', { label: confirmLabel });
       confirmButton.className = 'inline-flex items-center rounded-md border border-brand-700 bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white';
       confirmButton.dataset.action = 'confirm-modal';
-      confirmButton.textContent = confirmLabel;
 
       const closeWith = (result) => {
         modal.close();
@@ -524,8 +530,8 @@ export class PluginManager {
    * @private
    * @param {string} message
    */
-  #renderError(message) {
-    const banner = document.createElement('div');
+  renderError(message) {
+    const banner = component.create('div');
     banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
     banner.dataset.role = 'plugin-error';
     banner.textContent = message;
@@ -539,7 +545,7 @@ export class PluginManager {
    * @param {HTMLElement|string} container
    * @returns {HTMLElement}
    */
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

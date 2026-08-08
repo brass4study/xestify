@@ -7,6 +7,8 @@
  *  - setContent()
  */
 
+import { component } from './ComponentFactory.js';
+
 export class Modal {
   /** @type {HTMLElement} */
   #host;
@@ -34,46 +36,38 @@ export class Modal {
    * @param {{title?: string, content?: string|HTMLElement}} [options]
    */
   constructor(container = document.body, options = {}) {
-    this.#host = this.#resolveContainer(container);
+    this.#host = this.resolveContainer(container);
 
-    this.#overlay = document.createElement('div');
-    this.#overlay.className = 'fixed inset-0 z-[300] hidden items-center justify-center bg-slate-950/50 p-4';
-    this.#overlay.dataset.role = 'modal-overlay';
+    this.#overlay = component.create('modal', {
+      title: options.title ?? 'Mensaje',
+      content: options.content ?? '',
+      onClose: () => this.close(),
+    });
     this.#overlay.hidden = true;
+    this.#overlay.classList.add('hidden');
+    this.#overlay.dataset.role = 'modal-overlay';
 
-    this.#dialog = document.createElement('section');
-    this.#dialog.className = 'w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-float';
+    this.#dialog = this.#overlay.querySelector('[data-role="ui-modal-dialog"]');
+    if (!(this.#dialog instanceof HTMLElement)) {
+      throw new TypeError('Modal dialog node not found');
+    }
     this.#dialog.dataset.role = 'modal-dialog';
     this.#dialog.setAttribute('role', 'dialog');
     this.#dialog.setAttribute('aria-modal', 'true');
 
-    const header = document.createElement('header');
-    header.className = 'flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3';
-
-    this.#titleEl = document.createElement('h3');
-    this.#titleEl.className = 'text-base font-semibold text-slateui-950';
+    this.#titleEl = this.#overlay.querySelector('[data-role="ui-modal-title"]');
+    if (!(this.#titleEl instanceof HTMLElement)) {
+      throw new TypeError('Modal title node not found');
+    }
     this.#titleEl.dataset.role = 'modal-title';
-    this.#titleEl.textContent = options.title ?? 'Mensaje';
 
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-lg text-slate-600 transition hover:bg-slate-100';
-    closeBtn.dataset.role = 'modal-close';
-    closeBtn.setAttribute('aria-label', 'Cerrar diálogo');
-    closeBtn.textContent = '×';
-    closeBtn.addEventListener('click', () => this.close());
-
-    header.appendChild(this.#titleEl);
-    header.appendChild(closeBtn);
-
-    this.#contentEl = document.createElement('div');
-    this.#contentEl.className = 'p-4 text-sm text-slate-700';
+    this.#contentEl = this.#overlay.querySelector('[data-role="ui-modal-content"]');
+    if (!(this.#contentEl instanceof HTMLElement)) {
+      throw new TypeError('Modal content node not found');
+    }
     this.#contentEl.dataset.role = 'modal-content';
-    this.setContent(options.content ?? '');
 
-    this.#dialog.appendChild(header);
-    this.#dialog.appendChild(this.#contentEl);
-    this.#overlay.appendChild(this.#dialog);
+    this.setContent(options.content ?? '');
 
     this.#overlay.addEventListener('click', (event) => {
       if (event.target === this.#overlay) {
@@ -142,7 +136,7 @@ export class Modal {
    * @param {string|HTMLElement} container
    * @returns {HTMLElement}
    */
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

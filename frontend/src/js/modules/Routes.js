@@ -136,6 +136,10 @@ export function getPageFromHash(hashValue, fallbackPage) {
     return 'profile';
   }
 
+  if (section === 'ui') {
+    return 'ui';
+  }
+
   const usersPage = resolveUsersPage(parts);
   if (usersPage !== null) {
     return usersPage;

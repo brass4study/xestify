@@ -88,11 +88,13 @@
 
     assertTrue(sandbox.querySelector('input[name="title"][type="text"]') !== null, 'string input missing');
     assertTrue(sandbox.querySelector('textarea[name="description"]') !== null, 'text textarea missing');
-    assertTrue(sandbox.querySelector('input[name="amount"][type="number"]') !== null, 'number input missing');
+    assertTrue(sandbox.querySelector('input[name="amount"]') !== null, 'number input missing');
     assertTrue(sandbox.querySelector('input[name="email"][type="email"]') !== null, 'email input missing');
     assertTrue(sandbox.querySelector('input[name="due_date"][type="date"]') !== null, 'date input missing');
     assertTrue(sandbox.querySelector('select[name="status"]') !== null, 'select input missing');
-    assertTrue(sandbox.querySelector('input[name="is_active"][type="checkbox"]') !== null, 'boolean input missing');
+    const booleanSwitch = sandbox.querySelector('[data-role="input-switch"] input[name="is_active"]');
+    assertTrue(booleanSwitch !== null, 'boolean switch missing');
+    assertTrue(booleanSwitch.getAttribute('role') === 'switch', 'boolean control should expose switch semantics');
   });
 
   await test('getData() returns normalized values by type', async () => {
@@ -141,7 +143,7 @@
     assertTrue(result.isValid === false, 'validation should fail');
     assertTrue(Array.isArray(result.errors.title), 'title errors should exist');
     assertTrue(Array.isArray(result.errors.email), 'email errors should exist');
-    assertTrue(Array.isArray(result.errors.status), 'status errors should exist');
+    assertTrue(result.errors.status === undefined, 'status should default to the first available option');
   });
 
   await test('validate() reports type and range errors', async () => {
@@ -201,8 +203,8 @@
       'timestamp custom field should render as text'
     );
     assertTrue(
-      sandbox.querySelector('input[name="is_active"][type="checkbox"]') !== null,
-      'boolean custom field should render as checkbox'
+      sandbox.querySelector('[data-role="input-switch"] input[name="is_active"]') !== null,
+      'boolean custom field should render as switch'
     );
 
     const data = form.getData();

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ComponentsTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+  <h2>ComponentsTest</h2>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { component } from '../src/js/modules/ComponentFactory.js';
+
+    const output = document.getElementById('output');
+    let passed = 0;
+    let failed = 0;
+
+    function log(line) {
+      output.textContent += line + '\n';
+    }
+
+    function assertTrue(value, message) {
+      if (!value) {
+        throw new Error(message);
+      }
+    }
+
+    function assertEquals(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message}: expected "${String(expected)}", got "${String(actual)}"`);
+      }
+    }
+
+    function test(name, fn) {
+      try {
+        fn();
+        log(`✅ ${name}`);
+        passed += 1;
+      } catch (error) {
+        log(`❌ ${name}: ${error.message}`);
+        failed += 1;
+      }
+    }
+
+    test('component.create dispatches the central factory and renders a stable button', () => {
+      const button = component.create('button', { label: 'Guardar', variant: 'primary' });
+      assertTrue(button instanceof HTMLButtonElement, 'button should be an HTMLButtonElement');
+      assertEquals(button.textContent.trim(), 'Guardar', 'button label mismatch');
+      assertTrue(button.className.includes('rounded-lg'), 'button should include rounded classes');
+      assertTrue(button.getAttribute('type') === 'button', 'button should default to a button type');
+    });
+
+    test('component.create renders layout primitives through the shared factory', () => {
+      const typography = component.create('typography', { text: 'Hola', size: 'sm' });
+      const page = component.create('page');
+      const header = component.create('pageHeader', { title: 'Usuarios', subtitle: 'Gestión de usuarios' });
+      const section = component.create('section', { title: 'Detalle', subtitle: 'Bloque de contenido' });
+
+      assertTrue(typography instanceof HTMLElement, 'typography should be an HTMLElement');
+      assertTrue(page instanceof HTMLElement, 'page should be an HTMLElement');
+      assertTrue(header.querySelector('[data-role="page-title"]') !== null, 'title node missing');
+      assertTrue(section.querySelector('h3') !== null, 'section title missing');
+    });
+
+    test('component.getCatalog exposes the public components registered by the factory', () => {
+      const catalog = component.getCatalog();
+      assertTrue(typeof catalog === 'object', 'catalog should be an object');
+      assertTrue(Array.isArray(catalog.general), 'general category missing');
+      assertTrue(catalog.general.some((item) => item.name === 'button'), 'button should be listed in general');
+      assertTrue(catalog.feedback.some((item) => item.name === 'modal'), 'modal should be listed in feedback');
+      assertTrue(!catalog.general.some((item) => item.name === 'div'), 'internal primitives should not be public');
+    });
+
+    test('component.create rejects unknown names and renders registered native primitives', () => {
+      const table = component.create('tableElement');
+      const select = component.create('selectTag');
+      let error = null;
+
+      try {
+        component.create('unknownComponent');
+      } catch (caughtError) {
+        error = caughtError;
+      }
+
+      assertTrue(table instanceof HTMLTableElement, 'tableElement should render a native table');
+      assertTrue(select instanceof HTMLSelectElement, 'selectTag should render a native select');
+      assertTrue(error instanceof Error, 'unknown component should throw');
+      assertTrue(error.message.includes('not registered'), 'unknown component error should be descriptive');
+    });
+
+    test('component.create renders navigation and data-entry primitives', () => {
+      const breadcrumb = component.create('breadcrumb', [
+        { label: 'Inicio', href: '#/' },
+        { label: 'Usuarios', href: '#/users', active: true },
+      ]);
+      const tabs = component.create('tabs', {
+        tabs: [{ id: 'one', label: 'Uno' }, { id: 'two', label: 'Dos' }],
+        renderContent: () => component.create('div'),
+      });
+      const input = component.create('inputText', { name: 'email', placeholder: 'Correo' });
+      const field = component.create('formField', { label: 'Email', input });
+      const textArea = component.create('inputTextArea', { name: 'notes', placeholder: 'Notas' });
+      const select = component.create('inputSelect', { name: 'status', options: [{ value: 'active', label: 'Activo' }] });
+      const email = component.create('inputEmail', { name: 'emailAddress' });
+      const password = component.create('inputPassword', { name: 'password' });
+      const radio = component.create('inputRadio', { name: 'role', value: 'admin' });
+      const check = component.create('inputCheck', { name: 'agree' });
+      const inputSwitch = component.create('inputSwitch', { name: 'enabled', checked: true });
+
+      assertTrue(breadcrumb.querySelectorAll('a').length === 2, 'breadcrumb links mismatch');
+      assertTrue(tabs.querySelectorAll('[data-role="tabs-button"]').length === 2, 'tabs mismatch');
+      assertTrue(tabs.querySelector('[data-role="tabs-bar"]') !== null, 'tabs bar missing');
+      assertTrue(input instanceof HTMLInputElement, 'input should be an HTMLInputElement');
+      assertTrue(field.querySelector('label') !== null, 'form field label missing');
+      assertTrue(textArea instanceof HTMLTextAreaElement, 'textarea should be a HTMLTextAreaElement');
+      assertTrue(select instanceof HTMLSelectElement, 'select should be a HTMLSelectElement');
+      assertTrue(email instanceof HTMLInputElement, 'email input should be an HTMLInputElement');
+      assertTrue(password instanceof HTMLInputElement, 'password input should be an HTMLInputElement');
+      assertTrue(radio instanceof HTMLInputElement, 'radio should be an HTMLInputElement');
+      assertTrue(check instanceof HTMLInputElement, 'check should be an HTMLInputElement');
+      assertTrue(inputSwitch.dataset.role === 'input-switch', 'switch root missing');
+      assertTrue(inputSwitch.getInput() instanceof HTMLInputElement, 'switch native input missing');
+      assertTrue(inputSwitch.getInput().getAttribute('role') === 'switch', 'switch role missing');
+      assertTrue(inputSwitch.getChecked(), 'switch checked state mismatch');
+    });
+
+    test('inputSwitch exposes state, loading, focus and change behavior', () => {
+      let changedTo = null;
+      const inputSwitch = component.create('inputSwitch', {
+        name: 'published',
+        checkedChildren: 'ON',
+        unCheckedChildren: 'OFF',
+        onChange: (checked) => {
+          changedTo = checked;
+        },
+      });
+
+      inputSwitch.toggle();
+      assertTrue(inputSwitch.getChecked(), 'toggle should update checked state');
+      assertTrue(changedTo === true, 'toggle should emit the checked state');
+      assertEquals(inputSwitch.querySelector('[data-role="switch-content"]').textContent, 'ON', 'checked content mismatch');
+
+      inputSwitch.setLoading(true);
+      assertTrue(inputSwitch.getInput().disabled, 'loading switch should be disabled');
+      assertTrue(inputSwitch.getAttribute('aria-busy') === 'true', 'loading state should be announced');
+
+      inputSwitch.setLoading(false).setDisabled(true).toggle();
+      assertTrue(inputSwitch.getChecked(), 'disabled switch should not toggle');
+      inputSwitch.setDisabled(false).setChecked(false);
+      assertTrue(!inputSwitch.getChecked(), 'setChecked should update state');
+    });
+
+    test('component.create renders tables, empty states and feedback primitives', () => {
+      const table = component.create('table', { columns: [{ key: 'name', label: 'Nombre' }], rows: [{ name: 'Item' }] });
+      const emptyState = component.create('emptyState', { title: 'Sin datos', description: 'No hay contenido' });
+      const alert = component.create('alert', { type: 'success', title: 'Listo', message: 'Todo bien' });
+      const modal = component.create('modal', { title: 'Confirmar', content: '¿Continuar?' });
+      const spinner = component.create('spinner', { label: 'Cargando...' });
+      const skeleton = component.create('skeleton', { rows: 3 });
+
+      assertTrue(table instanceof HTMLElement, 'table wrapper should be an HTMLElement');
+      assertTrue(table.querySelector('table') !== null, 'table should render a real table element');
+      assertTrue(emptyState.querySelector('[data-role="empty-title"]') !== null, 'empty title missing');
+      assertTrue(alert.getAttribute('role') === 'status', 'alert role mismatch');
+      assertTrue(alert.querySelector('.font-semibold') !== null, 'alert title should be rendered');
+      assertTrue(modal.dataset.role === 'ui-modal-overlay', 'modal overlay missing');
+      assertTrue(spinner.querySelector('[aria-hidden="true"]') !== null, 'spinner missing');
+      assertEquals(skeleton.querySelectorAll('[data-role="skeleton-line"]').length, 3, 'skeleton lines mismatch');
+    });
+
+    test('pageHeader composes title, subtitle and actions container through the factory', () => {
+      const header = component.create('pageHeader', {
+        title: 'Usuarios',
+        subtitle: 'Gestión de usuarios',
+        actions: [component.create('button', { label: 'Nuevo', variant: 'primary' })],
+      });
+
+      assertTrue(header instanceof HTMLElement, 'header should be an HTMLElement');
+      assertTrue(header.querySelector('[data-role="page-title"]') !== null, 'title node missing');
+      assertTrue(header.querySelector('[data-role="page-actions"]') !== null, 'actions container missing');
+    });
+
+    test('component factory exposes chainable methods for real UI controls', () => {
+      const page = component.create('page').setRole('entity-edit-page');
+      const wrapper = component.create('div').setClassName('rounded-2xl').setRole('entity-edit-wrapper').setParent(page);
+      const errorBanner = component.create('alert').setRole('entity-edit-error').setVisible(false).setParent(wrapper);
+      const password = component.create('inputPassword').setType('password').setValue('secret').setError('Requerido');
+
+      assertTrue(page instanceof HTMLElement, 'page should be a component instance');
+      assertEquals(page.getAttribute('role'), 'entity-edit-page', 'page role mismatch');
+      assertEquals(wrapper.getAttribute('role'), 'entity-edit-wrapper', 'wrapper role mismatch');
+      assertTrue(errorBanner.getAttribute('role') === 'entity-edit-error', 'alert role mismatch');
+      assertTrue(password instanceof HTMLInputElement, 'password should be an input element');
+      assertEquals(password.value, 'secret', 'password value mismatch');
+      assertTrue(password.className.includes('border-red'), 'password should expose error styling');
+    });
+
+    log('────────────────────────────────────────────────────────────────────────');
+    log(`Resultado: ${passed} passed, ${failed} failed`);
+    output.innerHTML = output.textContent
+      .replaceAll('✅', '<span class="pass">✅</span>')
+      .replaceAll('❌', '<span class="fail">❌</span>');
+  </script>
+</body>
+</html>

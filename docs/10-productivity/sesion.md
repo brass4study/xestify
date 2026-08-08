@@ -8,9 +8,9 @@
 
 ## Última actualización
 
-**Fecha:** 2026-08-07
+**Fecha:** 2026-08-08
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.3 - Libreria de componentes UI base
+**Próxima story:** STORY 9.4 - Arquitectura frontend y modularizacion
 
 ---
 
@@ -289,6 +289,34 @@ Story implementada.
 - La navegación directa a entidades y usuarios queda coordinada desde un único módulo.
 - Backlog y roadmap ya reflejan que STORY 9.2 está implementada y que el siguiente foco es STORY 9.3.
 
+### Sesion 2026-08-07 - STORY 9.3 Libreria de componentes UI base
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/js/modules/ComponentFactory.js` - entrada pública única de la
+  librería UI, con registro canónico, catálogo derivado y rechazo de nombres no
+  registrados.
+- La fachada y el catálogo duplicados se eliminaron tras consolidarlos en
+  `ComponentFactory.js`.
+- `frontend/tests/ComponentsTest.html` - smoke test del contrato único, catálogo,
+  primitivas nativas y creación estricta.
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/ComponentFactory.js`
+- `node --check frontend/src/js/modules/Routes.js`
+- `node --check frontend/src/js/main.js`
+- Prueba de humo en navegador: `8 passed, 0 failed`
+- Suite frontend relacionada: `95 passed, 0 failed` en 12 runners HTML.
+- Smoke del runtime Apache: shell, navegación y tabla de clientes sin errores
+  propios de consola ni tags personalizados accidentales.
+
+**Cierre verificado (2026-08-07):**
+- La librería UI base expone exclusivamente `component.create()` y
+  `component.getCatalog()` para layout, acciones, feedback y estados vacíos.
+- DynamicForm, DynamicTable, Modal y futuras páginas pueden migrar a esta base sin crear patrones visuales paralelos.
+- El backlog queda alineado con la implementación real de la story 9.3.
+
 ---
 
 ## Stack decidido
@@ -303,6 +331,18 @@ Story implementada.
 | Schema | Custom minimalista | ~100 líneas PHP |
 
 ---
+
+### Cierre tecnico 2026-08-08 - STORY 9.3
+
+- Se corrigieron los globs de `frontend/tailwind.config.cjs` para que el build
+  detecte correctamente `frontend/src/**` y `plugins/**` cuando se ejecuta desde
+  la raiz del repo.
+- `frontend/src/css/tailwind.generated.css` volvió a incluir utilities reales de
+  Tailwind; la vista `#/entity/clients` recupera fondo, tipografia y bloques base.
+- Los iconos de las acciones de tabla quedaron fijados a 18px en
+  `DynamicTable.buildActionButton()` para mejorar legibilidad en columnas de acciones.
+- La verificacion manual en navegador confirmó shell con estilos, pagina de
+  plugins y acciones de tabla con iconos mas grandes.
 
 ## Estructura de archivos relevantes
 

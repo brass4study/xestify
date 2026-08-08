@@ -9,6 +9,7 @@
 
 import { Api } from '../modules/Api.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class PluginConfig {
   /** @type {HTMLElement} */
@@ -37,7 +38,7 @@ export class PluginConfig {
    * @param {{ slug: string, api?: Api, onBack?: () => void }} options
    */
   constructor(container, options) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#slug = String(options?.slug ?? '');
     this.#api = options?.api ?? new Api();
     this.#onBack = typeof options?.onBack === 'function' ? options.onBack : () => {};
@@ -45,7 +46,7 @@ export class PluginConfig {
 
   async init() {
     if (this.#slug === '') {
-      this.#renderError('Plugin slug is required.');
+      this.renderError('Plugin slug is required.');
       return;
     }
 
@@ -53,87 +54,112 @@ export class PluginConfig {
       const { data } = await this.#api.get(`/plugins/${this.#slug}/config`);
       const pluginType = String(data?.plugin?.plugin_type ?? '');
       const entityOptions = pluginType === 'extension'
-        ? await this.#loadActiveEntityOptions()
+        ? await this.loadActiveEntityOptions()
         : [];
-      this.#state = this.#buildStateFromResponse(data, entityOptions);
-      this.#render();
+      this.#state = this.buildStateFromResponse(data, entityOptions);
+      this.render();
     } catch (error) {
-      this.#renderError(`No se pudo cargar la configuracion: ${error.message}`);
+      this.renderError(`No se pudo cargar la configuracion: ${error.message}`);
     }
   }
 
-  #render() {
+  render() {
     if (this.#state === null) {
-      this.#renderError('No configuration data available.');
+      this.renderError('No configuration data available.');
       return;
     }
 
     const plugin = this.#state.plugin;
-    const isExtension = this.#isExtensionPlugin();
+    const isExtension = this.isExtensionPlugin();
     const targetEntity = String(this.#state.config.target_entity ?? '*');
     const entityOptions = Array.isArray(this.#state.config.entity_options)
       ? this.#state.config.entity_options
       : [];
-    const allTargetOptionsHtml = this.#buildTargetOptionsHtml(entityOptions, targetEntity);
-    const fieldsHelp = isExtension
+    const allTargetOptionsHtml = this.buildTargetOptionsHtml(entityOptions, targetEntity);
+    const fieldsHelperText = isExtension
       ? 'Define los campos de la extension y a que entidad se aplica. Desactiva una fila para excluirla del schema activo.'
       : 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
-    const feedbackTone = this.#messageType === 'error'
-      ? 'border-red-200 bg-red-50 text-red-700'
-      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
-    const feedbackHtml = this.#message === ''
-      ? ''
-      : `<div class="${feedbackTone} mt-3 rounded-lg border px-3 py-2 text-sm">${this.#escapeHtml(this.#message)}</div>`;
+    const noticeMessage = this.#message === '' ? '' : this.#message;
+    const noticeType = this.#messageType === 'error' ? 'error' : this.#messageType === 'success' ? 'success' : 'info';
 
-    const wrapper = document.createElement('section');
-    wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
-    wrapper.innerHTML = `
-      <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 class="text-xl font-semibold tracking-tight text-slateui-950">Configurar plugin: ${this.#escapeHtml(plugin.name || plugin.slug || this.#slug)}</h2>
-          <p class="mt-1 text-sm text-slate-500">
-            slug: ${this.#escapeHtml(plugin.slug || this.#slug)} | version: ${this.#escapeHtml(plugin.version || '-')} | schema v${this.#escapeHtml(String(plugin.schema_version ?? '-'))}
-          </p>
-        </div>
-      </header>
+    const page = component.create('page', { dataRole: 'plugin-config-page' });
+    const header = component.create('pageHeader', {
+      title: `Configurar plugin: ${plugin.name || plugin.slug || this.#slug}`,
+      subtitle: `slug: ${plugin.slug || this.#slug} | version: ${plugin.version || '-'} | schema v${String(plugin.schema_version ?? '-')}`,
+    });
+    page.appendChild(header);
 
-      ${feedbackHtml}
-
-      <section class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-        ${isExtension
-          ? `<h3>Relacion de extension</h3>
-        <p class="mt-1 text-sm text-slate-600">Selecciona la entidad destino o <strong>Todos</strong> para aplicar la extension globalmente.</p>
-        <select class="mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm" data-name="target-entity">
-            <option value="*" ${this.#selectedAttr('*', targetEntity)}>Todos</option>
-            ${allTargetOptionsHtml}
-        </select>`
-          : ''}
-
-        <h3 class="${isExtension ? 'mt-5' : 'mt-0'} text-base font-semibold text-slateui-950">Campos</h3>
-        <p class="mt-1 text-sm text-slate-600">${fieldsHelp}</p>
-        <div class="mt-3" data-role="fields-table-host"></div>
-        <button type="button" class="mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-action="add-field" data-role="plugin-config-action">Añadir campo</button>
-      </section>
-
-      <footer class="mt-4 flex flex-wrap gap-2">
-        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-action="back" data-role="plugin-config-action">Volver</button>
-        <button type="button" class="inline-flex items-center rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" data-action="save" data-role="plugin-config-action">Guardar</button>
-      </footer>
-    `;
-
-    const tableHost = wrapper.querySelector('[data-role="fields-table-host"]');
-    if (tableHost instanceof HTMLElement) {
-      this.#renderFieldsTable(tableHost);
+    if (noticeMessage !== '') {
+      const notice = component.create('alert', { type: noticeType, message: noticeMessage });
+      notice.dataset.role = 'plugin-config-notice';
+      page.appendChild(notice);
     }
 
-    this.#bindTableEvents(wrapper);
-    this.#bindPageActions(wrapper);
+    const shell = component.create('section', { dataRole: 'plugin-config-shell' });
+    shell.className = 'rounded-xl border border-slate-200 bg-slate-50 p-3';
 
-    this.#container.innerHTML = '';
-    this.#container.appendChild(wrapper);
+    if (isExtension) {
+      const relationshipTitle = component.create('typography', { as: 'h3', text: 'Relación de extension', size: 'sm', weight: 'semibold', color: 'slate-900' });
+      shell.appendChild(relationshipTitle);
+
+      const relationshipHelp = component.create('typography', { text: 'Selecciona la entidad destino o Todos para aplicar la extension globalmente.', size: 'sm', color: 'slate-600' });
+      relationshipHelp.className = 'mt-1';
+      shell.appendChild(relationshipHelp);
+
+      const targetSelect = component.create('selectTag');
+      targetSelect.className = 'mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm';
+      targetSelect.dataset.name = 'target-entity';
+      targetSelect.innerHTML = `<option value="*" ${this.selectedAttr('*', targetEntity)}>Todos</option>${allTargetOptionsHtml}`;
+      shell.appendChild(targetSelect);
+    }
+
+    const fieldsTitle = component.create('typography', { as: 'h3', text: 'Campos', size: 'sm', weight: 'semibold', color: 'slate-900' });
+    fieldsTitle.className = isExtension ? 'mt-5' : 'mt-0';
+    shell.appendChild(fieldsTitle);
+
+    const fieldsHelp = component.create('typography', { text: fieldsHelperText, size: 'sm', color: 'slate-600' });
+    fieldsHelp.className = 'mt-1';
+    shell.appendChild(fieldsHelp);
+
+    const tableHost = component.create('div');
+    tableHost.className = 'mt-3';
+    tableHost.dataset.role = 'fields-table-host';
+    shell.appendChild(tableHost);
+
+    const addFieldButton = component.create('button', {
+      label: 'Añadir campo',
+      dataRole: 'plugin-config-action',
+      dataAction: 'add-field',
+    });
+    addFieldButton.className = 'mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
+    shell.appendChild(addFieldButton);
+
+    page.appendChild(shell);
+
+    const footer = component.create('footer');
+    footer.className = 'mt-4 flex flex-wrap gap-2';
+    footer.appendChild(component.create('button', {
+      label: 'Volver',
+      dataRole: 'plugin-config-action',
+      dataAction: 'back',
+    }));
+    footer.appendChild(component.create('button', {
+      label: 'Guardar',
+      variant: 'primary',
+      dataRole: 'plugin-config-action',
+      dataAction: 'save',
+    }));
+    page.appendChild(footer);
+
+    this.renderFieldsTable(tableHost);
+    this.bindTableEvents(page);
+    this.bindPageActions(page);
+
+    this.#container.replaceChildren();
+    this.#container.appendChild(page);
   }
 
-  #renderFieldsTable(container) {
+  renderFieldsTable(container) {
     const rows = this.#state?.config?.fields ?? [];
     const records = rows.map((field, index) => ({
       ...field,
@@ -155,49 +181,49 @@ export class PluginConfig {
           label: 'Activo',
           headerClassName,
           cellClassName: centeredCellClassName,
-          renderCell: (field) => this.#renderActiveInput(field),
+          renderCell: (field) => this.renderActiveInput(field),
         },
         {
           label: 'Clase',
           headerClassName,
           cellClassName: baseCellClassName,
-          renderCell: (field) => this.#renderSourceBadge(field),
+          renderCell: (field) => this.renderSourceBadge(field),
         },
         {
           label: 'Clave',
           headerClassName,
           cellClassName: baseCellClassName,
-          renderCell: (field) => this.#renderKeyInput(field),
+          renderCell: (field) => this.renderKeyInput(field),
         },
         {
           label: 'Tipo',
           headerClassName,
           cellClassName: baseCellClassName,
-          renderCell: (field) => this.#renderTypeSelect(field),
+          renderCell: (field) => this.renderTypeSelect(field),
         },
         {
           label: 'Etiqueta',
           headerClassName,
           cellClassName: baseCellClassName,
-          renderCell: (field) => this.#renderLabelInput(field),
+          renderCell: (field) => this.renderLabelInput(field),
         },
         {
           label: 'Requerido',
           headerClassName,
           cellClassName: centeredCellClassName,
-          renderCell: (field) => this.#renderRequiredInput(field),
+          renderCell: (field) => this.renderRequiredInput(field),
         },
         {
           label: 'Cabecera',
           headerClassName,
           cellClassName: centeredCellClassName,
-          renderCell: (field) => this.#renderSummaryViewInput(field),
+          renderCell: (field) => this.renderSummaryViewInput(field),
         },
         {
           label: 'Acciones',
           headerClassName,
           cellClassName: actionsCellClassName,
-          renderCell: (field) => this.#renderActions(field),
+          renderCell: (field) => this.renderActions(field),
         },
       ],
       rowDecorator: (row, field) => {
@@ -209,7 +235,7 @@ export class PluginConfig {
     table.render();
   }
 
-  #fieldMeta(field) {
+  fieldMeta(field) {
     const locked = field.locked === true;
     const source = String(field.source ?? 'additional');
     const isBase = source === 'base';
@@ -219,9 +245,9 @@ export class PluginConfig {
     return { source, immutableField, keyReadonly, editable };
   }
 
-  #renderSourceBadge(field) {
-    const { source } = this.#fieldMeta(field);
-    const badge = document.createElement('span');
+  renderSourceBadge(field) {
+    const { source } = this.fieldMeta(field);
+    const badge = component.create('span');
     badge.dataset.role = 'field-source';
     badge.className = 'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide';
 
@@ -239,80 +265,81 @@ export class PluginConfig {
     return badge;
   }
 
-  #renderActiveInput(field) {
-    const { immutableField } = this.#fieldMeta(field);
-    const input = document.createElement('input');
-    input.type = 'checkbox';
+  renderActiveInput(field) {
+    const { immutableField } = this.fieldMeta(field);
+    const input = component.create('inputSwitch', {
+      checked: field.active === true,
+      disabled: immutableField,
+      size: 'small',
+    });
     input.dataset.name = 'active';
-    input.checked = field.active === true;
-    input.disabled = immutableField;
     return input;
   }
 
-  #renderKeyInput(field) {
-    const { keyReadonly } = this.#fieldMeta(field);
-    const input = document.createElement('input');
+  renderKeyInput(field) {
+    const { keyReadonly } = this.fieldMeta(field);
+    const input = component.create('inputText');
     input.className = 'w-full rounded-md border-slate-300 text-sm';
-    input.type = 'text';
     input.dataset.name = 'key';
     input.value = String(field.key ?? '');
     input.readOnly = keyReadonly;
     return input;
   }
 
-  #renderTypeSelect(field) {
-    const { editable } = this.#fieldMeta(field);
-    const select = document.createElement('select');
+  renderTypeSelect(field) {
+    const { editable } = this.fieldMeta(field);
+    const select = component.create('selectTag');
     select.className = 'w-full rounded-md border-slate-300 text-sm';
     select.dataset.name = 'type';
     select.disabled = !editable;
-    select.innerHTML = this.#typeOptions(field.type || 'string');
+    select.innerHTML = this.typeOptions(field.type || 'string');
     return select;
   }
 
-  #renderLabelInput(field) {
-    const { editable } = this.#fieldMeta(field);
-    const input = document.createElement('input');
+  renderLabelInput(field) {
+    const { editable } = this.fieldMeta(field);
+    const input = component.create('inputText');
     input.className = 'w-full rounded-md border-slate-300 text-sm';
-    input.type = 'text';
     input.dataset.name = 'label';
     input.value = String(field.label ?? '');
     input.readOnly = !editable;
     return input;
   }
 
-  #renderRequiredInput(field) {
-    const { editable } = this.#fieldMeta(field);
-    const input = document.createElement('input');
-    input.type = 'checkbox';
+  renderRequiredInput(field) {
+    const { editable } = this.fieldMeta(field);
+    const input = component.create('inputSwitch', {
+      checked: field.required === true,
+      disabled: !editable,
+      size: 'small',
+    });
     input.dataset.name = 'required';
-    input.checked = field.required === true;
-    input.disabled = !editable;
     return input;
   }
 
-  #renderSummaryViewInput(field) {
-    const { editable } = this.#fieldMeta(field);
-    const input = document.createElement('input');
-    input.type = 'checkbox';
+  renderSummaryViewInput(field) {
+    const { editable } = this.fieldMeta(field);
+    const input = component.create('inputSwitch', {
+      checked: field.summaryView !== false,
+      disabled: !editable,
+      size: 'small',
+    });
     input.dataset.name = 'summaryView';
-    input.checked = field.summaryView !== false;
-    input.disabled = !editable;
     return input;
   }
 
-  #renderActions(field) {
-    const { immutableField } = this.#fieldMeta(field);
-    const actions = document.createElement('div');
+  renderActions(field) {
+    const { immutableField } = this.fieldMeta(field);
+    const actions = component.create('div');
     actions.className = 'flex flex-wrap items-center gap-2';
     const rowIndex = Number(field.__rowIndex ?? 0);
     const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
 
-    actions.appendChild(this.#buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0));
-    actions.appendChild(this.#buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex));
+    actions.appendChild(this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0));
+    actions.appendChild(this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex));
 
     if (!immutableField) {
-      const removeButton = this.#buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false);
+      const removeButton = this.buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false);
       removeButton.classList.add('ml-2');
       actions.appendChild(removeButton);
     }
@@ -320,7 +347,7 @@ export class PluginConfig {
     return actions;
   }
 
-  #buildRowActionButton(label, icon, tone, action, rowIndex, disabled) {
+  buildRowActionButton(label, icon, tone, action, rowIndex, disabled) {
     const button = DynamicTable.buildActionButton({
       label,
       icon,
@@ -333,18 +360,18 @@ export class PluginConfig {
     return button;
   }
 
-  #bindTableEvents(wrapper) {
+  bindTableEvents(wrapper) {
     wrapper.querySelectorAll('[data-action="move-up"]').forEach((button) => {
       button.addEventListener('click', () => {
         const index = Number(button.dataset.rowIndex);
-        this.#moveRow(index, -1);
+        this.moveRow(index, -1);
       });
     });
 
     wrapper.querySelectorAll('[data-action="move-down"]').forEach((button) => {
       button.addEventListener('click', () => {
         const index = Number(button.dataset.rowIndex);
-        this.#moveRow(index, 1);
+        this.moveRow(index, 1);
       });
     });
 
@@ -352,13 +379,13 @@ export class PluginConfig {
       button.addEventListener('click', () => {
         const index = Number(button.dataset.rowIndex);
         this.#state.config.fields.splice(index, 1);
-        this.#clearNotice();
-        this.#render();
+        this.clearNotice();
+        this.render();
       });
     });
   }
 
-  #moveRow(index, delta) {
+  moveRow(index, delta) {
     const rows = this.#state.config.fields;
     const target = index + delta;
     if (target < 0 || target >= rows.length) {
@@ -368,52 +395,52 @@ export class PluginConfig {
     const tmp = rows[index];
     rows[index] = rows[target];
     rows[target] = tmp;
-    this.#clearNotice();
-    this.#render();
+    this.clearNotice();
+    this.render();
   }
 
-  async #saveFromDom(wrapper) {
+  async saveFromDom(wrapper) {
     try {
-      const payload = this.#buildPayloadFromDom(wrapper);
+      const payload = this.buildPayloadFromDom(wrapper);
       const { data } = await this.#api.put(`/plugins/${this.#slug}/config`, payload);
 
-      this.#applySavedState(data);
+      this.applySavedState(data);
 
       this.#message = 'Configuracion guardada correctamente.';
       this.#messageType = 'success';
-      this.#render();
+      this.render();
     } catch (error) {
       this.#message = `Error al guardar: ${error.message}`;
       this.#messageType = 'error';
-      this.#render();
+      this.render();
     }
   }
 
-  #clearNotice() {
+  clearNotice() {
     this.#message = '';
     this.#messageType = '';
   }
 
-  #renderError(message) {
-    const banner = document.createElement('div');
+  renderError(message) {
+    const banner = component.create('div');
     banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
     banner.textContent = message;
     this.#container.innerHTML = '';
     this.#container.appendChild(banner);
   }
 
-  #typeOptions(selected) {
+  typeOptions(selected) {
     const types = ['string', 'text', 'number', 'boolean', 'date', 'timestamp', 'email', 'select', 'uuid'];
     return types
       .map((type) => `<option value="${type}" ${type === selected ? 'selected' : ''}>${type}</option>`)
       .join('');
   }
 
-  #bindPageActions(wrapper) {
+  bindPageActions(wrapper) {
     wrapper.querySelector('[data-action="add-field"]').addEventListener('click', () => {
-      this.#state.config.fields.push(this.#createEmptyField());
-      this.#clearNotice();
-      this.#render();
+      this.#state.config.fields.push(this.createEmptyField());
+      this.clearNotice();
+      this.render();
     });
 
     wrapper.querySelector('[data-action="back"]').addEventListener('click', () => {
@@ -421,11 +448,11 @@ export class PluginConfig {
     });
 
     wrapper.querySelector('[data-action="save"]').addEventListener('click', async () => {
-      await this.#saveFromDom(wrapper);
+      await this.saveFromDom(wrapper);
     });
   }
 
-  #createEmptyField() {
+  createEmptyField() {
     return {
       active: true,
       key: '',
@@ -438,7 +465,7 @@ export class PluginConfig {
     };
   }
 
-  #buildTargetOptionsHtml(entityOptions, targetEntity) {
+  buildTargetOptionsHtml(entityOptions, targetEntity) {
     const hasCurrentTarget = entityOptions.some((entity) => entity.slug === targetEntity);
     const allTargetOptions = hasCurrentTarget || targetEntity === '*'
       ? entityOptions
@@ -446,13 +473,13 @@ export class PluginConfig {
 
     return allTargetOptions
       .map((entity) => {
-        const selectedAttr = this.#selectedAttr(entity.slug, targetEntity);
-        return `<option value="${this.#escapeHtml(entity.slug)}" ${selectedAttr}>${this.#escapeHtml(entity.label)}</option>`;
+        const selectedAttr = this.selectedAttr(entity.slug, targetEntity);
+        return `<option value="${this.escapeHtml(entity.slug)}" ${selectedAttr}>${this.escapeHtml(entity.label)}</option>`;
       })
       .join('');
   }
 
-  #buildStateFromResponse(data, entityOptions = []) {
+  buildStateFromResponse(data, entityOptions = []) {
     return {
       plugin: data?.plugin ?? {},
       config: {
@@ -467,9 +494,9 @@ export class PluginConfig {
     };
   }
 
-  #buildPayloadFromDom(wrapper) {
-    const payload = { fields: this.#collectRowsFromDom(wrapper) };
-    if (this.#isExtensionPlugin()) {
+  buildPayloadFromDom(wrapper) {
+    const payload = { fields: this.collectRowsFromDom(wrapper) };
+    if (this.isExtensionPlugin()) {
       const targetEntityInput = wrapper.querySelector('[data-name="target-entity"]');
       payload.target_entity = targetEntityInput ? targetEntityInput.value.trim() : '';
     }
@@ -477,16 +504,16 @@ export class PluginConfig {
     return payload;
   }
 
-  #collectRowsFromDom(wrapper) {
+  collectRowsFromDom(wrapper) {
     const rows = [];
     wrapper.querySelectorAll('[data-role="plugin-config-table"] tbody tr[data-row-index]').forEach((rowEl) => {
-      rows.push(this.#readRowFromDom(rowEl));
+      rows.push(this.readRowFromDom(rowEl));
     });
 
     return rows;
   }
 
-  #readRowFromDom(rowEl) {
+  readRowFromDom(rowEl) {
     const index = Number(rowEl.dataset.rowIndex);
     const original = this.#state.config.fields[index] ?? {};
 
@@ -509,20 +536,20 @@ export class PluginConfig {
     };
   }
 
-  #applySavedState(data) {
+  applySavedState(data) {
     const entityOptions = Array.isArray(this.#state?.config?.entity_options)
       ? this.#state.config.entity_options
       : [];
-    const nextState = this.#buildStateFromResponse(data, entityOptions);
+    const nextState = this.buildStateFromResponse(data, entityOptions);
     nextState.plugin = data?.plugin ?? this.#state.plugin;
     this.#state = nextState;
   }
 
-  #isExtensionPlugin() {
+  isExtensionPlugin() {
     return String(this.#state?.plugin?.plugin_type ?? '') === 'extension';
   }
 
-  async #loadActiveEntityOptions() {
+  async loadActiveEntityOptions() {
     try {
       const { data } = await this.#api.get('/entities');
       if (!Array.isArray(data)) {
@@ -540,7 +567,7 @@ export class PluginConfig {
     }
   }
 
-  #selectedAttr(value, selectedValue) {
+  selectedAttr(value, selectedValue) {
     if (value === selectedValue) {
       return 'selected';
     }
@@ -548,7 +575,7 @@ export class PluginConfig {
     return '';
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }
@@ -561,7 +588,7 @@ export class PluginConfig {
     throw new TypeError(`PluginConfig container "${String(container)}" not found`);
   }
 
-  #escapeHtml(text) {
+  escapeHtml(text) {
     const map = {
       '&': '&amp;',
       '<': '&lt;',

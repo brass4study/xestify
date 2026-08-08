@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-07
-> **Estado del proyecto:** **STORY 9.2 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.3`
+> **Última actualización:** 2026-08-08
+> **Estado del proyecto:** **STORY 9.3 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.4`
 
 ---
 
@@ -28,9 +28,11 @@ Su objetivo es:
 El corte funcional vigente del producto queda fijado en:
 
 - `STORY 9.1` completada
+- `STORY 9.2` completada
+- `STORY 9.3` completada
 - `EPIC 8` cerrada
 - `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.3` (librería de componentes UI base)
+- siguiente foco funcional: `STORY 9.4` (arquitectura frontend y modularizacion)
 
 ### Funcionalidades nucleares (Core)
 
@@ -134,7 +136,7 @@ La estrategia vigente de implementación es:
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
-| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.2 cerrada; siguiente foco 9.3 |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.3 cerrada; siguiente foco 9.4 |
 | 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
 | 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
@@ -278,7 +280,8 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 
 **Estado real**
 - ✅ Story 9.1 implementada: fundamentos visuales, tablas unificadas, tabs alineadas con Ant Design y pipeline Tailwind sin CDN runtime
-- ⏭ Siguiente punto: Story 9.3 para librería de componentes UI base
+- ✅ Story 9.3 implementada: librería de componentes UI base consolidada en `ComponentFactory`, con `InputSwitch` y `DynamicTable` alineados a la base común
+- ⏭ Siguiente punto: Story 9.4 para arquitectura frontend y modularizacion
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas

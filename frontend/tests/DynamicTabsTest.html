@@ -83,6 +83,9 @@
     assertEquals(buttons.length, 2, 'Expected 2 tab buttons');
     assertEquals(buttons[0].textContent, 'General', 'First tab label');
     assertEquals(buttons[1].textContent, 'Notas', 'Second tab label');
+    const inkBar = container.querySelector('[data-role="tabs-ink-bar"]');
+    assertTrue(inkBar !== null, 'Expected animated Ant Design ink bar');
+    assertTrue(inkBar.className.includes('transition-[width,transform]'), 'Ink bar should animate width and transform');
 
     const content = container.querySelector('[data-role="tabs-content"]');
     assertTrue(content !== null, 'Expected [data-role="tabs-content"]');
@@ -107,13 +110,39 @@
     const content = container.querySelector('[data-role="tabs-content"]');
     assertTrue(content.textContent.includes('Contenido B'), 'Content B should be visible');
 
-    const activeBtn = container.querySelector('[data-role="tabs-button"]--active');
+    const activeBtn = container.querySelector('[data-role="tabs-button"][data-state="active"]');
     assertTrue(activeBtn !== null, 'Should have an active button');
     assertEquals(activeBtn.dataset.tabId, 'b', 'Active button should be b');
     assertEquals(activeBtn.getAttribute('aria-selected'), 'true', 'aria-selected true on active');
 
     const inactiveBtn = container.querySelector('[data-tab-id="a"]');
     assertEquals(inactiveBtn.getAttribute('aria-selected'), 'false', 'aria-selected false on inactive');
+
+    const inkBar = container.querySelector('[data-role="tabs-ink-bar"]');
+    assertTrue(inkBar.style.width !== '', 'Ink bar width should be measured');
+    assertTrue(inkBar.style.transform.includes('translateX'), 'Ink bar position should be measured');
+
+    tabs.destroy();
+  });
+
+  it('teclado cambia el tab con flechas, Home y End', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'a', label: 'A', content: () => 'Contenido A' },
+        { id: 'b', label: 'B', content: () => 'Contenido B' },
+        { id: 'c', label: 'C', content: () => 'Contenido C' },
+      ],
+    });
+    tabs.render();
+
+    container.querySelector('[data-tab-id="a"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    assertEquals(tabs.getActiveTab(), 'b', 'ArrowRight should select next tab');
+
+    container.querySelector('[data-tab-id="b"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    assertEquals(tabs.getActiveTab(), 'c', 'End should select last tab');
+
+    container.querySelector('[data-tab-id="c"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    assertEquals(tabs.getActiveTab(), 'a', 'Home should select first tab');
 
     tabs.destroy();
   });

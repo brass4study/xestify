@@ -1,11 +1,11 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-08-07)
+## Estado implementado auditado (2026-08-08)
 
-El corte funcional actual queda fijado en **STORY 9.2 incluida**.
+El corte funcional actual queda fijado en **STORY 9.3 incluida**.
 
-- **EPIC 9 en progreso** con `STORY 9.1` y `STORY 9.2` implementadas.
-- **STORY 9.2** ya implementada: contrato central de navegación hash en inglés, sin aliases legacy, y documentación alineada para breadcrumbs y copy/i18n.
+- **EPIC 9 en progreso** con `STORY 9.1`, `STORY 9.2` y `STORY 9.3` implementadas.
+- **STORY 9.3** ya implementada: librería de componentes UI base consolidada en `ComponentFactory`, con `InputSwitch`, `Modal` y `DynamicTable` alineados a la base común.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -999,6 +999,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
+- **Status:** ✅ Implementada
 - **Criteria:**
   - ✅ Libreria base de controles reutilizables con categorias tipo Ant: general, layout, navigation, data entry, data display y feedback
   - ✅ Componentes base definidos al menos para Button, Typography, Page, PageHeader, Section, Breadcrumb, Tabs, Inputs, FormFields, Table, Empty, Alert, Modal y Spinner/Skeleton
@@ -1008,6 +1009,9 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Extraccion de controles base + contrato de componentes + alineacion visual de la UI
 - **Dependencias:** STORY 3.8, STORY 3.9, STORY 5.4, STORY 9.1
 - **Blockers:** Ninguno
+- **Implementacion verificada:** `frontend/src/js/modules/ComponentFactory.js` y `frontend/tests/ComponentsTest.html`; API única `component.create()` / `component.getCatalog()` con registro estricto.
+
+**Nota de cierre:** la implementación ya quedó validada con tests y navegación real en navegador; el siguiente foco del EPIC 9 pasa a STORY 9.4.
 
 ### STORY 9.4: Arquitectura frontend y modularizacion
 - **Points:** 5

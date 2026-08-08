@@ -41,6 +41,9 @@ los tres archivos siguientes en este orden:
   decision manual.
 3. `docs/10-productivity/prompts.md`: añadir el prompt exacto que se uso para la story,
   resultado e iteraciones.
+4. Si el commit es un `feat` de una story o de un EPIC, tambien debes revisar y
+  actualizar `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` para que el
+  estado del backlog quede alineado con la implementacion real.
 
 Flujo obligatorio para cada story:
 

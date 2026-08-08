@@ -2,6 +2,8 @@
  * UserMenu.js - Dropdown menu for the logged-in user in the navbar.
  */
 
+import { component } from './ComponentFactory.js';
+
 export class UserMenu {
   /** @type {HTMLElement} */
   #container;
@@ -35,55 +37,57 @@ export class UserMenu {
    * }} options
    */
   constructor(container, options = {}) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#name = typeof options.name === 'string' ? options.name : null;
     this.#email = typeof options.email === 'string' ? options.email : null;
     this.#avatar = typeof options.avatar === 'string' ? options.avatar : null;
     this.#roles = Array.isArray(options.roles) ? options.roles : [];
     this.#onSelect = typeof options.onSelect === 'function' ? options.onSelect : null;
     this.#open = false;
-    this.#render();
+    this.render();
   }
 
-  #render() {
+  render() {
     this.#container.replaceChildren();
     this.#container.className = 'relative inline-flex items-center';
     this.#container.dataset.role = 'user-menu';
 
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
+    const trigger = component.create('button', {
+      dataRole: 'user-menu-trigger',
+    });
     trigger.className = 'inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm text-white transition hover:bg-white/20';
-    trigger.dataset.role = 'user-menu-trigger';
-    trigger.setAttribute('aria-haspopup', 'menu');
-    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttributes({ 'aria-haspopup': 'menu', 'aria-expanded': 'false' });
 
-    const avatarWrap = document.createElement('div');
-    avatarWrap.className = 'inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-brand-700';
-    avatarWrap.dataset.role = 'user-menu-avatar';
+    const avatarWrap = component.create('div', {
+      className: 'inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-brand-700',
+      dataset: { role: 'user-menu-avatar' },
+    });
 
     if (this.#avatar !== null && this.#avatar !== '') {
-      const img = document.createElement('img');
-      img.src = this.#avatar;
-      img.alt = 'Avatar del usuario';
+      const img = component.create('img', {
+        attributes: { src: this.#avatar, alt: 'Avatar del usuario' },
+      });
       avatarWrap.appendChild(img);
     } else {
-      avatarWrap.textContent = this.#getInitials();
+      avatarWrap.textContent = this.getInitials();
     }
 
-    const label = document.createElement('span');
-    label.className = 'max-w-[180px] truncate text-left text-xs font-medium sm:text-sm';
-    label.dataset.role = 'user-menu-label';
-    label.textContent = this.#getDisplayName();
+    const label = component.create('span', {
+      className: 'max-w-[180px] truncate text-left text-xs font-medium sm:text-sm',
+      dataset: { role: 'user-menu-label' },
+      text: this.getDisplayName(),
+    });
 
     trigger.appendChild(avatarWrap);
     trigger.appendChild(label);
     this.#container.appendChild(trigger);
 
-    const menu = document.createElement('div');
-    menu.className = 'absolute right-0 top-[calc(100%+2px)] z-[120] hidden min-w-56 flex-col rounded-xl border border-slate-200 bg-white p-1.5 shadow-float';
-    menu.hidden = true;
-    menu.dataset.role = 'user-menu-items';
-    menu.setAttribute('role', 'menu');
+    const menu = component.create('div', {
+      className: 'absolute right-0 top-[calc(100%+2px)] z-[120] hidden min-w-56 flex-col rounded-xl border border-slate-200 bg-white p-1.5 shadow-float',
+      dataset: { role: 'user-menu-items' },
+      attributes: { role: 'menu' },
+      hidden: true,
+    });
 
     const actions = [
       { key: 'profile', label: 'Mi perfil' },
@@ -93,16 +97,16 @@ export class UserMenu {
 
     for (const action of actions) {
       const isAdminOnly = action.key === 'users';
-      if (isAdminOnly && !this.#isAdmin()) {
+      if (isAdminOnly && !this.isAdmin()) {
         continue;
       }
-      const item = document.createElement('button');
-      item.type = 'button';
+      const item = component.create('button', {
+        label: action.label,
+      });
       item.className = 'rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100';
       item.dataset.menuAction = action.key;
-      item.textContent = action.label;
       item.addEventListener('click', () => {
-        this.#setOpen(false);
+        this.setOpen(false);
         if (this.#onSelect !== null) {
           this.#onSelect(action.key);
         }
@@ -113,27 +117,27 @@ export class UserMenu {
     this.#container.appendChild(menu);
 
     this.#container.addEventListener('mouseenter', () => {
-      this.#setOpen(true);
+      this.setOpen(true);
     });
 
     this.#container.addEventListener('mouseleave', () => {
-      this.#setOpen(false);
+      this.setOpen(false);
     });
 
     this.#container.style.position = 'relative';
 
     trigger.addEventListener('click', () => {
-      this.#setOpen(!this.#open);
+      this.setOpen(!this.#open);
     });
 
     trigger.addEventListener('focus', () => {
-      this.#setOpen(true);
+      this.setOpen(true);
     });
 
     this.#container.addEventListener('focusout', () => {
       queueMicrotask(() => {
         if (!this.#container.contains(document.activeElement)) {
-          this.#setOpen(false);
+          this.setOpen(false);
         }
       });
     });
@@ -143,12 +147,12 @@ export class UserMenu {
         return;
       }
       if (!this.#container.contains(event.target)) {
-        this.#setOpen(false);
+        this.setOpen(false);
       }
     });
   }
 
-  #setOpen(isOpen) {
+  setOpen(isOpen) {
     this.#open = Boolean(isOpen);
 
     const trigger = this.#container.querySelector('[data-role="user-menu-trigger"]');
@@ -164,14 +168,14 @@ export class UserMenu {
     }
   }
 
-  #getDisplayName() {
+  getDisplayName() {
     if (this.#name !== null && this.#name !== '') {
       return this.#name;
     }
     return this.#email ?? 'Usuario';
   }
 
-  #getInitials() {
+  getInitials() {
     const source = this.#name ?? this.#email ?? 'Usuario';
     const parts = source.split(/\s+/).filter(Boolean);
     if (parts.length === 0) {
@@ -181,11 +185,11 @@ export class UserMenu {
     return initials.join('');
   }
 
-  #isAdmin() {
+  isAdmin() {
     return this.#roles.includes('admin');
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

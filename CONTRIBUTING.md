@@ -122,6 +122,17 @@ Aplicar estas reglas siempre al generar o modificar codigo JavaScript.
 - Comparacion estricta: usar siempre `===` y `!==`.
 - Sin funciones anonimas inline de mas de 5 lineas; extraer a funcion nombrada.
 - Sin `innerHTML` con datos de usuario; usar `textContent` o sanitizar.
+- La UI de paginas, modulos y componentes compuestos debe crearse exclusivamente
+  mediante `component.create` y los componentes registrados en
+  `ComponentFactory.js`, unica entrada publica del sistema UI. Los nombres no
+  registrados deben lanzar error; no usar tags personalizados como fallback.
+  No construir controles, tablas, formularios ni
+  estructuras visuales con `document.createElement`, `createElement`,
+  `createComponentInstance` o HTML manual. Estas primitivas quedan reservadas a
+  la infraestructura de bajo nivel de `BaseComponent` y `ComponentFactory`.
+- Si falta una capacidad visual, ampliar la API del componente propietario o
+  proponer y registrar un componente nuevo. No crear una implementacion paralela
+  dentro de una pagina o modulo consumidor.
 
 ## Herramientas recomendadas
 

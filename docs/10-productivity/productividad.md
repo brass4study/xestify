@@ -1032,3 +1032,18 @@
   - Eliminó un hash hardcodeado en `UserManager.js` para preparar el terreno a la modularización y al router formal.
 - **Iteraciones:** 2 (contrato inicial + limpieza de aliases legacy y docs finales)
 - **Decisión manual:** Mantener el routing hash actual y posponer el router formal a STORY 9.6, usando en 9.2 solo un contrato compartido de navegación en inglés.
+
+### STORY 9.3: Libreria de componentes UI base
+- **Fecha:** 2026-08-08
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** ~3h 30m
+- **Aceleración:** ~42% ⚡
+- **Qué hizo IA:**
+  - Consolidó `ComponentFactory` como API única y catálogo canónico de componentes.
+  - Implementó y validó `InputSwitch` como control booleano estándar.
+  - Unificó el modal sobre la base común y alineó `Tabs` con tokens Tailwind.
+  - Detectó y corrigió el problema real de build de Tailwind por globs mal resueltos desde la raíz del repo.
+  - Ajustó los iconos de las columnas de acciones de tabla a 18px para mejorar legibilidad.
+  - Ejecutó baterías amplias de tests y validaciones en navegador sobre Components, DynamicForm, DynamicTable, Modal, PluginManager, PluginConfig, EntityList, EntityEdit, Navbar, Login, UserManagement y UserProfile.
+- **Iteraciones:** 4
+- **Decisión manual:** Mantener Tailwind como fuente única de estilos runtime, corregir el pipeline para que se ejecute desde la raiz del repo y forzar 18px solo en iconos de acciones de tabla.

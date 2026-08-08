@@ -18,6 +18,7 @@ import {
 import { UserConfig } from './pages/UserConfig.js';
 import { UserProfile } from './pages/UserProfile.js';
 import { UserManager } from './pages/UserManager.js';
+import { component } from './modules/ComponentFactory.js';
 
 const STORAGE_TOKEN_KEY = 'xestify_access_token';
 const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
@@ -96,16 +97,16 @@ function renderLogin(container) {
 async function renderDashboard(container) {
   container.replaceChildren();
 
-  const shell = document.createElement('section');
+  const shell = component.create('sectionTag');
   shell.className = 'mx-auto flex min-h-screen w-full max-w-[1280px] flex-col';
   shell.dataset.role = 'app-shell';
 
-  const navbarEl = document.createElement('div');
+  const navbarEl = component.create('div');
   navbarEl.className = 'sticky top-0 z-50';
   navbarEl.dataset.role = 'shell-navbar';
   shell.appendChild(navbarEl);
 
-  const content = document.createElement('main');
+  const content = component.create('main');
   content.className = 'flex-1 px-3 py-4 sm:px-4 sm:py-6';
   content.dataset.role = 'shell-content';
   shell.appendChild(content);
@@ -659,7 +660,7 @@ function resolveUserRoles(value, fallbackValue) {
 }
 
 function showPlaceholder(container, message) {
-  const msg = document.createElement('p');
+  const msg = component.create('p');
   msg.className = 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500';
   msg.dataset.role = 'placeholder';
   msg.textContent = message;

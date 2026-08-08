@@ -13,6 +13,7 @@ sin depender de React ni build step.
 - **Tipografía base:** IBM Plex Sans (UI) + IBM Plex Mono (datos técnicos).
 - **Fuente de componentes objetivo:** catálogo conceptual de Ant Design (General, Layout,
   Navigation, Data Entry, Data Display, Feedback).
+- **Build de Tailwind:** el comando de generación se ejecuta desde la raiz del repo, por lo que los globs de contenido deben apuntar a `./frontend/src/**` y `./plugins/**` para evitar una salida vacía o incompleta.
 
 ## Valores de diseño adoptados
 
@@ -49,6 +50,7 @@ La Story 9.1 establece las bases para la librería de 9.3 con equivalencias conc
 - Los componentes nuevos deben usar clases Tailwind como capa principal.
 - Los anclajes de comportamiento y tests deben usar `data-role`/`data-*`; evitar prefijos de clase acoplados a implementación.
 - `frontend/src/css/main.css` queda restringido a **overrides mínimos** justificados.
+- Los botones de accion de tablas pueden ajustar el tamaño del icono inline cuando el foco es la legibilidad del glyph; no se deben crear clases CSS paralelas para ese caso.
 
 ## Siguientes pasos (EPIC 9)
 

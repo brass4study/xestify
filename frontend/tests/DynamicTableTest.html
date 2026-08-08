@@ -100,6 +100,21 @@
     assertEquals(rows.length, 3);
   });
 
+  await test('render() shows extra action columns and buttons', async () => {
+    const table = new DynamicTable(createRecords(2), createSchema(), '#table-container', {
+      extraColumns: [{
+        label: 'Acciones',
+        renderCell: () => DynamicTable.buildActionButton({ label: 'Editar', icon: 'fa-pen' }),
+      }],
+    });
+    table.render();
+
+    const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent);
+    assertEquals(headers, ['ID', 'Title', 'Acciones']);
+    assertEquals(sandbox.querySelectorAll('tbody button').length, 2);
+    assertEquals(sandbox.querySelector('table').style.width, '100%');
+  });
+
   await test('basic pagination: nextPage() changes visible records', async () => {
     const table = new DynamicTable(createRecords(5), createSchema(), '#table-container', { pageSize: 2 });
     table.render();

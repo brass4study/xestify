@@ -1,5 +1,6 @@
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { hashFromPage, userDetailPage } from '../modules/Routes.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class UserManager {
   /** @type {HTMLElement} */
@@ -25,7 +26,7 @@ export class UserManager {
    * }|Array<Object>} [options]
    */
   constructor(container, options = {}) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#api = null;
     this.#users = [];
     this.#message = null;
@@ -66,45 +67,39 @@ export class UserManager {
   #render() {
     this.#container.replaceChildren();
 
-    const wrapper = document.createElement('section');
-    wrapper.className = 'grid gap-4';
-
-    const heading = document.createElement('h2');
-    heading.className = 'text-2xl font-semibold tracking-tight text-slateui-950';
-    heading.textContent = 'Gestión de usuarios';
-    wrapper.appendChild(heading);
-
-    const subtitle = document.createElement('p');
-    subtitle.className = 'text-sm text-slate-500';
-    subtitle.textContent = 'Administra usuarios, roles, accesos y recuperación de contraseña.';
-    wrapper.appendChild(subtitle);
+    const page = component.create('page', { dataRole: 'user-manager-page' });
+    page.appendChild(component.create('pageHeader', {
+      title: 'Gestión de usuarios',
+      subtitle: 'Administra usuarios, roles, accesos y recuperación de contraseña.',
+    }));
 
     if (this.#message !== null) {
-      const feedback = document.createElement('div');
-      feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
-      feedback.textContent = this.#message;
-      wrapper.appendChild(feedback);
+      const feedback = component.create('alert', {
+        type: this.#messageType === 'error' ? 'error' : 'success',
+        message: this.#message,
+      });
+      feedback.dataset.role = 'user-manager-feedback';
+      page.appendChild(feedback);
     }
 
-    const card = document.createElement('div');
+    const card = component.create('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
 
     if (this.#users.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500';
-      empty.textContent = 'No hay usuarios disponibles todavía.';
-      card.appendChild(empty);
+      card.appendChild(component.create('emptyState', {
+        title: 'Sin usuarios',
+        description: 'No hay usuarios disponibles todavía.',
+      }));
     } else {
       card.appendChild(this.#renderTable());
     }
 
-    wrapper.appendChild(card);
-
-    this.#container.appendChild(wrapper);
+    page.appendChild(card);
+    this.#container.appendChild(page);
   }
 
   #renderTable() {
-    const wrap = document.createElement('div');
+    const wrap = component.create('div');
 
     const rows = this.#users.map((user) => ({
       __raw: user,
@@ -142,11 +137,11 @@ export class UserManager {
   }
 
   #avatarContent(user) {
-    const avatar = document.createElement('span');
+    const avatar = component.create('span');
     avatar.className = 'inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-bold text-brand-700';
 
     if (typeof user?.avatar === 'string' && user.avatar !== '') {
-      const image = document.createElement('img');
+      const image = component.create('img');
       image.src = user.avatar;
       image.alt = `Avatar de ${this.#displayName(user)}`;
       avatar.appendChild(image);
@@ -158,12 +153,12 @@ export class UserManager {
   }
 
   #buildEditAction(user) {
-    const actions = document.createElement('div');
+    const actions = component.create('div');
     actions.className = 'flex flex-wrap gap-1.5';
 
     const view = DynamicTable.buildActionButton({
       label: 'Editar',
-      icon: 'fa-pen',
+      icon: 'fa-pencil',
       tone: 'sky',
       onClick: () => {
       this.#openUserDetail(user);
@@ -266,7 +261,7 @@ export class UserManager {
     return this.#api !== null && typeof this.#api.get === 'function' && typeof this.#api.put === 'function' && typeof this.#api.delete === 'function';
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }

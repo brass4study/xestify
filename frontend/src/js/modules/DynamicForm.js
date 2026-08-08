@@ -2,8 +2,11 @@
  * DynamicForm.js — Schema-driven form renderer for Xestify frontend.
  *
  * Supports field types: string, text, number, email, date, select, boolean.
- * No listeners and no Proxy; simple imperative API.
+ * The rendering is composed from the shared UI primitives instead of hand-rolling
+ * DOM nodes at every branch.
  */
+
+import { component } from './ComponentFactory.js';
 
 export class DynamicForm {
   /** @type {Array<object>} */
@@ -20,8 +23,8 @@ export class DynamicForm {
    * @param {string|HTMLElement} container
    */
   constructor(schema, container) {
-    this.#fields = this.#normalizeFields(schema);
-    this.#container = this.#resolveContainer(container);
+    this.#fields = this.normalizeFields(schema);
+    this.#container = this.resolveContainer(container);
   }
 
   /**
@@ -33,25 +36,20 @@ export class DynamicForm {
     this.#inputs.clear();
     this.#container.replaceChildren();
 
-    const form = document.createElement('form');
-    form.className = 'grid gap-4';
-    form.setAttribute('novalidate', 'novalidate');
+    const form = component.create('form', {
+      className: 'grid gap-4',
+      novalidate: true,
+    });
 
     for (const field of this.#fields) {
-      const row = document.createElement('div');
-      row.className = 'grid gap-1.5';
-      row.dataset.role = 'form-field';
-
-      const label = document.createElement('label');
-      label.className = 'text-sm font-medium text-slate-700';
-      label.setAttribute('for', this.#fieldId(field.name));
-      label.textContent = field.label ?? field.name;
-
-      const input = this.#createInput(field);
-      row.appendChild(label);
-      row.appendChild(input);
-
-      form.appendChild(row);
+      const input = this.createInput(field);
+      const fieldEl = component.create('formField', {
+        label: field.label ?? field.name,
+        name: this.fieldId(field.name),
+        input,
+      });
+      fieldEl.dataset.role = 'form-field';
+      form.appendChild(fieldEl);
       this.#inputs.set(field.name, input);
     }
 
@@ -70,7 +68,7 @@ export class DynamicForm {
     const errors = {};
 
     for (const field of this.#fields) {
-      const fieldErrors = this.#validateField(field, data[field.name]);
+      const fieldErrors = this.validateField(field, data[field.name]);
       if (fieldErrors.length > 0) {
         errors[field.name] = fieldErrors;
       }
@@ -92,33 +90,33 @@ export class DynamicForm {
 
     for (const field of this.#fields) {
       const input = this.#inputs.get(field.name);
-      data[field.name] = this.#extractValue(field, input).value;
+      data[field.name] = this.extractValue(field, input).value;
     }
 
     return data;
   }
 
-  #extractValue(field, input) {
+  extractValue(field, input) {
     const result = { value: null };
 
     if (!(input instanceof HTMLElement)) {
       return result;
     }
 
-    if (field.type === 'boolean' && input instanceof HTMLInputElement) {
-      input.className = 'h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500';
-      result.value = input.checked;
+    if (field.type === 'boolean') {
+      const switchInput = typeof input.getInput === 'function'
+        ? input.getInput()
+        : input;
+      result.value = switchInput instanceof HTMLInputElement && switchInput.checked;
       return result;
     }
 
     if (field.type === 'select' && input instanceof HTMLSelectElement) {
-      input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
       result.value = input.value;
       return result;
     }
 
     if (input instanceof HTMLTextAreaElement) {
-      input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
       result.value = input.value;
       return result;
     }
@@ -141,13 +139,13 @@ export class DynamicForm {
     return result;
   }
 
-  #normalizeFields(schema) {
+  normalizeFields(schema) {
     if (!schema || typeof schema !== 'object') {
       return [];
     }
 
-    const baseFields = this.#normalizeFieldSection(schema.fields);
-    const customFields = this.#normalizeFieldSection(schema.custom_fields);
+    const baseFields = this.normalizeFieldSection(schema.fields);
+    const customFields = this.normalizeFieldSection(schema.custom_fields);
     const combined = [...baseFields, ...customFields];
     const byName = new Map(combined.map((field) => [field.name, field]));
 
@@ -175,11 +173,11 @@ export class DynamicForm {
     return ordered;
   }
 
-  #normalizeFieldSection(rawFields) {
+  normalizeFieldSection(rawFields) {
     if (Array.isArray(rawFields)) {
       return rawFields
-        .filter((field) => field && typeof field === 'object' && this.#fieldName(field) !== null)
-        .map((field) => ({ ...field, name: this.#fieldName(field) }));
+        .filter((field) => field && typeof field === 'object' && this.fieldName(field) !== null)
+        .map((field) => ({ ...field, name: this.fieldName(field) }));
     }
 
     if (rawFields && typeof rawFields === 'object') {
@@ -195,7 +193,7 @@ export class DynamicForm {
     return [];
   }
 
-  #fieldName(field) {
+  fieldName(field) {
     for (const key of ['name', 'key', 'slug']) {
       const value = field[key];
       if (typeof value === 'string' && value.trim() !== '') {
@@ -206,7 +204,7 @@ export class DynamicForm {
     return null;
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (typeof container === 'string') {
       const element = document.querySelector(container);
       if (!(element instanceof HTMLElement)) {
@@ -222,93 +220,89 @@ export class DynamicForm {
     throw new TypeError('DynamicForm container must be a selector or HTMLElement');
   }
 
-  #fieldId(name) {
+  fieldId(name) {
     return `xf_${String(name).replaceAll(' ', '_')}`;
   }
 
-  #createInput(field) {
+  createInput(field) {
     const type = field.type ?? 'string';
 
     if (type === 'select') {
-      return this.#createSelect(field);
+      return this.createSelect(field);
     }
 
     if (type === 'boolean') {
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.id = this.#fieldId(field.name);
-      input.name = field.name;
-      input.checked = Boolean(field.default ?? false);
-      return input;
+      return component.create('inputSwitch', {
+        id: this.fieldId(field.name),
+        name: field.name,
+        value: field.default ?? false,
+        checked: Boolean(field.default ?? false),
+      });
     }
 
     if (type === 'text') {
-      const textarea = document.createElement('textarea');
-      textarea.id = this.#fieldId(field.name);
-      textarea.name = field.name;
-      textarea.rows = Number.isInteger(field.rows) ? field.rows : 4;
-      textarea.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
-
-      if (field.default !== undefined && field.default !== null) {
-        textarea.value = String(field.default);
-      }
-
+      const textarea = component.create('inputTextArea', {
+        name: field.name,
+        rows: Number.isInteger(field.rows) ? field.rows : 4,
+        value: field.default ?? '',
+      });
+      textarea.id = this.fieldId(field.name);
       return textarea;
     }
 
-    const input = document.createElement('input');
-    input.id = this.#fieldId(field.name);
-    input.name = field.name;
-
-    input.type = this.#toInputType(type);
-    input.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
-
-    if (field.default !== undefined && field.default !== null) {
-      input.value = String(field.default);
+    if (type === 'email') {
+      const input = component.create('inputEmail', {
+        name: field.name,
+        value: field.default ?? '',
+      });
+      input.id = this.fieldId(field.name);
+      return input;
     }
 
+    if (type === 'password') {
+      const input = component.create('inputPassword', {
+        name: field.name,
+        value: field.default ?? '',
+      });
+      input.id = this.fieldId(field.name);
+      return input;
+    }
+
+    if (type === 'date') {
+      const input = component.create('inputDate', {
+        name: field.name,
+        value: field.default ?? '',
+      });
+      input.id = this.fieldId(field.name);
+      return input;
+    }
+
+    const input = component.create('inputText', {
+      name: field.name,
+      value: field.default ?? '',
+    });
+    input.id = this.fieldId(field.name);
     return input;
   }
 
-  #createSelect(field) {
-    const select = document.createElement('select');
-    select.id = this.#fieldId(field.name);
-    select.name = field.name;
-    select.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
-
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = '-- Select --';
-    select.appendChild(placeholder);
-
-    const options = Array.isArray(field.options) ? field.options : [];
-    for (const option of options) {
-      const optionEl = document.createElement('option');
-      if (typeof option === 'object' && option !== null) {
-        optionEl.value = String(option.value ?? '');
-        optionEl.textContent = String(option.label ?? option.value ?? '');
-      } else {
-        optionEl.value = String(option);
-        optionEl.textContent = String(option);
-      }
-      select.appendChild(optionEl);
-    }
-
-    if (field.default !== undefined && field.default !== null) {
-      select.value = String(field.default);
-    }
-
+  createSelect(field) {
+    const select = component.create('inputSelect', {
+      name: field.name,
+      value: field.default ?? '',
+      options: Array.isArray(field.options) ? field.options : [],
+    });
+    select.id = this.fieldId(field.name);
     return select;
   }
 
-  #toInputType(type) {
+  toInputType(type) {
     if (type === 'email' || type === 'number' || type === 'date') {
       return type;
     }
     return 'text';
   }
 
-  #validateField(field, value) {
+  validateField(field, value) {
     const errors = [];
     const type = field.type ?? 'string';
     const isRequired = field.required === true;
@@ -328,12 +322,12 @@ export class DynamicForm {
       return errors;
     }
 
-    if (this.#isStringLikeType(type)) {
-      this.#validateStringLike(field, String(value), errors);
+    if (this.isStringLikeType(type)) {
+      this.validateStringLike(field, String(value), errors);
     }
 
     if (type === 'number') {
-      this.#validateNumber(field, value, errors);
+      this.validateNumber(field, value, errors);
     }
 
     if (type === 'boolean' && typeof value !== 'boolean') {
@@ -343,13 +337,13 @@ export class DynamicForm {
     return errors;
   }
 
-  #isStringLikeType(type) {
+  isStringLikeType(type) {
     return ['string', 'text', 'email', 'date', 'timestamp', 'select'].includes(type);
   }
 
-  #validateStringLike(field, value, errors) {
+  validateStringLike(field, value, errors) {
     if (field.type === 'email') {
-      if (!this.#isValidEmail(value)) {
+      if (!this.isValidEmail(value)) {
         errors.push('Must be a valid email');
       }
     }
@@ -384,7 +378,7 @@ export class DynamicForm {
     }
   }
 
-  #validateNumber(field, value, errors) {
+  validateNumber(field, value, errors) {
     if (typeof value !== 'number' || Number.isNaN(value)) {
       errors.push('Must be a number');
       return;
@@ -399,7 +393,7 @@ export class DynamicForm {
     }
   }
 
-  #isValidEmail(value) {
+  isValidEmail(value) {
     if (typeof value !== 'string') {
       return false;
     }

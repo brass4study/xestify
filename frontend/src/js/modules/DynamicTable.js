@@ -5,7 +5,12 @@
  *   - Dynamic columns from schema
  *   - Row rendering from records array
  *   - Basic pagination (prev/next)
+ *
+ * Rendering is composed from the shared UI primitives instead of hard-coding the
+ * table DOM structure in each branch.
  */
+
+import { component } from './ComponentFactory.js';
 
 export class DynamicTable {
   /** @type {Array<object>} */
@@ -72,35 +77,20 @@ export class DynamicTable {
 
     const colorClasses = palette[tone] ?? palette.slate;
 
-    const button = document.createElement('button');
-    button.type = 'button';
+    const button = component.create('button', {
+      label: options.label,
+      icon: `fa-solid ${options.icon}`,
+      dataRole: options.dataRole,
+      dataAction: options.dataAction,
+      disabled: options.disabled === true,
+      onClick: options.onClick,
+    });
+    const icon = button.querySelector('i');
+    if (icon instanceof HTMLElement) {
+      icon.style.fontSize = '18px';
+      icon.style.lineHeight = '18px';
+    }
     button.className = `inline-flex items-center gap-1.5 border-0 bg-transparent px-1 py-1 text-xs font-semibold transition duration-150 focus:outline-none focus:ring-2 ${colorClasses}`;
-
-    if (typeof options?.dataRole === 'string' && options.dataRole !== '') {
-      button.dataset.role = options.dataRole;
-    }
-    if (typeof options?.dataAction === 'string' && options.dataAction !== '') {
-      button.dataset.action = options.dataAction;
-    }
-
-    if (options?.disabled === true) {
-      button.disabled = true;
-    }
-
-    const icon = document.createElement('i');
-    icon.className = `fa-solid ${options.icon} leading-none`;
-    icon.style.fontSize = '18px';
-    icon.setAttribute('aria-hidden', 'true');
-
-    const label = document.createElement('span');
-    label.textContent = options.label;
-
-    button.appendChild(icon);
-    button.appendChild(label);
-
-    if (typeof options?.onClick === 'function') {
-      button.addEventListener('click', options.onClick);
-    }
 
     return button;
   }
@@ -127,10 +117,10 @@ export class DynamicTable {
    */
   constructor(records, schema, container, options = {}) {
     this.#records = Array.isArray(records) ? [...records] : [];
-    this.#columns = this.#normalizeColumns(schema);
-    this.#container = this.#resolveContainer(container);
-    this.#pageSize = this.#normalizePageSize(options.pageSize);
-    const extraColumns = this.#normalizeExtraColumns(options.extraColumns);
+    this.#columns = this.normalizeColumns(schema);
+    this.#container = this.resolveContainer(container);
+    this.#pageSize = this.normalizePageSize(options.pageSize);
+    const extraColumns = this.normalizeExtraColumns(options.extraColumns);
     this.#extraColumnsStart = extraColumns.filter((column) => column.position === 'start');
     this.#extraColumnsEnd = extraColumns.filter((column) => column.position === 'end');
     this.#rowDecorator = typeof options.rowDecorator === 'function' ? options.rowDecorator : null;
@@ -145,23 +135,37 @@ export class DynamicTable {
    */
   render() {
     this.#container.replaceChildren();
+    const records = this.getCurrentPageRecords();
+    const baseColumns = this.#columns.map((column) => ({
+      key: column.name,
+      label: column.label ?? column.name,
+      render: (record) => this.toDisplayValue(record?.[column.name]),
+    }));
+    const toTableColumn = (column) => ({
+      label: column.label,
+      headerClassName: column.headerClassName,
+      cellClassName: column.cellClassName,
+      render: column.renderCell,
+    });
+    const columns = [
+      ...this.#extraColumnsStart.map(toTableColumn),
+      ...baseColumns,
+      ...this.#extraColumnsEnd.map(toTableColumn),
+    ];
+    const table = component.create('table', {
+      columns,
+      rows: records,
+      emptyMessage: 'No records',
+      className: this.#wrapperClassName ?? 'overflow-x-auto rounded-xl border border-slate-200 bg-white',
+      tableClassName: this.#tableClassName ?? 'w-full min-w-[680px] border-separate border-spacing-0 text-left',
+      tableDataRole: this.#tableDataRole ?? 'table',
+      rowDecorator: this.#rowDecorator,
+    });
 
-    const wrapper = document.createElement('div');
-    wrapper.className = this.#wrapperClassName ?? 'overflow-x-auto rounded-xl border border-slate-200 bg-white';
-    wrapper.dataset.role = 'table-wrapper';
-
-    const table = document.createElement('table');
-    table.className = this.#tableClassName ?? 'min-w-[680px] w-full border-separate border-spacing-0 text-left';
-    table.dataset.role = this.#tableDataRole ?? 'table';
-
-    table.appendChild(this.#buildHeader());
-    table.appendChild(this.#buildBody());
-
-    wrapper.appendChild(table);
     if (this.#showPagination) {
-      wrapper.appendChild(this.#buildPagination());
+      table.appendChild(this.buildPagination());
     }
-    this.#container.appendChild(wrapper);
+    this.#container.appendChild(table);
   }
 
   /**
@@ -180,7 +184,7 @@ export class DynamicTable {
    * @param {object} schema
    */
   setSchema(schema) {
-    this.#columns = this.#normalizeColumns(schema);
+    this.#columns = this.normalizeColumns(schema);
   }
 
   /**
@@ -227,119 +231,55 @@ export class DynamicTable {
     return this.#records.slice(start, start + this.#pageSize);
   }
 
-  #buildHeader() {
-    const thead = document.createElement('thead');
-    const row = document.createElement('tr');
-
-    for (const column of this.#extraColumnsStart) {
-      row.appendChild(this.#buildExtraHeaderCell(column));
-    }
-
-    for (const column of this.#columns) {
-      const th = document.createElement('th');
-      th.className = 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600';
-      th.textContent = column.label;
-      row.appendChild(th);
-    }
-
-    for (const column of this.#extraColumnsEnd) {
-      row.appendChild(this.#buildExtraHeaderCell(column));
-    }
-
-    thead.appendChild(row);
-    return thead;
+  recordToRow(record) {
+    const row = {};
+    this.#columns.forEach((column) => {
+      row[column.name] = this.toDisplayValue(record[column.name]);
+    });
+    return row;
   }
 
-  #buildBody() {
-    const tbody = document.createElement('tbody');
-    const pageRecords = this.getCurrentPageRecords();
-
-    for (const record of pageRecords) {
-      const row = document.createElement('tr');
-      const rowIndex = (this.#currentPage - 1) * this.#pageSize + tbody.children.length;
-
-      for (const column of this.#extraColumnsStart) {
-        row.appendChild(this.#buildExtraBodyCell(column, record, rowIndex));
-      }
-
-      for (const column of this.#columns) {
-        const td = document.createElement('td');
-        td.className = 'border-b border-slate-100 px-3 py-2 text-sm text-slate-700';
-        td.textContent = this.#toDisplayValue(record[column.name]);
-        row.appendChild(td);
-      }
-
-      for (const column of this.#extraColumnsEnd) {
-        row.appendChild(this.#buildExtraBodyCell(column, record, rowIndex));
-      }
-
-      if (this.#rowDecorator !== null) {
-        this.#rowDecorator(row, record, rowIndex);
-      }
-
-      tbody.appendChild(row);
-    }
-
-    if (pageRecords.length === 0) {
-      const row = document.createElement('tr');
-      const td = document.createElement('td');
-      td.className = 'px-3 py-6 text-center text-sm text-slate-500';
-      td.colSpan = this.#totalColumns() || 1;
-      td.textContent = 'No records';
-      row.appendChild(td);
-      tbody.appendChild(row);
-    }
-
-    return tbody;
-  }
-
-  #buildPagination() {
-    const nav = document.createElement('div');
-    nav.className = 'flex items-center justify-center gap-4 px-3 py-3';
-    nav.dataset.role = 'table-pagination';
-
-    const prevBtn = document.createElement('button');
-    prevBtn.type = 'button';
-    prevBtn.className = 'inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50';
-    prevBtn.dataset.role = 'table-prev';
-    prevBtn.setAttribute('aria-label', 'Página anterior');
-    const prevIcon = document.createElement('i');
-    prevIcon.className = 'fa-solid fa-chevron-left';
-    prevIcon.setAttribute('aria-hidden', 'true');
-    const prevLabel = document.createElement('span');
-    prevLabel.textContent = 'Anterior';
-    prevBtn.appendChild(prevIcon);
-    prevBtn.appendChild(prevLabel);
-    prevBtn.disabled = this.#currentPage <= 1;
-
-    const info = document.createElement('span');
-    info.className = 'text-xs font-medium text-slate-500';
-    info.dataset.role = 'table-page-info';
-    info.textContent = `Page ${this.#currentPage} / ${this.getTotalPages()}`;
-
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.className = 'inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50';
-    nextBtn.dataset.role = 'table-next';
-    nextBtn.setAttribute('aria-label', 'Página siguiente');
-    const nextLabel = document.createElement('span');
-    nextLabel.textContent = 'Siguiente';
-    const nextIcon = document.createElement('i');
-    nextIcon.className = 'fa-solid fa-chevron-right';
-    nextIcon.setAttribute('aria-hidden', 'true');
-    nextBtn.appendChild(nextLabel);
-    nextBtn.appendChild(nextIcon);
-    nextBtn.disabled = this.#currentPage >= this.getTotalPages();
-
-    prevBtn.addEventListener('click', () => {
-      this.prevPage();
-      this.render();
+  buildPagination() {
+    const nav = component.create('base', {
+      className: 'flex items-center justify-center gap-4 px-3 py-3',
     });
+    nav.setData('role', 'table-pagination');
 
-    nextBtn.addEventListener('click', () => {
-      this.nextPage();
-      this.render();
+    const prevBtn = component.create('button', {
+      label: 'Anterior',
+      variant: 'secondary',
+      dataRole: 'table-prev',
+      ariaLabel: 'Página anterior',
+      disabled: this.#currentPage <= 1,
+      onClick: () => {
+        this.prevPage();
+        this.render();
+      },
     });
+    prevBtn.classList.add('px-3', 'py-1.5', 'text-xs');
+
+    const info = component.create('typography', {
+      as: 'span',
+      size: 'xs',
+      weight: 'medium',
+      color: 'slate-500',
+      text: `Page ${this.#currentPage} / ${this.getTotalPages()}`,
+      className: 'text-xs font-medium text-slate-500',
+    });
+    info.setData('role', 'table-page-info');
+
+    const nextBtn = component.create('button', {
+      label: 'Siguiente',
+      variant: 'secondary',
+      dataRole: 'table-next',
+      ariaLabel: 'Página siguiente',
+      disabled: this.#currentPage >= this.getTotalPages(),
+      onClick: () => {
+        this.nextPage();
+        this.render();
+      },
+    });
+    nextBtn.classList.add('px-3', 'py-1.5', 'text-xs');
 
     nav.appendChild(prevBtn);
     nav.appendChild(info);
@@ -348,7 +288,7 @@ export class DynamicTable {
     return nav;
   }
 
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (typeof container === 'string') {
       const element = document.querySelector(container);
       if (!(element instanceof HTMLElement)) {
@@ -364,13 +304,13 @@ export class DynamicTable {
     throw new TypeError('DynamicTable container must be a selector or HTMLElement');
   }
 
-  #normalizeColumns(schema) {
+  normalizeColumns(schema) {
     if (!schema || typeof schema !== 'object') {
       return [];
     }
 
-    const baseColumns = this.#columnsFromSection(schema.fields);
-    const customColumns = this.#columnsFromSection(schema.custom_fields);
+    const baseColumns = this.columnsFromSection(schema.fields);
+    const customColumns = this.columnsFromSection(schema.custom_fields);
     const combined = [...baseColumns, ...customColumns];
     const byName = new Map(combined.map((column) => [column.name, column]));
 
@@ -398,7 +338,7 @@ export class DynamicTable {
     return ordered;
   }
 
-  #columnsFromSection(section) {
+  columnsFromSection(section) {
     if (Array.isArray(section)) {
       return section
         .filter((field) => field && typeof field === 'object')
@@ -441,7 +381,7 @@ export class DynamicTable {
     return [];
   }
 
-  #normalizeExtraColumns(extraColumns) {
+  normalizeExtraColumns(extraColumns) {
     if (!Array.isArray(extraColumns)) {
       return [];
     }
@@ -457,32 +397,7 @@ export class DynamicTable {
       }));
   }
 
-  #buildExtraHeaderCell(column) {
-    const th = document.createElement('th');
-    th.className = column.headerClassName ?? 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600';
-    th.textContent = column.label;
-    return th;
-  }
-
-  #buildExtraBodyCell(column, record, rowIndex) {
-    const td = document.createElement('td');
-    td.className = column.cellClassName ?? 'border-b border-slate-100 px-3 py-2 text-sm text-slate-700';
-    const rendered = column.renderCell(record, rowIndex);
-
-    if (rendered instanceof Node) {
-      td.appendChild(rendered);
-    } else if (rendered !== null && rendered !== undefined) {
-      td.textContent = String(rendered);
-    }
-
-    return td;
-  }
-
-  #totalColumns() {
-    return this.#extraColumnsStart.length + this.#columns.length + this.#extraColumnsEnd.length;
-  }
-
-  #normalizePageSize(pageSize) {
+  normalizePageSize(pageSize) {
     if (typeof pageSize !== 'number' || !Number.isInteger(pageSize) || pageSize <= 0) {
       return 10;
     }
@@ -490,7 +405,7 @@ export class DynamicTable {
     return pageSize;
   }
 
-  #toDisplayValue(value) {
+  toDisplayValue(value) {
     if (value === null || value === undefined) {
       return '';
     }

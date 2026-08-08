@@ -1,0 +1,10 @@
+export { InputTextComponent } from './InputText.js';
+export { InputTextAreaComponent } from './InputTextArea.js';
+export { InputSelectComponent } from './InputSelect.js';
+export { InputDateComponent } from './InputDate.js';
+export { InputTimeComponent } from './InputTime.js';
+export { InputEmailComponent } from './InputEmail.js';
+export { InputPasswordComponent } from './InputPassword.js';
+export { InputRadioComponent } from './InputRadio.js';
+export { InputCheckComponent } from './InputCheck.js';
+export { InputSwitchComponent } from './InputSwitch.js';

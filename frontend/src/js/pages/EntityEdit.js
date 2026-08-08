@@ -15,6 +15,7 @@ import { buildPluginModuleUrl } from '../modules/BasePath.js';
 import { DynamicForm } from '../modules/DynamicForm.js';
 import { DynamicTabs } from '../modules/DynamicTabs.js';
 import { PluginPanelRegistry } from '../modules/PluginPanelRegistry.js';
+import { component } from '../modules/ComponentFactory.js';
 
 export class EntityEdit {
   /** @type {number} */
@@ -67,7 +68,7 @@ export class EntityEdit {
    * }} options
    */
   constructor(container, slug, schema, options = {}) {
-    this.#container = this.#resolveContainer(container);
+    this.#container = this.resolveContainer(container);
     this.#slug = slug;
     this.#schema = schema && typeof schema === 'object' ? schema : { fields: [] };
     this.#recordId = options.recordId ?? null;
@@ -124,26 +125,30 @@ export class EntityEdit {
     const renderToken = this.#nextRenderToken();
     this.#container.replaceChildren();
 
-    // Title outside the form wrapper.
-    const title = document.createElement('h3');
-    title.className = 'mb-3 text-lg font-semibold tracking-tight text-slateui-950';
-    title.dataset.role = 'entity-edit-title';
-    title.textContent = this.#recordId === null
+    const page = component.create('page', { dataRole: 'entity-edit-page' });
+    const titleText = this.#recordId === null
       ? `Nuevo registro: ${this.#slug}`
       : `Editar registro: ${this.#slug}`;
-    this.#container.appendChild(title);
+    const header = component.create('pageHeader', {
+      title: titleText,
+      subtitle: this.#slug,
+    });
+    const titleEl = header.querySelector('[data-role="page-title"]');
+    if (titleEl instanceof HTMLElement) {
+      titleEl.dataset.role = 'entity-edit-title';
+    }
+    page.appendChild(header);
 
-    const wrapper = document.createElement('div');
+    const wrapper = component.create('div');
     wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
     wrapper.dataset.role = 'entity-edit-wrapper';
 
-    const errorBanner = document.createElement('p');
-    errorBanner.className = 'mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+    const errorBanner = component.create('alert', { type: 'error', message: '' });
     errorBanner.dataset.role = 'entity-edit-error';
     errorBanner.hidden = true;
     wrapper.appendChild(errorBanner);
 
-    const formContainer = document.createElement('div');
+    const formContainer = component.create('div');
     formContainer.dataset.role = 'entity-edit-form-wrap';
     wrapper.appendChild(formContainer);
 
@@ -151,36 +156,37 @@ export class EntityEdit {
     this.#form = new DynamicForm(schemaWithDefaults, formContainer);
     this.#form.render();
 
-    this.#container.appendChild(wrapper);
+    page.appendChild(wrapper);
 
-    // Actions stay outside the wrapper so they remain below tabs.
-    const actions = document.createElement('div');
+    const actions = component.create('div');
     actions.className = 'mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end';
     actions.dataset.role = 'entity-edit-actions';
 
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
-    saveBtn.dataset.role = 'entity-edit-save';
-    saveBtn.textContent = 'Guardar';
-    saveBtn.addEventListener('click', () => {
-      this.submit();
+    const saveBtn = component.create('button', {
+      label: 'Guardar',
+      variant: 'primary',
+      dataRole: 'entity-edit-save',
+      onClick: () => {
+        this.submit();
+      },
     });
+    saveBtn.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
     actions.appendChild(saveBtn);
 
     if (this.#onCancel !== null) {
-      const cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-      cancelBtn.dataset.role = 'entity-edit-cancel';
-      cancelBtn.textContent = 'Cancelar';
-      cancelBtn.addEventListener('click', () => {
-        this.#onCancel();
+      const cancelBtn = component.create('button', {
+        label: 'Cancelar',
+        dataRole: 'entity-edit-cancel',
+        onClick: () => {
+          this.#onCancel();
+        },
       });
+      cancelBtn.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
       actions.appendChild(cancelBtn);
     }
 
-    this.#container.appendChild(actions);
+    page.appendChild(actions);
+    this.#container.appendChild(page);
 
     void this.#loadAndRenderTabs(wrapper, actions, renderToken);
   }
@@ -223,12 +229,10 @@ export class EntityEdit {
 
       // Move the existing form content (errorBanner + formContainer) into a
       // detached element so it can be used as the "Datos" tab content.
-      const dataPanelContent = document.createDocumentFragment();
+      const dataPanelEl = component.create('div');
       while (wrapper.firstChild !== null) {
-        dataPanelContent.appendChild(wrapper.firstChild);
+        dataPanelEl.appendChild(wrapper.firstChild);
       }
-      const dataPanelEl = document.createElement('div');
-      dataPanelEl.appendChild(dataPanelContent);
 
       // Build tab definitions: "Datos" first, then plugin tabs.
       const tabDefs = [
@@ -298,10 +302,10 @@ export class EntityEdit {
    * @returns {HTMLElement}
    */
   #buildFallbackPanel(label) {
-    const el = document.createElement('div');
+    const el = component.create('div');
     el.className = 'flex flex-col gap-3';
     el.dataset.role = 'plugin-tab-fallback';
-    const placeholder = document.createElement('p');
+    const placeholder = component.create('p');
     placeholder.className = 'rounded-lg border border-dashed border-slate-300 px-3 py-6 text-sm text-slate-500';
     placeholder.dataset.role = 'placeholder';
     placeholder.textContent = `Plugin "${label}" no disponible.`;
@@ -416,13 +420,13 @@ export class EntityEdit {
       }
 
       const msgList = Array.isArray(messages) ? messages : [String(messages)];
-      const errorEl = document.createElement('ul');
+      const errorEl = component.create('ul');
       errorEl.className = 'mt-1 list-disc pl-5 text-xs text-red-700';
       errorEl.dataset.role = 'field-errors';
       errorEl.dataset.field = fieldName;
 
       for (const msg of msgList) {
-        const li = document.createElement('li');
+        const li = component.create('li');
         li.textContent = msg;
         errorEl.appendChild(li);
       }
@@ -563,7 +567,7 @@ export class EntityEdit {
    * @param {string|HTMLElement} container
    * @returns {HTMLElement}
    */
-  #resolveContainer(container) {
+  resolveContainer(container) {
     if (container instanceof HTMLElement) {
       return container;
     }
