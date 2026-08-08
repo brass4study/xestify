@@ -562,14 +562,4 @@ export class PluginManager {
    * @param {string} text
    * @returns {string}
    */
-  #escapeHtml(text) {
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return String(text ?? '').replaceAll(/[&<>"']/g, (char) => map[char]);
-  }
 }

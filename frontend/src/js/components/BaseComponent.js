@@ -14,7 +14,10 @@ export class BaseComponent extends HTMLElement {
   }
 
   setHtml(html) {
-    this.innerHTML = String(html ?? '');
+    this.textContent = '';
+    if (typeof html === 'string' && html !== '') {
+      this.insertAdjacentHTML('beforeend', html);
+    }
     return this;
   }
 
@@ -74,7 +77,7 @@ export class BaseComponent extends HTMLElement {
   }
 
   setVisible(visible) {
-    this.hidden = !Boolean(visible);
+    this.hidden = !visible;
     return this;
   }
 
@@ -165,11 +168,11 @@ export class InputComponent extends BaseComponent {
     if (typeof message === 'string' && message !== '') {
       this.addClass('border-red-300', 'focus:border-red-500');
       this.setAttribute('aria-invalid', 'true');
-      this.setAttribute('data-error', message);
+      this.dataset.error = message;
     } else {
       this.removeClass('border-red-300', 'focus:border-red-500');
       this.removeAttribute('aria-invalid');
-      this.removeAttribute('data-error');
+      delete this.dataset.error;
     }
     return this;
   }

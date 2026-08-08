@@ -98,7 +98,7 @@ export class TabsComponent extends BaseComponent {
 
   _handleKeydown(event, currentId) {
     const currentIndex = this._tabs.findIndex((tab) => tab.id === currentId);
-    let nextIndex = currentIndex;
+    let nextIndex;
     if (event.key === 'ArrowRight') {
       nextIndex = (currentIndex + 1) % this._tabs.length;
     } else if (event.key === 'ArrowLeft') {
@@ -111,8 +111,9 @@ export class TabsComponent extends BaseComponent {
       return;
     }
     event.preventDefault();
-    this.setActiveTab(this._tabs[nextIndex].id, true);
-    this._tabList.querySelector(`[data-tab-id="${this._tabs[nextIndex].id}"]`)?.focus();
+    const targetTab = this._tabs[nextIndex];
+    this.setActiveTab(targetTab.id, true);
+    this._tabList.querySelector(`[data-tab-id="${targetTab.id}"]`)?.focus();
   }
 
   _tabButtonClass(isActive) {

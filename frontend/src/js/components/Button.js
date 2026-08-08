@@ -6,10 +6,7 @@ export class ButtonComponent extends BaseComponent {
     this.type = options.type ?? 'button';
     this.className = [
       'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1',
-      options.variant === 'primary' ? 'border border-brand-600 bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-200' :
-      options.variant === 'danger' ? 'border border-red-600 bg-red-600 text-white hover:bg-red-700 focus:ring-red-200' :
-      options.variant === 'success' ? 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-200' :
-      'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-200',
+      this.variantClassName(options.variant),
     ].join(' ');
 
     if (typeof options.label === 'string' && options.label !== '') {
@@ -45,5 +42,21 @@ export class ButtonComponent extends BaseComponent {
     }
 
     return this;
+  }
+
+  variantClassName(variant) {
+    if (variant === 'primary') {
+      return 'border border-brand-600 bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-200';
+    }
+
+    if (variant === 'danger') {
+      return 'border border-red-600 bg-red-600 text-white hover:bg-red-700 focus:ring-red-200';
+    }
+
+    if (variant === 'success') {
+      return 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-200';
+    }
+
+    return 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-200';
   }
 }

@@ -14,6 +14,11 @@
 
 ---
 
+### 🔧 Cambios recientes (2026-08-08)
+- Fixes de SonarQube aplicados en frontend/backend y en la skill local de revisión para dejar el workspace en estado limpio.
+- Alineación del roadmap de la Fase 9 para reflejar que las stories 9.1, 9.2 y 9.3 están implementadas.
+- Próxima acción: seguir con la arquitectura frontend y modularización de la Story 9.4.
+
 ### ✅ Release B completado: consolidación de migraciones y fixes
 
 | Paso | Descripción | Estado |

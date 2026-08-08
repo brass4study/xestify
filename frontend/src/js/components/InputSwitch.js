@@ -149,12 +149,16 @@ export class InputSwitchComponent extends BaseComponent {
       checked: {
         configurable: true,
         get: () => this.getChecked(),
-        set: (checked) => this.setChecked(checked),
+        set: (checked) => {
+          this.setChecked(checked);
+        },
       },
       disabled: {
         configurable: true,
         get: () => this._switchDisabled,
-        set: (disabled) => this.setDisabled(disabled),
+        set: (disabled) => {
+          this.setDisabled(disabled);
+        },
       },
     });
 
@@ -264,14 +268,13 @@ export class InputSwitchComponent extends BaseComponent {
     const unavailable = this._switchDisabled || this._switchLoading;
 
     this.className = '';
-    this.classList.add(...ROOT_BASE_CLASSES, ...ROOT_SIZE_CLASSES[size]);
-
+    const nextClasses = [...ROOT_BASE_CLASSES, ...ROOT_SIZE_CLASSES[size]];
     if (unavailable) {
-      this.classList.add(...ROOT_DISABLED_CLASSES);
+      nextClasses.push(...ROOT_DISABLED_CLASSES);
     } else {
-      this.classList.add(...ROOT_INTERACTIVE_CLASSES);
-      this.classList.add(...(checked ? ROOT_ENABLED_CLASSES.checked : ROOT_ENABLED_CLASSES.unchecked));
+      nextClasses.push(...ROOT_INTERACTIVE_CLASSES, ...(checked ? ROOT_ENABLED_CLASSES.checked : ROOT_ENABLED_CLASSES.unchecked));
     }
+    this.classList.add(...nextClasses);
 
     if (this._switchContent instanceof HTMLElement) {
       const checkedClasses = CONTENT_SIZE_CLASSES[size].checked;

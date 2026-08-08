@@ -5,6 +5,16 @@
 
 ---
 
+## Cambio reciente — SonarQube + roadmap EPIC 9
+
+**Prompt:**
+```
+Analiza los hallazgos de SonarQube/VS Code del workspace, corrige los problemas detectados en frontend/backend y en la skill local de revisión, y actualiza la documentación del roadmap para reflejar el estado real de la Fase 9.
+```
+**Resultado:** Correcciones aplicadas en componentes UI, páginas y scripts de análisis, con el roadmap de EPIC 9 alineado a la implementación real.
+**Iteraciones:** 2
+**Lección:** La ruta más fiable para obtener hallazgos consistentes es la exportación desde la skill local; los artefactos temporales deben excluirse del commit para mantener el árbol limpio.
+
 ## EPIC 0 — Preparación Técnica
 
 ### STORY 0.1 — Setup repositorio

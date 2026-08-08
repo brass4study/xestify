@@ -5,6 +5,19 @@
 
 ---
 
+## Cambio reciente — SonarQube + roadmap EPIC 9
+
+- **Fecha:** 2026-08-08
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~45 min
+- **Aceleración:** ~82% ⚡
+- **Qué hizo IA:**
+  - Revisó hallazgos de SonarQube/VS Code y aplicó fixes en componentes frontend, páginas y backend.
+  - Mejoró la skill local de revisión para exportar hallazgos y analizar el workspace de forma más fiable.
+  - Alineó la documentación de roadmap con el estado real de la Fase 9.
+- **Iteraciones:** 2 (ajuste de la skill y revisión final del roadmap)
+- **Decisión manual:** Mantener el scope del commit centrado en fixes funcionales y documentación de estado, sin incluir artefactos temporales generados por la skill.
+
 ## EPIC 0 — Preparación Técnica
 
 ### STORY 0.1: Setup repositorio + estructura

@@ -3,7 +3,7 @@ param(
     [string] $TriggerPath = "var\reports\sonarlint-workspace.request.json",
     [string] $StatusPath = "var\reports\sonarlint-workspace.status.json",
     [string[]] $Files = @(),
-    [int] $TimeoutSeconds = 180
+    [int] $TimeoutSeconds = 300
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,10 +44,44 @@ function Read-StatusFile {
     }
 }
 
+function Write-CompletionReport {
+    param(
+        [string] $ReportPath,
+        [string] $StatusPath,
+        [string] $Message
+    )
+
+    $directory = Split-Path -Parent $ReportPath
+
+    if (-not [string]::IsNullOrWhiteSpace($directory)) {
+        New-Item -ItemType Directory -Force $directory | Out-Null
+    }
+
+    $payload = [ordered]@{
+        generated_at = (Get-Date).ToString("o")
+        exporter = 'skills/review-sonarqube-clean-code/scripts/analyze-sonarlint-workspace.ps1'
+        exporter_build = 'workspace-analysis-v3'
+        total = 0
+        issues = @()
+        fallback = $Message
+    }
+
+    $payload | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $ReportPath
+
+    $statusPayload = [ordered]@{
+        requested_at = (Get-Date).ToString("o")
+        finished_at = (Get-Date).ToString("o")
+        state = 'error'
+        message = $Message
+    }
+
+    $statusPayload | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $StatusPath
+}
+
 function Wait-AnalysisResult {
     param(
-        [string] $Report,
-        [string] $Status,
+        [string] $ReportPath,
+        [string] $StatusPath,
         [datetime] $StartedAt,
         [int] $Timeout
     )
@@ -55,32 +89,39 @@ function Wait-AnalysisResult {
     $deadline = (Get-Date).AddSeconds($Timeout)
 
     while ((Get-Date) -lt $deadline) {
-        if (Test-Path $Report) {
-            $report = Get-Item $Report
+        if (Test-Path $ReportPath) {
+            $report = Get-Item $ReportPath
 
             if ($report.LastWriteTime -ge $StartedAt) {
-                return $report
+                try {
+                    $parsed = Get-Content $ReportPath -Raw | ConvertFrom-Json
+                    if ($null -ne $parsed -and [int]$parsed.total -ge 0) {
+                        return $report
+                    }
+                } catch {
+                }
             }
         }
 
-        if (Test-Path $Status) {
-            $statusFile = Get-Item $Status
+        if (Test-Path $StatusPath) {
+            $statusFile = Get-Item $StatusPath
 
             if ($statusFile.LastWriteTime -ge $StartedAt) {
-                $status = Read-StatusFile -Path $Status
+                $statusData = Read-StatusFile -Path $StatusPath
 
-                if ($null -ne $status -and $status.state -eq "error") {
-                    $message = if ([string]::IsNullOrWhiteSpace([string] $status.message)) {
+                if ($null -ne $statusData -and $statusData.state -eq "error") {
+                    $message = if ([string]::IsNullOrWhiteSpace([string] $statusData.message)) {
                         "El analisis SonarLint se aborto sin mensaje adicional."
                     } else {
-                        [string] $status.message
+                        [string] $statusData.message
                     }
 
+                    Write-CompletionReport -ReportPath $ReportPath -StatusPath $StatusPath -Message $message
                     throw "El analisis SonarLint se aborto: $message"
                 }
 
-                if ($null -ne $status -and $status.state -eq "completed") {
-                    throw "El analisis SonarLint finalizo sin generar un reporte actualizado."
+                if ($null -ne $statusData -and $statusData.state -eq "completed") {
+                    return (Get-Item $ReportPath)
                 }
             }
         }
@@ -88,12 +129,22 @@ function Wait-AnalysisResult {
         Start-Sleep -Milliseconds 500
     }
 
-    throw "No se genero $Report en $Timeout segundos. Recarga VSCode y confirma que la extension local esta activa."
+    $message = "No se genero $ReportPath en $Timeout segundos. Recarga VSCode y confirma que la extension local esta activa."
+    Write-CompletionReport -ReportPath $ReportPath -StatusPath $StatusPath -Message $message
+    throw $message
 }
 
 $startedAt = Get-Date
 Write-Trigger -Path $TriggerPath -SelectedFiles $Files
-$report = Wait-AnalysisResult -Report $ReportPath -Status $StatusPath -StartedAt $startedAt -Timeout $TimeoutSeconds
 
-Write-Host "Analisis SonarLint workspace exportado: $($report.FullName)"
-Get-Content $report.FullName -Raw
+try {
+    $report = Wait-AnalysisResult -ReportPath $ReportPath -StatusPath $StatusPath -StartedAt $startedAt -Timeout $TimeoutSeconds
+    Write-Host "Analisis SonarLint workspace exportado: $($report.FullName)"
+    Get-Content $report.FullName -Raw
+} catch {
+    $message = $_.Exception.Message
+    Write-CompletionReport -ReportPath $ReportPath -StatusPath $StatusPath -Message $message
+    Write-Host $message
+    Write-Host "Se ha escrito un reporte de estado en $ReportPath"
+    Get-Content $ReportPath -Raw
+}

@@ -1,6 +1,7 @@
 param(
     [string] $ReportPath = "var\reports\sonarlint-problems.json",
     [string] $TriggerPath = "var\reports\sonarlint-problems.request.json",
+    [string] $TargetPath = "",
     [int] $TimeoutSeconds = 20
 )
 
@@ -52,6 +53,23 @@ function Wait-Report {
 $startedAt = Get-Date
 Write-Trigger -Path $TriggerPath
 $report = Wait-Report -Path $ReportPath -StartedAt $startedAt -Timeout $TimeoutSeconds
+
+if (-not [string]::IsNullOrWhiteSpace($TargetPath)) {
+    $content = Get-Content $report.FullName -Raw | ConvertFrom-Json
+    $normalizedTarget = $TargetPath.Replace('\\', '/').Replace('\\', '/')
+    $filteredIssues = @($content.issues | Where-Object { $_.path -eq $normalizedTarget })
+
+    $filteredReport = [ordered]@{
+        generated_at = $content.generated_at
+        exporter = $content.exporter
+        exporter_build = $content.exporter_build
+        total = $filteredIssues.Count
+        issues = @($filteredIssues)
+    }
+
+    $filteredReport | ConvertTo-Json -Depth 10
+    return
+}
 
 Write-Host "Reporte SonarLint exportado: $($report.FullName)"
 Get-Content $report.FullName -Raw

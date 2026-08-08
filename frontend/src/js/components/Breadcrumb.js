@@ -10,7 +10,7 @@ export class BreadcrumbComponent extends BaseComponent {
       className: 'flex flex-wrap items-center gap-2',
     });
 
-    const items = Array.isArray(options.items) ? options.items : Array.isArray(options) ? options : [];
+    const items = this.resolveItems(options);
     items.forEach((item, index) => {
       const li = component.create('li', {
         className: 'flex items-center gap-2',
@@ -47,5 +47,17 @@ export class BreadcrumbComponent extends BaseComponent {
 
     this.appendChild(list);
     return this;
+  }
+
+  resolveItems(options) {
+    if (Array.isArray(options.items)) {
+      return options.items;
+    }
+
+    if (Array.isArray(options)) {
+      return options;
+    }
+
+    return [];
   }
 }

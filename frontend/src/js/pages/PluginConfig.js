@@ -76,11 +76,9 @@ export class PluginConfig {
       ? this.#state.config.entity_options
       : [];
     const allTargetOptionsHtml = this.buildTargetOptionsHtml(entityOptions, targetEntity);
-    const fieldsHelperText = isExtension
-      ? 'Define los campos de la extension y a que entidad se aplica. Desactiva una fila para excluirla del schema activo.'
-      : 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
+    const fieldsHelperText = this.fieldsHelperText(isExtension);
     const noticeMessage = this.#message === '' ? '' : this.#message;
-    const noticeType = this.#messageType === 'error' ? 'error' : this.#messageType === 'success' ? 'success' : 'info';
+    const noticeType = this.noticeType();
 
     const page = component.create('page', { dataRole: 'plugin-config-page' });
     const header = component.create('pageHeader', {
@@ -109,7 +107,7 @@ export class PluginConfig {
       const targetSelect = component.create('selectTag');
       targetSelect.className = 'mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm';
       targetSelect.dataset.name = 'target-entity';
-      targetSelect.innerHTML = `<option value="*" ${this.selectedAttr('*', targetEntity)}>Todos</option>${allTargetOptionsHtml}`;
+      targetSelect.replaceChildren(this.createTargetOptions(targetEntity, allTargetOptionsHtml));
       shell.appendChild(targetSelect);
     }
 
@@ -170,62 +168,14 @@ export class PluginConfig {
     const baseCellClassName = 'border-b border-slate-100 px-2 py-2';
     const centeredCellClassName = 'border-b border-slate-100 px-2 py-2 text-center';
     const actionsCellClassName = 'border-b border-slate-100 px-2 py-2 whitespace-nowrap';
+    const extraColumns = this.buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName);
 
     const table = new DynamicTable(records, { fields: [] }, container, {
       showPagination: false,
       wrapperClassName: 'overflow-x-auto rounded-xl border border-slate-200 bg-white',
       tableClassName: 'min-w-[920px] w-full border-separate border-spacing-0 text-left',
       tableDataRole: 'plugin-config-table',
-      extraColumns: [
-        {
-          label: 'Activo',
-          headerClassName,
-          cellClassName: centeredCellClassName,
-          renderCell: (field) => this.renderActiveInput(field),
-        },
-        {
-          label: 'Clase',
-          headerClassName,
-          cellClassName: baseCellClassName,
-          renderCell: (field) => this.renderSourceBadge(field),
-        },
-        {
-          label: 'Clave',
-          headerClassName,
-          cellClassName: baseCellClassName,
-          renderCell: (field) => this.renderKeyInput(field),
-        },
-        {
-          label: 'Tipo',
-          headerClassName,
-          cellClassName: baseCellClassName,
-          renderCell: (field) => this.renderTypeSelect(field),
-        },
-        {
-          label: 'Etiqueta',
-          headerClassName,
-          cellClassName: baseCellClassName,
-          renderCell: (field) => this.renderLabelInput(field),
-        },
-        {
-          label: 'Requerido',
-          headerClassName,
-          cellClassName: centeredCellClassName,
-          renderCell: (field) => this.renderRequiredInput(field),
-        },
-        {
-          label: 'Cabecera',
-          headerClassName,
-          cellClassName: centeredCellClassName,
-          renderCell: (field) => this.renderSummaryViewInput(field),
-        },
-        {
-          label: 'Acciones',
-          headerClassName,
-          cellClassName: actionsCellClassName,
-          renderCell: (field) => this.renderActions(field),
-        },
-      ],
+      extraColumns,
       rowDecorator: (row, field) => {
         row.dataset.rowIndex = String(field.__rowIndex ?? 0);
         row.className = (field.__rowIndex ?? 0) % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
@@ -243,6 +193,67 @@ export class PluginConfig {
     const keyReadonly = immutableField || source === 'suggested';
     const editable = !immutableField;
     return { source, immutableField, keyReadonly, editable };
+  }
+
+  fieldsHelperText(isExtension) {
+    if (isExtension) {
+      return 'Define los campos de la extension y a que entidad se aplica. Desactiva una fila para excluirla del schema activo.';
+    }
+
+    return 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
+  }
+
+  buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName) {
+    return [
+      {
+        label: 'Activo',
+        headerClassName,
+        cellClassName: centeredCellClassName,
+        renderCell: (field) => this.renderActiveInput(field),
+      },
+      {
+        label: 'Clase',
+        headerClassName,
+        cellClassName: baseCellClassName,
+        renderCell: (field) => this.renderSourceBadge(field),
+      },
+      {
+        label: 'Clave',
+        headerClassName,
+        cellClassName: baseCellClassName,
+        renderCell: (field) => this.renderKeyInput(field),
+      },
+      {
+        label: 'Tipo',
+        headerClassName,
+        cellClassName: baseCellClassName,
+        renderCell: (field) => this.renderTypeSelect(field),
+      },
+      {
+        label: 'Etiqueta',
+        headerClassName,
+        cellClassName: baseCellClassName,
+        renderCell: (field) => this.renderLabelInput(field),
+      },
+      {
+        label: 'Requerido',
+        headerClassName,
+        cellClassName: centeredCellClassName,
+        renderCell: (field) => this.renderRequiredInput(field),
+      },
+      {
+        label: 'Cabecera',
+        headerClassName,
+        cellClassName: centeredCellClassName,
+        renderCell: (field) => this.renderSummaryViewInput(field),
+      },
+      {
+        label: 'Acciones',
+        headerClassName,
+        cellClassName: actionsCellClassName,
+        renderCell: (field) => this.renderActions(field),
+      },
+    ];
   }
 
   renderSourceBadge(field) {
@@ -421,6 +432,18 @@ export class PluginConfig {
     this.#messageType = '';
   }
 
+  noticeType() {
+    if (this.#messageType === 'error') {
+      return 'error';
+    }
+
+    if (this.#messageType === 'success') {
+      return 'success';
+    }
+
+    return 'info';
+  }
+
   renderError(message) {
     const banner = component.create('div');
     banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
@@ -432,7 +455,7 @@ export class PluginConfig {
   typeOptions(selected) {
     const types = ['string', 'text', 'number', 'boolean', 'date', 'timestamp', 'email', 'select', 'uuid'];
     return types
-      .map((type) => `<option value="${type}" ${type === selected ? 'selected' : ''}>${type}</option>`)
+      .map((type) => `<option value="${type}" ${this.selectedAttr(type, selected)}>${type}</option>`)
       .join('');
   }
 
@@ -477,6 +500,21 @@ export class PluginConfig {
         return `<option value="${this.escapeHtml(entity.slug)}" ${selectedAttr}>${this.escapeHtml(entity.label)}</option>`;
       })
       .join('');
+  }
+
+  createTargetOptions(targetEntity, allTargetOptionsHtml) {
+    const targetOptionsFragment = document.createDocumentFragment();
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '*';
+    defaultOption.selected = targetEntity === '*';
+    defaultOption.textContent = 'Todos';
+    targetOptionsFragment.appendChild(defaultOption);
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.innerHTML = allTargetOptionsHtml;
+    Array.from(optionsContainer.childNodes).forEach((node) => targetOptionsFragment.appendChild(node));
+
+    return targetOptionsFragment;
   }
 
   buildStateFromResponse(data, entityOptions = []) {

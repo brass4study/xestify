@@ -27,7 +27,11 @@ the cleanup.
    - If the scope is ambiguous and a broad cleanup would be risky, ask one short
      question before editing.
 2. Export diagnostics:
-   - For the current VSCode Problems state, run
+   - If the user is working on a specific file or the current editor context is a
+     single file, run `scripts/export-sonarlint-problems.ps1 -TargetPath <relative-path>`
+     using the current file path as the target. This should be the preferred
+     path for focused reviews.
+   - For the current VSCode Problems state without a target file, run
      `scripts/export-sonarlint-problems.ps1`.
    - For a broader pass over `php`, `js`, and `html` files, run
      `scripts/analyze-sonarlint-workspace.ps1`.

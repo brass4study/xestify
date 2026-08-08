@@ -7,9 +7,10 @@ const TRIGGER_PATH = path.join('var', 'reports', 'sonarlint-problems.request.jso
 const WORKSPACE_TRIGGER_PATH = path.join('var', 'reports', 'sonarlint-workspace.request.json');
 const WORKSPACE_STATUS_PATH = path.join('var', 'reports', 'sonarlint-workspace.status.json');
 const SONAR_SOURCE_PATTERN = /sonar/i;
-const ANALYSIS_DELAY_MS = 300;
-const REQUEST_READ_RETRY_MS = 120;
-const REQUEST_READ_RETRIES = 10;
+const ANALYSIS_DELAY_MS = 1500;
+const REQUEST_READ_RETRY_MS = 200;
+const REQUEST_READ_RETRIES = 20;
+const ANALYZE_OPEN_FILE_COMMAND = 'SonarLint.AnalyseOpenFile';
 const SOURCE_GLOB = '**/*.{php,js,html}';
 const EXCLUDED_GLOB = '**/{.git,var,node_modules,dist,vendor}/**';
 const DEFAULT_ANALYSIS_COLUMN = vscode.ViewColumn.Beside;
@@ -192,25 +193,25 @@ function sleep(ms) {
 
 async function createAnalysisSession() {
   const originalEditor = vscode.window.activeTextEditor;
-  const previousGroups = new Set(vscode.window.tabGroups.all);
 
   try {
     await vscode.commands.executeCommand('workbench.action.newGroupRight');
   } catch (error) {
-    throw new Error(
-      `No se pudo crear el grupo temporal de analisis: ${error instanceof Error ? error.message : String(error)}`
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      originalEditor,
+      tabGroup: null,
+      viewColumn: DEFAULT_ANALYSIS_COLUMN,
+      warning: `No se pudo crear el grupo temporal de analisis: ${message}`
+    };
   }
 
-  const tabGroup = vscode.window.tabGroups.all.find((group) => !previousGroups.has(group));
-  if (!tabGroup) {
-    throw new Error('No se pudo identificar el grupo temporal de analisis recien creado.');
-  }
-
+  const tabGroup = vscode.window.tabGroups.all.at(-1) ?? null;
   return {
     originalEditor,
     tabGroup,
-    viewColumn: tabGroup?.viewColumn ?? DEFAULT_ANALYSIS_COLUMN
+    viewColumn: tabGroup?.viewColumn ?? DEFAULT_ANALYSIS_COLUMN,
+    warning: null
   };
 }
 
@@ -228,12 +229,12 @@ async function restoreOriginalEditor(originalEditor) {
 
 async function closeAnalysisGroup(tabGroup, originalEditor) {
   if (!tabGroup) {
-    throw new Error('No existe grupo temporal de analisis para cerrar.');
+    return;
   }
 
   const groupStillOpen = vscode.window.tabGroups.all.includes(tabGroup);
   if (!groupStillOpen) {
-    throw new Error('El grupo temporal de analisis ya no existe; no se puede garantizar su limpieza.');
+    return;
   }
 
   await vscode.window.tabGroups.close(tabGroup, true);
@@ -244,11 +245,51 @@ async function analyzeFile(uri, viewColumn) {
   const document = await vscode.workspace.openTextDocument(uri);
   await vscode.window.showTextDocument(document, {
     viewColumn,
-    preview: true,
+    preview: false,
     preserveFocus: false
   });
-  await vscode.commands.executeCommand('SonarLint.AnalyseOpenFile');
-  await sleep(ANALYSIS_DELAY_MS);
+
+  const availableCommands = await vscode.commands.getCommands(true);
+  if (availableCommands.includes(ANALYZE_OPEN_FILE_COMMAND)) {
+    try {
+      await vscode.commands.executeCommand(ANALYZE_OPEN_FILE_COMMAND);
+    } catch (error) {
+      logAnalysis(`Comando opcional no disponible: ${ANALYZE_OPEN_FILE_COMMAND}`);
+    }
+  }
+
+  await sleep(ANALYSIS_DELAY_MS * 2);
+}
+
+function logAnalysis(message) {
+  console.log(`[xestify-sonarlint] ${message}`);
+}
+
+function writeAnalysisStatus(root, requestedAt, state, message, reportPath = null) {
+  const status = {
+    requested_at: requestedAt,
+    finished_at: new Date().toISOString(),
+    state,
+    message
+  };
+
+  if (reportPath) {
+    status.report_path = reportPath;
+  }
+
+  writeWorkspaceStatus(root, status);
+}
+
+async function analyzeFiles(root, files, session, analysisWarnings) {
+  for (const uri of files) {
+    try {
+      logAnalysis(`Abriendo ${relativePath(root, uri)}`);
+      await analyzeFile(uri, session.viewColumn);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      analysisWarnings.push(`No se pudo analizar ${relativePath(root, uri)}: ${message}`);
+    }
+  }
 }
 
 async function workspaceFiles() {
@@ -315,54 +356,44 @@ async function analyzeWorkspace(request = null) {
   });
 
   let session = null;
-  let analysisError = null;
-  let closeError = null;
+  let analysisWarnings = [];
+  let finalError = null;
 
   try {
     session = await createAnalysisSession();
-
-    for (const uri of files) {
-      await analyzeFile(uri, session.viewColumn);
+    if (session?.warning) {
+      analysisWarnings.push(session.warning);
     }
 
+    logAnalysis(`Iniciando analisis para ${summary}`);
+    await analyzeFiles(root, files, session, analysisWarnings);
     await sleep(ANALYSIS_DELAY_MS);
   } catch (error) {
-    analysisError = error;
+    finalError = error;
   }
 
   if (session !== null) {
     try {
       await closeAnalysisGroup(session.tabGroup, session.originalEditor);
     } catch (error) {
-      closeError = error;
+      finalError = error;
     }
   }
 
-  const finalError = closeError ?? analysisError;
   if (finalError) {
     const message = finalError instanceof Error ? finalError.message : String(finalError);
-    writeWorkspaceStatus(root, {
-      requested_at: requestedAt,
-      finished_at: new Date().toISOString(),
-      state: 'error',
-      message
-    });
+    writeAnalysisStatus(root, requestedAt, 'error', message);
     vscode.window.showErrorMessage(`Analisis SonarLint abortado: ${message}`);
     return null;
   }
 
   const reportPath = exportProblems();
-  writeWorkspaceStatus(root, {
-    requested_at: requestedAt,
-    finished_at: new Date().toISOString(),
-    state: 'completed',
-    message: `Analizados ${summary} con SonarLint.`,
-    report_path: reportPath
-  });
+  const completionMessage = analysisWarnings.length > 0
+    ? `Analizados ${summary} con SonarLint. Algunas aperturas fallaron: ${analysisWarnings.join(' | ')}`
+    : `Analizados ${summary} con SonarLint.`;
 
-  vscode.window.showInformationMessage(
-    `Analizados ${summary} con SonarLint.`
-  );
+  writeAnalysisStatus(root, requestedAt, 'completed', completionMessage, reportPath);
+  vscode.window.showInformationMessage(`Analizados ${summary} con SonarLint.`);
 
   return reportPath;
 }
@@ -384,6 +415,13 @@ function registerTriggerWatcher(context) {
   watcher.onDidCreate(runExport);
   watcher.onDidChange(runExport);
 
+  const triggerPath = path.join(root, TRIGGER_PATH);
+  if (fs.existsSync(triggerPath)) {
+    setTimeout(() => {
+      runExport();
+    }, 1500);
+  }
+
   context.subscriptions.push(watcher);
 }
 
@@ -396,12 +434,30 @@ function registerWorkspaceTriggerWatcher(context) {
 
   const watcher = vscode.workspace.createFileSystemWatcher(triggerPattern(root, WORKSPACE_TRIGGER_PATH));
   const runAnalysis = async () => {
-    const request = await loadWorkspaceAnalysisRequest(root);
-    await analyzeWorkspace(request);
+    try {
+      const request = await loadWorkspaceAnalysisRequest(root);
+      await analyzeWorkspace(request);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logAnalysis(`Error de analisis workspace: ${message}`);
+      writeWorkspaceStatus(root, {
+        requested_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        state: 'error',
+        message
+      });
+    }
   };
 
   watcher.onDidCreate(runAnalysis);
   watcher.onDidChange(runAnalysis);
+
+  const workspaceTriggerPath = path.join(root, WORKSPACE_TRIGGER_PATH);
+  if (fs.existsSync(workspaceTriggerPath)) {
+    setTimeout(() => {
+      runAnalysis();
+    }, 1500);
+  }
 
   context.subscriptions.push(watcher);
 }

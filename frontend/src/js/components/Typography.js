@@ -2,7 +2,6 @@ import { BaseComponent } from './BaseComponent.js';
 
 export class TypographyComponent extends BaseComponent {
   initialize(options = {}) {
-    const as = options.as ?? 'p';
     const text = typeof options.text === 'string' ? options.text : '';
     const size = options.size ?? 'md';
     const weight = options.weight ?? 'medium';

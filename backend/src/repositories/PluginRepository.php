@@ -60,7 +60,7 @@ final class PluginRepository
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return array_values(array_map(static fn(array $row): string => (string) $row['slug'], $rows));
+        return $this->extractSlugs($rows);
     }
 
     /**
@@ -82,7 +82,7 @@ final class PluginRepository
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return array_values(array_map(static fn(array $row): string => (string) $row['slug'], $rows));
+        return $this->extractSlugs($rows);
     }
 
     /**
@@ -139,11 +139,28 @@ final class PluginRepository
         $stmt->execute([':slug' => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($row === false || !isset($row['version'])) {
+        if ($row === false) {
             return null;
         }
 
-        return (string) $row['version'];
+        $version = $row['version'] ?? null;
+        if (!is_string($version) && !is_numeric($version)) {
+            return null;
+        }
+
+        return (string) $version;
+    }
+
+    /**
+     * @param array<string, mixed> $rows
+     * @return list<string>
+     */
+    private function extractSlugs(array $rows): array
+    {
+        return array_values(array_map(
+            static fn(array $row): string => (string) ($row['slug'] ?? ''),
+            $rows
+        ));
     }
 
     /**
