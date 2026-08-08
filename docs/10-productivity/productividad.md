@@ -1060,3 +1060,18 @@
   - Ejecutó baterías amplias de tests y validaciones en navegador sobre Components, DynamicForm, DynamicTable, Modal, PluginManager, PluginConfig, EntityList, EntityEdit, Navbar, Login, UserManagement y UserProfile.
 - **Iteraciones:** 4
 - **Decisión manual:** Mantener Tailwind como fuente única de estilos runtime, corregir el pipeline para que se ejecute desde la raiz del repo y forzar 18px solo en iconos de acciones de tabla.
+
+### STORY 9.4: Arquitectura frontend y modularizacion
+- **Fecha:** 2026-08-08
+- **Estimado sin IA:** 8h
+- **Tiempo real con IA:** ~4h 15m
+- **Aceleración:** ~47% ⚡
+- **Qué hizo IA:**
+  - Dejó `frontend/src/js/app.js` como bootstrap técnico mínimo en la raíz y delegó el arranque y el wiring de la SPA en `controllers/AppController.js`.
+  - Consolidó el routing en `RouteController`, `RouteMapController` y `PluginRouteController`, eliminando `RouteModel.js` y `PluginRouteModel.js` como capas ambiguas en `models`.
+  - Alineó `AppController`, `UserManager` y el runtime de plugins (`PluginPanelModel` + `plugins/comments/plugin.js`) con la organización MVC estricta.
+  - Adaptó y verificó los tests HTML clave (`StateTest`, `FrontendArchitectureTest`, `E2ETest`) en el navegador integrado de VS Code, incluyendo la corrección de mocks para evitar `404` espurios en tabs de entidad.
+  - Ejecutó la auditoría final sobre los 17 runners HTML, corrigió una regresión de inicialización heredada en `UserProfile` y dejó 146/146 assertions sin errores de consola.
+  - Actualizó la documentación técnica y de backlog para reflejar el frontend MVC estricto y el nuevo punto de entrada del runtime.
+- **Iteraciones:** 8 (definición de criterio MVC, refactor de rutas, ajuste de imports, validación en navegador, corrección de tests, auditoría completa y limpieza de hallazgos de Sonar)
+- **Decisión manual:** Mantener `app.js` en la raíz como entrypoint localizable y sin lógica de aplicación; conservar el cliente API y el runtime de paneles de plugin en `models`, y mover la traducción de rutas y la orquestación de navegación a `controllers` sin abrir capas paralelas.

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Aplicar MVC en backend PHP sin acoplar la UI del negocio al servidor.
+Aplicar MVC en backend PHP y frontend JS sin acoplar la UI del negocio al servidor.
 
 ## Distribucion de responsabilidades
 
@@ -52,6 +52,23 @@ Responsabilidades:
 - Renderizado por metadata
 - Reaccion a hooks UI
 - Validaciones de experiencia de usuario
+
+## MVC estricto en frontend
+
+El frontend tambien sigue MVC estricto dentro de `frontend/src/js`. El archivo
+raiz `app.js` es un bootstrap tecnico minimo: localiza `#app`, instancia
+`AppController` y le delega el arranque, sin contener logica de aplicacion.
+
+- `controllers/`: arranque de aplicacion, router hash, traduccion entre hash e
+	identificadores internos de pagina y orquestacion de vistas.
+- `views/`: `layout/`, `components/`, `modules/` y `pages/` para todo el
+	renderizado y comportamiento de interfaz.
+- `models/`: estado global, sesion, cliente API, helpers de base path y
+	runtime/registro de plugins frontend.
+
+No deben existir carpetas o capas paralelas de primer nivel fuera de
+`controllers/`, `views/` y `models/`; el bootstrap raiz `app.js` no constituye
+una capa adicional.
 
 ## Servicios transversales (fuera de MVC clasico)
 

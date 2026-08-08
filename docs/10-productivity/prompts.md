@@ -1079,3 +1079,17 @@ Prepara el commit de la story 9.3, asegurate de cubrir toda la documentacion y r
 **Iteraciones:** 4
 **Lección:** En UI base, la verificación visual debe incluir el build real de Tailwind y no solo tests de componentes; un content glob incorrecto puede dejar la app sin utilities aunque el DOM parezca correcto.
 **Estado final:** Listo para commit con trazabilidad completa en sesión, productividad, prompts y documentacion de frontend.
+
+### STORY 9.4 — Arquitectura frontend y modularizacion
+**Prompt:**
+```
+Acabo de pasar al modo Agente, ejecuta ese plan.
+```
+**Prompt de auditoría final:**
+```
+Ok, paremos una comprobacion final y detallada de la story 9.4 para asegurarnos que todo ha quedado implementado
+```
+**Resultado:** Se cerró la STORY 9.4 dejando el frontend bajo MVC estricto real: `frontend/src/js` queda reducido a `controllers`, `models` y `views`; el entrypoint queda en `app.js` en la raíz del módulo JS; el routing deja de vivir en `models` y se consolida en `RouteController`, `RouteMapController` y `PluginRouteController`; los tests HTML clave se adaptan y se validan en el navegador integrado de VS Code. También se corrigió el runtime del plugin `comments`, se fijó el flujo canónico de validación frontend en pestañas del navegador integrado y se eliminó la deuda de `404` en `E2ETest`.
+**Iteraciones:** 8
+**Lección:** En una refactorización arquitectónica de frontend sin bundler, el riesgo principal no es el código de negocio sino la coherencia entre rutas relativas, mocks de tests HTML standalone y documentación activa; si no se validan juntos, la arquitectura parece correcta pero la ejecución real se degrada.
+**Estado final:** STORY 9.4 implementada y verificada en navegador integrado con 17/17 runners HTML y 146/146 assertions, sin errores de consola; siguiente foco del backlog: STORY 9.5.

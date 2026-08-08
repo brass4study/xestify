@@ -8,7 +8,7 @@
  *   - flush(resolvedId): Promise   Persists pending POST/PUT/DELETE to the API.
  */
 
-import { PluginPanelRegistry } from '../../js/modules/PluginPanelRegistry.js';
+import { PluginPanelRegistry } from '../../js/models/PluginPanelModel.js';
 
 export class CommentsPanel {
   /** @type {HTMLElement} */
@@ -21,7 +21,7 @@ export class CommentsPanel {
    * @param {{
    *   endpoint: string,
    *   recordId: string|null,
-   *   api: import('/src/js/modules/Api.js').Api
+  *   api: import('/src/js/models/ApiClientModel.js').Api
    * }} options
    */
   constructor({ endpoint, recordId, api }) {

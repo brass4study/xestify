@@ -11,8 +11,8 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Navbar } from '../src/js/modules/Navbar.js';
-  import { UserMenu } from '../src/js/modules/UserMenu.js';
+  import { Navbar } from '../src/js/views/modules/Navbar.js';
+  import { UserMenu } from '../src/js/views/modules/UserMenu.js';
 
   let passed = 0;
   let failed = 0;
@@ -66,6 +66,7 @@
     { slug: 'client', label: 'Clientes' },
     { slug: 'product', label: 'Productos' },
   ];
+  const AVATAR_DATA_URI = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
   it('renders nav element with brand text', (container) => {
     const navbar = new Navbar(container);
@@ -109,11 +110,11 @@
   });
 
   it('renders an avatar image when provided', (container) => {
-    const userMenu = new UserMenu(container, { email: 'admin@xestify.local', avatar: 'https://example.test/avatar.png' });
+    const userMenu = new UserMenu(container, { email: 'admin@xestify.local', avatar: AVATAR_DATA_URI });
     assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
     const img = container.querySelector('[data-role="user-menu-avatar"] img');
     assertTrue(img !== null, 'Expected avatar image element');
-    assertEquals(img.getAttribute('src'), 'https://example.test/avatar.png', 'Avatar image should be used when available');
+    assertEquals(img.getAttribute('src'), AVATAR_DATA_URI, 'Avatar image should be used when available');
   });
 
   it('shows the user management action for admins', (container) => {

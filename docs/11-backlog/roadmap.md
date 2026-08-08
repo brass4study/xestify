@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-08
-> **Estado del proyecto:** **STORY 9.3 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.4`
+> **Estado del proyecto:** **STORY 9.4 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.5`
 
 ---
 
@@ -30,9 +30,10 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.1` completada
 - `STORY 9.2` completada
 - `STORY 9.3` completada
+- `STORY 9.4` completada
 - `EPIC 8` cerrada
 - `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.4` (arquitectura frontend y modularizacion)
+- siguiente foco funcional: `STORY 9.5` (shell SPA y plantillas de navegacion)
 
 ### Funcionalidades nucleares (Core)
 
@@ -136,7 +137,7 @@ La estrategia vigente de implementación es:
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
-| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1, 9.2 y 9.3 cerradas; siguiente foco 9.4 |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1, 9.2, 9.3 y 9.4 cerradas; siguiente foco 9.5 |
 | 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
 | 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
@@ -282,7 +283,8 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - ✅ Story 9.1 implementada: fundamentos visuales, tablas unificadas, tabs alineadas con Ant Design y pipeline Tailwind sin CDN runtime
 - ✅ Story 9.2 implementada: contratos de navegación, anatomía de páginas y mapa hash base para la SPA
 - ✅ Story 9.3 implementada: librería de componentes UI base consolidada en `ComponentFactory`, con los `modules\*` y `pages\*` alineados a la base común
-- ⏭ Siguiente punto: Story 9.4 para arquitectura frontend y modularizacion
+- ✅ Story 9.4 implementada: frontend reorganizado bajo MVC estricto con `controllers`, `models` y `views` como únicas capas principales, entrypoint en `app.js` en la raíz de `frontend/src/js` y routing centralizado en controladores
+- ⏭ Siguiente punto: Story 9.5 para shell SPA y plantillas de navegacion
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas

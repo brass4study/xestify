@@ -10,14 +10,15 @@
 
 **Fecha:** 2026-08-08
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.4 - Arquitectura frontend y modularizacion
+**Próxima story:** STORY 9.5 - Shell SPA y plantillas de navegacion
 
 ---
 
 ### 🔧 Cambios recientes (2026-08-08)
-- Fixes de SonarQube aplicados en frontend/backend y en la skill local de revisión para dejar el workspace en estado limpio.
-- Alineación del roadmap de la Fase 9 para reflejar que las stories 9.1, 9.2 y 9.3 están implementadas.
-- Próxima acción: seguir con la arquitectura frontend y modularización de la Story 9.4.
+- STORY 9.4 cerrada: el frontend queda alineado a MVC estricto con `controllers`, `views` y `models` como únicas capas principales en `frontend/src/js`.
+- El entrypoint queda en `frontend/src/js/app.js` y la lógica de rutas se consolida en `RouteController`, `RouteMapController` y `PluginRouteController`.
+- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 146/146 assertions, incluidos `StateTest` 11/0, `FrontendArchitectureTest` 7/0 y `E2ETest` 13/0; checks de sintaxis, consola y diagnósticos en verde.
+- Próxima acción: abordar STORY 9.5 para montar el shell SPA y las plantillas de navegación sobre la base modular ya cerrada.
 
 ### ✅ Release B completado: consolidación de migraciones y fixes
 
@@ -229,6 +230,9 @@
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
 | 9.1 ✅ | Fundamentos de diseño | `pendiente (este commit)` | `node --check frontend/src/js/modules/DynamicTable.js`; `node --check frontend/src/js/modules/DynamicTabs.js`; `node --check frontend/src/js/pages/EntityEdit.js`; diagnósticos frontend en verde ✅ |
+| 9.2 ✅ | Fundamentos de navegacion y anatomia de paginas | `pendiente (este commit)` | contrato de navegación actualizado y documentación de anatomía alineada ✅ |
+| 9.3 ✅ | Libreria de componentes UI base | `pendiente (este commit)` | `frontend/tests/ComponentsTest.html`; smoke frontend y diagnósticos en verde ✅ |
+| 9.4 ✅ | Arquitectura frontend y modularizacion | `pendiente (este commit)` | 17/17 runners HTML, 146/146 assertions; sintaxis, consola y diagnósticos en verde ✅ |
 
 **Detalle de la story 9.1:**
 - Se consolidó una base visual enterprise inspirada en Ant Design sobre Tailwind, con tipografía IBM Plex, tokens `brand/slateui`, sombras y criterios de densidad comunes.
@@ -321,6 +325,40 @@ Story implementada.
   `component.getCatalog()` para layout, acciones, feedback y estados vacíos.
 - DynamicForm, DynamicTable, Modal y futuras páginas pueden migrar a esta base sin crear patrones visuales paralelos.
 - El backlog queda alineado con la implementación real de la story 9.3.
+
+### Sesion 2026-08-08 - STORY 9.4 Arquitectura frontend y modularizacion
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/index.html` - el runtime carga ahora `js/app.js` como entrypoint de la SPA.
+- `frontend/src/js/app.js` - entrypoint raiz del runtime SPA.
+- `frontend/src/js/controllers/RouteController.js`, `frontend/src/js/controllers/RouteMapController.js`, `frontend/src/js/controllers/PluginRouteController.js` - routing SPA y traducción hash/página consolidados en `controllers`.
+- `frontend/src/js/controllers/AppController.js` y `frontend/src/js/views/pages/UserManager.js` - consumidores actualizados al nuevo contrato de routing.
+- `frontend/src/js/models/PluginPanelModel.js` y `plugins/comments/plugin.js` - runtime de paneles de plugin alineado con MVC estricto desde `models`.
+- `frontend/tests/FrontendArchitectureTest.html`, `frontend/tests/StateTest.html` y `frontend/tests/E2ETest.html` - cobertura adaptada a la nueva organización y al contrato actual de estado/routing.
+- `frontend/src/js/views/pages/UserProfile.js` - corregido el render heredado para no invocar métodos privados de la subclase durante el constructor base.
+- `frontend/tests/EntityEditTest.html` y `frontend/tests/NavbarTest.html` - red aislada con fixtures locales para eliminar `404` y DNS espurios de la consola.
+- `frontend/src/js/controllers/app.js`, `frontend/src/js/models/RouteModel.js` y `frontend/src/js/models/PluginRouteModel.js` se eliminan; el bootstrap real queda en `app.js` y toda la lógica de rutas permanece en `controllers`.
+
+**Docs actualizadas:**
+- `docs/05-frontend/navegacion-anatomia.md` - fuente de verdad del routing ajustada a `RouteMapController` y `PluginRouteController`.
+- `docs/05-frontend/README.md` y `docs/01-architecture/mvc.md` - descripción explícita del frontend MVC estricto.
+- `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` - trazabilidad alineada con el estado real de la story.
+
+**Verificaciones finales:**
+- `node --check` sobre `frontend/src/js` y `plugins/comments/plugin.js`
+- `frontend/tests/StateTest.html` - `11 passed, 0 failed` en navegador integrado
+- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed` en navegador integrado
+- `frontend/tests/E2ETest.html` - `13 passed, 0 failed` en navegador integrado
+- suite frontend completa - 17/17 runners, `146 passed, 0 failed`, sin errores de consola
+- diagnósticos sin errores en controladores, modelos, plugin `comments` y tests tocados
+
+**Cierre verificado (2026-08-08):**
+- `frontend/src/js` queda reducido a `controllers/`, `models/` y `views/` como únicas capas principales.
+- El routing deja de vivir en `models` y pasa a la capa `controllers`.
+- Los tests HTML relevantes siguen funcionando en ejecución standalone sin bundler y el flujo canónico de validación queda fijado en el navegador integrado de VS Code.
+- El siguiente foco del EPIC 9 pasa a STORY 9.5.
 
 ---
 

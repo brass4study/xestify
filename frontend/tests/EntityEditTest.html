@@ -11,7 +11,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { EntityEdit } from '../js/pages/EntityEdit.js';
+  import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
   import {
     initTestRunner,
     separator,
@@ -41,6 +41,11 @@
       { key: 'is_active', label: 'Activo', type: 'boolean', default: true },
     ],
   };
+
+  globalThis.fetch = async () => ({
+    status: 200,
+    json: async () => ({ ok: true, data: { tabs: [] } }),
+  });
 
   // -------------------------------------------------------------------------
   // Tests

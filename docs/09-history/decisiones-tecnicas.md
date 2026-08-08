@@ -522,13 +522,13 @@ Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tai
 
 **Nota sobre tabs:** se prefiere subruta (`#/.../comentarios`) sobre query param (`?tab=comentarios`) para mantener consistencia. Query param solo se usa si el tab requiere estado adicional en query string.
 
-**Fuente de verdad actual:** `frontend/src/js/modules/Routes.js` centraliza el mapa de hashes y la traduccion entre URL visible e identificadores internos de pagina.
+**Fuente de verdad actual:** `frontend/src/js/controllers/RouteMapController.js` centraliza el mapa de hashes y la traduccion entre URL visible e identificadores internos de pagina, con `frontend/src/js/controllers/PluginRouteController.js` para las rutas de configuracion de plugin.
 **Contrato canónico:** el frontend solo acepta el mapa de rutas en inglés; los aliases legacy ya no forman parte del contrato ni de la implementación.
 
 ### Implicaciones
 
 - El router cliente escucha `hashchange` y parsea `window.location.hash`.
-- Navegacion programatica: `window.location.hash = '#/ruta'` o wrapper equivalente apoyado en `Routes.js`.
+- Navegacion programatica: `window.location.hash = '#/ruta'` o wrapper equivalente apoyado en `RouteMapController.js`.
 - Back/forward del navegador funcionan de forma nativa al cambiar el hash.
 - No hay necesidad de `<base href>` ni configuracion de servidor para deep links.
 - El contrato de pagina separa URL, plantilla y copy: las vistas futuras deben poder resolver `template`, `titleKey` y `descriptionKey` sin hardcodear idioma en la estructura del componente.

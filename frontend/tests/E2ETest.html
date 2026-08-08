@@ -11,9 +11,9 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { EntityList } from '../js/pages/EntityList.js';
-  import { EntityEdit } from '../js/pages/EntityEdit.js';
-  import { AppState } from '../js/modules/State.js';
+  import { EntityList } from '../src/js/views/pages/EntityList.js';
+  import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
+  import { AppState } from '../src/js/models/StateModel.js';
   import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from './js/helpers.js';
 
   initTestRunner('output');
@@ -24,6 +24,18 @@
     log('────────────────────────────────────────────────────────────────────────');
   }
 
+  function resolveRequestUrl(url) {
+    if (typeof url === 'string') {
+      return url;
+    }
+
+    if (typeof url?.url === 'string') {
+      return url.url;
+    }
+
+    return String(url);
+  }
+
   /**
    * Install a fetch mock that routes by URL substring + optional method.
    * Each entry: { url: string, method?: string, data: any, status?: number }
@@ -32,10 +44,18 @@
     const original = globalThis.fetch;
     globalThis.fetch = async (url, init) => {
       const method = (init?.method ?? 'GET').toUpperCase();
+      const requestUrl = resolveRequestUrl(url);
+      if (requestUrl.includes('/entities/') && requestUrl.endsWith('/tabs')) {
+        return {
+          status: 200,
+          json: async () => ({ ok: true, data: { tabs: [] } }),
+        };
+      }
+
       const sorted = [...routes].sort((a, b) => b.url.length - a.url.length);
       for (const route of sorted) {
         const methodMatch = route.method === undefined || route.method.toUpperCase() === method;
-        if (methodMatch && url.includes(route.url)) {
+        if (methodMatch && requestUrl.includes(route.url)) {
           const status = route.status ?? 200;
           return {
             status,
@@ -66,6 +86,7 @@
       log(`     ${err.message}`);
       failed++;
     } finally {
+      await new Promise((resolve) => { setTimeout(resolve, 0); });
       globalThis.fetch = originalFetch;
     }
   }
@@ -209,6 +230,7 @@
 
   await test('EntityEdit renders form for the entity schema', async () => {
     const container = makeSandbox();
+    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
     const page = new EntityEdit(container, 'clients', schema);
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
@@ -221,6 +243,7 @@
 
   await test('EntityEdit renders custom_fields from the full entity schema', async () => {
     const container = makeSandbox();
+    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
     const page = new EntityEdit(container, 'clients', CLIENTS_SCHEMA);
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     assertTrue(container.querySelector('input[name="phone"]') !== null, 'phone should render');
@@ -231,6 +254,7 @@
 
   await test('EntityEdit validates required fields on submit', async () => {
     const container = makeSandbox();
+    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
     let savedCalled = false;
     const page = new EntityEdit(container, 'clients', schema, {
@@ -288,6 +312,7 @@
 
   await test('EntityEdit onCancel is called when cancel button clicked', async () => {
     const container = makeSandbox();
+    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
     let cancelCalled = false;
     const page = new EntityEdit(container, 'clients', schema, {
@@ -314,7 +339,7 @@
       { url: '/entities', data: ENTITIES },
     ]);
 
-    // Simulate the flow wired in main.js: EntityList with onCreateNew → EntityEdit
+    // Simulate the flow wired in app.js: EntityList with onCreateNew → EntityEdit
     let entityListPage;
     let schemaEndpointLoaded = false;
     const reloadSlug = await new Promise((resolve) => {

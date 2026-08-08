@@ -8,7 +8,7 @@ mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cad
 
 ## Fuente de verdad
 
-- El mapa de rutas hash y los identificadores internos de pagina viven en `frontend/src/js/modules/Routes.js`.
+- El mapa de rutas hash y los identificadores internos de pagina viven en `frontend/src/js/controllers/RouteMapController.js`, con el soporte especifico de plugins en `frontend/src/js/controllers/PluginRouteController.js`.
 - La app sigue usando hash routing como convencion oficial: `#/ruta`.
 - Las vistas trabajan con identificadores internos (`profile`, `users:<id>`, `entity:<slug>`) y el modulo de rutas traduce entre ese estado y la URL visible.
 
@@ -115,4 +115,4 @@ anatomia de paginas definida aqui.
 
 - STORY 9.3 debe tomar estas plantillas como contrato para `Page`, `PageHeader`, `Breadcrumb`, `Empty` y `Alert`.
 - STORY 9.5 debe montar el shell SPA usando estas areas y jerarquias de pagina.
-- STORY 9.6 debe formalizar el router sobre el mapa ya centralizado en `Routes.js`.
+- STORY 9.6 debe formalizar el router sobre el mapa ya centralizado en `RouteMapController.js` y `PluginRouteController.js`.

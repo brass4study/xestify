@@ -16,69 +16,6 @@ export const HASH_ROUTE_MAP = Object.freeze({
   resultForbidden: '#/result/403',
 });
 
-export const PAGE_BLUEPRINTS = Object.freeze({
-  login: Object.freeze({
-    area: 'public',
-    template: 'login',
-    titleKey: 'auth.login.title',
-    descriptionKey: 'auth.login.description',
-  }),
-  dashboard: Object.freeze({
-    area: 'workspace',
-    template: 'workbench',
-    titleKey: 'app.dashboard.title',
-    descriptionKey: 'app.dashboard.description',
-  }),
-  entityList: Object.freeze({
-    area: 'operations',
-    template: 'list',
-    titleKey: 'entities.list.title',
-    descriptionKey: 'entities.list.description',
-  }),
-  entityDetail: Object.freeze({
-    area: 'operations',
-    template: 'detail',
-    titleKey: 'entities.detail.title',
-    descriptionKey: 'entities.detail.description',
-  }),
-  plugins: Object.freeze({
-    area: 'system',
-    template: 'plugin-management',
-    titleKey: 'plugins.management.title',
-    descriptionKey: 'plugins.management.description',
-  }),
-  profile: Object.freeze({
-    area: 'account',
-    template: 'detail',
-    titleKey: 'users.profile.title',
-    descriptionKey: 'users.profile.description',
-  }),
-  users: Object.freeze({
-    area: 'system',
-    template: 'list',
-    titleKey: 'users.list.title',
-    descriptionKey: 'users.list.description',
-  }),
-  userDetail: Object.freeze({
-    area: 'system',
-    template: 'detail',
-    titleKey: 'users.detail.title',
-    descriptionKey: 'users.detail.description',
-  }),
-  resultEmpty: Object.freeze({
-    area: 'feedback',
-    template: 'result-empty',
-    titleKey: 'results.empty.title',
-    descriptionKey: 'results.empty.description',
-  }),
-  resultError: Object.freeze({
-    area: 'feedback',
-    template: 'result-error',
-    titleKey: 'results.error.title',
-    descriptionKey: 'results.error.description',
-  }),
-});
-
 export function entityPage(slug) {
   const normalizedSlug = normalizeSegment(slug);
   return normalizedSlug === '' ? '' : `entity:${normalizedSlug}`;
@@ -159,6 +96,30 @@ export function getPageFromHash(hashValue, fallbackPage) {
 }
 
 export function hashFromPage(page) {
+  const basicHash = resolveBasicHash(page);
+  if (basicHash !== null) {
+    return basicHash;
+  }
+
+  const usersHash = resolveUsersHash(page);
+  if (usersHash !== null) {
+    return usersHash;
+  }
+
+  const pluginsHash = resolvePluginsHash(page);
+  if (pluginsHash !== null) {
+    return pluginsHash;
+  }
+
+  const entitiesHash = resolveEntityHash(page);
+  if (entitiesHash !== null) {
+    return entitiesHash;
+  }
+
+  return '';
+}
+
+function resolveBasicHash(page) {
   if (page === 'dashboard') {
     return HASH_ROUTE_MAP.dashboard;
   }
@@ -171,25 +132,41 @@ export function hashFromPage(page) {
     return HASH_ROUTE_MAP.users;
   }
 
-  if (typeof page === 'string' && page.startsWith('users:')) {
-    const userId = page.slice('users:'.length);
-    return userId === '' ? HASH_ROUTE_MAP.users : `#/users/${encodeURIComponent(userId)}`;
-  }
-
   if (page === 'plugins') {
     return HASH_ROUTE_MAP.plugins;
   }
 
+  return null;
+}
+
+function resolveUsersHash(page) {
+  if (typeof page !== 'string' || !page.startsWith('users:')) {
+    return null;
+  }
+
+  const userId = page.slice('users:'.length);
+  return userId === '' ? HASH_ROUTE_MAP.users : `#/users/${encodeURIComponent(userId)}`;
+}
+
+function resolvePluginsHash(page) {
   if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
     return `#${page}`;
   }
 
-  if (typeof page === 'string' && page.startsWith('entity-create:')) {
+  return null;
+}
+
+function resolveEntityHash(page) {
+  if (typeof page !== 'string') {
+    return null;
+  }
+
+  if (page.startsWith('entity-create:')) {
     const slug = page.slice('entity-create:'.length);
     return slug === '' ? HASH_ROUTE_MAP.dashboard : `#/entity/${encodeURIComponent(slug)}/new`;
   }
 
-  if (typeof page === 'string' && page.startsWith('entity-record:')) {
+  if (page.startsWith('entity-record:')) {
     const parsed = parseEntityRecordPage(page);
     if (parsed === null) {
       return HASH_ROUTE_MAP.dashboard;
@@ -198,12 +175,12 @@ export function hashFromPage(page) {
     return `#/entity/${encodeURIComponent(parsed.slug)}/${encodeURIComponent(parsed.recordId)}`;
   }
 
-  if (typeof page === 'string' && page.startsWith('entity:')) {
+  if (page.startsWith('entity:')) {
     const slug = page.slice('entity:'.length);
     return slug === '' ? HASH_ROUTE_MAP.dashboard : `#/entity/${encodeURIComponent(slug)}`;
   }
 
-  return '';
+  return null;
 }
 
 function resolveUsersPage(parts) {

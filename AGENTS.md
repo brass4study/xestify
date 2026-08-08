@@ -191,6 +191,9 @@ git config --local core.eol lf
 
 - Seguir la estrategia de verificacion definida en `CONTRIBUTING.md`.
 - Añadir tests cuando se corrija una regresion para evitar que reaparezca.
+- Para tests frontend HTML (`frontend/tests/*.html`), la verificacion canonica y prioritaria debe hacerse abriendo el test en una pestaña del navegador integrado de VS Code, sirviendolo por Apache del proyecto o, en su defecto, por un servidor HTTP local equivalente.
+- No usar navegador headless como via principal cuando el objetivo sea validar o enseñar resultados de tests HTML frontend al usuario. El modo headless solo puede usarse como apoyo tecnico adicional, nunca como sustituto del navegador integrado cuando este disponible.
+- Cuando se valide un test HTML frontend, mantener abierta la pestaña del navegador integrado para que el usuario pueda ver el resultado directamente en VS Code.
 
 ## Documentacion
 

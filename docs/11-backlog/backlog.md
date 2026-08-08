@@ -160,7 +160,7 @@ Objetivo: Entorno dev reproducible, baseline arquitectura, pipeline de calidad.
 - **Type:** UI
 - **Criteria:**
   - ✅ `frontend/src/index.html` con estructura base
-  - ✅ `frontend/src/js/main.js` carga sin errores
+  - ✅ `frontend/src/js/app.js` carga sin errores
   - ✅ CSS reset mínimo
   - ✅ Página carga en navegador
 - **IA Usage:** Generar HTML base, CSS reset, estructura JS entry point
@@ -1018,8 +1018,8 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Priority:** MUST
 - **Type:** Frontend
 - **Criteria:**
-  - ✅ `main.js` deja de concentrar la mayor parte del wiring de UI
-  - ✅ Separacion explicita entre `app`, `router`, `layout`, `components`, `pages`, `services`, `state` y adaptadores de plugin
+  - ✅ El entrypoint frontend (`app.js`) deja de concentrar la mayor parte del wiring de UI y el arranque queda integrado en la capa `controllers`
+  - ✅ Separacion explicita segun arquitectura MVC estricta: toda la logica frontend debe organizarse bajo `controllers`, `views` y `models` como unicas capas principales; el `app.js` raiz se limita al bootstrap tecnico y delega en `AppController`; router, layout, components, pages, estado, consumo API y adaptadores de plugin viven dentro de una de esas tres capas, sin crear carpetas o capas paralelas al mismo nivel fuera del modelo MVC
   - ✅ Libreria de componentes frontend con imports estables y convencion clara de composicion
   - ✅ Estructura preparada para crecer sin crear archivos monoliticos
   - ✅ Tests frontend actualizados a la nueva organizacion sin romper ejecucion standalone

@@ -10,7 +10,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { AppState } from '../js/modules/State.js';
+  import { AppState } from '../src/js/models/StateModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from './js/helpers.js';
 
   initTestRunner('output');
@@ -20,7 +20,11 @@
   await test('setUser/getUser stores and returns user', async () => {
     const user = { id: 'u1', email: 'admin@xestify.local' };
     AppState.setUser(user);
-    assertEquals(AppState.getUser(), user);
+    assertEquals(AppState.getUser(), {
+      id: 'u1',
+      email: 'admin@xestify.local',
+      roles: [],
+    });
   });
 
   await test('setUser(null) clears user', async () => {

@@ -13,6 +13,13 @@ aplicacion puede servirse tanto desde la raiz del host como desde una subruta
 Apache, por ejemplo `http://localhost/xestify/`, sin hardcodear `/api` ni
 `/plugins` contra la raiz del dominio.
 
+El frontend sigue una arquitectura MVC estricta: toda la logica de aplicacion de
+`frontend/src/js` vive bajo `controllers/`, `views/` y `models/`. El entrypoint
+raiz `app.js` es solo un bootstrap tecnico minimo que delega en `AppController`.
+`controllers/` concentra arranque, routing y orquestacion; `views/` organiza
+`layout/`, `components/`, `modules/` y `pages/`; `models/` concentra estado,
+sesion, cliente API, helpers de base path y runtime de plugins.
+
 ---
 
 ## Componentes principales
@@ -23,9 +30,9 @@ Apache, por ejemplo `http://localhost/xestify/`, sin hardcodear `/api` ni
 - **DynamicTabs**: Permite la composición de pestañas, incluyendo tabs inyectados por plugins de extensión.
 - **Modal**: Componente reutilizable para diálogos y confirmaciones.
 - **Navbar**: Barra de navegación superior, muestra usuario, entidades y acceso a PluginManager.
-- **PluginPanelRegistry**: Mapea slugs de plugins a paneles frontend, permitiendo que cada extensión registre su UI.
-- **State**: Contenedor global de estado (usuario, entidad activa, registros, token, etc.).
-- **Api**: Cliente HTTP genérico con manejo de autenticación y errores.
+- **PluginPanelRegistry**: Registro runtime de plugins frontend, ubicado en la capa `models`, para que cada extensión registre su UI sin abrir capas paralelas a MVC.
+- **State**: Contenedor global de estado (`models/StateModel.js`) con usuario, entidad activa, registros, token y flags transversales.
+- **Api**: Cliente HTTP genérico (`models/ApiClientModel.js`) con manejo de autenticación y errores.
 
 ---
 
