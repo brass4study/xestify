@@ -8,6 +8,7 @@ export class DynamicTabs {
 	#activeId = null;
 	#root = null;
 	#rendered = false;
+	#onChange = null;
 
 	constructor(container, options = {}) {
 		this.#container = typeof container === 'string'
@@ -19,6 +20,7 @@ export class DynamicTabs {
 		}
 
 		this.#tabBarContainer = this.resolveTabBarContainer(options.tabBarContainer);
+		this.#onChange = typeof options.onChange === 'function' ? options.onChange : null;
 
 		const initialTabs = options.tabs ?? [];
 		for (const tab of initialTabs) {
@@ -55,7 +57,7 @@ export class DynamicTabs {
 	setActiveTab(id) {
 		const exists = this.#tabs.some((tab) => tab.id === id);
 		if (!exists) {
-			return;
+			return false;
 		}
 
 		this.#activeId = id;
@@ -63,6 +65,8 @@ export class DynamicTabs {
 		if (this.#rendered && this.#root !== null) {
 			this.#root.setActiveTab(id, false);
 		}
+
+		return true;
 	}
 
 	getActiveTab() {
@@ -90,6 +94,7 @@ export class DynamicTabs {
 			activeId,
 			onChange: (id) => {
 				this.#activeId = id;
+				this.#onChange?.(id);
 			},
 			renderContent: (id) => this.#tabs.find((tab) => tab.id === id)?.content() ?? '',
 		});

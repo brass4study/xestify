@@ -188,6 +188,9 @@
     const backButtons = shell.getTarget('shell-header')
       .querySelectorAll('[data-role="page-header-toolbar"] [data-role="user-config-back"]');
     assertEquals(backButtons.length, 1, 'Rerender should keep one back action');
+    assertTrue(backButtons[0].classList.contains('bg-white'), 'Volver al listado debe usar la variant secondary');
+    assertTrue(shell.getTarget('shell-main-actions').querySelector('[data-role="user-config-back"]') === null,
+      'Volver al listado no debe renderizarse en shell-main-actions');
   });
 
   await test('UserConfig admin deshabilita borrar propio dentro de la ficha', async () => {

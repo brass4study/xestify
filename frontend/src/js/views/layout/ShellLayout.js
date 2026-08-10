@@ -122,7 +122,7 @@ export class ShellLayout {
   /** @param {string} template @returns {this} */
   setTemplate(template) {
     this.#requireTarget('shell-main-content').dataset.template =
-      typeof template === 'string' && template !== '' ? template : 'workbench';
+      typeof template === 'string' && template !== '' ? template : 'home';
     return this;
   }
 

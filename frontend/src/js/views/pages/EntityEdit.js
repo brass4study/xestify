@@ -17,12 +17,15 @@ export class EntityEdit {
 	#slug;
 	#schema;
 	#recordId;
+	#initialTab;
 	#shellLayout;
 	#title;
 	#description;
 	#form = null;
 	#onSaved;
 	#onCancel;
+	#onTabChange;
+	#dynamicTabs = null;
 	#pluginPanels = [];
 	#renderToken = 0;
 	#layout = null;
@@ -32,13 +35,14 @@ export class EntityEdit {
 	 * @param {HTMLElement|string} container
 	 * @param {string} slug
 	 * @param {Object} schema
-	 * @param {{recordId?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function}} options
+	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function}} options
 	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
 		this.#slug = slug;
 		this.#schema = schema && typeof schema === 'object' ? schema : { fields: [] };
 		this.#recordId = options.recordId ?? null;
+		this.#initialTab = typeof options.initialTab === 'string' ? options.initialTab : null;
 		this.#shellLayout = options.shellLayout ?? null;
 		this.#title = typeof options.title === 'string' ? options.title : null;
 		this.#description = typeof options.description === 'string' ? options.description : this.#slug;
@@ -47,6 +51,7 @@ export class EntityEdit {
 			: new Api();
 		this.#onSaved = typeof options.onSaved === 'function' ? options.onSaved : null;
 		this.#onCancel = typeof options.onCancel === 'function' ? options.onCancel : null;
+		this.#onTabChange = typeof options.onTabChange === 'function' ? options.onTabChange : null;
 
 		this.#render(options.initialData ?? {});
 	}
@@ -73,6 +78,15 @@ export class EntityEdit {
 		} finally {
 			this.#setLoading(false);
 		}
+	}
+
+	setActiveTab(tabId) {
+		this.#initialTab = tabId;
+		if (this.#dynamicTabs === null) {
+			return true;
+		}
+
+		return this.#dynamicTabs.setActiveTab(tabId);
 	}
 
 	#render(initialData) {
@@ -161,7 +175,7 @@ export class EntityEdit {
 
 			const tabDefs = [
 				{
-					id: 'datos',
+					id: 'data',
 					label: 'Datos',
 					content: () => dataPanelEl,
 				},
@@ -189,7 +203,12 @@ export class EntityEdit {
 				const dynamicTabs = new DynamicTabs(wrapper, {
 					tabs: tabDefs,
 					tabBarContainer,
+					onChange: this.#onTabChange,
 				});
+				this.#dynamicTabs = dynamicTabs;
+				if (this.#initialTab !== null) {
+					dynamicTabs.setActiveTab(this.#initialTab);
+				}
 				dynamicTabs.render();
 			});
 

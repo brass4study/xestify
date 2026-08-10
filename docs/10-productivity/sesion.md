@@ -10,18 +10,20 @@
 
 **Fecha:** 2026-08-10
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.6 - Implementacion del routing SPA
+**Próxima story:** STORY 9.7 - Infraestructura transversal de frontend y resiliencia
 
 ---
 
 ### 🔧 Cambios recientes (2026-08-10)
-- STORY 9.5 cerrada: `ShellLayout` concentra las zonas persistentes de navegación, cabecera, notificaciones, contenido, acciones y footer.
-- `PageLayout`, `ListLayout` y `FormLayout` aplican las plantillas comunes a las páginas autenticadas; Login usa ahora la plantilla standalone `login` de `PageLayout` sin crear un shell paralelo.
-- Las zonas de breadcrumbs, toolbar, tabs, paneles, acciones y bloques de plugins quedan expuestas mediante contratos reutilizables y targets explícitos.
-- Se eliminó `ShellLayoutView.js`, implementación duplicada y sin consumidores.
-- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 166/166 assertions; `FrontendArchitectureTest` 7/0 y entrypoint real de Login sin errores de consola.
-- README, índices, brief académico, navegación, arquitectura MVC y decisiones técnicas quedan alineados con el cierre de STORY 9.5.
-- Próxima acción: abordar STORY 9.6 para completar y validar el routing SPA.
+- STORY 9.6 cerrada: `RouteController` formaliza navegación hash, entrada directa, refresh y back/forward sin recarga.
+- `RouteMapController` implementa el mapa bidireccional completo; `#/home`, `#/` y el hash vacio redirigen a la primera entidad activa mientras no exista una pagina de inicio.
+- La configuración frontend de plugins usa `#/plugins/:slug`; el sufijo `/config` queda reservado a los endpoints API.
+- `PluginRouteController` consume el parser compartido de `RouteMapController`, evitando divergencias entre resolución del hash y despacho de página.
+- `router.navigate('#/ruta')` acepta hashes públicos además de los identificadores internos existentes.
+- `AppController` y `EntityEdit` preservan slug, registro y tab activo, junto con la plantilla, breadcrumbs y navbar correspondientes.
+- `DynamicTabs` propaga la seleccion del usuario y `EntityEdit` navega a `#/entity/:slug/:id/:tab` sin rerender completo; formulario y paneles precargados conservan su estado.
+- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 169/169 assertions; `FrontendArchitectureTest` 9/0.
+- Próxima acción: abordar STORY 9.7 para consolidar estado transversal, resiliencia, i18n y theming.
 
 ### ✅ Release B completado: consolidación de migraciones y fixes
 
@@ -237,6 +239,7 @@
 | 9.3 ✅ | Libreria de componentes UI base | `pendiente (este commit)` | `frontend/tests/ComponentsTest.html`; smoke frontend y diagnósticos en verde ✅ |
 | 9.4 ✅ | Arquitectura frontend y modularizacion | `pendiente (este commit)` | 17/17 runners HTML, 146/146 assertions; sintaxis, consola y diagnósticos en verde ✅ |
 | 9.5 ✅ | Shell SPA y plantillas de navegacion | `pendiente (este commit)` | 17/17 runners HTML, 166/166 assertions; entrypoint Login y diagnósticos en verde ✅ |
+| 9.6 ✅ | Implementacion del routing SPA | `pendiente (este commit)` | 17/17 runners HTML, 169/169 assertions; mapa completo, refresh, back/forward y tabs ✅ |
 
 **Detalle de la story 9.1:**
 - Se consolidó una base visual enterprise inspirada en Ant Design sobre Tailwind, con tipografía IBM Plex, tokens `brand/slateui`, sombras y criterios de densidad comunes.
@@ -386,6 +389,32 @@ Story implementada y verificada.
 - entrypoint real de Login - un único `login-shell`, contenido y footer correctos, sin `shell-menu` ni errores de consola
 
 **Siguiente foco:** STORY 9.6 - Implementacion del routing SPA.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.6 Implementacion del routing SPA
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `RouteMapController` resuelve y genera todas las rutas canónicas de la story, con parsing estricto, segmentos codificados y soporte de query adicional sin perder el tab.
+- El parser de configuración de plugins queda centralizado y cubierto de extremo a extremo desde hash hasta handler de `AppController`.
+- `RouteController.navigate()` acepta hashes públicos y usa el historial del navegador para navegación programática sin recarga.
+- La entrada directa y el reinicio del router restauran la vista activa; back/forward recupera también el contexto parametrizado.
+- `AppController` integra home, login y tabs de entidad, manteniendo plantilla, breadcrumbs y estado activo de navbar.
+- Los cambios de pestaña en `EntityEdit` invocan el router: `data` identifica la pestaña base y los plugins usan su slug, preservando back/forward.
+- Los tabs del mismo registro usan una ruta rápida de historial: solo cambian panel activo y breadcrumbs, sin recargar schema, registro, formulario ni plugins.
+- `#/home`, `#/` y el hash vacio actuan como aliases de entrada y se reemplazan por la primera ruta `#/entity/:slug` del menu; `#/workbench` permanece eliminado.
+- `EntityEdit` recibe el tab inicial de la URL y lo activa tras cargar las extensiones.
+- `Volver` y `Volver al listado` quedan unificados en `page-header-toolbar` con variant `secondary`; los comandos de formulario permanecen en `shell-main-actions`.
+
+**Verificaciones finales:**
+- `node --check` sobre los cuatro módulos JavaScript modificados
+- diagnósticos de VS Code sin errores en código y test modificados
+- `frontend/tests/FrontendArchitectureTest.html` - `9 passed, 0 failed`
+- suite frontend completa en navegador integrado - 17/17 runners, `169 passed, 0 failed`
+
+**Siguiente foco:** STORY 9.7 - Infraestructura transversal de frontend y resiliencia.
 
 ---
 
@@ -712,7 +741,7 @@ Story completada junto con su refuerzo funcional para plugins `extension`.
 - `backend/src/controllers/ExtensionPluginDataStore.php` - acceso dedicado a `plugin_extension_data`
 
 **Creados (frontend):**
-- `frontend/src/js/pages/PluginConfig.js` - pagina admin `/plugins/{slug}/config` para configurar campos de plugins `entity` y `extension`
+- `frontend/src/js/pages/PluginConfig.js` - pagina admin `#/plugins/{slug}` para configurar campos de plugins `entity` y `extension`
 - `frontend/tests/PluginConfigTest.html` - 6 tests frontend para render, bloqueo de campos base, reordenacion, guardado y `target_entity`
 
 **Modificados (backend):**
@@ -725,7 +754,7 @@ Story completada junto con su refuerzo funcional para plugins `extension`.
 - `backend/src/controllers/EntityController.php` y `backend/src/services/EntityService.php` - ajustes para schema vivo y campos configurables
 
 **Modificados (frontend y plugins):**
-- `frontend/src/js/main.js` - navegacion hacia `/plugins/{slug}/config`
+- `frontend/src/js/main.js` - navegacion hacia `#/plugins/{slug}`
 - `frontend/src/js/pages/PluginManager.js` - boton `Configure` para plugins `entity` y `extension` activos
 - `frontend/src/css/main.css` - estilos de la pagina de configuracion y acciones del manager
 - `frontend/src/js/modules/DynamicForm.js` y `DynamicTable.js` - soporte de nuevos tipos/campos configurables

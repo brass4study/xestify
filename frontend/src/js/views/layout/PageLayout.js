@@ -21,7 +21,7 @@ export class PageLayout {
   #contentTarget = null;
 
   /** @type {string} */
-  #template = 'workbench';
+  #template = 'home';
 
   /** @type {string} */
   #footerText = '';
@@ -57,7 +57,7 @@ export class PageLayout {
 
   /** @param {string} template @returns {this} */
   setTemplate(template) {
-    this.#template = typeof template === 'string' && template !== '' ? template : 'workbench';
+    this.#template = typeof template === 'string' && template !== '' ? template : 'home';
     this.#shell?.setTemplate(this.#template);
     return this;
   }

@@ -78,20 +78,19 @@ export class PluginConfig {
 			.build();
 		layout.setNotification(null);
 		const backButton = component.create('button', {
-					label: 'Volver',
+					label: 'Volver al listado',
 					variant: 'secondary',
-					size: 'sm',
 					dataRole: 'plugin-config-action',
 					dataAction: 'back',
 				});
 		const saveButton = component.create('button', {
 					label: 'Guardar',
 					variant: 'primary',
-					size: 'sm',
 					dataRole: 'plugin-config-action',
 					dataAction: 'save',
 				});
-		layout.addAction([backButton, saveButton]);
+		layout.setHeaderToolbar(backButton);
+		layout.addAction(saveButton);
 		const panel = layout.getPanel();
 
 		if (noticeMessage !== '') {

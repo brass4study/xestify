@@ -1,12 +1,11 @@
 export const HASH_ROUTE_MAP = Object.freeze({
   login: '#/login',
-  dashboard: '#/',
-  workbench: '#/workbench',
+  home: '#/home',
   profile: '#/profile',
   users: '#/users',
   userDetail: '#/users/:id',
   plugins: '#/plugins',
-  pluginConfig: '#/plugins/:slug/config',
+  pluginConfig: '#/plugins/:slug',
   entityList: '#/entity/:slug',
   entityCreate: '#/entity/:slug/new',
   entityDetail: '#/entity/:slug/:id',
@@ -40,9 +39,29 @@ export function entityRecordPage(slug, recordId) {
   return `entity-record:${normalizedSlug}:${normalizedRecordId}`;
 }
 
+export function entityTabPage(slug, recordId, tabId) {
+  const recordPage = entityRecordPage(slug, recordId);
+  const normalizedTabId = normalizeSegment(tabId);
+  if (!recordPage.startsWith('entity-record:') || normalizedTabId === '') {
+    return recordPage;
+  }
+
+  return `entity-tab:${recordPage.slice('entity-record:'.length)}:${normalizedTabId}`;
+}
+
 export function pluginConfigPage(slug) {
   const normalizedSlug = normalizeSegment(slug);
-  return normalizedSlug === '' ? 'plugins' : `/plugins/${normalizedSlug}/config`;
+  return normalizedSlug === '' || normalizedSlug.includes('/') ? 'plugins' : `/plugins/${normalizedSlug}`;
+}
+
+export function parsePluginConfigPage(page) {
+  const prefix = '/plugins/';
+  if (typeof page !== 'string' || !page.startsWith(prefix)) {
+    return null;
+  }
+
+  const slug = page.slice(prefix.length);
+  return slug === '' || slug.includes('/') ? null : { slug };
 }
 
 export function userDetailPage(userId) {
@@ -57,7 +76,8 @@ export function getPageFromHash(hashValue, fallbackPage) {
   }
 
   const rawPath = hash.startsWith('#') ? hash.slice(1) : hash;
-  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  const pathWithoutQuery = rawPath.split('?')[0];
+  const normalizedPath = pathWithoutQuery.startsWith('/') ? pathWithoutQuery : `/${pathWithoutQuery}`;
   const parts = normalizedPath.split('/').filter(Boolean);
 
   if (parts.length === 0) {
@@ -65,11 +85,15 @@ export function getPageFromHash(hashValue, fallbackPage) {
   }
 
   const section = parts[0];
-  if (section === 'login' || section === 'workbench') {
+  if (section === 'login' && parts.length === 1) {
+    return 'login';
+  }
+
+  if (section === 'home' && parts.length === 1) {
     return fallbackPage;
   }
 
-  if (section === 'profile') {
+  if (section === 'profile' && parts.length === 1) {
     return 'profile';
   }
 
@@ -120,8 +144,12 @@ export function hashFromPage(page) {
 }
 
 function resolveBasicHash(page) {
-  if (page === 'dashboard') {
-    return HASH_ROUTE_MAP.dashboard;
+  if (page === 'login') {
+    return HASH_ROUTE_MAP.login;
+  }
+
+  if (page === 'home') {
+    return HASH_ROUTE_MAP.home;
   }
 
   if (page === 'profile') {
@@ -149,11 +177,8 @@ function resolveUsersHash(page) {
 }
 
 function resolvePluginsHash(page) {
-  if (typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config')) {
-    return `#${page}`;
-  }
-
-  return null;
+  const parsed = parsePluginConfigPage(page);
+  return parsed === null ? null : `#/plugins/${encodeURIComponent(parsed.slug)}`;
 }
 
 function resolveEntityHash(page) {
@@ -161,15 +186,24 @@ function resolveEntityHash(page) {
     return null;
   }
 
+  if (page.startsWith('entity-tab:')) {
+    const parsed = parseEntityTabPage(page);
+    if (parsed === null) {
+      return HASH_ROUTE_MAP.home;
+    }
+
+    return `#/entity/${encodeURIComponent(parsed.slug)}/${encodeURIComponent(parsed.recordId)}/${encodeURIComponent(parsed.tabId)}`;
+  }
+
   if (page.startsWith('entity-create:')) {
     const slug = page.slice('entity-create:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.dashboard : `#/entity/${encodeURIComponent(slug)}/new`;
+    return slug === '' ? HASH_ROUTE_MAP.home : `#/entity/${encodeURIComponent(slug)}/new`;
   }
 
   if (page.startsWith('entity-record:')) {
     const parsed = parseEntityRecordPage(page);
     if (parsed === null) {
-      return HASH_ROUTE_MAP.dashboard;
+      return HASH_ROUTE_MAP.home;
     }
 
     return `#/entity/${encodeURIComponent(parsed.slug)}/${encodeURIComponent(parsed.recordId)}`;
@@ -177,7 +211,7 @@ function resolveEntityHash(page) {
 
   if (page.startsWith('entity:')) {
     const slug = page.slice('entity:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.dashboard : `#/entity/${encodeURIComponent(slug)}`;
+    return slug === '' ? HASH_ROUTE_MAP.home : `#/entity/${encodeURIComponent(slug)}`;
   }
 
   return null;
@@ -188,11 +222,12 @@ function resolveUsersPage(parts) {
     return null;
   }
 
-  if (parts.length >= 2 && parts[1] !== '') {
-    return `users:${decodeURIComponent(parts[1])}`;
+  if (parts.length === 2 && parts[1] !== '') {
+    const userId = decodeSegment(parts[1]);
+    return userId === null ? null : `users:${userId}`;
   }
 
-  return 'users';
+  return parts.length === 1 ? 'users' : null;
 }
 
 function resolvePluginsPage(parts) {
@@ -200,11 +235,12 @@ function resolvePluginsPage(parts) {
     return null;
   }
 
-  if (parts.length >= 3 && parts[2] === 'config') {
-    return `/plugins/${parts[1]}/config`;
+  if (parts.length === 2 && parts[1] !== '') {
+    const slug = decodeSegment(parts[1]);
+    return slug === null ? null : pluginConfigPage(slug);
   }
 
-  return 'plugins';
+  return parts.length === 1 ? 'plugins' : null;
 }
 
 function resolveEntityPage(parts) {
@@ -216,21 +252,48 @@ function resolveEntityPage(parts) {
     return null;
   }
 
-  const slug = decodeURIComponent(parts[1]);
+  const slug = decodeSegment(parts[1]);
+  if (slug === null) {
+    return null;
+  }
+
   if (parts.length === 2) {
     return `entity:${slug}`;
   }
 
-  if (parts[2] === 'new') {
+  if (parts.length === 3 && parts[2] === 'new') {
     return `entity-create:${slug}`;
   }
 
-  if (parts[2] !== '') {
-    const recordId = decodeURIComponent(parts[2]);
+  const recordId = decodeSegment(parts[2]);
+  if (recordId === null) {
+    return null;
+  }
+
+  if (parts.length === 3) {
     return `entity-record:${slug}:${recordId}`;
   }
 
-  return `entity:${slug}`;
+  if (parts.length === 4) {
+    const tabId = decodeSegment(parts[3]);
+    return tabId === null ? null : `entity-tab:${slug}:${recordId}:${tabId}`;
+  }
+
+  return null;
+}
+
+export function parseEntityTabPage(page) {
+  const prefix = 'entity-tab:';
+  if (typeof page !== 'string' || !page.startsWith(prefix)) {
+    return null;
+  }
+
+  const parts = page.slice(prefix.length).split(':');
+  if (parts.length !== 3 || parts.includes('')) {
+    return null;
+  }
+
+  return { slug: parts[0], recordId: parts[1], tabId: parts[2] };
 }
 
 function parseEntityRecordPage(page) {
@@ -256,4 +319,16 @@ function parseEntityRecordPage(page) {
 
 function normalizeSegment(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function decodeSegment(value) {
+  if (typeof value !== 'string' || value === '') {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
 }

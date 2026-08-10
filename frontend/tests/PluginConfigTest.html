@@ -205,10 +205,16 @@
     assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent, 'Ajusta las opciones específicas del plugin activo.', 'La descripción debe estar en español');
     assertTrue(shell.getTarget('shell-main-notifications').querySelector('[data-role="plugin-config-error"]') === null,
       'No debe mostrar error al registrar acciones externas al panel');
-    const actions = shell.getTarget('shell-main-actions');
-    actions.querySelector('[data-action="back"]').click();
+    const toolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
+    const backButton = toolbar.querySelector('[data-action="back"]');
+    assertTrue(backButton !== null, 'Volver debe renderizarse en page-header-toolbar');
+    assertTrue(backButton.classList.contains('bg-white'), 'Volver debe usar la variant secondary');
+    assertTrue(shell.getTarget('shell-main-actions').querySelector('[data-action="back"]') === null,
+      'Volver no debe renderizarse en shell-main-actions');
+    backButton.click();
     assertTrue(backCalled, 'Volver debe conservar su callback dentro de la shell');
 
+    const actions = shell.getTarget('shell-main-actions');
     actions.querySelector('[data-action="save"]').click();
     await new Promise((resolve) => setTimeout(resolve, 40));
     assertTrue(api.savedPayload !== null, 'Guardar debe ejecutarse desde shell-main-actions');

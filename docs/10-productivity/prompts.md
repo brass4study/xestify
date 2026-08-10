@@ -1107,3 +1107,63 @@ Actualiza el resto de documentacion para reflejar el estado actual
 **Iteraciones:** 4
 **Lección:** Los requisitos de navegación básica del shell deben validarse en 9.5 sin adelantar los criterios de refresh, back/forward y mapa hash completo reservados para 9.6; separar ambos alcances evita cerrar una story con deuda ficticia o ampliar el cambio innecesariamente.
 **Estado final:** STORY 9.5 implementada y verificada en navegador integrado con 17/17 runners HTML y 166/166 assertions; el entrypoint real de Login monta una única plantilla sin navegación autenticada ni errores de consola. Siguiente foco: STORY 9.6.
+
+### STORY 9.6 — Implementacion del routing SPA
+**Prompt:**
+```
+Implementemos la STORY 9.6, mucho del trabajo necesario ya esta realizado, hay que revisar que realmente este bien implementado y que respeta todo el mapa de rutas. Tienes una descripcion mas detallada en navegacion-anatomia.md.
+```
+**Resultado:** Se auditó la implementación previa y se completó el mapa bidireccional de rutas. `RouteController` acepta navegación mediante hashes públicos, mantiene entrada directa y refresh, y usa historial sin recarga para soportar back/forward. La ruta de tabs conserva slug, registro y tab hasta `EntityEdit`, incluyendo anatomía de detalle, breadcrumbs y navbar activa.
+**Iteraciones:** 5
+**Lección:** Un mapa de constantes no equivale a un router completo: cada ruta parametrizada debe ser bidireccional y conservar contexto al entrar directamente, reiniciar y recorrer el historial.
+**Estado final:** STORY 9.6 implementada y verificada en navegador integrado con 17/17 runners HTML y 169/169 assertions; diagnósticos y sintaxis en verde. Siguiente foco: STORY 9.7.
+
+**Prompt de unificación de home:**
+```
+Realmente workbench: '#/workbench', no tiene sentido, con #/home cubririamos su funcionalidad. Eliminalo tanto de codigo como de la documentacion. Veo informacion dispersa sobre si el home esta en #/ o en #/home
+```
+**Resultado:** Se eliminó `#/workbench`, se descartó `#/` como ruta pública y se unificaron identificador interno, hash y template de inicio en `home` / `#/home`. La raíz vacía solo se normaliza internamente hacia la URL canónica.
+
+**Prompt de simplificación de plugins:**
+```
+En el mapa de rutas, veo una inconsistencia, /plugins/:slug/config no seria necesario el /config con /plugins/:slug es suficiente.
+```
+**Resultado:** La ruta SPA de configuración se simplificó a `#/plugins/:slug` en mapa, parser, generador, controlador, tests y documentación. El sufijo `/config` se conserva únicamente en los endpoints REST de configuración.
+
+**Prompt de corrección del runtime:**
+```
+Algo no has refactorizado bien, cuando accedo a http://127.0.0.1/xestify/#/plugins/comments me dice "Pagina no encontrada."
+```
+**Resultado:** Se reprodujo el flujo con los módulos servidos por Apache y se detectó que mapa y controlador mantenían validadores independientes. El parser se centralizó en `RouteMapController`, `PluginRouteController` pasó a consumirlo y el test arquitectónico cubre ahora hash, token, reconocimiento y extracción del slug.
+
+**Prompt de consistencia de navegación:**
+```
+El boton "Volver" o "Volver al listado" es incosistente, en algunas paginas se pone en el shell-main-actions y en otras en el page-header-toolbar
+Deberia aparecer siempre en el page-header-toolbar y con con button con la variant secondary
+```
+**Resultado:** `PluginConfig` movió Volver al toolbar y `UserConfig` cambió Volver al listado a variant secondary. Los tests verifican ubicación, ausencia de duplicados, estilo secondary y conservación del callback; Guardar y demás comandos siguen en `shell-main-actions`.
+
+**Prompt de fallback de inicio:**
+```
+Por ahora no tenemos una pagina de inicio o home( /# o /#home) hay que añadir un fallback, para que cuando se intente acceder a ellas haga una rediccion al primer #/entity/:slug del menu
+```
+**Resultado:** `#/home`, `#/` y el hash vacio resuelven a la primera entidad activa del menu y la URL se reemplaza por su ruta `#/entity/:slug`, sin conservar el alias en el historial. Si no hay entidades, los administradores acceden a Plugins y el resto conserva el estado vacio existente.
+
+**Prompt de navegación por tabs:**
+```
+Cuando cambio entre pestañas en la edicion de una entidad que tiene un plugin de extension(clients) no me cambiar el hash:
+Deberia cambiarme a:
+#/entity/clients/7fcf9b4d-267c-459a-8024-ed79939f415b/data
+#/entity/clients/7fcf9b4d-267c-459a-8024-ed79939f415b/comments
+Y sin embargo siempre se queda como:
+#/entity/clients/7fcf9b4d-267c-459a-8024-ed79939f415b
+
+Las rutas #/entity/:slug/:id/:tab no estan funcionando o no se invocan desde navegacion
+```
+**Resultado:** `DynamicTabs` propaga el id seleccionado, `EntityEdit` lo eleva a la aplicacion y `AppController` navega mediante `entityTabPage`. La pestaña base se normaliza a `data`; la extensión usa `comments`. Apache confirmó ambos hashes y back restauró la pestaña Comentarios.
+
+**Prompt de optimización de tabs:**
+```
+Ahora, cuando cambio de una pestaña a otra hace algo que se siente raro, hace un rerenderizado de la pagina, esto hace que la navegacion no se vea fluida. Optimicemosla para que no rerenderice toda la pagina, solo las partes necesarias, y en caso de ser nevesario que las tengra pre-cargadas
+```
+**Resultado:** `RouteController` permite actualizar historial sin despachar la página. `AppController` conserva la instancia activa de `EntityEdit` y, para tabs del mismo registro, actualiza solo panel y breadcrumbs. Formulario y paneles se precargan una vez; Apache confirmó identidad DOM estable, conservación de valores sin guardar y back/forward sin rerender.

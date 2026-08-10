@@ -1,8 +1,8 @@
-import { pluginConfigPage } from './RouteMapController.js';
+import { parsePluginConfigPage, pluginConfigPage } from './RouteMapController.js';
 
 export const PluginRouteController = {
   isPluginConfigPage(page) {
-    return typeof page === 'string' && page.startsWith('/plugins/') && page.endsWith('/config');
+    return parsePluginConfigPage(page) !== null;
   },
 
   getPluginSlugFromPage(page) {
@@ -10,8 +10,7 @@ export const PluginRouteController = {
       return '';
     }
 
-    const parts = page.split('/');
-    return parts.length >= 4 ? parts[2] : '';
+    return parsePluginConfigPage(page)?.slug ?? '';
   },
 
   toPluginConfigPage(slug) {

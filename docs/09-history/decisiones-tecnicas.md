@@ -508,7 +508,7 @@ Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tai
 ### Convencion de rutas
 
 ```
-#/                              Dashboard / inicio
+#/home                          Inicio
 #/login                         Pantalla de autenticacion
 #/profile                       Perfil del usuario autenticado
 #/users                         Gestion administrativa de usuarios
@@ -518,8 +518,7 @@ Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tai
 #/entity/:slug/:id              Detalle / edicion de registro
 #/entity/:slug/:id/:tab         Tab de un registro (ej: #/.../:id/comentarios)
 #/plugins                       PluginManager
-#/plugins/:slug/config          Configuracion de un plugin
-#/workbench                     Alias futuro de dashboard/home operativa
+#/plugins/:slug                 Configuracion de un plugin
 #/result/empty                  Estado vacio reutilizable
 #/result/error                  Estado de error recuperable
 ```

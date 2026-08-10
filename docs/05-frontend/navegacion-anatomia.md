@@ -16,7 +16,7 @@ mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cad
 
 ### Areas principales
 
-- `workspace`: inicio operativo o workbench, puerta de entrada tras login.
+- `home`: alias de entrada reservado para una futura pagina de inicio; mientras no exista, redirige a la primera entidad activa.
 - `operations`: entidades de negocio y sus registros.
 - `system`: administracion del sistema, plugins y usuarios.
 - `account`: perfil y preferencias del usuario autenticado.
@@ -30,7 +30,7 @@ mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cad
 
 ### Breadcrumbs objetivo
 
-- Workbench: sin breadcrumb o con un unico nivel de contexto.
+- Home: sin breadcrumb o con un unico nivel de contexto.
 - List pages: `Area > Recurso`.
 - Detail/form pages: `Area > Recurso > Registro`.
 - Plugin config: `Sistema > Plugins > Configuracion`.
@@ -48,25 +48,34 @@ render dentro del shell SPA.
 | Vista | Hash | Template objetivo |
 |------|------|-------------------|
 | Login | `#/login` | `login` |
-| Inicio / dashboard | `#/` | `workbench` |
+| Inicio (alias temporal) | `#/home` y `#/` | Redireccion a `#/entity/:slug` |
 | Mi perfil | `#/profile` | `detail` |
 | Gestion de usuarios | `#/users` | `list` |
 | Ficha de usuario | `#/users/:id` | `detail` |
 | PluginManager | `#/plugins` | `plugin-management` |
-| Configuracion de plugin | `#/plugins/:slug/config` | `plugin-management` |
+| Configuracion de plugin | `#/plugins/:slug` | `plugin-management` |
 | Listado de entidad | `#/entity/:slug` | `list` |
 
 ### Rutas reservadas para stories siguientes
 
 | Vista | Hash | Uso previsto |
 |------|------|--------------|
-| Workbench explicito | `#/workbench` | Alias navegable del inicio cuando exista home dedicada |
 | Alta de registro | `#/entity/:slug/new` | Formulario en modo creacion |
 | Edicion de registro | `#/entity/:slug/:id` | Formulario/detalle de un registro |
-| Tab de registro | `#/entity/:slug/:id/:tab` | Extension por tabs y plugins |
+| Tab de registro | `#/entity/:slug/:id/:tab` | Datos (`data`) y extensiones por plugins |
 | Estado vacio | `#/result/empty` | Pantalla reusable sin datos |
 | Estado error | `#/result/error` | Error recuperable con CTA |
 | Estado prohibido | `#/resultado/403` | Acceso denegado |
+
+Al seleccionar una pestaña en la edicion de un registro, `EntityEdit` debe navegar
+mediante el router a su subruta. La pestaña base usa el id tecnico `data`; las
+extensiones usan su slug, por ejemplo `comments`. Esto mantiene entrada directa,
+refresh y back/forward sincronizados con la pestaña visible.
+
+Los cambios entre tabs del mismo registro no deben reconstruir la pagina. El
+router actualiza el historial sin volver a despachar `EntityEdit`; la instancia
+activa cambia solo el panel y los breadcrumbs. El formulario y los paneles de
+plugins se crean una vez, quedan precargados y conservan su estado sin guardar.
 
 ## Plantillas objetivo de pagina
 
@@ -75,10 +84,11 @@ render dentro del shell SPA.
 - Layout centrado, mensaje de valor corto, formulario y feedback inmediato.
 - Sin navbar principal.
 
-### `workbench`
+### `home`
 
-- Vista de entrada con resumen, accesos rapidos y bloques de contexto.
-- Debe soportar widgets futuros y personalizacion por cliente.
+- Plantilla reservada para una futura vista de entrada con resumen, accesos rapidos y bloques de contexto.
+- Hasta que esa vista exista, el router reemplaza `#/home`, `#/` o un hash vacio por la ruta de la primera entidad activa del menu.
+- Si no hay entidades activas, el fallback administrativo es `#/plugins`; para usuarios sin acceso administrativo se mantiene el estado vacio de `home`.
 
 ### `list`
 
@@ -116,4 +126,5 @@ anatomia de paginas definida aqui.
 
 - STORY 9.3 implementó los componentes `Page`, `PageHeader`, `Breadcrumb`, `Empty` y `Alert` sobre estas plantillas.
 - STORY 9.5 montó el shell SPA y los layouts de página usando estas áreas y jerarquías.
-- STORY 9.6 debe formalizar el router sobre el mapa ya centralizado en `RouteMapController.js` y `PluginRouteController.js`.
+- STORY 9.6 formalizó el router sobre el mapa centralizado en `RouteMapController.js` y `PluginRouteController.js`, con navegación programática, entrada directa, refresh y back/forward.
+- STORY 9.7 debe consolidar estado transversal, resiliencia, i18n y theming sobre este contrato de navegación ya cerrado.

@@ -6,7 +6,7 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 8 cerrada y STORY 9.5 incluida; EPIC 9 en progreso con STORY 9.6 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 8 cerrada y STORY 9.6 incluida; EPIC 9 en progreso con STORY 9.7 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
@@ -160,7 +160,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 9.5 incluida**:
+MVP implementado hasta **STORY 9.6 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -172,9 +172,10 @@ MVP implementado hasta **STORY 9.5 incluida**:
 - Gestión de perfil propio y administración de usuarios con rutas hash `#/profile`, `#/users` y `#/users/:id`.
 - Base visual frontend consolidada: tablas unificadas vía `DynamicTable`, tabs alineadas con patrón Ant Design y hoja Tailwind generada localmente sin CDN runtime.
 - Frontend organizado bajo MVC estricto, con `ShellLayout` persistente para páginas autenticadas y `PageLayout`, `ListLayout` y `FormLayout` como plantillas reutilizables.
+- Routing SPA hash completo con navegación programática, entrada directa, refresh y back/forward preservando el contexto de vistas parametrizadas.
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios y perfil.
 
-Pendiente tras STORY 9.5: completar y validar el routing SPA de STORY 9.6, infraestructura transversal, operación técnica, auditoría, permisos finos y marketplace.
+Pendiente tras STORY 9.6: infraestructura transversal y resiliencia frontend, operación técnica, auditoría, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 

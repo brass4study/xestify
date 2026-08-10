@@ -187,8 +187,7 @@ export class UserConfig {
 	#render() {
 		const backAction = this.#onBack === null ? null : component.create('button', {
 			label: 'Volver al listado',
-			variant: 'primary',
-			size: 'md',
+			variant: 'secondary',
 			dataRole: 'user-config-back',
 			onClick: () => {
 				this.#onBack();

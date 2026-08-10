@@ -171,6 +171,11 @@ se integra con la shell.
 común de los formularios. Sus acciones se montan directamente en
 `shell-main-actions`. Añade `getPanel` y `addAction`.
 
+Los comandos del formulario, como Guardar, Eliminar o Reset, pertenecen a
+`shell-main-actions`. Los botones de navegación `Volver` o `Volver al listado`
+pertenecen siempre a `page-header-toolbar` mediante `setHeaderToolbar` y usan la
+variant `secondary`.
+
 Ejemplo funcional de `UserConfig`:
 
 ```js
@@ -212,8 +217,9 @@ No se crean archivos `.ts` ni `.d.ts`.
 4. No registrar en `ShellLayout` targets internos de `PageHeader`, breadcrumbs,
   toolbar o tabs.
 5. Usar builders para desacoplar al productor de la ubicación del target.
-6. Publicar tabs en `page-header-bottom` y acciones principales en
-   `shell-main-actions`.
+6. Publicar tabs en `page-header-bottom`, retornos de navegación en
+  `page-header-toolbar` con variant `secondary` y comandos principales en
+  `shell-main-actions`.
 7. Mantener tablas de página en `ListLayout` y formularios de edición o
    configuración en `FormLayout`.
 8. Añadir tests que comprueben el padre real de cada zona y la sincronización

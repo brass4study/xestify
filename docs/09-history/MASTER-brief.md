@@ -2,14 +2,14 @@
 
 ## Estado actual auditado (2026-08-10)
 
-El corte funcional defendible queda cerrado hasta **STORY 9.5 incluida**. Las
+El corte funcional defendible queda cerrado hasta **STORY 9.6 incluida**. Las
 EPIC 0-8 están completadas y la EPIC 9 sigue en progreso. El sistema dispone de
 pipeline `Router -> Middleware -> Controller`, entidades y extensiones basadas en
 plugins, gestión de usuarios, actualizaciones con rollback y frontend MVC con
-shell SPA persistente y layouts reutilizables.
+shell SPA persistente, layouts reutilizables y routing hash completo.
 
-**Siguiente foco:** STORY 9.6, implementación y validación completa del routing
-SPA. Después quedan la infraestructura transversal y UX de EPIC 9, operación,
+**Siguiente foco:** STORY 9.7, infraestructura transversal y resiliencia del
+frontend. Después quedan UX y testing UI de EPIC 9, operación,
 marketplace, QA, auditoría y permisos finos.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
@@ -85,8 +85,8 @@ Demostrar que:
 - ✅ Menú de usuario integrado en la navegación
 
 **EPIC 9 - Sistema UI, Shell Frontend y Arquitectura SPA**
-- ✅ STORY 9.1-9.5: diseño, navegación, componentes, MVC y shell/layouts
-- ⏭ STORY 9.6-9.9: routing completo, resiliencia, UX y testing UI
+- ✅ STORY 9.1-9.6: diseño, navegación, componentes, MVC, shell y routing completo
+- ⏭ STORY 9.7-9.9: resiliencia, UX y testing UI
 
 **EPIC 10 - Operación Técnica y Observabilidad**
 - ⏭ Health operativo, backup, despliegue y hardening
@@ -140,12 +140,12 @@ Demostrar que:
 ### ✅ Consolidación posterior: EPIC 6 + EPIC 7 + EPIC 8 (COMPLETADO)
 **Entregable logrado:** extensiones, PluginManager, configuración, update/rollback y gestión de usuarios.
 
-### 🔄 Fase actual: EPIC 9 (STORY 9.1-9.5 COMPLETADAS)
+### 🔄 Fase actual: EPIC 9 (STORY 9.1-9.6 COMPLETADAS)
 **Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
-shell SPA persistente y plantillas de página reutilizables.
+shell SPA persistente, plantillas de página reutilizables y routing hash completo.
 
-### ⏭ Próximas fases: STORY 9.6-9.9 + EPIC 10-12 + A1 + A2
-**Objetivo:** completar routing y resiliencia frontend, operación, permisos,
+### ⏭ Próximas fases: STORY 9.7-9.9 + EPIC 10-12 + A1 + A2
+**Objetivo:** completar resiliencia y UX frontend, operación, permisos,
 auditoría, marketplace y QA.
 
 ---
@@ -230,7 +230,7 @@ sin completar retrospectivamente valores desconocidos.
 
 | Item | MVP Producción | MVP Master |
 |------|---|---|
-| Scope | Roadmap completo | EPIC 0-8 + STORY 9.1-9.5 implementadas |
+| Scope | Roadmap completo | EPIC 0-8 + STORY 9.1-9.6 implementadas |
 | Timeline | Evolución continua | Corte académico incremental documentado |
 | IA | Accesible | **Primario** |
 | Testing | Quality gate completo | Suites PHP + 17 runners HTML |
@@ -241,8 +241,8 @@ sin completar retrospectivamente valores desconocidos.
 
 ## Próximo Paso
 
-1. Implementar STORY 9.6 y validar entrada directa, refresh y back/forward del routing SPA.
-2. Continuar con STORY 9.7-9.9 sin adelantar EPIC 10.
+1. Implementar STORY 9.7 y consolidar estado transversal, resiliencia, i18n y theming.
+2. Continuar con STORY 9.8-9.9 sin adelantar EPIC 10.
 3. Mantener [sesion.md](../10-productivity/sesion.md),
    [productividad.md](../10-productivity/productividad.md) y
    [prompts.md](../10-productivity/prompts.md) al cerrar cada story.
@@ -258,7 +258,7 @@ análisis académico deben usarse los tiempos realmente registrados en
 [productividad.md](../10-productivity/productividad.md), no esa hipótesis.
 
 **P: ¿Qué ocurre si una story futura bloquea la defensa?**
-R: Se conserva como corte defendible STORY 9.5 y se documenta el bloqueo. No se
+R: Se conserva como corte defendible STORY 9.6 y se documenta el bloqueo. No se
 deben presentar como completadas funciones no verificadas.
 
 **P: ¿Necesito aprender PHP de cero?**  

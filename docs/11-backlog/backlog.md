@@ -2,10 +2,10 @@
 
 ## Estado implementado auditado (2026-08-10)
 
-El corte funcional actual queda fijado en **STORY 9.5 incluida**.
+El corte funcional actual queda fijado en **STORY 9.6 incluida**.
 
-- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.5` implementadas y `STORY 9.6` como siguiente foco.
-- **STORY 9.5** ya implementada: shell SPA persistente, plantillas de navegación reutilizables y zonas explícitas para breadcrumbs, toolbar, tabs, contenido, acciones, notificaciones y footer.
+- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.6` implementadas y `STORY 9.7` como siguiente foco.
+- **STORY 9.6** ya implementada: mapa hash completo, navegación programática, entrada directa, refresh y back/forward con persistencia de contexto.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -636,7 +636,7 @@ Objetivo: UI funcional para entidades dinámicas.
   - ✅ Formulario email + password
   - ✅ POST `/api/auth/login`
   - ✅ Almacenar JWT en localStorage
-  - ✅ Redirigir a dashboard si exitoso
+  - ✅ Redirigir a home si exitoso
   - ✅ Mostrar error si credenciales inválidas
 - **Dependencias:** STORY 3.6, STORY 0.6
 - **Blockers:** Ninguno
@@ -809,7 +809,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
   para personalizar el schema de la entidad: activar/desactivar `custom_fields` sugeridos por el plugin
   y añadir campos adicionales libres. Los cambios generan una nueva versión en `plugins.schema_json`.
 - **Criteria:**
-  - ✅ Ruta `/plugins/{slug}/config` renderiza página de configuración del plugin
+  - ✅ Ruta `#/plugins/{slug}` renderiza página de configuración del plugin
   - ✅ Se listan los `custom_fields` del schema del plugin con checkbox activar/desactivar
   - ✅ Sección "Campos adicionales" permite añadir campos libres (nombre, tipo, requerido)
   - ✅ Guardar llama a PUT `/api/v1/plugins/{slug}/config` y genera nueva versión en `plugins.schema_json`
@@ -823,7 +823,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 
 #### Refuerzo STORY 7.3 (ampliación funcional)
 
-- Extender la pantalla `/plugins/{slug}/config` para plugins `extension` en estado `active`.
+- Extender la pantalla `#/plugins/{slug}` para plugins `extension` en estado `active`.
 - Permitir configuración de campos del `schema` del plugin extension desde la misma tabla unificada.
 - Añadir configuración de relación de extensión mediante `target_entity`:
   - `*` para aplicar a cualquier entidad.
@@ -985,7 +985,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Status:** ✅ Implementada
 - **Criteria:**
   - ✅ Arquitectura de informacion definida para menu principal, areas y tipos de pagina
-  - ✅ Plantillas objetivo definidas para login, list page, detail/form page, plugin management, workbench/dashboard y estados result/empty/error
+  - ✅ Plantillas objetivo definidas para login, home, list page, detail/form page, plugin management y estados result/empty/error
   - ✅ Preparados los contratos base para breadcrumbs y copy/i18n; STORY 9.5 ya consume la estructura y STORY 9.7 completara la externalizacion transversal
   - ✅ Decision tecnica documentada: routing SPA basado en hash (`#/ruta`) como convencion de navegacion, compatible con Apache+PHP y refresh
   - ✅ Mapa de rutas hash definido para todas las vistas actuales y futuras (incluidas `#/profile`, `#/users` y `#/users/:id`)
@@ -1051,7 +1051,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Criteria:**
   - ✅ Router cliente basado en `hashchange` + `window.location.hash` con convencion `#/segmento/param`
   - ✅ Mapa de rutas hash completo implementado:
-    - `#/` — Dashboard / inicio
+    - `#/home` y `#/` — aliases de inicio con redireccion a la primera `#/entity/:slug` activa
     - `#/profile` — perfil propio
     - `#/users` — gestión de usuarios (admin)
     - `#/users/:id` — ficha de usuario (admin)
@@ -1060,7 +1060,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
     - `#/entity/:slug/:id` — detalle/edicion de registro
     - `#/entity/:slug/:id/:tab` — tab de registro
     - `#/plugins` — PluginManager
-    - `#/plugins/:slug/config` — configuracion de plugin
+    - `#/plugins/:slug` — configuracion de plugin
     - `#/login` — pantalla de autenticacion
   - ✅ Navegacion programatica via `router.navigate('#/ruta')` sin recargar pagina
   - ✅ Refresh del navegador mantiene la vista activa (hash preservado en URL)
@@ -1068,8 +1068,10 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Tests de navegacion: entrada directa por hash, refresh, back/forward y persistencia de contexto
 - **IA Usage:** Implementacion del router hash + mapa de rutas + navegacion programatica + tests
 - **Nota:** Convencion de tabs: preferir subruta `#/entity/:slug/:id/:tab` sobre query param para mantener consistencia con el resto del mapa de rutas. Usar `?tab=` solo si un tab necesita estado adicional en query string.
+- **Nota:** La pestaña base usa el id tecnico `data`; seleccionar una pestaña debe sincronizar el hash sin reconstruir `EntityEdit`. Back/forward entre tabs del mismo registro reutiliza formulario y paneles precargados.
 - **Dependencias:** STORY 9.1, STORY 9.3, STORY 9.4
 - **Blockers:** Ninguno
+- **Verificacion:** 17/17 runners HTML y 169/169 assertions; mapa completo, entrada directa, refresh, back/forward, navegación por tabs y fallback de inicio en navegador integrado
 
 ### STORY 9.7: Infraestructura transversal de frontend y resiliencia
 - **Points:** 5

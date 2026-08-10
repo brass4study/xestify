@@ -904,7 +904,7 @@
 - **Aceleración:** ~69%
 - **Qué hizo IA:**
   - Preparó el cierre documental de la story ya implementada y contrastó el alcance real contra los diffs del repositorio.
-  - Documentó la nueva página `PluginConfig.js` para configurar plugins activos desde `/plugins/{slug}/config`.
+  - Documentó la nueva página `PluginConfig.js` para configurar plugins activos desde `#/plugins/{slug}`.
   - Registró los endpoints admin `GET /api/v1/plugins/{slug}/config` y `PUT /api/v1/plugins/{slug}/config`.
   - Resumió la lógica backend de `PluginAdministrationService` para proteger campos base, activar/desactivar sugerencias, añadir campos libres y versionar `plugins.schema_json`.
   - Incorporó el refuerzo para plugins `extension`: configuración de campos desde la misma tabla, persistencia de `target_entity` y validación de entidad destino.
@@ -1090,3 +1090,22 @@
   - Auditó y alineó README, índices documentales, arquitectura MVC, navegación, decisiones técnicas, backlog y roadmap con el cierre real de la story.
 - **Iteraciones:** 5 (auditoría de alcance, corrección focal, validación completa, alineación documental y normalización de naming)
 - **Decisión manual:** Mantener una única implementación persistente de `ShellLayout` para páginas autenticadas y resolver Login mediante `PageLayout` standalone, sin navbar y sin introducir otro layout paralelo.
+
+### STORY 9.6: Implementacion del routing SPA
+- **Fecha:** 2026-08-10
+- **Estimado sin IA:** 5h
+- **Tiempo real con IA:** No medido; la sesión partió de una implementación parcial ya existente
+- **Aceleración:** No calculable con datos fiables
+- **Qué hizo IA:**
+  - Auditó el router existente contra las once rutas y los criterios de entrada directa, refresh, back/forward y persistencia de contexto.
+  - Completó el mapa bidireccional con login, home y tabs de registro, parsing estricto y navegación programática mediante hashes públicos.
+  - Integró el contexto de tab en `AppController`, `EntityEdit`, plantillas, breadcrumbs y navbar.
+  - Centralizó el parser de configuración de plugins tras reproducir un desajuste entre el mapa y `PluginRouteController` en el runtime Apache.
+  - Unificó los retornos de navegación en `page-header-toolbar` con variant `secondary`, separándolos de los comandos persistentes del formulario.
+  - Sustituyó la supresión global de `hashchange` por entradas deterministas de historial para evitar renders duplicados y pérdidas de navegación.
+  - Convirtió `#/home`, `#/` y el hash vacio en aliases que se reemplazan por la primera entidad activa mientras no existe una pagina de inicio.
+  - Conectó la selección de `DynamicTabs` con `EntityEdit` y `AppController` para navegar a la subruta del tab, usando `data` como id base y el slug para extensiones.
+  - Separó la actualización de historial del despacho de páginas y reutilizó la instancia activa de `EntityEdit` para evitar rerenders entre tabs, incluidos back/forward.
+  - Amplió los tests de tabs y ejecutó los 17 runners HTML en navegador integrado con 169/169 aserciones.
+- **Iteraciones:** 12 (auditoría local, núcleo del mapa, integración de tabs, cobertura de historial, unificación de home, simplificación de plugins, reproducción en Apache, consistencia de retornos, fallback de inicio, navegación interactiva por tabs, optimización sin rerender y limpieza final)
+- **Decisión manual:** Mantener identificadores internos para las vistas y exponer hashes canónicos como contrato público del router; hasta implementar una pagina de inicio, `#/home` y `#/` redirigen a la primera entidad activa. La configuración usa `#/plugins/:slug` sin segmentos redundantes y los tabs usan `#/entity/:slug/:id/:tab`, con `data` como pestaña base. Los tabs del mismo registro actualizan historial sin despachar de nuevo la página y back/forward reutiliza la instancia precargada.

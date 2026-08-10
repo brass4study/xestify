@@ -4,7 +4,10 @@ import {
   entityCreatePage,
   entityPage,
   entityRecordPage,
+  entityTabPage,
   getPageFromHash,
+  hashFromPage,
+  parseEntityTabPage,
   userDetailPage,
 } from './RouteMapController.js';
 import { SessionModel } from '../models/SessionModel.js';
@@ -31,9 +34,14 @@ export class AppController {
     this.dashboardApi = null;
     this.shellLayout = null;
     this.contentContainer = null;
+    this.currentEntityEdit = null;
+    this.currentEntityRoute = null;
 
     this.router = new RouteController({
       onNavigate: async (page) => {
+        if (this.activateCurrentEntityRoute(page)) {
+          return;
+        }
         await this.navigateTo(page);
       },
     });
@@ -80,6 +88,10 @@ export class AppController {
     this.shellLayout = null;
     this.contentContainer = null;
 
+    if (window.location.hash === '' || window.location.hash === '#') {
+      window.history.replaceState(null, '', '#/login');
+    }
+
     const loginLayout = PageLayout.create(this.container)
       .setTemplate('login')
       .setFooter('Xestify MVP · Acceso seguro')
@@ -125,15 +137,17 @@ export class AppController {
     }
 
     const isAdmin = SessionModel.currentUserIsAdmin();
-    const firstEntitySlug = entitiesForNav.length > 0 ? entitiesForNav[0].slug : '';
-    let fallbackPage = '';
+    const firstEntitySlug = entitiesForNav[0]?.slug ?? '';
+    let fallbackPage = isAdmin ? 'plugins' : 'home';
     if (firstEntitySlug !== '') {
       fallbackPage = entityPage(firstEntitySlug);
-    } else if (isAdmin) {
-      fallbackPage = 'plugins';
     }
 
-    const initialPage = getPageFromHash(window.location.hash, fallbackPage);
+    let initialPage = getPageFromHash(window.location.hash, fallbackPage);
+    if (initialPage === 'login') {
+      initialPage = fallbackPage;
+      window.history.replaceState(null, '', hashFromPage(fallbackPage));
+    }
     const currentUser = SessionModel.getUser();
     const userName = currentUser && typeof currentUser === 'object' && typeof currentUser.name === 'string'
       ? currentUser.name
@@ -178,6 +192,9 @@ export class AppController {
       return;
     }
 
+    this.currentEntityEdit = null;
+    this.currentEntityRoute = null;
+
     if (this.currentNavbar instanceof Navbar) {
       const navbarPage = this.resolveNavbarPage(page);
       if (navbarPage !== '') {
@@ -200,8 +217,37 @@ export class AppController {
     }
   }
 
+  activateCurrentEntityRoute(page) {
+    if (!(this.currentEntityEdit instanceof EntityEdit) || this.currentEntityRoute === null) {
+      return false;
+    }
+
+    const tabRoute = parseEntityTabPage(page);
+    const recordRoute = tabRoute === null ? parseEntityRecordPageToken(page) : null;
+    const route = tabRoute ?? (recordRoute === null ? null : { ...recordRoute, tabId: 'data' });
+    if (route === null
+      || route.slug !== this.currentEntityRoute.slug
+      || route.recordId !== this.currentEntityRoute.recordId
+      || !this.currentEntityEdit.setActiveTab(route.tabId)) {
+      return false;
+    }
+
+    const template = this.buildTemplateDefinition(page);
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setBreadcrumbs(template.breadcrumbs ?? []);
+    return true;
+  }
+
   async handlePageNavigation(page) {
     const handlers = [
+      {
+        matches: (nextPage) => nextPage === 'home',
+        run: () => this.showHomePage(),
+      },
+      {
+        matches: (nextPage) => nextPage === 'login',
+        run: () => this.renderLogin(),
+      },
       {
         matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity:'),
         run: (nextPage) => this.showEntityPage(nextPage),
@@ -209,6 +255,10 @@ export class AppController {
       {
         matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-create:'),
         run: (nextPage) => this.showEntityCreatePage(nextPage),
+      },
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-tab:'),
+        run: (nextPage) => this.showEntityTabPage(nextPage),
       },
       {
         matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-record:'),
@@ -248,6 +298,10 @@ export class AppController {
     return false;
   }
 
+  showHomePage() {
+    this.showPlaceholder('Selecciona una seccion para empezar.');
+  }
+
   async showEntityPage(page) {
     const slug = page.slice('entity:'.length);
     await this.showEntityList(slug === '' ? null : slug);
@@ -271,6 +325,16 @@ export class AppController {
     }
 
     await this.showEntityEdit(parsed.slug, parsed.recordId, null);
+  }
+
+  async showEntityTabPage(page) {
+    const parsed = parseEntityTabPage(page);
+    if (parsed === null) {
+      this.showPlaceholder('No se pudo abrir la pestaña del registro.');
+      return;
+    }
+
+    await this.showEntityEdit(parsed.slug, parsed.recordId, null, parsed.tabId);
   }
 
   async showPluginConfigPage(page) {
@@ -428,7 +492,7 @@ export class AppController {
     }
   }
 
-  async showEntityEdit(slug, recordId, initialData) {
+  async showEntityEdit(slug, recordId, initialData, initialTab = null) {
     this.contentContainer.replaceChildren();
     this.showPlaceholder('Cargando formulario...');
 
@@ -459,10 +523,20 @@ export class AppController {
       : entityRecordPage(slug, recordId);
     const pageHeader = this.buildTemplateDefinition(pageToken).pageHeader ?? {};
 
-    return new EntityEdit(this.contentContainer, slug, schema, {
+    const entityEdit = new EntityEdit(this.contentContainer, slug, schema, {
       api: this.dashboardApi,
       recordId: recordId ?? null,
       initialData: dataForForm,
+      initialTab,
+      onTabChange: recordId === null
+        ? null
+        : async (tabId) => {
+          const page = entityTabPage(slug, recordId, tabId);
+          await this.router.navigate(page, { updateHash: true, notify: false });
+          const template = this.buildTemplateDefinition(page);
+          PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+            .setBreadcrumbs(template.breadcrumbs ?? []);
+        },
       shellLayout: this.shellLayout,
       title: pageHeader.title,
       description: pageHeader.subtitle,
@@ -473,6 +547,9 @@ export class AppController {
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
     });
+    this.currentEntityEdit = entityEdit;
+    this.currentEntityRoute = { slug, recordId };
+    return entityEdit;
   }
 
   async loadEntitySchema(slug) {
@@ -567,7 +644,7 @@ export class AppController {
     const template = this.buildTemplateDefinition(page);
     const pageHeader = template.pageHeader ?? {};
     PageLayout.create(this.contentContainer, { shell: this.shellLayout })
-      .setTemplate(template.template ?? 'workbench')
+      .setTemplate(template.template ?? 'home')
       .setBreadcrumbs(template.breadcrumbs ?? [])
       .setTitle(pageHeader.title ?? '')
       .setDescription(pageHeader.subtitle ?? '')
@@ -591,7 +668,7 @@ export class AppController {
   buildTemplateDefinition(page) {
     if (typeof page !== 'string') {
       return {
-        template: 'workbench',
+        template: 'home',
       };
     }
 
@@ -611,7 +688,7 @@ export class AppController {
       }
     }
 
-    return this.defaultWorkbenchTemplate();
+    return this.defaultHomeTemplate();
   }
 
   resolvePluginTemplate(page) {
@@ -724,23 +801,32 @@ export class AppController {
   }
 
   resolveEntityRecordTemplate(page) {
-    if (!page.startsWith('entity-record:')) {
+    const isRecordPage = page.startsWith('entity-record:');
+    const isTabPage = page.startsWith('entity-tab:');
+    if (!isRecordPage && !isTabPage) {
       return null;
     }
 
-    const entityData = parseEntityRecordPageToken(page);
+    const entityData = isTabPage
+      ? parseEntityTabPage(page)
+      : parseEntityRecordPageToken(page);
     if (entityData === null) {
       return null;
     }
 
     const label = this.resolveEntityLabel(entityData.slug);
+    const breadcrumbs = [
+      { label: 'Operaciones' },
+      { label, href: `#/entity/${encodeURIComponent(entityData.slug)}` },
+      { label: `Registro ${entityData.recordId}`, active: !isTabPage },
+    ];
+    if (isTabPage) {
+      breadcrumbs.push({ label: entityData.tabId, active: true });
+    }
+
     return {
       template: 'detail',
-      breadcrumbs: this.makeBreadcrumbItems([
-        { label: 'Operaciones' },
-        { label, href: `#/entity/${encodeURIComponent(entityData.slug)}` },
-        { label: `Registro ${entityData.recordId}`, active: true },
-      ]),
+      breadcrumbs: this.makeBreadcrumbItems(breadcrumbs),
       pageHeader: {
         title: `Detalle de ${label}`,
         subtitle: 'Edita datos y extensiones del registro seleccionado.',
@@ -768,9 +854,9 @@ export class AppController {
     };
   }
 
-  defaultWorkbenchTemplate() {
+  defaultHomeTemplate() {
     return {
-      template: 'workbench',
+      template: 'home',
       breadcrumbs: this.makeBreadcrumbItems([
         { label: 'Workspace', active: true },
       ]),
@@ -786,7 +872,8 @@ export class AppController {
       return '';
     }
 
-    if (page.startsWith('entity:') || page.startsWith('entity-create:') || page.startsWith('entity-record:')) {
+    if (page.startsWith('entity:') || page.startsWith('entity-create:')
+      || page.startsWith('entity-record:') || page.startsWith('entity-tab:')) {
       const slug = this.resolveEntitySlugFromPage(page);
       return slug === '' ? '' : `entity:${slug}`;
     }
@@ -813,6 +900,11 @@ export class AppController {
 
     if (page.startsWith('entity-record:')) {
       const parsed = parseEntityRecordPageToken(page);
+      return parsed === null ? '' : parsed.slug;
+    }
+
+    if (page.startsWith('entity-tab:')) {
+      const parsed = parseEntityTabPage(page);
       return parsed === null ? '' : parsed.slug;
     }
 

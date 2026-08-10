@@ -22,10 +22,13 @@
       entityCreatePage,
       entityPage,
       entityRecordPage,
+      entityTabPage,
       getPageFromHash,
       hashFromPage,
+      pluginConfigPage,
       userDetailPage,
     } from '../src/js/controllers/RouteMapController.js';
+    import { PluginRouteController } from '../src/js/controllers/PluginRouteController.js';
     import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
     import { PageLayout } from '../src/js/views/layout/PageLayout.js';
     import { ListLayout } from '../src/js/views/layout/ListLayout.js';
@@ -34,30 +37,125 @@
 
     initTestRunner('output');
 
-    await test('RouteController mantiene navegación hash estable', async () => {
-      const originalHash = window.location.hash;
+    await test('RouteController soporta entrada directa, refresh y navegación programática por hash', async () => {
+      const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       const visited = [];
       const router = new RouteController({
         onNavigate: async (page) => visited.push(page),
       });
 
-      window.location.hash = '#/users';
+      window.history.replaceState(null, '', '#/users/user-7');
       await router.start('entity:clients');
-      await router.navigate('plugins', { updateHash: true });
-      router.stop();
 
-      assertEquals(visited[0], 'users', 'Debe resolver la ruta inicial');
-      assertEquals(visited.at(-1), 'plugins', 'Debe ejecutar navegación programática');
-      assertEquals(window.location.hash, '#/plugins', 'Debe sincronizar el hash');
-      window.location.hash = originalHash;
+      const navigationCount = visited.length;
+      await router.navigate('#/profile', { notify: false });
+      assertEquals(window.location.hash, '#/profile', 'Debe actualizar el hash sin despachar la página');
+      assertEquals(visited.length, navigationCount, 'notify false no debe invocar onNavigate');
+
+      await router.navigate('#/entity/clients/record-9/comments');
+
+      assertEquals(visited[0], 'users:user-7', 'Debe resolver la entrada directa por hash');
+      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe aceptar hashes públicos en navigate');
+      assertEquals(window.location.hash, '#/entity/clients/record-9/comments', 'Debe sincronizar el hash programático');
+
+      router.stop();
+      const restarted = new RouteController({
+        onNavigate: async (page) => visited.push(page),
+      });
+      await restarted.start('entity:clients');
+
+      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe restaurar la vista tras reiniciar con el hash preservado');
+      restarted.stop();
+      window.history.replaceState(null, '', originalUrl);
     });
 
-    await test('RouteMapController resuelve y genera rutas principales', async () => {
-      assertEquals(getPageFromHash('#/users/user-7', 'plugins'), 'users:user-7', 'Detalle de usuario incorrecto');
-      assertEquals(hashFromPage(userDetailPage('user-7')), '#/users/user-7', 'Hash de usuario incorrecto');
-      assertEquals(hashFromPage(entityPage('clients')), '#/entity/clients', 'Hash de listado incorrecto');
-      assertEquals(hashFromPage(entityCreatePage('clients')), '#/entity/clients/new', 'Hash de alta incorrecto');
-      assertEquals(hashFromPage(entityRecordPage('clients', 'record-9')), '#/entity/clients/record-9', 'Hash de detalle incorrecto');
+    await test('RouteController restaura contexto con back y forward', async () => {
+      const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const visited = [];
+      const router = new RouteController({
+        onNavigate: async (page) => visited.push(page),
+      });
+
+      window.history.replaceState(null, '', '#/entity/clients/record-9');
+      await router.start('home');
+      await router.navigate('#/entity/clients/record-9/comments');
+      await router.navigate('#/profile');
+
+      const backNavigation = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }));
+      window.history.back();
+      await backNavigation;
+      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Back debe recuperar registro y tab');
+
+      const forwardNavigation = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }));
+      window.history.forward();
+      await forwardNavigation;
+      assertEquals(visited.at(-1), 'profile', 'Forward debe recuperar la vista siguiente');
+
+      router.stop();
+      window.history.replaceState(null, '', originalUrl);
+    });
+
+    await test('RouteController redirige home y raíz al fallback sin dejar aliases en el historial', async () => {
+      const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const visited = [];
+      const router = new RouteController({
+        onNavigate: async (page) => visited.push(page),
+      });
+
+      window.history.replaceState(null, '', '#/home');
+      await router.start('entity:clients');
+      assertEquals(visited.at(-1), 'entity:clients', 'Home debe abrir la primera entidad');
+      assertEquals(window.location.hash, '#/entity/clients', 'Home debe reemplazarse por la ruta real');
+
+      const rootNavigation = new Promise((resolve) => {
+        window.addEventListener('hashchange', resolve, { once: true });
+      });
+      window.location.hash = '#/';
+      await rootNavigation;
+      assertEquals(visited.at(-1), 'entity:clients', 'La raíz debe abrir la primera entidad');
+      assertEquals(window.location.hash, '#/entity/clients', 'La raíz debe reemplazarse por la ruta real');
+
+      router.stop();
+      window.history.replaceState(null, '', originalUrl);
+    });
+
+    await test('RouteMapController resuelve y genera el mapa hash completo', async () => {
+      const routes = [
+        ['profile', '#/profile'],
+        ['users', '#/users'],
+        [userDetailPage('user-7'), '#/users/user-7'],
+        [entityPage('clients'), '#/entity/clients'],
+        [entityCreatePage('clients'), '#/entity/clients/new'],
+        [entityRecordPage('clients', 'record-9'), '#/entity/clients/record-9'],
+        [entityTabPage('clients', 'record-9', 'comments'), '#/entity/clients/record-9/comments'],
+        ['plugins', '#/plugins'],
+        [pluginConfigPage('comments'), '#/plugins/comments'],
+        ['login', '#/login'],
+      ];
+
+      routes.forEach(([page, hash]) => {
+        assertEquals(hashFromPage(page), hash, `Hash incorrecto para ${page}`);
+        assertEquals(getPageFromHash(hash, 'home'), page, `Página incorrecta para ${hash}`);
+      });
+
+      assertEquals(hashFromPage('home'), '#/home', 'El alias home debe conservar hash navegable');
+      assertEquals(getPageFromHash('#/home', 'entity:clients'), 'entity:clients',
+        'Home debe resolver al fallback de entidad');
+
+      const pluginPage = getPageFromHash('#/plugins/comments', 'home');
+      assertTrue(PluginRouteController.isPluginConfigPage(pluginPage),
+        'El controlador debe reconocer el token generado por el mapa');
+      assertEquals(PluginRouteController.getPluginSlugFromPage(pluginPage), 'comments',
+        'El controlador debe conservar el slug del plugin');
+
+      assertEquals(getPageFromHash('#/', 'entity:clients'), 'entity:clients',
+        'La raíz debe resolver al fallback de entidad');
+      assertEquals(getPageFromHash('#/plugins/comments/config', 'home'), 'home',
+        'La antigua ruta de configuración de plugins debe quedar fuera del mapa');
+      assertEquals(getPageFromHash('#/entity/clients/record-9/comments?panel=activity', 'home'),
+        'entity-tab:clients:record-9:comments', 'La query no debe destruir el contexto de tab');
+      assertEquals(getPageFromHash('#/entity/clients/record-9/comments/extra', 'home'),
+        'home', 'Las rutas fuera del mapa deben usar fallback');
     });
 
     await test('ShellLayout construye el árbol exacto y expone sus targets', async () => {

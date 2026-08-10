@@ -8,7 +8,6 @@ export class RouteController {
 
 		this.fallbackPage = '';
 		this.hashNavigationHandler = null;
-		this.suppressNextHashNavigation = false;
 	}
 
 	async start(fallbackPage) {
@@ -16,19 +15,14 @@ export class RouteController {
 		this.fallbackPage = fallbackPage;
 
 		this.hashNavigationHandler = () => {
-			if (this.suppressNextHashNavigation) {
-				this.suppressNextHashNavigation = false;
-				return;
-			}
-
 			const nextPage = this.resolvePage(window.location.hash, this.fallbackPage);
-			void this.onNavigate(nextPage, { updateHash: false });
+			void this.navigate(nextPage, { updateHash: true, replaceHash: true });
 		};
 
 		window.addEventListener('hashchange', this.hashNavigationHandler);
 
 		const initialPage = this.resolvePage(window.location.hash, this.fallbackPage);
-		await this.navigate(initialPage, { updateHash: true });
+		await this.navigate(initialPage, { updateHash: true, replaceHash: true });
 		return initialPage;
 	}
 
@@ -37,28 +31,29 @@ export class RouteController {
 			window.removeEventListener('hashchange', this.hashNavigationHandler);
 			this.hashNavigationHandler = null;
 		}
-
-		this.suppressNextHashNavigation = false;
 	}
 
 	async navigate(page, options = {}) {
-		const shouldUpdateHash = options.updateHash === true;
+		const isHashTarget = typeof page === 'string' && page.startsWith('#');
+		const resolvedPage = isHashTarget ? this.resolvePage(page, this.fallbackPage) : page;
+		const shouldUpdateHash = options.updateHash === true || (isHashTarget && options.updateHash !== false);
 
 		if (shouldUpdateHash) {
-			this.updateHash(page);
+			this.updateHash(resolvedPage, options.replaceHash === true);
 		}
 
-		await this.onNavigate(page, { updateHash: false });
+		if (options.notify !== false) {
+			await this.onNavigate(resolvedPage, { updateHash: false });
+		}
 	}
 
-	updateHash(page) {
+	updateHash(page, replaceHash = false) {
 		const targetHash = this.toHash(page);
 		if (targetHash === '' || window.location.hash === targetHash) {
 			return;
 		}
 
-		this.suppressNextHashNavigation = true;
-		window.location.hash = targetHash;
+		window.history[replaceHash ? 'replaceState' : 'pushState'](null, '', targetHash);
 	}
 
 	resolveFromHash(hashValue) {

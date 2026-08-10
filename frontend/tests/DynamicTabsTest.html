@@ -97,9 +97,11 @@
   });
 
   it('setActiveTab() cambia el tab activo y actualiza contenido', (container) => {
+    const cachedContent = document.createElement('div');
+    cachedContent.textContent = 'Contenido A';
     const tabs = new DynamicTabs(container, {
       tabs: [
-        { id: 'a', label: 'A', content: () => 'Contenido A' },
+        { id: 'a', label: 'A', content: () => cachedContent },
         { id: 'b', label: 'B', content: () => 'Contenido B' },
       ],
     });
@@ -124,6 +126,10 @@
     assertTrue(activeInkBar !== null, 'Shared ink bar should move to the active tab');
     assertTrue(inactiveInkBar === null, 'Inactive tab should not retain a second ink bar');
     assertEquals(container.querySelectorAll('[data-role="tabs-ink-bar"]').length, 1, 'Only one ink bar should exist after changing tabs');
+
+    tabs.setActiveTab('a');
+    assertTrue(container.querySelector('[data-role="tabs-content"] > div') === cachedContent,
+      'Tab content should reuse the preloaded node instead of rebuilding it');
 
     tabs.destroy();
   });
@@ -195,6 +201,23 @@
     tabs.destroy();
   });
 
+  it('notifica el cambio de tab iniciado por el usuario', (container) => {
+    let selectedId = null;
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'data', label: 'Datos', content: () => 'Datos' },
+        { id: 'comments', label: 'Comentarios', content: () => 'Comentarios' },
+      ],
+      onChange: (id) => { selectedId = id; },
+    });
+    tabs.render();
+
+    container.querySelector('[data-tab-id="comments"]').click();
+
+    assertEquals(selectedId, 'comments', 'onChange should receive the selected tab id');
+    tabs.destroy();
+  });
+
   it('registerTab() añade tab desde plugin después del render', (container) => {
     const tabs = new DynamicTabs(container, {
       tabs: [
@@ -263,7 +286,7 @@
     const tabs = new DynamicTabs(panelHost, {
       tabBarContainer: headerBottom,
       tabs: [
-        { id: 'datos', label: 'Datos', content: () => 'Contenido datos' },
+        { id: 'data', label: 'Datos', content: () => 'Contenido datos' },
         { id: 'plugin', label: 'Plugin', content: () => 'Contenido plugin' },
       ],
     });
