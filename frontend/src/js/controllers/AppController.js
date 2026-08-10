@@ -8,7 +8,8 @@ import {
   userDetailPage,
 } from './RouteMapController.js';
 import { SessionModel } from '../models/SessionModel.js';
-import { ShellLayoutView } from '../views/layout/ShellLayoutView.js';
+import { PageLayout } from '../views/layout/PageLayout.js';
+import { ShellLayout } from '../views/layout/ShellLayout.js';
 import { EntityEdit } from '../views/pages/EntityEdit.js';
 import { EntityList } from '../views/pages/EntityList.js';
 import { Login } from '../views/pages/Login.js';
@@ -18,6 +19,7 @@ import { UserConfig } from '../views/pages/UserConfig.js';
 import { UserManager } from '../views/pages/UserManager.js';
 import { UserProfile } from '../views/pages/UserProfile.js';
 import { Navbar } from '../views/modules/Navbar.js';
+import { component } from '../views/modules/ComponentFactory.js';
 import { RouteController } from './RouteController.js';
 
 export class AppController {
@@ -27,6 +29,7 @@ export class AppController {
     this.currentNavbar = null;
     this.navbarSubscription = null;
     this.dashboardApi = null;
+    this.shellLayout = null;
     this.contentContainer = null;
 
     this.router = new RouteController({
@@ -74,11 +77,18 @@ export class AppController {
     this.unsubscribeNavbar();
     this.currentNavbar = null;
     this.dashboardApi = null;
+    this.shellLayout = null;
     this.contentContainer = null;
+
+    const loginLayout = PageLayout.create(this.container)
+      .setTemplate('login')
+      .setFooter('Xestify MVP · Acceso seguro')
+      .build();
+    this.contentContainer = loginLayout.getContentTarget();
 
     const loginApi = createApi();
 
-    return new Login(this.container, {
+    return new Login(this.contentContainer, {
       api: loginApi,
       onSuccess: async ({ accessToken, email }) => {
         SessionModel.persistAccessToken(accessToken);
@@ -102,8 +112,10 @@ export class AppController {
   }
 
   async renderDashboard() {
-    const { navbarContainer, contentContainer } = ShellLayoutView.createDashboardLayout(this.container);
-    this.contentContainer = contentContainer;
+    this.shellLayout = ShellLayout.create(this.container).build();
+    this.contentContainer = this.shellLayout.getTarget('shell-main-content');
+    const navbarContainer = this.shellLayout.getTarget('shell-menu-nav');
+    const userMenuContainer = this.shellLayout.getTarget('shell-menu-config-user');
 
     this.dashboardApi = createApiWithToken(SessionModel.getToken());
 
@@ -140,6 +152,7 @@ export class AppController {
       userName,
       avatar,
       roles: userRoles,
+      userContainer: userMenuContainer,
       entities: entitiesForNav,
       currentPage: initialPage,
       canManagePlugins: isAdmin,
@@ -165,55 +178,74 @@ export class AppController {
       return;
     }
 
+    if (this.currentNavbar instanceof Navbar) {
+      const navbarPage = this.resolveNavbarPage(page);
+      if (navbarPage !== '') {
+        this.currentNavbar.setActive(navbarPage);
+      }
+    }
+
+    this.applyTemplateForPage(page);
+
     if (this.dashboardApi === null) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo preparar la navegacion.');
+      this.showPlaceholder('No se pudo preparar la navegacion.');
       return;
     }
 
     this.contentContainer.replaceChildren();
 
-    if (typeof page === 'string' && page.startsWith('entity:')) {
-      await this.showEntityPage(page);
-      return;
+    const wasHandled = await this.handlePageNavigation(page);
+    if (!wasHandled) {
+      this.showPlaceholder('Pagina no encontrada.');
+    }
+  }
+
+  async handlePageNavigation(page) {
+    const handlers = [
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity:'),
+        run: (nextPage) => this.showEntityPage(nextPage),
+      },
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-create:'),
+        run: (nextPage) => this.showEntityCreatePage(nextPage),
+      },
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-record:'),
+        run: (nextPage) => this.showEntityRecordPage(nextPage),
+      },
+      {
+        matches: (nextPage) => PluginRouteController.isPluginConfigPage(nextPage),
+        run: (nextPage) => this.showPluginConfigPage(nextPage),
+      },
+      {
+        matches: (nextPage) => nextPage === 'plugins',
+        run: () => this.showPluginsPage(),
+      },
+      {
+        matches: (nextPage) => nextPage === 'profile',
+        run: () => this.showProfilePage(),
+      },
+      {
+        matches: (nextPage) => nextPage === 'users',
+        run: () => this.showUsersPage(),
+      },
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('users:'),
+        run: (nextPage) => this.showUserConfigPage(nextPage.slice('users:'.length)),
+      },
+    ];
+
+    for (const handler of handlers) {
+      if (!handler.matches(page)) {
+        continue;
+      }
+
+      await handler.run(page);
+      return true;
     }
 
-    if (typeof page === 'string' && page.startsWith('entity-create:')) {
-      await this.showEntityCreatePage(page);
-      return;
-    }
-
-    if (typeof page === 'string' && page.startsWith('entity-record:')) {
-      await this.showEntityRecordPage(page);
-      return;
-    }
-
-    if (PluginRouteController.isPluginConfigPage(page)) {
-      await this.showPluginConfigPage(page);
-      return;
-    }
-
-    if (page === 'plugins') {
-      await this.showPluginsPage();
-      return;
-    }
-
-    if (page === 'profile') {
-      this.showProfilePage();
-      return;
-    }
-
-    if (page === 'users') {
-      await this.showUsersPage();
-      return;
-    }
-
-    if (typeof page === 'string' && page.startsWith('users:')) {
-      const userId = page.slice('users:'.length);
-      await this.showUserConfigPage(userId);
-      return;
-    }
-
-    ShellLayoutView.showPlaceholder(this.contentContainer, 'Pagina no encontrada.');
+    return false;
   }
 
   async showEntityPage(page) {
@@ -224,7 +256,7 @@ export class AppController {
   async showEntityCreatePage(page) {
     const slug = page.slice('entity-create:'.length);
     if (slug === '') {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo abrir el formulario de alta.');
+      this.showPlaceholder('No se pudo abrir el formulario de alta.');
       return;
     }
 
@@ -234,7 +266,7 @@ export class AppController {
   async showEntityRecordPage(page) {
     const parsed = parseEntityRecordPageToken(page);
     if (parsed === null) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo abrir la ficha del registro.');
+      this.showPlaceholder('No se pudo abrir la ficha del registro.');
       return;
     }
 
@@ -250,11 +282,15 @@ export class AppController {
 
   async showPluginsPage() {
     if (!SessionModel.currentUserIsAdmin()) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'Acceso denegado: solo administradores.');
+      this.showPlaceholder('Acceso denegado: solo administradores.');
       return;
     }
 
+    const pageHeader = this.buildTemplateDefinition('plugins').pageHeader ?? {};
     const pluginManager = new PluginManager(this.contentContainer, this.dashboardApi, {
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
       onConfigure: (plugin) => {
         void this.router.navigate(PluginRouteController.toPluginConfigPage(plugin.slug), { updateHash: true });
       },
@@ -272,17 +308,26 @@ export class AppController {
           roles: Array.isArray(currentUser.roles) ? currentUser.roles : [],
         }
       : { email: SessionModel.getUserEmail(), roles: [] };
-    return new UserProfile(this.contentContainer, displayUser, this.dashboardApi);
+    const pageHeader = this.buildTemplateDefinition('profile').pageHeader ?? {};
+    return new UserProfile(this.contentContainer, displayUser, this.dashboardApi, {
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      subtitle: pageHeader.subtitle,
+    });
   }
 
   async showUsersPage() {
     if (!SessionModel.currentUserIsAdmin()) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'Acceso denegado: solo administradores.');
+      this.showPlaceholder('Acceso denegado: solo administradores.');
       return;
     }
 
+    const pageHeader = this.buildTemplateDefinition('users').pageHeader ?? {};
     const userManagementPage = new UserManager(this.contentContainer, {
       api: this.dashboardApi,
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
       onViewUser: (user) => {
         if (user && typeof user.id === 'string') {
           void this.router.navigate(userDetailPage(user.id), { updateHash: true });
@@ -296,7 +341,7 @@ export class AppController {
 
   async showUserConfigPage(userId) {
     if (!SessionModel.currentUserIsAdmin()) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'Acceso denegado: solo administradores.');
+      this.showPlaceholder('Acceso denegado: solo administradores.');
       return;
     }
 
@@ -310,7 +355,7 @@ export class AppController {
       const response = await this.dashboardApi.get(`/users/${userId}`);
       selectedUser = response?.data ?? null;
     } catch {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo cargar la ficha de usuario.');
+      this.showPlaceholder('No se pudo cargar la ficha de usuario.');
       return;
     }
 
@@ -319,13 +364,15 @@ export class AppController {
       ? currentUser.id
       : null;
 
+    const pageHeader = this.buildTemplateDefinition(userDetailPage(userId)).pageHeader ?? {};
     return new UserConfig(this.contentContainer, {
       mode: 'admin',
       user: selectedUser,
       api: this.dashboardApi,
+      shellLayout: this.shellLayout,
       currentUserId,
-      title: 'Configuración de usuario',
-      subtitle: 'Página de configuración del usuario seleccionado.',
+      title: pageHeader.title,
+      subtitle: pageHeader.subtitle,
       onBack: () => {
         void this.router.navigate('users', { updateHash: true });
       },
@@ -354,9 +401,15 @@ export class AppController {
 
   async showEntityList(preloadSlug) {
     this.contentContainer.replaceChildren();
+    const pageHeader = preloadSlug === null
+      ? {}
+      : this.buildTemplateDefinition(entityPage(preloadSlug)).pageHeader ?? {};
 
     const entityListPage = new EntityList(this.contentContainer, {
       api: this.dashboardApi,
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
       onCreateNew: (slug) => {
         void this.router.navigate(entityCreatePage(slug), { updateHash: true });
       },
@@ -371,17 +424,17 @@ export class AppController {
         await entityListPage.loadEntity(preloadSlug);
       }
     } catch {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo cargar la lista de entidades.');
+      this.showPlaceholder('No se pudo cargar la lista de entidades.');
     }
   }
 
   async showEntityEdit(slug, recordId, initialData) {
     this.contentContainer.replaceChildren();
-    ShellLayoutView.showPlaceholder(this.contentContainer, 'Cargando formulario...');
+    this.showPlaceholder('Cargando formulario...');
 
     const schema = await this.loadEntitySchema(slug);
     if (schema === null) {
-      ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo cargar el formulario de la entidad.');
+      this.showPlaceholder('No se pudo cargar el formulario de la entidad.');
       return null;
     }
 
@@ -393,7 +446,7 @@ export class AppController {
     if (recordId !== null && !hasInitialData) {
       const recordData = await this.loadEntityRecord(slug, recordId);
       if (recordData === null) {
-        ShellLayoutView.showPlaceholder(this.contentContainer, 'No se pudo cargar la ficha del registro.');
+        this.showPlaceholder('No se pudo cargar la ficha del registro.');
         return null;
       }
 
@@ -401,11 +454,18 @@ export class AppController {
     }
 
     this.contentContainer.replaceChildren();
+    const pageToken = recordId === null
+      ? entityCreatePage(slug)
+      : entityRecordPage(slug, recordId);
+    const pageHeader = this.buildTemplateDefinition(pageToken).pageHeader ?? {};
 
     return new EntityEdit(this.contentContainer, slug, schema, {
       api: this.dashboardApi,
       recordId: recordId ?? null,
       initialData: dataForForm,
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
       onSaved: async () => {
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
@@ -439,11 +499,17 @@ export class AppController {
 
   async showPluginConfig(slug) {
     this.contentContainer.replaceChildren();
-    ShellLayoutView.showPlaceholder(this.contentContainer, 'Cargando configuracion del plugin...');
+    this.showPlaceholder('Cargando configuracion del plugin...');
 
+    const pageHeader = this.buildTemplateDefinition(
+      PluginRouteController.toPluginConfigPage(slug)
+    ).pageHeader ?? {};
     const page = new PluginConfig(this.contentContainer, {
       slug,
       api: this.dashboardApi,
+      shellLayout: this.shellLayout,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
       onBack: () => {
         void this.router.navigate('plugins', { updateHash: true });
       },
@@ -457,6 +523,7 @@ export class AppController {
     this.unsubscribeNavbar();
     this.currentNavbar = null;
     this.dashboardApi = null;
+    this.shellLayout = null;
     this.contentContainer = null;
 
     SessionModel.reset();
@@ -490,6 +557,302 @@ export class AppController {
     this.currentNavbar.setUserName(userName);
     this.currentNavbar.setAvatar(avatar);
     this.currentNavbar.setRoles(userRoles);
+  }
+
+  applyTemplateForPage(page) {
+    if (this.shellLayout === null) {
+      return;
+    }
+
+    const template = this.buildTemplateDefinition(page);
+    const pageHeader = template.pageHeader ?? {};
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setTemplate(template.template ?? 'workbench')
+      .setBreadcrumbs(template.breadcrumbs ?? [])
+      .setTitle(pageHeader.title ?? '')
+      .setDescription(pageHeader.subtitle ?? '')
+      .setHeaderToolbar(null)
+      .setHeaderBottom(null)
+      .setActions(null)
+      .setFooter(template.footerText ?? '');
+    this.shellLayout.clearZone('shell-main-notifications');
+    this.contentContainer = this.shellLayout.getTarget('shell-main-content');
+  }
+
+  showPlaceholder(message) {
+    const placeholder = component.create('p', {
+      className: 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500',
+      text: message,
+    }).setData('role', 'placeholder');
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setContent(placeholder);
+  }
+
+  buildTemplateDefinition(page) {
+    if (typeof page !== 'string') {
+      return {
+        template: 'workbench',
+      };
+    }
+
+    const resolvers = [
+      this.resolvePluginTemplate.bind(this),
+      this.resolveUsersTemplate.bind(this),
+      this.resolveProfileTemplate.bind(this),
+      this.resolveEntityCreateTemplate.bind(this),
+      this.resolveEntityRecordTemplate.bind(this),
+      this.resolveEntityListTemplate.bind(this),
+    ];
+
+    for (const resolver of resolvers) {
+      const resolved = resolver(page);
+      if (resolved !== null) {
+        return resolved;
+      }
+    }
+
+    return this.defaultWorkbenchTemplate();
+  }
+
+  resolvePluginTemplate(page) {
+    if (page === 'plugins') {
+      return {
+        template: 'plugin-management',
+        breadcrumbs: this.makeBreadcrumbItems([
+          { label: 'Sistema' },
+          { label: 'Plugins', active: true },
+        ]),
+        pageHeader: {
+          title: 'Gestión de plugins',
+          subtitle: 'Sincroniza, activa y configura plugins del sistema.',
+        },
+        footerText: 'Zona de extensiones preparada para sync, update y rollback.',
+      };
+    }
+
+    if (!PluginRouteController.isPluginConfigPage(page)) {
+      return null;
+    }
+
+    const slug = PluginRouteController.getPluginSlugFromPage(page);
+    return {
+      template: 'plugin-management',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Sistema' },
+        { label: 'Plugins', href: '#/plugins' },
+        { label: slug === '' ? 'Configuración' : `Configuración: ${slug}`, active: true },
+      ]),
+      pageHeader: {
+        title: 'Configuración de plugin',
+        subtitle: 'Ajusta opciones específicas del plugin activo.',
+      },
+      footerText: slug === '' ? '' : `Plugin objetivo: ${slug}`,
+    };
+  }
+
+  resolveUsersTemplate(page) {
+    if (page === 'users') {
+      return {
+        template: 'list',
+        breadcrumbs: this.makeBreadcrumbItems([
+          { label: 'Sistema' },
+          { label: 'Usuarios', active: true },
+        ]),
+        pageHeader: {
+          title: 'Gestión de usuarios',
+          subtitle: 'Administra cuentas, roles y accesos.',
+        },
+      };
+    }
+
+    if (!page.startsWith('users:')) {
+      return null;
+    }
+
+    const userId = page.slice('users:'.length);
+    return {
+      template: 'detail',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Sistema' },
+        { label: 'Usuarios', href: '#/users' },
+        { label: userId === '' ? 'Detalle' : `Usuario ${userId}`, active: true },
+      ]),
+      pageHeader: {
+        title: 'Detalle de usuario',
+        subtitle: 'Consulta o edita la ficha del usuario seleccionado.',
+      },
+    };
+  }
+
+  resolveProfileTemplate(page) {
+    if (page !== 'profile') {
+      return null;
+    }
+
+    return {
+      template: 'detail',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Cuenta' },
+        { label: 'Mi perfil', active: true },
+      ]),
+      pageHeader: {
+        title: 'Mi perfil',
+        subtitle: 'Actualiza tus datos personales y tu contraseña.',
+      },
+    };
+  }
+
+  resolveEntityCreateTemplate(page) {
+    if (!page.startsWith('entity-create:')) {
+      return null;
+    }
+
+    const slug = page.slice('entity-create:'.length);
+    const label = this.resolveEntityLabel(slug);
+    return {
+      template: 'detail',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Operaciones' },
+        { label, href: `#/entity/${encodeURIComponent(slug)}` },
+        { label: 'Nuevo registro', active: true },
+      ]),
+      pageHeader: {
+        title: `Nuevo registro: ${label}`,
+        subtitle: 'Completa los campos requeridos y guarda para continuar.',
+      }
+    };
+  }
+
+  resolveEntityRecordTemplate(page) {
+    if (!page.startsWith('entity-record:')) {
+      return null;
+    }
+
+    const entityData = parseEntityRecordPageToken(page);
+    if (entityData === null) {
+      return null;
+    }
+
+    const label = this.resolveEntityLabel(entityData.slug);
+    return {
+      template: 'detail',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Operaciones' },
+        { label, href: `#/entity/${encodeURIComponent(entityData.slug)}` },
+        { label: `Registro ${entityData.recordId}`, active: true },
+      ]),
+      pageHeader: {
+        title: `Detalle de ${label}`,
+        subtitle: 'Edita datos y extensiones del registro seleccionado.',
+      }
+    };
+  }
+
+  resolveEntityListTemplate(page) {
+    if (!page.startsWith('entity:')) {
+      return null;
+    }
+
+    const slug = page.slice('entity:'.length);
+    const label = this.resolveEntityLabel(slug);
+    return {
+      template: 'list',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Operaciones' },
+        { label, active: true },
+      ]),
+      pageHeader: {
+        title: label,
+        subtitle: 'Explora registros y accede a acciones contextuales.',
+      },
+    };
+  }
+
+  defaultWorkbenchTemplate() {
+    return {
+      template: 'workbench',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Workspace', active: true },
+      ]),
+      pageHeader: {
+        title: 'Panel de trabajo',
+        subtitle: 'Selecciona una sección para empezar.',
+      },
+    };
+  }
+
+  resolveNavbarPage(page) {
+    if (typeof page !== 'string') {
+      return '';
+    }
+
+    if (page.startsWith('entity:') || page.startsWith('entity-create:') || page.startsWith('entity-record:')) {
+      const slug = this.resolveEntitySlugFromPage(page);
+      return slug === '' ? '' : `entity:${slug}`;
+    }
+
+    if (page === 'plugins' || PluginRouteController.isPluginConfigPage(page)) {
+      return 'plugins';
+    }
+
+    if (page === 'users' || page.startsWith('users:') || page === 'profile') {
+      return '';
+    }
+
+    return page;
+  }
+
+  resolveEntitySlugFromPage(page) {
+    if (page.startsWith('entity:')) {
+      return page.slice('entity:'.length);
+    }
+
+    if (page.startsWith('entity-create:')) {
+      return page.slice('entity-create:'.length);
+    }
+
+    if (page.startsWith('entity-record:')) {
+      const parsed = parseEntityRecordPageToken(page);
+      return parsed === null ? '' : parsed.slug;
+    }
+
+    return '';
+  }
+
+  resolveEntityLabel(slug) {
+    const normalizedSlug = typeof slug === 'string' ? slug.trim() : '';
+    if (normalizedSlug === '') {
+      return 'Entidad';
+    }
+
+    const entities = SessionModel.getEntities();
+    const match = Array.isArray(entities)
+      ? entities.find((entity) => entity?.slug === normalizedSlug)
+      : null;
+    const label = typeof match?.label === 'string' ? match.label.trim() : '';
+    return label === '' ? normalizedSlug : label;
+  }
+
+  makeBreadcrumbItems(items) {
+    return items.map((item) => {
+      if (item.active === true) {
+        return {
+          label: item.label,
+          active: true,
+        };
+      }
+
+      if (typeof item.href === 'string' && item.href !== '') {
+        return {
+          label: item.label,
+          href: item.href,
+        };
+      }
+
+      return {
+        label: item.label,
+      };
+    });
   }
 
   async loadCurrentUserProfile(token, fallbackUser = null) {

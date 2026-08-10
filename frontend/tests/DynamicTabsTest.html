@@ -83,9 +83,11 @@
     assertEquals(buttons.length, 2, 'Expected 2 tab buttons');
     assertEquals(buttons[0].textContent, 'General', 'First tab label');
     assertEquals(buttons[1].textContent, 'Notas', 'Second tab label');
-    const inkBar = container.querySelector('[data-role="tabs-ink-bar"]');
-    assertTrue(inkBar !== null, 'Expected animated Ant Design ink bar');
-    assertTrue(inkBar.className.includes('transition-[width,transform]'), 'Ink bar should animate width and transform');
+    const activeInkBar = buttons[0].querySelector('[data-role="tabs-ink-bar"]');
+    assertTrue(activeInkBar !== null, 'Active tab should render an ink bar');
+    assertTrue(activeInkBar.className.includes('tabs-ink-bar'), 'Ink bar should use the Tailwind component class');
+    assertEquals(bar.querySelectorAll('[data-role="tabs-ink-bar"]').length, 1, 'Tab list should render a single shared ink bar');
+    assertEquals(buttons[0].dataset.state, 'active', 'Active tab should expose its state to Tailwind');
 
     const content = container.querySelector('[data-role="tabs-content"]');
     assertTrue(content !== null, 'Expected [data-role="tabs-content"]');
@@ -117,10 +119,42 @@
 
     const inactiveBtn = container.querySelector('[data-tab-id="a"]');
     assertEquals(inactiveBtn.getAttribute('aria-selected'), 'false', 'aria-selected false on inactive');
+    const activeInkBar = activeBtn.querySelector('[data-role="tabs-ink-bar"]');
+    const inactiveInkBar = inactiveBtn.querySelector('[data-role="tabs-ink-bar"]');
+    assertTrue(activeInkBar !== null, 'Shared ink bar should move to the active tab');
+    assertTrue(inactiveInkBar === null, 'Inactive tab should not retain a second ink bar');
+    assertEquals(container.querySelectorAll('[data-role="tabs-ink-bar"]').length, 1, 'Only one ink bar should exist after changing tabs');
+
+    tabs.destroy();
+  });
+
+  it('ink bar se desplaza entre tabs adaptando su ancho', (container) => {
+    const tabs = new DynamicTabs(container, {
+      tabs: [
+        { id: 'short', label: 'Uno', content: () => 'Uno' },
+        { id: 'wide', label: 'Pestaña larga', content: () => 'Dos' },
+      ],
+    });
+    tabs.render();
 
     const inkBar = container.querySelector('[data-role="tabs-ink-bar"]');
-    assertTrue(inkBar.style.width !== '', 'Ink bar width should be measured');
-    assertTrue(inkBar.style.transform.includes('translateX'), 'Ink bar position should be measured');
+    let capturedKeyframes = [];
+    let capturedOptions = {};
+    inkBar.getBoundingClientRect = () => inkBar.parentElement.dataset.tabId === 'short'
+      ? { left: 10, width: 40 }
+      : { left: 100, width: 80 };
+    inkBar.animate = (keyframes, options) => {
+      capturedKeyframes = keyframes;
+      capturedOptions = options;
+      return { cancel() {} };
+    };
+
+    tabs.setActiveTab('wide');
+
+    assertEquals(capturedKeyframes[0].transform, 'translateX(-90px) scaleX(0.5)', 'Animation should start at previous tab geometry');
+    assertEquals(capturedKeyframes[1].transform, 'translateX(0) scaleX(1)', 'Animation should finish at active tab geometry');
+    assertEquals(capturedOptions.duration, 300, 'Animation should use the expected duration');
+    assertTrue(inkBar.parentElement.dataset.tabId === 'wide', 'Ink bar should finish inside the active tab');
 
     tabs.destroy();
   });
@@ -215,6 +249,35 @@
     tabs.destroy();
     assertTrue(container.querySelector('[data-role="tabs-root"]') === null, 'DOM should be removed after destroy');
     assertEquals(tabs.getActiveTab(), null, 'Active tab should be null after destroy');
+  });
+
+  it('permite montar el tablist en contenedor externo manteniendo tabpanel local', (container) => {
+    const headerBottom = document.createElement('div');
+    headerBottom.dataset.role = 'page-header-bottom';
+    container.appendChild(headerBottom);
+
+    const panelHost = document.createElement('div');
+    panelHost.dataset.role = 'form-panel';
+    container.appendChild(panelHost);
+
+    const tabs = new DynamicTabs(panelHost, {
+      tabBarContainer: headerBottom,
+      tabs: [
+        { id: 'datos', label: 'Datos', content: () => 'Contenido datos' },
+        { id: 'plugin', label: 'Plugin', content: () => 'Contenido plugin' },
+      ],
+    });
+
+    tabs.render();
+
+    const movedBar = headerBottom.querySelector('[data-role="tabs-bar"]');
+    const panel = panelHost.querySelector('[data-role="tabs-content"]');
+    assertTrue(movedBar !== null, 'Tablist should be moved to external header container');
+    assertTrue(panel !== null, 'Tabpanel should stay in the entity edit host');
+    assertTrue(panel.textContent.includes('Contenido datos'), 'Initial panel content should be rendered in local host');
+
+    tabs.destroy();
+    assertTrue(headerBottom.querySelector('[data-role="tabs-bar"]') === null, 'External tablist should be removed on destroy');
   });
 
   separator();

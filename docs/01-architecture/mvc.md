@@ -70,6 +70,21 @@ No deben existir carpetas o capas paralelas de primer nivel fuera de
 `controllers/`, `views/` y `models/`; el bootstrap raiz `app.js` no constituye
 una capa adicional.
 
+### Shell y layouts de pagina
+
+`AppController` crea una única instancia persistente de `ShellLayout` para las
+páginas autenticadas. La shell registra navegación, cabecera, notificaciones,
+contenido, acciones principales y footer, pero no construye contenido propio de
+las páginas.
+
+`PageLayout` recibe la shell activa y compone breadcrumbs, título, descripción,
+toolbar y zonas de extensión. `ListLayout` y `FormLayout` especializan listados y
+formularios sin crear shells adicionales. Login queda fuera de la shell
+autenticada y usa la plantilla standalone `login` de `PageLayout`.
+
+El contrato completo y sus targets se documentan en
+[`../05-frontend/layouts-guide.md`](../05-frontend/layouts-guide.md).
+
 ## Servicios transversales (fuera de MVC clasico)
 
 - ValidationService

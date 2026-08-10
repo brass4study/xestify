@@ -15,17 +15,17 @@ export class ModalComponent extends BaseComponent {
       className: 'flex items-center justify-between border-b border-slate-200 px-4 py-3',
     });
 
-    const title = component.create('h3', {
+    component.create('h3', {
       className: 'text-base font-semibold text-slate-900',
       dataset: { role: 'ui-modal-title' },
       text: options.title ?? 'Mensaje',
-    });
-    header.appendChild(title);
+    }).setParent(header);
 
     if (typeof options.onClose === 'function') {
       const closeButton = component.create('button', { label: '×', variant: 'ghost', ariaLabel: 'Cerrar diálogo', onClick: options.onClose });
-      closeButton.className = 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-lg text-slate-600 transition hover:bg-slate-100';
-      header.appendChild(closeButton);
+      closeButton
+        .setClassName('inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-lg text-slate-600 transition hover:bg-slate-100')
+        .setParent(header);
     }
 
     const content = component.create('div', {
@@ -38,9 +38,9 @@ export class ModalComponent extends BaseComponent {
       content.textContent = options.content;
     }
 
-    dialog.appendChild(header);
-    dialog.appendChild(content);
-    this.appendChild(dialog);
+    header.setParent(dialog);
+    content.setParent(dialog);
+    dialog.setParent(this);
     return this;
   }
 }

@@ -29,6 +29,8 @@ use Xestify\services\EntityService;
  */
 class EntityController
 {
+    private const DEFAULT_PAGE_SIZE = 20;
+    private const MAX_PAGE_SIZE = 200;
     public function __construct(
         private EntityService $service,
         private PDO $pdo,
@@ -141,7 +143,7 @@ class EntityController
 
     /**
      * GET /api/v1/entities/{slug}/records
-     * Returns all active records for the entity type.
+    * Returns a page of active records for the entity type.
      */
     public function index(array $params, ?Request $request = null): void
     {
@@ -153,9 +155,25 @@ class EntityController
             return;
         }
 
-        $rows = $this->service->listRecords($slug);
+        $page = max(1, (int) $request->query('page', 1));
+        $pageSize = min(
+            self::MAX_PAGE_SIZE,
+            max(1, (int) $request->query('page_size', self::DEFAULT_PAGE_SIZE))
+        );
+        $sort = (string) $request->query('sort', 'created_at');
+        $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
+        $direction = $requestedDirection === 'desc' ? 'DESC' : 'ASC';
+        $result = $this->service->listRecordsPage($slug, $page, $pageSize, $sort, $direction);
+        $totalPages = max(1, (int) ceil($result['total'] / $pageSize));
 
-        Response::make()->json($rows, ['total' => count($rows)]);
+        Response::make()->json($result['records'], [
+            'page' => $page,
+            'page_size' => $pageSize,
+            'total' => $result['total'],
+            'total_pages' => $totalPages,
+            'sort' => $result['sort'],
+            'direction' => strtolower($direction),
+        ]);
     }
 
     /**

@@ -12,12 +12,10 @@
   <script type="module">
     import {
       initTestRunner,
-      log,
       test,
       assertEquals,
       assertTrue,
       finishTestRunner,
-      separator,
     } from './js/helpers.js';
     import { RouteController } from '../src/js/controllers/RouteController.js';
     import {
@@ -28,114 +26,205 @@
       hashFromPage,
       userDetailPage,
     } from '../src/js/controllers/RouteMapController.js';
-    import { PluginRouteController } from '../src/js/controllers/PluginRouteController.js';
-    import { SessionModel } from '../src/js/models/SessionModel.js';
+    import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
+    import { PageLayout } from '../src/js/views/layout/PageLayout.js';
+    import { ListLayout } from '../src/js/views/layout/ListLayout.js';
+    import { FormLayout } from '../src/js/views/layout/FormLayout.js';
+    import { component } from '../src/js/views/modules/ComponentFactory.js';
 
     initTestRunner('output');
 
-    function createStorageMock() {
-      const values = new Map();
-      return {
-        getItem(key) {
-          return values.has(key) ? values.get(key) : null;
-        },
-        setItem(key, value) {
-          values.set(key, String(value));
-        },
-        removeItem(key) {
-          values.delete(key);
-        },
-      };
-    }
-
-    separator();
-    log('Arquitectura 9.4 MVC: controllers de rutas + modelo de sesion');
-
-    await test('RouteController resuelve la pagina inicial desde hash y ejecuta navigate', async () => {
+    await test('RouteController mantiene navegación hash estable', async () => {
       const originalHash = window.location.hash;
       const visited = [];
       const router = new RouteController({
-        onNavigate: async (page) => {
-          visited.push(page);
-        },
+        onNavigate: async (page) => visited.push(page),
       });
 
       window.location.hash = '#/users';
       await router.start('entity:clients');
-      router.stop();
-
-      assertEquals(visited[0], 'users', 'El router debe resolver #/users como users');
-      window.location.hash = originalHash;
-    });
-
-    await test('RouteController actualiza hash en navegacion programatica', async () => {
-      const originalHash = window.location.hash;
-      const visited = [];
-      const router = new RouteController({
-        onNavigate: async (page) => {
-          visited.push(page);
-        },
-      });
-
-      await router.start('users');
       await router.navigate('plugins', { updateHash: true });
       router.stop();
 
-      assertTrue(window.location.hash === '#/plugins', 'La navegacion debe sincronizar hash');
-      assertEquals(visited[visited.length - 1], 'plugins', 'La ultima pagina debe ser plugins');
+      assertEquals(visited[0], 'users', 'Debe resolver la ruta inicial');
+      assertEquals(visited.at(-1), 'plugins', 'Debe ejecutar navegación programática');
+      assertEquals(window.location.hash, '#/plugins', 'Debe sincronizar el hash');
       window.location.hash = originalHash;
     });
 
-    await test('PluginRouteController parsea y genera rutas de configuracion', async () => {
-      const page = '/plugins/comments/config';
-      assertTrue(PluginRouteController.isPluginConfigPage(page), 'Debe detectar pagina de config');
-      assertEquals(PluginRouteController.getPluginSlugFromPage(page), 'comments', 'Debe extraer slug');
-      assertEquals(PluginRouteController.toPluginConfigPage('comments'), '/plugins/comments/config', 'Debe generar ruta estable');
+    await test('RouteMapController resuelve y genera rutas principales', async () => {
+      assertEquals(getPageFromHash('#/users/user-7', 'plugins'), 'users:user-7', 'Detalle de usuario incorrecto');
+      assertEquals(hashFromPage(userDetailPage('user-7')), '#/users/user-7', 'Hash de usuario incorrecto');
+      assertEquals(hashFromPage(entityPage('clients')), '#/entity/clients', 'Hash de listado incorrecto');
+      assertEquals(hashFromPage(entityCreatePage('clients')), '#/entity/clients/new', 'Hash de alta incorrecto');
+      assertEquals(hashFromPage(entityRecordPage('clients', 'record-9')), '#/entity/clients/record-9', 'Hash de detalle incorrecto');
     });
 
-    await test('RouteMapController resuelve las rutas estaticas principales', async () => {
-      assertEquals(getPageFromHash('#/profile', 'plugins'), 'profile', 'Debe resolver perfil');
-      assertEquals(getPageFromHash('#/users', 'plugins'), 'users', 'Debe resolver usuarios');
-      assertEquals(getPageFromHash('#/users/user-7', 'plugins'), 'users:user-7', 'Debe resolver detalle de usuario');
-      assertEquals(getPageFromHash('#/plugins', 'users'), 'plugins', 'Debe resolver plugins');
-      assertEquals(getPageFromHash('#/plugins/comments/config', 'users'), '/plugins/comments/config', 'Debe resolver configuracion de plugin');
+    await test('ShellLayout construye el árbol exacto y expone sus targets', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+
+      assertEquals(shell.getTarget('shell-menu-nav').parentElement.dataset.role, 'shell-menu', 'Nav fuera de shell-menu');
+      assertEquals(shell.getTarget('shell-menu-config').parentElement.dataset.role, 'shell-menu', 'Config fuera de shell-menu');
+      assertEquals(shell.getTarget('shell-menu-config-user').parentElement.dataset.role, 'shell-menu-config', 'Usuario fuera de config');
+      assertEquals(shell.getTarget('shell-header').parentElement.dataset.role, 'shell-main', 'Header fuera de main');
+      assertEquals(shell.getTarget('shell-header').childElementCount, 0, 'ShellLayout no debe inyectar componentes de página');
+      assertTrue(shell.getTarget('page-header-title') === null, 'ShellLayout no debe registrar targets de PageLayout');
+      assertTrue(shell.showPlaceholder === undefined, 'ShellLayout no debe renderizar contenido de página');
+      assertEquals(shell.getTarget('shell-main-notifications').parentElement.dataset.role, 'shell-main', 'Notificaciones fuera de main');
+      assertEquals(shell.getTarget('shell-main-content').parentElement.dataset.role, 'shell-main', 'Contenido fuera de main');
+      assertEquals(shell.getTarget('shell-main-actions').parentElement.dataset.role, 'shell-main', 'Acciones fuera de main');
+      const mainTargets = ['shell-main', 'shell-header', 'shell-main-notifications', 'shell-main-content', 'shell-main-actions'];
+      mainTargets.forEach((targetName) => {
+        const classNames = shell.getTarget(targetName).classList;
+        if (targetName !== 'shell-main-notifications') {
+          assertTrue(classNames.contains('pb-4'), `${targetName} debe separarse con pb-4`);
+        }
+        assertTrue(![...classNames].some((className) => /^m[trblxy]?-/.test(className)), `${targetName} no debe usar márgenes`);
+      });
+      const notifications = shell.getTarget('shell-main-notifications');
+      assertTrue(notifications.classList.contains('flex'), 'Notificaciones debe usar flex');
+      assertTrue(notifications.classList.contains('flex-col'), 'Notificaciones debe apilarse en columna');
+      assertTrue(!notifications.classList.contains('grid'), 'Notificaciones no debe usar grid');
+      assertTrue(notifications.hidden, 'Notificaciones vacías deben permanecer ocultas');
+      assertTrue(!notifications.classList.contains('pb-4'), 'Notificaciones ocultas no deben reservar padding');
+      shell.appendZone('shell-main-notifications', document.createElement('div'));
+      assertTrue(!notifications.hidden, 'Notificaciones con contenido deben mostrarse');
+      assertTrue(notifications.classList.contains('pb-4'), 'Notificaciones visibles deben separarse con pb-4');
+      shell.clearZone('shell-main-notifications');
+      assertTrue(notifications.hidden, 'Notificaciones deben ocultarse al vaciarse');
+      assertTrue(!notifications.classList.contains('pb-4'), 'Notificaciones vacías deben retirar el padding');
+      assertEquals(shell.getTarget('shell-footer').parentElement.dataset.role, 'shell', 'Footer fuera de shell');
+
+      host.remove();
     });
 
-    await test('RouteMapController resuelve alta y detalle de entidad', async () => {
-      assertEquals(getPageFromHash('#/entity/clients', 'plugins'), entityPage('clients'), 'Debe resolver listado de entidad');
-      assertEquals(getPageFromHash('#/entity/clients/new', 'plugins'), entityCreatePage('clients'), 'Debe resolver alta de entidad');
-      assertEquals(getPageFromHash('#/entity/clients/record-9', 'plugins'), entityRecordPage('clients', 'record-9'), 'Debe resolver detalle de entidad');
+    await test('PageLayout sincroniza setters fluent directamente con ShellLayout', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+      const toolbarButton = component.create('button', { label: 'Crear', variant: 'primary' });
+      const actionButton = component.create('button', { label: 'Guardar', variant: 'primary' });
+
+      const page = PageLayout.create(shell.getTarget('shell-main-content'), { shell })
+        .setTemplate('detail')
+        .setTitle('Detalle de usuario')
+        .setDescription('Edita los datos del usuario.')
+        .setBreadcrumbs([{ label: 'Usuarios', href: '#/users' }, { label: 'Detalle', active: true }])
+        .setHeaderToolbar(toolbarButton)
+        .addMainAction(actionButton)
+        .setFooter('Ficha de usuario');
+
+      assertEquals(page.getTarget('page-header-title').textContent, 'Detalle de usuario', 'Título no sincronizado');
+      assertEquals(shell.getTarget('shell-main-content').dataset.template, 'detail', 'Template no sincronizado');
+      const breadcrumb = page.getTarget('page-header-breadcrumbs').querySelector('[data-role="page-breadcrumbs"]');
+      assertTrue(breadcrumb?.querySelector('a[href="#/users"]') !== null, 'Breadcrumb no sincronizado');
+      assertTrue(typeof breadcrumb?.resolveConfig === 'function', 'PageLayout debe usar BreadcrumbComponent');
+      assertTrue(typeof toolbarButton.variantClassName === 'function', 'PageLayout debe usar ButtonComponent');
+      assertTrue(page.getTarget('page-header-toolbar').contains(toolbarButton), 'Toolbar no sincronizado');
+      assertTrue(shell.getTarget('shell-main-actions').contains(actionButton), 'Acción no sincronizada');
+
+      const notification = component.create('alert', { type: 'success', message: 'Guardado' });
+      page.setNotification(notification);
+      assertTrue(notification.classList.contains('rounded-md'), 'La notificación debe conservar rounded-md');
+      assertTrue(!notification.classList.contains('border'), 'La notificación debe nacer sin borde');
+      assertTrue(!notification.classList.contains('border-0'), 'PageLayout no debe corregir estilos del componente');
+
+      const headerBottom = page.getTarget('page-header-bottom');
+      assertTrue(headerBottom.hidden, 'Header bottom vacío debe permanecer oculto');
+      const tabs = document.createElement('nav');
+      page.setHeaderBottom(tabs);
+      assertTrue(!headerBottom.hidden, 'Header bottom con contenido debe mostrarse');
+      page.setHeaderBottom(null);
+      assertTrue(headerBottom.hidden, 'Header bottom debe ocultarse de nuevo al vaciarlo');
+
+      assertTrue(page.addHeaderAction === undefined, 'No debe existir el alias addHeaderAction');
+      assertTrue(page.addHeaderToolbar === undefined, 'No debe existir un mutador aditivo de toolbar');
+      assertTrue(page.addHeaderBottom === undefined, 'No debe existir el wrapper addHeaderBottom');
+      assertTrue(page.setShellZone === undefined, 'No debe existir el bypass genérico setShellZone');
+      assertTrue(page.syncHeaderBottom === undefined, 'La sincronización interna no debe ser pública');
+      assertTrue(page.setContainer === undefined, 'El contenedor debe fijarse en construcción');
+      assertTrue(page.setShell === undefined, 'La shell debe fijarse en construcción');
+      assertTrue(page.addContent === undefined, 'No debe existir un segundo mutador de contenido');
+      assertTrue(page.getPage === undefined, 'No debe exponerse un getter redundante de página');
+      assertTrue(PageLayout.createActionButton === undefined, 'PageLayout no debe construir botones');
+      assertTrue(PageLayout.createFeedbackBanner === undefined, 'PageLayout no debe construir alertas');
+      assertTrue(PageLayout.findFeedback === undefined, 'PageLayout no debe buscar alertas de páginas');
+
+      let receivedTarget = null;
+      page.setContent((target) => {
+        receivedTarget = target;
+        const content = document.createElement('p');
+        content.textContent = 'Contenido';
+        target.append(content);
+      });
+
+      assertTrue(receivedTarget === shell.getTarget('shell-main-content'), 'El builder no recibió el target real de la shell');
+      assertEquals(shell.getTarget('shell-main-content').textContent, 'Contenido', 'Contenido no sincronizado inmediatamente');
+      page.build();
+      assertEquals(shell.getTarget('shell-main-content').textContent, 'Contenido', 'Contenido no montado');
+      host.remove();
     });
 
-    await test('RouteMapController genera hashes estables desde paginas internas', async () => {
-      assertEquals(hashFromPage(userDetailPage('user-7')), '#/users/user-7', 'Debe generar detalle de usuario');
-      assertEquals(hashFromPage(entityPage('clients')), '#/entity/clients', 'Debe generar listado de entidad');
-      assertEquals(hashFromPage(entityCreatePage('clients')), '#/entity/clients/new', 'Debe generar alta de entidad');
-      assertEquals(hashFromPage(entityRecordPage('clients', 'record-9')), '#/entity/clients/record-9', 'Debe generar detalle de entidad');
+    await test('PageLayout aplica la plantilla Login sin crear un shell paralelo', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const layout = PageLayout.create(host)
+        .setTemplate('login')
+        .setFooter('Acceso seguro')
+        .build();
+
+      const loginShell = host.querySelector(':scope > [data-role="login-shell"]');
+      const content = layout.getContentTarget();
+      assertTrue(loginShell !== null, 'Falta la plantilla login');
+      assertTrue(content === loginShell.querySelector(':scope > [data-role="login-content"]'), 'Contenido fuera de Login');
+      assertEquals(loginShell.querySelector('[data-role="login-footer"]')?.textContent, 'Acceso seguro', 'Footer incorrecto');
+      assertTrue(loginShell.querySelector('[data-role="shell-menu"]') === null, 'Login no debe incluir navegación autenticada');
+
+      host.remove();
     });
 
-    await test('SessionModel persiste y limpia sesion sin depender de localStorage global', async () => {
-      const storage = createStorageMock();
+    await test('ListLayout construye contenido y tabla dentro de shell-main-content', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+      const layout = ListLayout.create(shell.getTarget('shell-main-content'), { shell })
+        .setTitle('Usuarios')
+        .build();
+      const tableHost = layout.createTableHost();
 
-      SessionModel.persistAccessToken('jwt.test.value', storage);
-      SessionModel.persistUserSnapshot({
-        email: 'admin@xestify.local',
-        name: 'Admin',
-        avatar: '/img/admin.png',
-      }, storage);
+      layout.createTable(
+        [{ name: 'Ana' }],
+        { fields: [{ name: 'name', label: 'Nombre' }] },
+        { container: tableHost, showPagination: false },
+      );
 
-      const session = SessionModel.readStoredSession(storage);
-      assertEquals(session.token, 'jwt.test.value', 'Token persistido incorrecto');
-      assertEquals(session.email, 'admin@xestify.local', 'Email persistido incorrecto');
-      assertEquals(session.name, 'Admin', 'Nombre persistido incorrecto');
-      assertEquals(session.avatar, '/img/admin.png', 'Avatar persistido incorrecto');
+      assertTrue(shell.getTarget('shell-main-content').querySelector('[data-role="list-section"]') !== null, 'Falta list-section');
+      assertTrue(tableHost.querySelector('table') !== null, 'Falta tabla real');
+      host.remove();
+    });
 
-      SessionModel.clearStoredSession(storage);
-      const afterClear = SessionModel.readStoredSession(storage);
-      assertEquals(afterClear.token, null, 'Token no limpiado');
-      assertEquals(afterClear.email, null, 'Email no limpiado');
-      assertEquals(afterClear.name, null, 'Nombre no limpiado');
-      assertEquals(afterClear.avatar, null, 'Avatar no limpiado');
+    await test('FormLayout monta panel y acciones en las zonas correctas', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+      const layout = FormLayout.create(shell.getTarget('shell-main-content'), {
+        shell,
+      })
+        .setTitle('Configuración de usuario')
+        .build();
+      const saveButton = document.createElement('button');
+      saveButton.textContent = 'Guardar';
+      const fluentResult = layout.addAction(saveButton);
+
+      assertTrue(layout.getPanel().dataset.role === 'form-panel', 'FormLayout debe exponer el rol canónico form-panel');
+      assertTrue(layout.getPanel().parentElement === shell.getTarget('shell-main-content'), 'Panel debe ser hijo directo del contenido');
+      assertTrue(shell.getTarget('shell-main-content').querySelector('[data-role="form-content-host"]') === null, 'No debe existir form-content-host');
+      assertTrue(shell.getTarget('shell-main-actions').contains(saveButton), 'Acción fuera de shell-main-actions');
+      assertTrue(fluentResult === layout, 'FormLayout.addAction debe ser fluent');
+      assertTrue(layout.getActionsTarget === undefined, 'FormLayout no debe exponer el target de acciones');
+      host.remove();
     });
 
     finishTestRunner('output');

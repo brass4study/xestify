@@ -108,7 +108,7 @@
       const check = component.create('inputCheck', { name: 'agree' });
       const inputSwitch = component.create('inputSwitch', { name: 'enabled', checked: true });
 
-      assertTrue(breadcrumb.querySelectorAll('a').length === 2, 'breadcrumb links mismatch');
+      assertTrue(breadcrumb.querySelectorAll('a').length === 1, 'breadcrumb links mismatch');
       assertTrue(tabs.querySelectorAll('[data-role="tabs-button"]').length === 2, 'tabs mismatch');
       assertTrue(tabs.querySelector('[data-role="tabs-bar"]') !== null, 'tabs bar missing');
       assertTrue(input instanceof HTMLInputElement, 'input should be an HTMLInputElement');
@@ -123,6 +123,39 @@
       assertTrue(inputSwitch.getInput() instanceof HTMLInputElement, 'switch native input missing');
       assertTrue(inputSwitch.getInput().getAttribute('role') === 'switch', 'switch role missing');
       assertTrue(inputSwitch.getChecked(), 'switch checked state mismatch');
+    });
+
+    test('breadcrumb soporta separator configurable, iconos y dropdown estilo Ant', () => {
+      const breadcrumb = component.create('breadcrumb', {
+        separator: '>',
+        items: [
+          { label: 'Inicio', href: '#/', iconClass: 'fa-solid fa-house' },
+          {
+            label: 'Componentes',
+            href: '#/components',
+            menu: [
+              { label: 'Navigation', href: '#/components/navigation' },
+              { label: 'Data Display', href: '#/components/data-display' },
+            ],
+          },
+          { label: 'Breadcrumb', active: true },
+        ],
+      });
+
+      const separators = breadcrumb.querySelectorAll('[data-role="breadcrumb-separator"]');
+      assertEquals(separators.length, 2, 'separator count mismatch');
+      assertTrue(Array.from(separators).every((node) => node.textContent === '>'), 'separator symbol mismatch');
+
+      const icon = breadcrumb.querySelector('i.fa-house');
+      assertTrue(icon !== null, 'icon item missing');
+
+      const dropdownTrigger = breadcrumb.querySelector('[data-role="breadcrumb-dropdown-trigger"]');
+      assertTrue(dropdownTrigger !== null, 'dropdown trigger missing');
+      dropdownTrigger.click();
+
+      const dropdownMenu = breadcrumb.querySelector('[data-role="breadcrumb-dropdown-menu"]');
+      assertTrue(dropdownMenu !== null, 'dropdown menu missing');
+      assertTrue(dropdownMenu.classList.contains('hidden') === false, 'dropdown menu should open on click');
     });
 
     test('inputSwitch exposes state, loading, focus and change behavior', () => {
@@ -163,10 +196,34 @@
       assertTrue(table.querySelector('table') !== null, 'table should render a real table element');
       assertTrue(emptyState.querySelector('[data-role="empty-title"]') !== null, 'empty title missing');
       assertTrue(alert.getAttribute('role') === 'status', 'alert role mismatch');
+      assertTrue(alert.classList.contains('rounded-md'), 'alert debe usar rounded-md');
+      assertTrue(!alert.classList.contains('rounded-xl'), 'alert no debe conservar rounded-xl');
+      assertTrue(!alert.classList.contains('border'), 'alert debe nacer sin borde');
       assertTrue(alert.querySelector('.font-semibold') !== null, 'alert title should be rendered');
       assertTrue(modal.dataset.role === 'ui-modal-overlay', 'modal overlay missing');
       assertTrue(spinner.querySelector('[aria-hidden="true"]') !== null, 'spinner missing');
       assertEquals(skeleton.querySelectorAll('[data-role="skeleton-line"]').length, 3, 'skeleton lines mismatch');
+    });
+
+    test('passwordStrength calcula niveles según reglas configurables', () => {
+      const rules = [
+        { key: 'length', label: 'Longitud', test: (value) => value.length >= 4 },
+        { key: 'number', label: 'Número', test: (value) => /\d/.test(value) },
+        { key: 'different', label: 'Distinta', test: (value, context) => value !== context.previous },
+      ];
+      const strength = component.create('passwordStrength', {
+        rules,
+        value: 'abc1',
+        context: { previous: 'old' },
+      });
+      const result = strength.evaluate();
+
+      assertEquals(strength.querySelectorAll('[data-role="password-rule"]').length, 3, 'Debe renderizar reglas configuradas');
+      assertEquals(strength.dataset.levelCount, '4', 'Tres reglas deben generar cuatro niveles');
+      assertEquals(result.metRules, 3, 'Debe evaluar callbacks con valor y contexto');
+      assertEquals(result.score, 100, 'Todas las reglas deben producir 100%');
+      assertEquals(strength.querySelector('[data-role="password-fill"]').dataset.color, 'rgb(22 163 74)', 'El nivel completo debe usar verde sólido');
+      assertTrue(!strength.querySelector('[data-role="password-meter"]').className.includes('gradient'), 'La pista no debe usar gradiente');
     });
 
     test('pageHeader composes title, subtitle and actions container through the factory', () => {
@@ -174,22 +231,24 @@
         title: 'Usuarios',
         subtitle: 'Gestión de usuarios',
         actions: [component.create('button', { label: 'Nuevo', variant: 'primary' })],
+        toolbar: [component.create('button', { label: 'Sync', variant: 'secondary' })],
       });
 
       assertTrue(header instanceof HTMLElement, 'header should be an HTMLElement');
       assertTrue(header.querySelector('[data-role="page-title"]') !== null, 'title node missing');
       assertTrue(header.querySelector('[data-role="page-actions"]') !== null, 'actions container missing');
+      assertTrue(header.querySelector('[data-role="page-header-toolbar"]') !== null, 'toolbar container missing');
     });
 
     test('component factory exposes chainable methods for real UI controls', () => {
-      const page = component.create('page').setRole('entity-edit-page');
-      const wrapper = component.create('div').setClassName('rounded-2xl').setRole('entity-edit-wrapper').setParent(page);
+      const page = component.create('page').setRole('custom-page');
+      const wrapper = component.create('div').setClassName('rounded-2xl').setRole('generic-panel').setParent(page);
       const errorBanner = component.create('alert').setRole('entity-edit-error').setVisible(false).setParent(wrapper);
       const password = component.create('inputPassword').setType('password').setValue('secret').setError('Requerido');
 
       assertTrue(page instanceof HTMLElement, 'page should be a component instance');
-      assertEquals(page.getAttribute('role'), 'entity-edit-page', 'page role mismatch');
-      assertEquals(wrapper.getAttribute('role'), 'entity-edit-wrapper', 'wrapper role mismatch');
+      assertEquals(page.getAttribute('role'), 'custom-page', 'page role mismatch');
+      assertEquals(wrapper.getAttribute('role'), 'generic-panel', 'wrapper role mismatch');
       assertTrue(errorBanner.getAttribute('role') === 'entity-edit-error', 'alert role mismatch');
       assertTrue(password instanceof HTMLInputElement, 'password should be an input element');
       assertEquals(password.value, 'secret', 'password value mismatch');

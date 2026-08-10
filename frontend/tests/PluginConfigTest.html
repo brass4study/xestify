@@ -12,6 +12,7 @@
 
 <script type="module">
   import { PluginConfig } from '../src/js/views/pages/PluginConfig.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -160,6 +161,12 @@
     return div;
   }
 
+  function makeShellSandbox() {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    return { shell, content: shell.getTarget('shell-main-content') };
+  }
+
   await test('renderiza campos en formato tabla con columnas esperadas', async () => {
     const container = makeSandbox();
     const api = new MockApi();
@@ -171,6 +178,40 @@
     assertEquals(headers.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Requerido|Cabecera|Acciones', 'Debe renderizar columnas de tabla esperadas');
     const rows = container.querySelectorAll('[data-role="plugin-config-table"] tbody tr');
     assertEquals(rows.length, 3, 'Debe renderizar 3 filas iniciales');
+    const panel = container.querySelector('[data-role="form-panel"]');
+    const actions = container.querySelector('[data-role="form-actions"]');
+    assertTrue(panel.className.includes('bg-white'), 'PluginConfig debe usar el panel visual de FormLayout');
+    assertTrue(panel.className.includes('border'), 'PluginConfig debe usar el borde compartido de FormLayout');
+    assertTrue(actions.parentElement === panel.parentElement, 'Las acciones de PluginConfig deben quedar fuera del panel');
+    assertTrue(!actions.className.includes('bg-'), 'Las acciones de PluginConfig no deben tener fondo');
+  });
+
+  await test('registra acciones cuando el formulario usa las zonas de ShellLayout', async () => {
+    const { shell, content } = makeShellSandbox();
+    const api = new MockApi();
+    let backCalled = false;
+
+    const page = new PluginConfig(content, {
+      slug: 'clients',
+      api,
+      shellLayout: shell,
+      onBack: () => {
+        backCalled = true;
+      },
+    });
+    await page.init();
+
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-title"]').textContent, 'Configuración de plugin', 'El título debe estar en español');
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent, 'Ajusta las opciones específicas del plugin activo.', 'La descripción debe estar en español');
+    assertTrue(shell.getTarget('shell-main-notifications').querySelector('[data-role="plugin-config-error"]') === null,
+      'No debe mostrar error al registrar acciones externas al panel');
+    const actions = shell.getTarget('shell-main-actions');
+    actions.querySelector('[data-action="back"]').click();
+    assertTrue(backCalled, 'Volver debe conservar su callback dentro de la shell');
+
+    actions.querySelector('[data-action="save"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assertTrue(api.savedPayload !== null, 'Guardar debe ejecutarse desde shell-main-actions');
   });
 
   await test('los campos bloqueados base se muestran sin poder editar o desactivar', async () => {

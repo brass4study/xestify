@@ -21,17 +21,17 @@ export class DynamicForm {
 
 		for (const field of this.#fields) {
 			const input = this.createInput(field);
-			const fieldEl = component.create('formField', {
+			component.create('formField', {
 				label: field.label ?? field.name,
 				name: this.fieldId(field.name),
 				input,
-			});
-			fieldEl.dataset.role = 'form-field';
-			form.appendChild(fieldEl);
+			})
+				.setData('role', 'form-field')
+				.setParent(form);
 			this.#inputs.set(field.name, input);
 		}
 
-		this.#container.appendChild(form);
+		form.setParent(this.#container);
 
 		return form;
 	}
@@ -214,8 +214,7 @@ export class DynamicForm {
 				rows: Number.isInteger(field.rows) ? field.rows : 4,
 				value: field.default ?? '',
 			});
-			textarea.id = this.fieldId(field.name);
-			return textarea;
+			return textarea.setId(this.fieldId(field.name));
 		}
 
 		if (type === 'email') {
@@ -223,8 +222,7 @@ export class DynamicForm {
 				name: field.name,
 				value: field.default ?? '',
 			});
-			input.id = this.fieldId(field.name);
-			return input;
+			return input.setId(this.fieldId(field.name));
 		}
 
 		if (type === 'password') {
@@ -232,8 +230,7 @@ export class DynamicForm {
 				name: field.name,
 				value: field.default ?? '',
 			});
-			input.id = this.fieldId(field.name);
-			return input;
+			return input.setId(this.fieldId(field.name));
 		}
 
 		if (type === 'date') {
@@ -241,16 +238,14 @@ export class DynamicForm {
 				name: field.name,
 				value: field.default ?? '',
 			});
-			input.id = this.fieldId(field.name);
-			return input;
+			return input.setId(this.fieldId(field.name));
 		}
 
 		const input = component.create('inputText', {
 			name: field.name,
 			value: field.default ?? '',
 		});
-		input.id = this.fieldId(field.name);
-		return input;
+		return input.setId(this.fieldId(field.name));
 	}
 
 	createSelect(field) {
@@ -259,8 +254,7 @@ export class DynamicForm {
 			value: field.default ?? '',
 			options: Array.isArray(field.options) ? field.options : [],
 		});
-		select.id = this.fieldId(field.name);
-		return select;
+		return select.setId(this.fieldId(field.name));
 	}
 
 	validateField(field, value) {

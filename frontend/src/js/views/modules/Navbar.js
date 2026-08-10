@@ -3,6 +3,7 @@ import { UserMenu } from './UserMenu.js';
 
 export class Navbar {
 	#container;
+	#userContainer;
 	#userEmail;
 	#userName;
 	#avatar;
@@ -15,6 +16,7 @@ export class Navbar {
 
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
+		this.#userContainer = this.resolveContainer(options.userContainer);
 		this.#userEmail = typeof options.userEmail === 'string' ? options.userEmail : null;
 		this.#userName = typeof options.userName === 'string' ? options.userName : null;
 		this.#avatar = typeof options.avatar === 'string' ? options.avatar : null;
@@ -49,7 +51,7 @@ export class Navbar {
 	}
 
 	renderUserMenu() {
-		const userEl = this.#container.querySelector('[data-role="navbar-user"]');
+		const userEl = this.#userContainer.querySelector('[data-role="navbar-user"]');
 		if (userEl === null) {
 			return;
 		}
@@ -90,19 +92,19 @@ export class Navbar {
 
 	render() {
 		this.#container.replaceChildren();
+		this.#userContainer.replaceChildren();
 
 		const nav = component.create('nav', {
-			className: 'flex flex-wrap items-center gap-3 border border-brand-200 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white',
+			className: 'flex min-w-0 flex-wrap items-center gap-3 text-white',
 			dataset: { role: 'navbar' },
 			attributes: { 'aria-label': 'Navegación principal' },
 		});
 
-		const brand = component.create('span', {
+		component.create('span', {
 			className: 'pr-2 text-xl font-semibold tracking-tight',
 			dataset: { role: 'navbar-brand' },
 			text: 'Xestify',
-		});
-		nav.appendChild(brand);
+		}).setParent(nav);
 
 		const links = component.create('ul', {
 			className: 'order-3 flex w-full flex-wrap gap-1.5 pt-1 sm:order-2 sm:w-auto sm:pt-0',
@@ -122,21 +124,13 @@ export class Navbar {
 			links.appendChild(this.makeNavItem('plugins', 'Plugins'));
 		}
 
-		nav.appendChild(links);
+		links.setParent(nav);
 
-		const right = component.create('div', {
-			className: 'order-2 ml-auto flex items-center gap-2 sm:order-3',
-			dataset: { role: 'navbar-right' },
-		});
-
-		const userEl = component.create('div', {
+		component.create('div', {
 			className: 'relative min-w-0',
 			dataset: { role: 'navbar-user' },
-		});
-		right.appendChild(userEl);
-
-		nav.appendChild(right);
-		this.#container.appendChild(nav);
+		}).setParent(this.#userContainer);
+		nav.setParent(this.#container);
 		this.renderUserMenu();
 
 		if (this.#activePage !== '') {
@@ -159,7 +153,7 @@ export class Navbar {
 				this.#onNavigate(page);
 			}
 		});
-		li.appendChild(a);
+		a.setParent(li);
 		return li;
 	}
 

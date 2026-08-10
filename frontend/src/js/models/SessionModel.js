@@ -105,6 +105,10 @@ export const SessionModel = {
     AppState.setEntities(entities);
   },
 
+  getEntities() {
+    return AppState.getEntities();
+  },
+
   subscribe(listener) {
     return AppState.subscribe(listener);
   },

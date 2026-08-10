@@ -5,6 +5,7 @@
 import { Api, ApiError } from '../../models/ApiClientModel.js';
 import { buildPluginModuleUrl } from '../../models/BasePathModel.js';
 import { PluginPanelRegistry } from '../../models/PluginPanelModel.js';
+import { FormLayout } from '../layout/FormLayout.js';
 import { DynamicForm } from '../modules/DynamicForm.js';
 import { DynamicTabs } from '../modules/DynamicTabs.js';
 import { component } from '../modules/ComponentFactory.js';
@@ -16,17 +17,31 @@ export class EntityEdit {
 	#slug;
 	#schema;
 	#recordId;
+	#shellLayout;
+	#title;
+	#description;
 	#form = null;
 	#onSaved;
 	#onCancel;
 	#pluginPanels = [];
 	#renderToken = 0;
+	#layout = null;
+	#errorBanner = null;
 
+	/**
+	 * @param {HTMLElement|string} container
+	 * @param {string} slug
+	 * @param {Object} schema
+	 * @param {{recordId?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function}} options
+	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
 		this.#slug = slug;
 		this.#schema = schema && typeof schema === 'object' ? schema : { fields: [] };
 		this.#recordId = options.recordId ?? null;
+		this.#shellLayout = options.shellLayout ?? null;
+		this.#title = typeof options.title === 'string' ? options.title : null;
+		this.#description = typeof options.description === 'string' ? options.description : this.#slug;
 		this.#api = (options.api !== null && options.api !== undefined && typeof options.api.post === 'function')
 			? options.api
 			: new Api();
@@ -62,75 +77,61 @@ export class EntityEdit {
 
 	#render(initialData) {
 		const renderToken = this.#nextRenderToken();
-		this.#container.replaceChildren();
-
-		const page = component.create('page', { dataRole: 'entity-edit-page' });
-		const titleText = this.#recordId === null
+		const fallbackTitle = this.#recordId === null
 			? `Nuevo registro: ${this.#slug}`
 			: `Editar registro: ${this.#slug}`;
-		const header = component.create('pageHeader', {
-			title: titleText,
-			subtitle: this.#slug,
-		});
-		const titleEl = header.querySelector('[data-role="page-title"]');
-		if (titleEl instanceof HTMLElement) {
-			titleEl.dataset.role = 'entity-edit-title';
-		}
-		page.appendChild(header);
+		const titleText = this.#title ?? fallbackTitle;
+		this.#layout = FormLayout.create(this.#container, {
+			shell: this.#shellLayout,
+		})
+			.setTitle(titleText)
+			.setDescription(this.#description)
+			.build();
+		const layout = this.#layout;
+		const wrapper = layout.getPanel();
 
-		const wrapper = component.create('div');
-		wrapper.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
-		wrapper.dataset.role = 'entity-edit-wrapper';
+		this.#errorBanner = component.create('alert', {
+			type: 'error',
+			message: '',
+		}).setData('role', 'entity-edit-error').setData('type', 'error');
+		layout.setNotification(null);
 
-		const errorBanner = component.create('alert', { type: 'error', message: '' });
-		errorBanner.dataset.role = 'entity-edit-error';
-		errorBanner.hidden = true;
-		wrapper.appendChild(errorBanner);
-
-		const formContainer = component.create('div');
-		formContainer.dataset.role = 'entity-edit-form-wrap';
-		wrapper.appendChild(formContainer);
+		const formContainer = component.create('div')
+			.setData('role', 'entity-edit-form-wrap')
+			.setParent(wrapper);
 
 		const schemaWithDefaults = this.#applyInitialData(this.#schema, initialData);
 		this.#form = new DynamicForm(schemaWithDefaults, formContainer);
 		this.#form.render();
 
-		page.appendChild(wrapper);
-
-		const actions = component.create('div');
-		actions.className = 'mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end';
-		actions.dataset.role = 'entity-edit-actions';
-
 		const saveBtn = component.create('button', {
 			label: 'Guardar',
 			variant: 'primary',
+			size: 'md',
 			dataRole: 'entity-edit-save',
 			onClick: () => {
 				this.submit();
 			},
 		});
-		saveBtn.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
-		actions.appendChild(saveBtn);
+		layout.addAction(saveBtn);
 
 		if (this.#onCancel !== null) {
 			const cancelBtn = component.create('button', {
 				label: 'Cancelar',
+				variant: 'secondary',
+				size: 'md',
 				dataRole: 'entity-edit-cancel',
 				onClick: () => {
 					this.#onCancel();
 				},
 			});
-			cancelBtn.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-			actions.appendChild(cancelBtn);
+			layout.addAction(cancelBtn);
 		}
 
-		page.appendChild(actions);
-		this.#container.appendChild(page);
-
-		void this.#loadAndRenderTabs(wrapper, renderToken);
+		void this.#loadAndRenderTabs(wrapper, renderToken, layout);
 	}
 
-	async #loadAndRenderTabs(wrapper, renderToken) {
+	async #loadAndRenderTabs(wrapper, renderToken, layout) {
 		try {
 			const { data } = await this.#api.get(`/entities/${this.#slug}/tabs`);
 			if (!this.#isCurrentRender(renderToken)) {
@@ -184,8 +185,13 @@ export class EntityEdit {
 			wrapper.classList.remove('p-4');
 			wrapper.classList.add('px-4', 'pb-4', 'pt-0');
 
-			const dynamicTabs = new DynamicTabs(wrapper, { tabs: tabDefs });
-			dynamicTabs.render();
+			layout.setHeaderBottom((tabBarContainer) => {
+				const dynamicTabs = new DynamicTabs(wrapper, {
+					tabs: tabDefs,
+					tabBarContainer,
+				});
+				dynamicTabs.render();
+			});
 
 			if (!this.#isCurrentRender(renderToken)) {
 				return;
@@ -206,14 +212,14 @@ export class EntityEdit {
 	}
 
 	#buildFallbackPanel(label) {
-		const el = component.create('div');
-		el.className = 'flex flex-col gap-3';
-		el.dataset.role = 'plugin-tab-fallback';
-		const placeholder = component.create('p');
-		placeholder.className = 'rounded-lg border border-dashed border-slate-300 px-3 py-6 text-sm text-slate-500';
-		placeholder.dataset.role = 'placeholder';
-		placeholder.textContent = `Plugin "${label}" no disponible.`;
-		el.appendChild(placeholder);
+		const el = component.create('div')
+			.setClassName('flex flex-col gap-3')
+			.setData('role', 'plugin-tab-fallback');
+		component.create('p')
+			.setClassName('rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500')
+			.setData('role', 'placeholder')
+			.setText(`Plugin "${label}" no disponible.`)
+			.setParent(el);
 		return el;
 	}
 
@@ -304,15 +310,13 @@ export class EntityEdit {
 			}
 
 			const msgList = Array.isArray(messages) ? messages : [String(messages)];
-			const errorEl = component.create('ul');
-			errorEl.className = 'mt-1 list-disc pl-5 text-xs text-red-700';
-			errorEl.dataset.role = 'field-errors';
-			errorEl.dataset.field = fieldName;
+			const errorEl = component.create('ul')
+				.setClassName('mt-1 list-disc pl-5 text-xs text-red-700')
+				.setData('role', 'field-errors')
+				.setData('field', fieldName);
 
 			for (const msg of msgList) {
-				const li = component.create('li');
-				li.textContent = msg;
-				errorEl.appendChild(li);
+				component.create('li').setText(msg).setParent(errorEl);
 			}
 
 			if (input !== null && input.parentElement !== null) {
@@ -358,19 +362,14 @@ export class EntityEdit {
 	}
 
 	#showGlobalError(message) {
-		const banner = this.#container.querySelector('[data-role="entity-edit-error"]');
-		if (banner !== null) {
-			banner.textContent = message;
-			banner.hidden = false;
+		if (this.#errorBanner !== null && this.#layout !== null) {
+			this.#errorBanner.textContent = message;
+			this.#layout.setNotification(this.#errorBanner);
 		}
 	}
 
 	#clearErrors() {
-		const banner = this.#container.querySelector('[data-role="entity-edit-error"]');
-		if (banner !== null) {
-			banner.textContent = '';
-			banner.hidden = true;
-		}
+		this.#layout?.setNotification(null);
 
 		const errorLists = this.#container.querySelectorAll('[data-role="field-errors"]');
 		for (const el of errorLists) {

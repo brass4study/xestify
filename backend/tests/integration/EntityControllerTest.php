@@ -100,9 +100,15 @@ function buildController(): EntityController
     );
 }
 
-function callController(EntityController $ctrl, string $method, array $params, array $body = []): array
+function callController(
+    EntityController $ctrl,
+    string $method,
+    array $params,
+    array $body = [],
+    array $query = []
+): array
 {
-    $request = new Request([], $body, [], $params);
+    $request = new Request($query, $body, [], $params);
     ob_start();
     $ctrl->$method($params, $request);
     $output = ob_get_clean();
@@ -219,6 +225,43 @@ TestSuite::run('GET index returns list of active records', function (): void {
 
     assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
     assertTrue(count($result['data'] ?? []) === 2, 'must list 2 records');
+    assertTrue(($result['meta']['page_size'] ?? 0) === 20, 'default page size must be 20');
+    assertTrue(($result['meta']['total'] ?? 0) === 2, 'meta.total must include all active records');
+
+    cleanCtrlData();
+});
+
+TestSuite::run('GET index paginates and sorts records without loading all rows', function (): void {
+    cleanCtrlData();
+    seedCtrlSchema();
+    $ctrl = buildController();
+    foreach (['Delta', 'Alfa', 'Charlie', 'Beta'] as $title) {
+        callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => $title]);
+    }
+
+    $result = callController(
+        $ctrl,
+        'index',
+        ['slug' => CTRL_ENTITY_SLUG],
+        [],
+        ['page' => '2', 'page_size' => '2', 'sort' => 'title', 'direction' => 'asc']
+    );
+
+    assertTrue(count($result['data'] ?? []) === 2, 'must return only requested page rows');
+    assertTrue(($result['meta']['total'] ?? 0) === 4, 'meta.total must include all matching rows');
+    assertTrue(($result['meta']['total_pages'] ?? 0) === 2, 'must report total pages');
+    assertTrue(($result['meta']['page'] ?? 0) === 2, 'must report current page');
+    $firstContent = json_decode((string) ($result['data'][0]['content'] ?? ''), true);
+    assertTrue(($firstContent['title'] ?? '') === 'Charlie', 'second page must preserve requested sorting');
+
+    $largePage = callController(
+        $ctrl,
+        'index',
+        ['slug' => CTRL_ENTITY_SLUG],
+        [],
+        ['page_size' => '200']
+    );
+    assertTrue(($largePage['meta']['page_size'] ?? 0) === 200, 'must allow 200 records per page');
 
     cleanCtrlData();
 });

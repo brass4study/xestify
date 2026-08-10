@@ -1,18 +1,22 @@
-# Brief Académico - Xestify MVP en 1 Mes
+# Brief Académico - Xestify MVP
 
-## Estado actual auditado (2026-05-03)
+## Estado actual auditado (2026-08-10)
 
-El MVP defendible queda cerrado hasta **STORY 6.4 incluida**. El sistema ya tiene
-pipeline `Router -> AuthMiddleware -> Controller`, hooks reales en `EntityService`,
-catalogo de entidades desde plugins `entity`, `clients` como slug canonico y
-extension `comments` validada contra plugin activo y registro padre existente.
+El corte funcional defendible queda cerrado hasta **STORY 9.5 incluida**. Las
+EPIC 0-8 están completadas y la EPIC 9 sigue en progreso. El sistema dispone de
+pipeline `Router -> Middleware -> Controller`, entidades y extensiones basadas en
+plugins, gestión de usuarios, actualizaciones con rollback y frontend MVC con
+shell SPA persistente y layouts reutilizables.
 
-**STORY 6.5+ permanece pendiente:** PluginManager, configuracion de plugins,
-updates/rollback, operacion avanzada, auditoria, permisos finos y marketplace.
+**Siguiente foco:** STORY 9.6, implementación y validación completa del routing
+SPA. Después quedan la infraestructura transversal y UX de EPIC 9, operación,
+marketplace, QA, auditoría y permisos finos.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
 
-Este documento define alcance, entregables y estrategia para completar Xestify como proyecto demostrativo de un **Master en Desarrollo Asistido por IA** en **4-5 semanas**.
+Este documento partió de una hipótesis de ejecución de **4-5 semanas** para
+Xestify como proyecto demostrativo de un **Master en Desarrollo Asistido por
+IA**. El estado auditado y las métricas reales sustituyen esa estimación inicial.
 
 ---
 
@@ -42,7 +46,7 @@ Demostrar que:
 - ✅ AuthMiddleware
 
 **EPIC 2 - Datos**
-- ✅ Tablas core: entity_metadata, entity_data, plugins, plugin_hooks, plugin_extension_data
+- ✅ Tablas core: users, plugin_entity_data, plugins, plugin_hooks, plugin_extension_data
 - ✅ GenericRepository JSONB
 
 **EPIC 3 - CRUD Dinámico**
@@ -66,24 +70,32 @@ Demostrar que:
 - ✅ Estilos responsive + iconografía Font Awesome
 
 **EPIC 6 - Plugins tipo Extension**
-- ⏭ DynamicTabs.js + hooks registerTabs/registerActions
-- ⏭ Plugin de ejemplo tipo extension (comments)
-- ⏭ Página PluginManager (listar, activar, desactivar)
+- ✅ DynamicTabs + hooks registerTabs/registerActions
+- ✅ Plugin de ejemplo tipo extension (`comments`)
+- ✅ Página PluginManager (listar, activar y desactivar)
 
 **EPIC 7 - Actualizaciones, Rollback y Configuración**
-- ⏭ Actualización atómica de plugins + migración de schema
-- ⏭ Rollback manual a versión anterior
-- ⏭ Página de configuración de plugin (custom_fields desde UI)
+- ✅ Detección, sincronización y actualización explícita de plugins
+- ✅ Snapshots y rollback manual a versión anterior
+- ✅ Página de configuración de plugin desde UI
 
-**EPIC 8 - Operación Técnica**
-- ⏭ Health endpoint + backup automático
-- ⏭ Docker Compose para RPi5
-- ⏭ Hardening seguridad (headers + rate limiting)
+**EPIC 8 - Gestión de usuarios**
+- ✅ Perfil propio y cambio seguro de credenciales
+- ✅ Administración de usuarios y borrado lógico
+- ✅ Menú de usuario integrado en la navegación
+
+**EPIC 9 - Sistema UI, Shell Frontend y Arquitectura SPA**
+- ✅ STORY 9.1-9.5: diseño, navegación, componentes, MVC y shell/layouts
+- ⏭ STORY 9.6-9.9: routing completo, resiliencia, UX y testing UI
+
+**EPIC 10 - Operación Técnica y Observabilidad**
+- ⏭ Health operativo, backup, despliegue y hardening
+
+**EPIC 11 - Marketplace de Plugins** (⏭ pendiente)
+**EPIC 12 - QA y Calidad** (⏭ pendiente)
 
 **A1 - Auditoría funcional** (⏭ pendiente)
 **A2 - Matriz de permisos fina** (⏭ pendiente)
-**EPIC 9 - Marketplace** (⏭ pendiente)
-**EPIC 10 - QA y Calidad** (⏭ pendiente)
 
 ### ❌ OUT OF SCOPE (thesis posterior)
 
@@ -97,8 +109,8 @@ Demostrar que:
 
 ### 1. Código Funcional (50% de la nota)
 - ✅ Repositorio GitHub con commits claros
-- ✅ Demo en vivo: login → crear entidad → crear cliente → instalar plugin
-- ✅ Dockerizable y reproducible en cualquier máquina
+- ✅ Demo en vivo: login → gestionar entidad → crear registro → operar plugins
+- ✅ Reproducible con Apache+PHP y PostgreSQL mediante la documentación operativa
 
 ### 2. Documentación de Proceso (30% de la nota)
 - ✅ [ia-productivity-template.md](../10-productivity/ia-productivity-template.md) — análisis de cómo IA aceleró
@@ -114,7 +126,7 @@ Demostrar que:
 
 ---
 
-## Timeline actualizado
+## Timeline ejecutado y fase actual
 
 ### ✅ Semana 1-2: EPIC 0 + EPIC 1 + EPIC 2 (COMPLETADO)
 **Entregable logrado:** Proyecto arranca, login funciona, modelo de datos estable.
@@ -125,8 +137,16 @@ Demostrar que:
 ### ✅ Semana 4-5: EPIC 5 (COMPLETADO)
 **Entregable logrado:** Frontend completo: login → entidades → registros → iconos → responsive.
 
-### ⏭ Próximas fases: EPIC 6-10 + A1 + A2
-**Objetivo:** Extensions de plugins, actualizaciones, configuración UI, operación, permisos, auditoría, marketplace, QA.
+### ✅ Consolidación posterior: EPIC 6 + EPIC 7 + EPIC 8 (COMPLETADO)
+**Entregable logrado:** extensiones, PluginManager, configuración, update/rollback y gestión de usuarios.
+
+### 🔄 Fase actual: EPIC 9 (STORY 9.1-9.5 COMPLETADAS)
+**Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
+shell SPA persistente y plantillas de página reutilizables.
+
+### ⏭ Próximas fases: STORY 9.6-9.9 + EPIC 10-12 + A1 + A2
+**Objetivo:** completar routing y resiliencia frontend, operación, permisos,
+auditoría, marketplace y QA.
 
 ---
 
@@ -135,24 +155,27 @@ Demostrar que:
 ### 📦 Package 1: Código
 ```
 xestify/
-├── backend/                    (PHP nativo + plugins)
-├── frontend/                   (Vanilla JS puro)
-├── docker/                     (Docker Compose - deployment futuro RPi5)
+├── backend/                    (PHP nativo + API)
+├── frontend/                   (Vanilla JS MVC + Tailwind generado)
+├── plugins/                    (entidades y extensiones)
 ├── docs/
-│   ├── README.md
-│   ├── roadmap.md
-│   └── mvp/
-│       ├── decisiones-tecnicas.md
-│       ├── ia-productivity-analysis.md  ← NUEVO: tu análisis
-│       └── prompts-efectivos.md         ← NUEVO: prompts que usaste
+│   ├── 01-architecture/        (arquitectura y decisiones vigentes)
+│   ├── 05-frontend/            (UI, navegación y layouts)
+│   ├── 08-operations/          (Apache, despliegue y actualizaciones)
+│   ├── 09-history/             (brief e historial técnico)
+│   ├── 10-productivity/        (sesión, métricas y prompts)
+│   └── 11-backlog/             (backlog y roadmap)
+├── skills/                     (skills locales de agentes)
+├── tools/                      (setup y utilidades)
 └── .git/                       (con commits descriptivos)
 ```
 
 ### 📄 Package 2: Documentación Académica
 - `MASTER-brief.md` (este archivo)
-- `ia-productivity-analysis.md` (completado con datos reales)
-- `tecnico-thesis.md` (opción: paper corto sobre decisiones)
-- `README-DEMO.md` (cómo reproducir la demo)
+- `docs/10-productivity/productividad.md` (datos reales por story)
+- `docs/10-productivity/prompts.md` (prompts, resultados e iteraciones)
+- `docs/09-history/decisiones-tecnicas.md` (decisiones y trade-offs)
+- `docs/11-backlog/roadmap.md` (estado y fases pendientes)
 
 ### 🎬 Package 3: Demo
 - Video de 10-15min mostrando:
@@ -160,8 +183,10 @@ xestify/
   2. Crear registro de cliente desde EntityList
   3. Ver que datos se guardan en JSONB
   4. Gestionar plugin desde PluginManager
-  5. Mostrar tabs de extensión inyectadas por plugin (EPIC 6)
-  6. Actualizar plugin con migración de schema (EPIC 7)
+  5. Mostrar tabs de extensión inyectadas por `comments`
+  6. Actualizar y hacer rollback de un plugin
+  7. Gestionar perfil y usuarios
+  8. Mostrar navegación, shell y layouts compartidos
 
 ---
 
@@ -173,7 +198,7 @@ xestify/
 | **Arquitectura** | ✅ | Plugins loadable, hooks ejecutables |
 | **Proceso con IA** | ✅ | Análisis de productividad documentado |
 | **Documentación** | ✅ | Cada decisión justificada |
-| **Reproducible** | ✅ | Docker Compose funciona |
+| **Reproducible** | ✅ | Guía Apache+PHP, setup local y despliegue RPi5 documentados |
 | **Git visible** | ✅ | Commits muestran progreso semana a semana |
 
 ---
@@ -189,27 +214,15 @@ xestify/
 
 ---
 
-## Métricas de Aceleración a Documentar
+## Métricas de Aceleración
 
-Antes de terminar, mide:
+La fuente de verdad de tiempos, estimaciones, iteraciones y decisiones manuales
+es [productividad.md](../10-productivity/productividad.md). Los prompts exactos y
+sus resultados se conservan en [prompts.md](../10-productivity/prompts.md).
 
-```
-Tarea: ValidationService
-- Estimado sin IA: 5 puntos (40 horas developer típico)
-- Tiempo REAL con IA: X horas (documenta)
-- Aceleración: X%
-
-Tarea: DynamicForm
-- Estimado sin IA: 5 puntos
-- Tiempo REAL con IA: X horas
-- Aceleración: X%
-
-(... repetir para 10-15 tareas clave)
-
-Factor promedio: Y%
-```
-
-Esto es lo que defenderás académicamente.
+No se calcula aceleración cuando una sesión retoma trabajo previo sin un tiempo
+acumulado fiable. Para la defensa deben usarse únicamente métricas registradas,
+sin completar retrospectivamente valores desconocidos.
 
 ---
 
@@ -217,31 +230,36 @@ Esto es lo que defenderás académicamente.
 
 | Item | MVP Producción | MVP Master |
 |------|---|---|
-| Scope | Full 10 EPIC | Solo EPIC 0-5 |
-| Timeline | 12-24 semanas | 4-5 semanas |
+| Scope | Roadmap completo | EPIC 0-8 + STORY 9.1-9.5 implementadas |
+| Timeline | Evolución continua | Corte académico incremental documentado |
 | IA | Accesible | **Primario** |
-| Testing | 80% cobertura | Tests críticos |
+| Testing | Quality gate completo | Suites PHP + 17 runners HTML |
 | Documentación | Operativa | **Académica + técnica** |
-| Plugins | Extensiones complejas | Solo entidad base + 1 extensión simple |
+| Plugins | Marketplace y catálogo remoto | Entidades, extensiones, update y rollback local |
 
 ---
 
 ## Próximo Paso
 
-1. Lee [ia-productivity-template.md](../10-productivity/ia-productivity-template.md) para entender qué documentar.
-2. Revisa [backlog.md](backlog.md) **versión Master reducida** (40 puntos).
-3. **Semana 1:** Empieza EPIC 0 inmediatamente.
-4. **Cada semana:** Actualiza [../10-productivity/ia-productivity-analysis.md](../10-productivity/ia-productivity-analysis.md) con tiempos reales.
+1. Implementar STORY 9.6 y validar entrada directa, refresh y back/forward del routing SPA.
+2. Continuar con STORY 9.7-9.9 sin adelantar EPIC 10.
+3. Mantener [sesion.md](../10-productivity/sesion.md),
+   [productividad.md](../10-productivity/productividad.md) y
+   [prompts.md](../10-productivity/prompts.md) al cerrar cada story.
+4. Preparar el guion de defensa usando solo funcionalidades y métricas verificadas.
 
 ---
 
 ## Preguntas Frecuentes
 
 **P: ¿Cuántas horas por semana dedicar?**  
-R: Full-time (40 horas) es lo ideal. Con IA, espera 30-35 horas efectivas (sin contar interrupciones).
+R: La referencia inicial fue una dedicación full-time de 40 horas. Para el
+análisis académico deben usarse los tiempos realmente registrados en
+[productividad.md](../10-productivity/productividad.md), no esa hipótesis.
 
-**P: ¿Qué pasa si fallo algo en Semana 2?**  
-R: Semana 5 es contingencia. Recorta EPIC 5 (frontend) antes que EPIC 3 (core).
+**P: ¿Qué ocurre si una story futura bloquea la defensa?**
+R: Se conserva como corte defendible STORY 9.5 y se documenta el bloqueo. No se
+deben presentar como completadas funciones no verificadas.
 
 **P: ¿Necesito aprender PHP de cero?**  
 R: No. IA genera 80% del código repetitivo. Enfócate en lógica y decisiones.

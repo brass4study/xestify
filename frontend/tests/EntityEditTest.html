@@ -12,6 +12,7 @@
 
 <script type="module">
   import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import {
     initTestRunner,
     separator,
@@ -47,6 +48,12 @@
     json: async () => ({ ok: true, data: { tabs: [] } }),
   });
 
+  function makeShellSandbox() {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    return { host, shell, content: shell.getTarget('shell-main-content') };
+  }
+
   // -------------------------------------------------------------------------
   // Tests
   // -------------------------------------------------------------------------
@@ -74,22 +81,39 @@
     assertEquals(inputs[1].name, 'email', 'Second input should be email');
   });
 
-  await test('renders "Nuevo registro" title when no recordId', async () => {
+  await test('keeps the canonical form panel and actions as siblings', async () => {
     const container = makeSandbox();
-    const page = new EntityEdit(container, 'client', SCHEMA);
+    const page = new EntityEdit(container, 'client', SCHEMA, { onCancel: () => {} });
+
+    const panel = container.querySelector('[data-role="form-panel"]');
+    const actions = container.querySelector('[data-role="form-actions"]');
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const title = container.querySelector('[data-role="entity-edit-title"]');
+    assertTrue(container.querySelector('[data-role="entity-edit-page"]') === null, 'Entity edit should not add a page wrapper');
+    assertTrue(container.querySelector('[data-role="form-section"]') === null, 'FormLayout should not add a section wrapper');
+    assertTrue(panel.className.includes('border'), 'Form panel should own the border');
+    assertTrue(panel.className.includes('bg-white'), 'Form panel should own the background');
+    assertTrue(panel.className.includes('p-4'), 'Form panel should own the padding');
+    assertTrue(actions.parentElement === panel.parentElement, 'Actions should be a sibling of the form panel');
+    assertTrue(!actions.className.includes('bg-'), 'Actions should not have a background');
+  });
+
+  await test('renders "Nuevo registro" title when no recordId', async () => {
+    const { shell, content } = makeShellSandbox();
+    const page = new EntityEdit(content, 'client', SCHEMA, { shellLayout: shell });
+
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    const title = shell.getTarget('shell-header').querySelector('[data-role="page-title"]');
     assertTrue(title !== null, 'Title element should exist');
     assertTrue(title.textContent.includes('Nuevo'), 'Title should say Nuevo registro');
   });
 
   await test('renders "Editar registro" title when recordId is provided', async () => {
-    const container = makeSandbox();
-    const page = new EntityEdit(container, 'client', SCHEMA, { recordId: '42' });
+    const { shell, content } = makeShellSandbox();
+    const page = new EntityEdit(content, 'client', SCHEMA, { recordId: '42', shellLayout: shell });
 
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
-    const title = container.querySelector('[data-role="entity-edit-title"]');
+    const title = shell.getTarget('shell-header').querySelector('[data-role="page-title"]');
     assertTrue(title.textContent.includes('Editar'), 'Title should say Editar registro');
   });
 

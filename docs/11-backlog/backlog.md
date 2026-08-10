@@ -1,11 +1,11 @@
 # Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
 
-## Estado implementado auditado (2026-08-08)
+## Estado implementado auditado (2026-08-10)
 
-El corte funcional actual queda fijado en **STORY 9.3 incluida**.
+El corte funcional actual queda fijado en **STORY 9.5 incluida**.
 
-- **EPIC 9 en progreso** con `STORY 9.1`, `STORY 9.2` y `STORY 9.3` implementadas.
-- **STORY 9.3** ya implementada: librería de componentes UI base consolidada en `ComponentFactory`, con `InputSwitch`, `Modal` y `DynamicTable` alineados a la base común.
+- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.5` implementadas y `STORY 9.6` como siguiente foco.
+- **STORY 9.5** ya implementada: shell SPA persistente, plantillas de navegación reutilizables y zonas explícitas para breadcrumbs, toolbar, tabs, contenido, acciones, notificaciones y footer.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -986,14 +986,14 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Criteria:**
   - ✅ Arquitectura de informacion definida para menu principal, areas y tipos de pagina
   - ✅ Plantillas objetivo definidas para login, list page, detail/form page, plugin management, workbench/dashboard y estados result/empty/error
-  - ✅ Preparados los contratos base para breadcrumbs y copy/i18n, dejando definida la estructura que consumiran STORY 9.5 y STORY 9.7
+  - ✅ Preparados los contratos base para breadcrumbs y copy/i18n; STORY 9.5 ya consume la estructura y STORY 9.7 completara la externalizacion transversal
   - ✅ Decision tecnica documentada: routing SPA basado en hash (`#/ruta`) como convencion de navegacion, compatible con Apache+PHP y refresh
   - ✅ Mapa de rutas hash definido para todas las vistas actuales y futuras (incluidas `#/profile`, `#/users` y `#/users/:id`)
 - **IA Usage:** Sintesis de sistema UI + mapa de navegacion + definicion de plantillas y reglas base
 - **Dependencias:** STORY 9.1
 - **Blockers:** Ninguno
 
-**Nota de alcance:** STORY 9.2 deja listos los contratos base de breadcrumbs y copy/i18n para que STORY 9.5 y STORY 9.7 los implementen en UI y shell; aqui no se completa el render final ni la externalizacion real de textos.
+**Nota de alcance:** STORY 9.2 dejó listos los contratos base de breadcrumbs y copy/i18n. STORY 9.5 ya materializa el render reusable en UI y shell; la externalizacion real de textos sigue reservada para STORY 9.7.
 
 ### STORY 9.3: Libreria de componentes UI base
 - **Points:** 5
@@ -1009,9 +1009,9 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Extraccion de controles base + contrato de componentes + alineacion visual de la UI
 - **Dependencias:** STORY 3.8, STORY 3.9, STORY 5.4, STORY 9.1
 - **Blockers:** Ninguno
-- **Implementacion verificada:** `frontend/src/js/modules/ComponentFactory.js` y `frontend/tests/ComponentsTest.html`; API única `component.create()` / `component.getCatalog()` con registro estricto.
+- **Implementacion verificada:** `frontend/src/js/views/modules/ComponentFactory.js` y `frontend/tests/ComponentsTest.html`; API única `component.create()` / `component.getCatalog()` con registro estricto.
 
-**Nota de cierre:** la implementación ya quedó validada con tests y navegación real en navegador; el siguiente foco del EPIC 9 pasa a STORY 9.4.
+**Nota de cierre:** la implementación quedó validada con tests y navegación real en navegador y sirve como base de los layouts cerrados en STORY 9.5.
 
 ### STORY 9.4: Arquitectura frontend y modularizacion
 - **Points:** 5
@@ -1028,6 +1028,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Blockers:** Ninguno
 
 ### STORY 9.5: Shell SPA y plantillas de navegacion
+- **Estado:** ✅ COMPLETADA (2026-08-10)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -1041,6 +1042,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Construccion del layout compartido + page templates + integracion con paginas existentes
 - **Dependencias:** STORY 9.1, STORY 9.2, STORY 9.3
 - **Blockers:** Ninguno
+- **Verificacion:** 17/17 runners HTML y 166/166 assertions en navegador integrado; Login y shell real sin errores de consola
 
 ### STORY 9.6: Implementacion del routing SPA
 - **Points:** 3

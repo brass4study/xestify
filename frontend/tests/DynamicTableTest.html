@@ -18,6 +18,11 @@
 
   const sandbox = document.getElementById('sandbox');
 
+  function clearTablePreferences() {
+    document.cookie = `${DynamicTable.PAGE_SIZE_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+    document.cookie = `${DynamicTable.DENSITY_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+  }
+
   // Local counters for custom test() function below
   let passed = 0;
   let failed = 0;
@@ -42,6 +47,7 @@
 
   async function test(name, fn) {
     try {
+      clearTablePreferences();
       sandbox.innerHTML = '<div id="table-container"></div>';
       await fn();
       log(`  ✅ ${name}`);
@@ -93,11 +99,84 @@
   });
 
   await test('render() shows rows for current page', async () => {
-    const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', { pageSize: 10 });
+    const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', {
+      pageSize: 10,
+      rowDecorator: (row) => { row.className = 'custom-row'; },
+    });
     table.render();
 
     const rows = sandbox.querySelectorAll('tbody tr');
     assertEquals(rows.length, 3);
+    assertTrue(rows[0].classList.contains('custom-row'), 'Debe conservar las clases del decorador');
+    assertTrue(rows[0].classList.contains('hover:bg-slate-50'), 'La fila debe resaltar su fondo con un gris claro');
+    assertTrue(rows[0].classList.contains('transition-colors'), 'El resaltado debe tener una transición suave');
+  });
+
+  await test('click en header alterna orden ascendente y descendente', async () => {
+    const table = new DynamicTable([
+      { id: 2, title: 'Beta' },
+      { id: 1, title: 'Alfa' },
+    ], createSchema(), '#table-container');
+    table.render();
+
+    const initialHeader = sandbox.querySelector('th');
+    assertEquals(initialHeader.dataset.sortable, 'true');
+    assertTrue(initialHeader.classList.contains('hover:bg-slate-200'), 'El hover debe oscurecer el fondo del header');
+    assertTrue(initialHeader.classList.contains('duration-300'), 'El hover debe usar transición visible');
+    assertEquals(initialHeader.querySelectorAll('[data-role="table-sort-indicator"] i').length, 2);
+    sandbox.querySelector('[data-role="table-sort"][data-column="id"]').click();
+    assertEquals(sandbox.querySelector('tbody td').textContent, '1');
+    assertEquals(sandbox.querySelector('th').getAttribute('aria-sort'), 'ascending');
+    assertTrue(sandbox.querySelector('th[data-sorted="true"]').classList.contains('bg-slate-200'), 'La cabecera ordenada debe quedar resaltada');
+    assertEquals(sandbox.querySelectorAll('tbody td[data-sorted="true"]').length, 2);
+    assertTrue(sandbox.querySelector('tbody td[data-sorted="true"]').classList.contains('bg-slate-50'), 'Toda la columna ordenada debe quedar resaltada');
+    assertTrue(sandbox.querySelector('[data-role="table-sort-up"]').classList.contains('text-brand-500'), 'Ascendente debe resaltar la flecha superior');
+    assertTrue(sandbox.querySelector('[data-role="table-sort-down"]').classList.contains('text-slate-300'), 'Ascendente debe atenuar la flecha inferior');
+
+    sandbox.querySelector('[data-role="table-sort"][data-column="id"]').click();
+    assertEquals(sandbox.querySelector('tbody td').textContent, '2');
+    assertEquals(sandbox.querySelector('th').getAttribute('aria-sort'), 'descending');
+    assertTrue(sandbox.querySelector('[data-role="table-sort-down"]').classList.contains('text-brand-500'), 'Descendente debe resaltar la flecha inferior');
+  });
+
+  await test('toolbar refresca, cambia densidad y configura columnas', async () => {
+    let refreshes = 0;
+    const table = new DynamicTable(createRecords(2), createSchema(), '#table-container', {
+      onRefresh: async () => { refreshes += 1; },
+    });
+    table.render();
+
+    sandbox.querySelector('[data-role="table-refresh"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertEquals(refreshes, 1);
+
+    sandbox.querySelector('[data-role="table-density"]').click();
+    sandbox.querySelector('[data-role="table-density-option"][data-density="compact"]').click();
+    assertTrue(sandbox.querySelector('tbody td').classList.contains('py-1'), 'La densidad compacta debe reducir el padding');
+
+    sandbox.querySelector('[data-role="table-settings"]').click();
+    const titleToggle = sandbox.querySelector('[data-role="table-settings-menu"] input[data-column="title"]');
+    titleToggle.click();
+    const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent.trim());
+    assertEquals(headers, ['ID']);
+  });
+
+  await test('density and page size persist between tables in cookies', async () => {
+    const firstTable = new DynamicTable(createRecords(60), createSchema(), '#table-container', { pageSize: 20 });
+    firstTable.render();
+
+    sandbox.querySelector('[data-role="table-density"]').click();
+    sandbox.querySelector('[data-role="table-density-option"][data-density="compact"]').click();
+    sandbox.querySelector('[data-role="table-page-size"]').click();
+    sandbox.querySelector('[data-role="table-page-size-option"][data-page-size="50"]').click();
+
+    assertTrue(document.cookie.includes(`${DynamicTable.DENSITY_COOKIE}=compact`), 'Debe guardar la densidad en cookie');
+    assertTrue(document.cookie.includes(`${DynamicTable.PAGE_SIZE_COOKIE}=50`), 'Debe guardar el tamaño de página en cookie');
+
+    const secondTable = new DynamicTable(createRecords(60), createSchema(), '#table-container', { pageSize: 20 });
+    secondTable.render();
+    assertTrue(sandbox.querySelector('tbody td').classList.contains('py-1'), 'Debe restaurar la densidad compacta');
+    assertTrue(sandbox.querySelector('[data-role="table-page-size"]').textContent.includes('50 / página'), 'Debe restaurar 50 registros por página');
   });
 
   await test('render() shows extra action columns and buttons', async () => {
@@ -112,6 +191,8 @@
     const headers = Array.from(sandbox.querySelectorAll('th')).map((th) => th.textContent);
     assertEquals(headers, ['ID', 'Title', 'Acciones']);
     assertEquals(sandbox.querySelectorAll('tbody button').length, 2);
+    const actionButton = sandbox.querySelector('tbody button');
+    assertTrue(actionButton.firstElementChild?.matches('i') === true, 'El icono debe preceder al texto de la acción');
     assertEquals(sandbox.querySelector('table').style.width, '100%');
   });
 
@@ -129,6 +210,81 @@
     firstRow = sandbox.querySelector('tbody tr td');
     assertTrue(firstRow !== null, 'first row should exist on page 2');
     assertEquals(firstRow.textContent, '3');
+  });
+
+  await test('pagination buttons navigate to the selected page', async () => {
+    const table = new DynamicTable(createRecords(5), createSchema(), '#table-container', { pageSize: 2 });
+    table.render();
+
+    sandbox.querySelector('[data-role="table-page"][data-page="2"]').click();
+    assertEquals(sandbox.querySelector('tbody tr td').textContent, '3');
+    assertEquals(table.getCurrentPage(), 2);
+  });
+
+  await test('remote pagination delegates page and sorting without slicing received rows', async () => {
+    const queries = [];
+    const table = new DynamicTable(createRecords(20), createSchema(), '#table-container', {
+      pageSize: 20,
+      totalRecords: 45,
+      onQueryChange: async (query) => {
+        queries.push(query);
+        return { records: createRecords(5), total: 45, page: query.page };
+      },
+    });
+    table.render();
+
+    assertEquals(sandbox.querySelectorAll('tbody tr').length, 20);
+    assertEquals(sandbox.querySelectorAll('[data-role="table-page"]').length, 3);
+    assertEquals(sandbox.querySelector('[data-role="table-page-info"]').textContent, '1-20 de 45 registros');
+    sandbox.querySelector('[data-role="table-page"][data-page="3"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertEquals(queries[0].page, 3);
+    assertEquals(sandbox.querySelectorAll('tbody tr').length, 5);
+    assertEquals(sandbox.querySelector('[data-role="table-page-info"]').textContent, '41-45 de 45 registros');
+
+    sandbox.querySelector('[data-role="table-sort"][data-column="title"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertEquals(queries[1].page, 1);
+    assertEquals(queries[1].sort, 'title');
+    assertEquals(queries[1].direction, 'asc');
+
+    sandbox.querySelector('[data-role="table-page-size"]').click();
+    const pageSizeMenu = sandbox.querySelector('[data-role="table-page-size-menu"]');
+    assertTrue(pageSizeMenu.classList.contains('bottom-full'), 'El menú de paginación debe abrir hacia arriba');
+    assertTrue(sandbox.querySelector('[data-role="table-page-size"] i').classList.contains('fa-chevron-up'), 'El icono debe indicar apertura hacia arriba');
+    sandbox.querySelector('[data-role="table-page-size-option"][data-page-size="50"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertEquals(queries[2].page, 1);
+    assertEquals(queries[2].pageSize, 50);
+  });
+
+  await test('long pagination keeps boundaries and jumps five pages', async () => {
+    const queries = [];
+    const table = new DynamicTable(createRecords(20), createSchema(), '#table-container', {
+      pageSize: 20,
+      totalRecords: 203,
+      onQueryChange: async (query) => {
+        queries.push(query);
+        return { records: createRecords(20), total: 203, page: query.page };
+      },
+    });
+    table.render();
+
+    assertTrue(sandbox.querySelector('[data-role="table-page"][data-page="1"]') !== null, 'Debe mostrar la primera página');
+    assertTrue(sandbox.querySelector('[data-role="table-page"][data-page="11"]') !== null, 'Debe mostrar la última página');
+    assertTrue(sandbox.querySelectorAll('[data-role="table-page"]').length < 11, 'Debe resumir más de 10 páginas');
+
+    sandbox.querySelector('[data-role="table-page"][data-page="5"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const visiblePages = Array.from(sandbox.querySelectorAll('[data-role="table-page"]')).map((button) => Number(button.dataset.page));
+    assertEquals(visiblePages, [1, 3, 4, 5, 6, 7, 11]);
+    assertEquals(sandbox.querySelectorAll('[data-role="table-page-jump"]').length, 2);
+    assertTrue(sandbox.querySelector('[data-direction="prev"] i').classList.contains('fa-angles-left'), 'El salto anterior debe mostrar << en hover');
+    assertTrue(sandbox.querySelector('[data-direction="next"] i').classList.contains('fa-angles-right'), 'El salto siguiente debe mostrar >> en hover');
+
+    sandbox.querySelector('[data-role="table-page-jump"][data-direction="next"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertEquals(queries[1].page, 10);
   });
 
   await test('pagination bounds: prev on page 1 and next on last page stay in range', async () => {

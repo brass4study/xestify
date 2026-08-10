@@ -20,6 +20,11 @@ raiz `app.js` es solo un bootstrap tecnico minimo que delega en `AppController`.
 `layout/`, `components/`, `modules/` y `pages/`; `models/` concentra estado,
 sesion, cliente API, helpers de base path y runtime de plugins.
 
+Desde STORY 9.5, las páginas autenticadas comparten una única instancia de
+`ShellLayout`. `PageLayout`, `ListLayout` y `FormLayout` componen cabeceras,
+breadcrumbs, toolbars, contenido y acciones sin generar layouts paralelos.
+Login usa la plantilla standalone `login` de `PageLayout` y no monta navbar.
+
 ---
 
 ## Componentes principales
@@ -30,9 +35,40 @@ sesion, cliente API, helpers de base path y runtime de plugins.
 - **DynamicTabs**: Permite la composición de pestañas, incluyendo tabs inyectados por plugins de extensión.
 - **Modal**: Componente reutilizable para diálogos y confirmaciones.
 - **Navbar**: Barra de navegación superior, muestra usuario, entidades y acceso a PluginManager.
+- **ShellLayout**: Armazón persistente de las páginas autenticadas y fuente de sus zonas estructurales.
+- **PageLayout / ListLayout / FormLayout**: Plantillas reutilizables para anatomía común, listados y formularios.
 - **PluginPanelRegistry**: Registro runtime de plugins frontend, ubicado en la capa `models`, para que cada extensión registre su UI sin abrir capas paralelas a MVC.
 - **State**: Contenedor global de estado (`models/StateModel.js`) con usuario, entidad activa, registros, token y flags transversales.
 - **Api**: Cliente HTTP genérico (`models/ApiClientModel.js`) con manejo de autenticación y errores.
+
+---
+
+## Construcción encadenada de componentes
+
+Los elementos creados mediante `component.create()` exponen los métodos
+encadenables de `BaseComponent`. Durante la creación de una vista, se deben usar
+para agrupar la configuración inicial y el montaje del nodo:
+
+```js
+const navbarContainer = component.create('div')
+	.setClassName('sticky top-0 z-50')
+	.setData('role', 'shell-navbar')
+	.setParent(shell);
+```
+
+- Usar `setClassName()` para asignar todas las clases iniciales y `addClass()`
+	para añadir clases posteriormente.
+- Usar `setData('role', value)` para generar `data-role`. `setRole()` se reserva
+	para el atributo HTML accesible `role` y no sustituye a `data-role`.
+- Pasar el nodo padre a `setParent()` cuando ya esté disponible. La resolución
+	mediante string se reserva para contenedores externos que deban localizarse
+	por selector, `id`, `data-role` o `data-id`.
+- Mantener una constante cuando el nodo se reutilice o forme parte del valor de
+	retorno. Si no se reutiliza, la cadena puede terminar directamente en
+	`setParent()`.
+- Aplicar el encadenado a la configuración inicial. Los cambios de estado
+	posteriores pueden seguir usando propiedades DOM cuando expresen mejor la
+	mutación.
 
 ---
 
@@ -92,5 +128,6 @@ form.render();
 - [renderizado-dinamico.md](renderizado-dinamico.md): Guía detallada de renderizado y mapeo de tipos
 - [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño de STORY 9.1 inspirados en Ant Design
 - [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy de STORY 9.2
+- [layouts-guide.md](layouts-guide.md): Wiring directo Shell-Page y contratos fluent de PageLayout, ListLayout y FormLayout
 - [../backend/](../../backend/): Contratos de API y ejemplos de payload
 - [../04-plugins/](../04-plugins/): Plantillas y ejemplos de plugins

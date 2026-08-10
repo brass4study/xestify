@@ -8,17 +8,20 @@
 
 ## Última actualización
 
-**Fecha:** 2026-08-08
+**Fecha:** 2026-08-10
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.5 - Shell SPA y plantillas de navegacion
+**Próxima story:** STORY 9.6 - Implementacion del routing SPA
 
 ---
 
-### 🔧 Cambios recientes (2026-08-08)
-- STORY 9.4 cerrada: el frontend queda alineado a MVC estricto con `controllers`, `views` y `models` como únicas capas principales en `frontend/src/js`.
-- El entrypoint queda en `frontend/src/js/app.js` y la lógica de rutas se consolida en `RouteController`, `RouteMapController` y `PluginRouteController`.
-- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 146/146 assertions, incluidos `StateTest` 11/0, `FrontendArchitectureTest` 7/0 y `E2ETest` 13/0; checks de sintaxis, consola y diagnósticos en verde.
-- Próxima acción: abordar STORY 9.5 para montar el shell SPA y las plantillas de navegación sobre la base modular ya cerrada.
+### 🔧 Cambios recientes (2026-08-10)
+- STORY 9.5 cerrada: `ShellLayout` concentra las zonas persistentes de navegación, cabecera, notificaciones, contenido, acciones y footer.
+- `PageLayout`, `ListLayout` y `FormLayout` aplican las plantillas comunes a las páginas autenticadas; Login usa ahora la plantilla standalone `login` de `PageLayout` sin crear un shell paralelo.
+- Las zonas de breadcrumbs, toolbar, tabs, paneles, acciones y bloques de plugins quedan expuestas mediante contratos reutilizables y targets explícitos.
+- Se eliminó `ShellLayoutView.js`, implementación duplicada y sin consumidores.
+- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 166/166 assertions; `FrontendArchitectureTest` 7/0 y entrypoint real de Login sin errores de consola.
+- README, índices, brief académico, navegación, arquitectura MVC y decisiones técnicas quedan alineados con el cierre de STORY 9.5.
+- Próxima acción: abordar STORY 9.6 para completar y validar el routing SPA.
 
 ### ✅ Release B completado: consolidación de migraciones y fixes
 
@@ -233,6 +236,7 @@
 | 9.2 ✅ | Fundamentos de navegacion y anatomia de paginas | `pendiente (este commit)` | contrato de navegación actualizado y documentación de anatomía alineada ✅ |
 | 9.3 ✅ | Libreria de componentes UI base | `pendiente (este commit)` | `frontend/tests/ComponentsTest.html`; smoke frontend y diagnósticos en verde ✅ |
 | 9.4 ✅ | Arquitectura frontend y modularizacion | `pendiente (este commit)` | 17/17 runners HTML, 146/146 assertions; sintaxis, consola y diagnósticos en verde ✅ |
+| 9.5 ✅ | Shell SPA y plantillas de navegacion | `pendiente (este commit)` | 17/17 runners HTML, 166/166 assertions; entrypoint Login y diagnósticos en verde ✅ |
 
 **Detalle de la story 9.1:**
 - Se consolidó una base visual enterprise inspirada en Ant Design sobre Tailwind, con tipografía IBM Plex, tokens `brand/slateui`, sombras y criterios de densidad comunes.
@@ -359,6 +363,29 @@ Story implementada.
 - El routing deja de vivir en `models` y pasa a la capa `controllers`.
 - Los tests HTML relevantes siguen funcionando en ejecución standalone sin bundler y el flujo canónico de validación queda fijado en el navegador integrado de VS Code.
 - El siguiente foco del EPIC 9 pasa a STORY 9.5.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.5 Shell SPA y plantillas de navegacion
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `ShellLayout` define un único armazón persistente con navegación, cabecera, notificaciones, contenido, acciones y footer opcional.
+- `PageLayout`, `ListLayout` y `FormLayout` componen las plantillas de páginas y sus zonas de extensión sin buscar nodos mediante selectores globales.
+- EntityList, EntityEdit, PluginManager, PluginConfig, UserProfile y UserManagement consumen la instancia activa de shell.
+- Login usa `PageLayout` en modo standalone con template `login`, contenido y footer propios, sin navbar autenticada ni layout paralelo.
+- Se eliminó `ShellLayoutView.js`, que duplicaba la implementación activa y no tenía referencias.
+- `layouts-guide.md` documenta el árbol, el wiring, los contratos fluent y las reglas de extensión.
+
+**Verificaciones finales:**
+- sintaxis Node sobre `AppController.js`, `PageLayout.js` y `ShellLayout.js`
+- diagnósticos de VS Code sin errores en el slice modificado
+- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed`
+- suite frontend completa en navegador integrado - 17/17 runners, `166 passed, 0 failed`
+- entrypoint real de Login - un único `login-shell`, contenido y footer correctos, sin `shell-menu` ni errores de consola
+
+**Siguiente foco:** STORY 9.6 - Implementacion del routing SPA.
 
 ---
 

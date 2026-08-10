@@ -103,11 +103,11 @@ export class InputSwitchComponent extends BaseComponent {
     const input = component.create('input', {
       name: options.name,
       required: options.required,
-    });
-    input.setType('checkbox');
-    input.className = INPUT_CLASSES.join(' ');
+    })
+      .setType('checkbox')
+      .setClassName(INPUT_CLASSES.join(' '))
+      .setAttribute('role', 'switch');
     input.checked = toBoolean(options.checked ?? options.value ?? options.defaultChecked);
-    input.setAttribute('role', 'switch');
 
     if (typeof options.id === 'string' && options.id !== '') {
       input.id = options.id;
@@ -116,26 +116,24 @@ export class InputSwitchComponent extends BaseComponent {
     const content = component.create('span', {
       className: CONTENT_BASE_CLASSES.join(' '),
       attributes: { 'aria-hidden': 'true' },
-    });
-    content.dataset.role = 'switch-content';
+    }).setData('role', 'switch-content');
 
     const indicator = component.create('span', {
       className: `${INDICATOR_BASE_CLASSES.join(' ')} ${INDICATOR_SIZE_CLASSES[this.dataset.size].join(' ')}`,
       attributes: { 'aria-hidden': 'true' },
-    });
-    indicator.dataset.role = 'switch-indicator';
+    }).setData('role', 'switch-indicator');
 
     const spinner = component.create('span', {
       className: 'hidden',
       attributes: { 'aria-hidden': 'true' },
-    });
-    spinner.dataset.role = 'switch-spinner';
-    spinner.classList.add(...SPINNER_BASE_CLASSES);
-    indicator.appendChild(spinner);
+    })
+      .setData('role', 'switch-spinner')
+      .addClass(SPINNER_BASE_CLASSES)
+      .setParent(indicator);
 
-    this.appendChild(input);
-    this.appendChild(content);
-    this.appendChild(indicator);
+    input.setParent(this);
+    content.setParent(this);
+    indicator.setParent(this);
     this._switchInput = input;
     this._switchContent = content;
     this._switchIndicator = indicator;

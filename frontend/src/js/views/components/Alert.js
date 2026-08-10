@@ -2,32 +2,30 @@ import { BaseComponent } from './BaseComponent.js';
 import { component } from '../modules/ComponentFactory.js';
 
 const ALERT_VARIANTS = {
-  info: 'border-slate-200 bg-slate-50 text-slate-700',
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  warning: 'border-amber-200 bg-amber-50 text-amber-800',
-  error: 'border-red-200 bg-red-50 text-red-800',
+  info: 'bg-slate-50 text-slate-700',
+  success: 'bg-emerald-50 text-emerald-800',
+  warning: 'bg-amber-50 text-amber-800',
+  error: 'bg-red-50 text-red-800',
 };
 
 export class AlertComponent extends BaseComponent {
   initialize(options = {}) {
     const type = options.type ?? 'info';
-    this.className = `rounded-xl border px-4 py-3 text-sm ${ALERT_VARIANTS[type] ?? ALERT_VARIANTS.info}`;
+    this.className = `rounded-md px-4 py-3 text-sm ${ALERT_VARIANTS[type] ?? ALERT_VARIANTS.info}`;
     this.setAttribute('role', 'status');
 
     if (typeof options.title === 'string' && options.title !== '') {
-      const titleEl = component.create('div', {
+      component.create('div', {
         className: 'font-semibold',
         text: options.title,
-      });
-      this.appendChild(titleEl);
+      }).setParent(this);
     }
 
     if (typeof options.message === 'string' && options.message !== '') {
-      const messageEl = component.create('div', {
+      component.create('div', {
         className: options.title ? 'mt-1' : '',
         text: options.message,
-      });
-      this.appendChild(messageEl);
+      }).setParent(this);
     }
 
     return this;
@@ -44,7 +42,7 @@ export class AlertComponent extends BaseComponent {
   }
 
   setType(type) {
-    this.className = `rounded-xl border px-4 py-3 text-sm ${ALERT_VARIANTS[type] ?? ALERT_VARIANTS.info}`;
+    this.className = `rounded-md px-4 py-3 text-sm ${ALERT_VARIANTS[type] ?? ALERT_VARIANTS.info}`;
     return this;
   }
 }

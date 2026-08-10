@@ -267,7 +267,7 @@ export class CommentsPanel {
    */
   #buildItem(item, isNew, onEditApply, onDelete) {
     const li = document.createElement('li');
-    li.className = 'relative rounded-lg border border-slate-200 bg-slate-50 px-3 pb-8 pt-6 text-sm text-slate-700';
+    li.className = 'relative rounded-md border border-slate-200 bg-slate-50 px-3 pb-8 pt-6 text-sm text-slate-700';
     if (isNew) {
       li.className += ' border-amber-300 bg-amber-50';
     } else if (item.pendingBody !== undefined) {
@@ -416,7 +416,7 @@ export class CommentsPanel {
    */
   #setListMessage(list, message, className = '') {
     const item = document.createElement('li');
-    item.className = `${className} rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500`.trim();
+    item.className = `${className} rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm text-slate-500`.trim();
     item.dataset.role = 'placeholder';
     item.textContent = message;
     list.replaceChildren(item);

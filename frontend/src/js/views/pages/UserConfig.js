@@ -1,5 +1,6 @@
 import { Api } from '../../models/ApiClientModel.js';
 import { AppState } from '../../models/StateModel.js';
+import { FormLayout } from '../layout/FormLayout.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class UserConfig {
@@ -18,7 +19,12 @@ export class UserConfig {
 	#onDeleted;
 	#title;
 	#subtitle;
+	#shellLayout;
 
+	/**
+	 * @param {HTMLElement|string} container
+	 * @param {{mode?: 'profile'|'admin', user?: Object|null, api?: Object, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, currentUserId?: string, title?: string, subtitle?: string, onBack?: Function, onSaved?: Function, onDeleted?: Function}} options
+	 */
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
 		this.#mode = options.mode === 'profile' ? 'profile' : 'admin';
@@ -33,6 +39,7 @@ export class UserConfig {
 		this.#onBack = typeof options.onBack === 'function' ? options.onBack : null;
 		this.#onSaved = typeof options.onSaved === 'function' ? options.onSaved : null;
 		this.#onDeleted = typeof options.onDeleted === 'function' ? options.onDeleted : null;
+		this.#shellLayout = options.shellLayout ?? null;
 
 		if (typeof options.title === 'string') {
 			this.#title = options.title;
@@ -131,15 +138,6 @@ export class UserConfig {
 		return '';
 	}
 
-	escapeHtml(value) {
-		return String(value)
-			.replaceAll('&', '&amp;')
-			.replaceAll('<', '&lt;')
-			.replaceAll('>', '&gt;')
-			.replaceAll('"', '&quot;')
-			.replaceAll("'", '&#39;');
-	}
-
 	showRoleField() {
 		return this.#mode === 'admin';
 	}
@@ -187,56 +185,49 @@ export class UserConfig {
 	}
 
 	#render() {
-		this.#container.replaceChildren();
-
-		const page = component.create('page', { dataRole: 'user-config-page' });
-		const backButton = this.#onBack === null ? null : component.create('button', {
+		const backAction = this.#onBack === null ? null : component.create('button', {
 			label: 'Volver al listado',
+			variant: 'primary',
+			size: 'md',
 			dataRole: 'user-config-back',
 			onClick: () => {
 				this.#onBack();
 			},
 		});
-		const header = component.create('pageHeader', {
-			title: this.#title,
-			subtitle: this.#subtitle,
-			actions: backButton === null ? [] : [backButton],
-		});
-		page.appendChild(header);
+		const layout = FormLayout.create(this.#container, {
+			shell: this.#shellLayout,
+		})
+			.setTitle(this.#title)
+			.setDescription(this.#subtitle);
+		layout.setHeaderToolbar(backAction);
+		layout.build();
+		const panel = layout.getPanel();
 
-		const feedback = this.#feedbackNode();
-		if (feedback !== null) {
-			page.appendChild(feedback);
-		}
-
-		const card = component.create('div');
-		card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
+		layout.setNotification(null);
+		this.#mountFeedback(layout);
 
 		const user = this.#resolveUser();
 		if (user === null || typeof user !== 'object') {
-			card.appendChild(component.create('emptyState', {
+			component.create('emptyState', {
 				title: 'Usuario no encontrado',
 				description: 'No se encontró el usuario solicitado.',
-			}));
-			page.appendChild(card);
-			this.#container.appendChild(page);
+			}).setParent(panel);
+			layout.setActions(null);
 			return;
 		}
 
-		const form = component.create('formTag');
-		form.className = 'grid gap-4';
+		const form = component.create('formTag').setClassName('grid gap-4');
 		form.addEventListener('submit', (event) => {
 			event.preventDefault();
 			void this.#submitForm(form);
 		});
 
 		this.#buildFormNodes(form, user);
-		this.#attachFormInteractions(form);
+		const actionControls = this.#buildActions(layout, form);
+		this.#attachFormInteractions(form, actionControls);
 		this.attachAdditionalInteractions(form);
 
-		card.appendChild(form);
-		page.appendChild(card);
-		this.#container.appendChild(page);
+		form.setParent(panel);
 	}
 
 	#buildFormNodes(form, user) {
@@ -291,9 +282,7 @@ export class UserConfig {
 			hidden: true,
 			dataset: { userconfigError: '' },
 		});
-		form.appendChild(errorMessage);
-
-		form.appendChild(this.#buildActions());
+		errorMessage.setParent(form);
 
 		if (this.#temporaryPassword !== null) {
 			form.appendChild(this.#temporaryPasswordNode(this.#temporaryPassword));
@@ -309,90 +298,85 @@ export class UserConfig {
 			className: 'inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-sm font-bold text-brand-700',
 		});
 		if (avatarImage !== '') {
-			const img = component.create('img', {
+			component.create('img', {
 				attributes: { src: avatarImage, alt: 'Avatar actual' },
 				className: 'h-full w-full object-cover',
-			});
-			avatar.appendChild(img);
+			}).setParent(avatar);
 		} else {
-			avatar.textContent = this.#getInitials(initialName, initialEmail);
+			avatar.setText(this.#getInitials(initialName, initialEmail));
 		}
 
 		const info = component.create('div', { className: 'grid gap-0.5' });
-		info.appendChild(component.create('p', {
+		component.create('p', {
 			className: 'text-sm font-semibold text-slateui-950',
 			text: 'Avatar',
-		}));
-		info.appendChild(component.create('p', {
+		}).setParent(info);
+		component.create('p', {
 			className: 'text-xs text-slate-500',
 			text: 'JPG/PNG hasta 2MB.',
-		}));
+		}).setParent(info);
 
 		const actions = component.create('div', { className: 'inline-flex flex-wrap items-center gap-2' });
 		const selectAvatarButton = component.create('button', {
 			label: avatarImage === '' ? 'Subir avatar' : 'Cambiar avatar',
+			variant: 'secondary',
 			attributes: { type: 'button', 'data-userconfig-select-avatar': '' },
 		});
-		selectAvatarButton.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-		actions.appendChild(selectAvatarButton);
+		actions.append(selectAvatarButton);
 
 		if (avatarImage !== '') {
 			const removeAvatarButton = component.create('button', {
 				label: 'Quitar avatar',
+				variant: 'danger',
 				attributes: { type: 'button', 'data-userconfig-remove-avatar': '' },
 			});
-			removeAvatarButton.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-			actions.appendChild(removeAvatarButton);
+			actions.append(removeAvatarButton);
 		}
 
-		const avatarFile = component.create('input', {
+		const avatarFile = component.create('inputFile', {
 			attributes: {
-				type: 'file',
 				accept: 'image/png,image/jpeg,image/webp',
-				'data-userconfig-avatar-file': '',
 			},
+			dataset: { userconfigAvatarFile: '' },
 			hidden: true,
 		});
 
-		const avatarValue = component.create('input', {
-			attributes: {
-				type: 'hidden',
-				name: 'avatar',
-				value: avatarImage,
-				'data-userconfig-avatar-value': '',
-			},
+		const avatarValue = component.create('inputHidden', {
+			name: 'avatar',
+			value: avatarImage,
+			dataset: { userconfigAvatarValue: '' },
 		});
 
-		section.appendChild(avatar);
-		section.appendChild(info);
-		section.appendChild(actions);
-		section.appendChild(avatarFile);
-		section.appendChild(avatarValue);
+		avatar.setParent(section);
+		info.setParent(section);
+		actions.setParent(section);
+		avatarFile.setParent(section);
+		avatarValue.setParent(section);
 		return section;
 	}
 
 	#buildInputField(options) {
 		const label = component.create('label');
-		label.appendChild(component.create('span', {
+		component.create('span', {
 			className: 'text-sm font-medium text-slate-700',
 			text: options.label,
-		}));
+		}).setParent(label);
 
 		const input = component.create('input', {
 			attributes: {
 				type: options.type,
 				name: options.name,
 			},
-		});
-		input.value = options.value ?? '';
+		})
+			.setValue(options.value ?? '')
+			.setClassName(options.baseClassName ?? `w-full rounded-lg ${this.fieldErrorClass(options.errorField)} text-sm text-slate-900`)
+			.setParent(label);
 		input.disabled = options.disabled === true;
-		input.className = options.baseClassName ?? `w-full rounded-lg ${this.fieldErrorClass(options.errorField)} text-sm text-slate-900`;
-		label.appendChild(input);
 
 		if (typeof options.errorField === 'string' && options.errorField !== '') {
 			const errorNode = this.createFieldErrorNode(options.errorField);
 			if (errorNode instanceof Node) {
-				label.appendChild(errorNode);
+				errorNode.setParent(label);
 			}
 		}
 
@@ -401,56 +385,60 @@ export class UserConfig {
 
 	#buildRoleField(initialRole) {
 		const label = component.create('label');
-		label.appendChild(component.create('span', {
+		component.create('span', {
 			className: 'text-sm font-medium text-slate-700',
 			text: 'Rol',
-		}));
+		}).setParent(label);
 
-		const roleSelect = component.create('inputSelect', {
+		component.create('inputSelect', {
 			name: 'role',
 			value: initialRole,
 			options: [
 				{ value: 'admin', label: 'Administrador' },
 				{ value: 'user', label: 'Usuario' },
 			],
-		});
-		roleSelect.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
-		label.appendChild(roleSelect);
+		})
+			.setClassName('w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500')
+			.setParent(label);
 		return label;
 	}
 
-	#buildActions() {
-		const actions = component.create('div', { className: 'flex flex-wrap gap-2' });
-
+	#buildActions(layout, form) {
 		const saveButton = component.create('button', {
 			label: 'Guardar cambios',
-			attributes: { type: 'submit' },
+			variant: 'primary',
+			size: 'md',
+			onClick: () => {
+				form.requestSubmit();
+			},
 		});
-		saveButton.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700';
-		actions.appendChild(saveButton);
+		layout.addAction(saveButton);
+		let resetButton = null;
+		let deleteButton = null;
 
 		if (this.showResetButton()) {
-			const resetButton = component.create('button', {
+			resetButton = component.create('button', {
 				label: 'Reset password',
+				variant: 'secondary',
+				size: 'md',
 				attributes: { type: 'button', 'data-userconfig-reset': '' },
 			});
-			resetButton.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-			actions.appendChild(resetButton);
+			layout.addAction(resetButton);
 		}
 
 		if (this.showDeleteButton()) {
-			const deleteButton = component.create('button', {
+			deleteButton = component.create('button', {
 				label: 'Borrar usuario',
+				variant: 'danger',
+				size: 'md',
 				attributes: { type: 'button', 'data-userconfig-delete': '' },
 			});
-			deleteButton.className = 'inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50';
-			actions.appendChild(deleteButton);
+			layout.addAction(deleteButton);
 		}
-
-		return actions;
+		return { resetButton, deleteButton };
 	}
 
-	#attachFormInteractions(form) {
+	#attachFormInteractions(form, actionControls) {
 		form.querySelectorAll('input[name="name"], input[name="email"], select[name="role"]').forEach((input) => {
 			if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
 				input.addEventListener('input', () => this.#syncDraftValues(form));
@@ -482,14 +470,13 @@ export class UserConfig {
 			});
 		}
 
-		const resetButton = form.querySelector('[data-userconfig-reset]');
+		const { resetButton, deleteButton } = actionControls;
 		if (resetButton instanceof HTMLButtonElement) {
 			resetButton.addEventListener('click', () => {
 				void this.#resetPassword(form);
 			});
 		}
 
-		const deleteButton = form.querySelector('[data-userconfig-delete]');
 		if (deleteButton instanceof HTMLButtonElement) {
 			const user = this.#resolveUser();
 			if (this.#isCurrentUser(user)) {
@@ -718,20 +705,17 @@ export class UserConfig {
 		return false;
 	}
 
-	#feedbackNode() {
+	#mountFeedback(layout) {
 		if (this.#message === null) {
-			return null;
+			return;
 		}
 
-		const feedback = component.create('alert', {
-			type: this.#messageType === 'error' ? 'error' : 'success',
+		const type = this.#messageType === 'error' ? 'error' : 'success';
+		const banner = component.create('alert', {
+			type,
 			message: this.#message,
-		});
-		feedback.className = `rounded-lg border px-3 py-2 text-sm ${this.#messageType === 'error'
-			? 'border-red-200 bg-red-50 text-red-800'
-			: 'border-emerald-200 bg-emerald-50 text-emerald-800'}`;
-		feedback.dataset.role = 'user-config-feedback';
-		return feedback;
+		}).setData('role', 'user-config-feedback').setData('type', type);
+		layout.setNotification(banner);
 	}
 
 	#resolveUser() {
@@ -761,12 +745,13 @@ export class UserConfig {
 
 		const copy = component.create('button', {
 			label: 'Copiar',
+			variant: 'secondary',
+			size: 'sm',
 			attributes: { type: 'button', 'data-userconfig-copy-password': '' },
 		});
-		copy.className = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
 
-		wrap.appendChild(input);
-		wrap.appendChild(copy);
+		input.setParent(wrap);
+		wrap.append(copy);
 		return wrap;
 	}
 

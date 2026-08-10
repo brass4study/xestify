@@ -38,9 +38,9 @@ export class UserMenu {
 
 		const trigger = component.create('button', {
 			dataRole: 'user-menu-trigger',
-		});
-		trigger.className = 'inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm text-white transition hover:bg-white/20';
-		trigger.setAttributes({ 'aria-haspopup': 'menu', 'aria-expanded': 'false' });
+		})
+			.setClassName('inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm text-white transition hover:bg-white/20')
+			.setAttributes({ 'aria-haspopup': 'menu', 'aria-expanded': 'false' });
 
 		const avatarWrap = component.create('div', {
 			className: 'inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-brand-700',
@@ -48,12 +48,11 @@ export class UserMenu {
 		});
 
 		if (this.#avatar !== null && this.#avatar !== '') {
-			const img = component.create('img', {
+			component.create('img', {
 				attributes: { src: this.#avatar, alt: 'Avatar del usuario' },
-			});
-			avatarWrap.appendChild(img);
+			}).setParent(avatarWrap);
 		} else {
-			avatarWrap.textContent = this.getInitials();
+			avatarWrap.setText(this.getInitials());
 		}
 
 		const label = component.create('span', {
@@ -62,9 +61,9 @@ export class UserMenu {
 			text: this.getDisplayName(),
 		});
 
-		trigger.appendChild(avatarWrap);
-		trigger.appendChild(label);
-		this.#container.appendChild(trigger);
+		avatarWrap.setParent(trigger);
+		label.setParent(trigger);
+		trigger.setParent(this.#container);
 
 		const menu = component.create('div', {
 			className: 'absolute right-0 top-full mt-2 z-[120] hidden min-w-56 flex-col rounded-xl border border-slate-200 bg-white p-1.5 shadow-float',
@@ -86,19 +85,19 @@ export class UserMenu {
 			}
 			const item = component.create('button', {
 				label: action.label,
-			});
-			item.className = 'rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100';
-			item.dataset.menuAction = action.key;
+			})
+				.setClassName('rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100')
+				.setData('menuAction', action.key);
 			item.addEventListener('click', () => {
 				this.setOpen(false);
 				if (this.#onSelect !== null) {
 					this.#onSelect(action.key);
 				}
 			});
-			menu.appendChild(item);
+			item.setParent(menu);
 		}
 
-		this.#container.appendChild(menu);
+		menu.setParent(this.#container);
 
 		this.#container.addEventListener('mouseenter', () => {
 			this.clearCloseTimer();

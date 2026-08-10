@@ -10,16 +10,14 @@ export class EmptyStateComponent extends BaseComponent {
       className: 'text-base font-semibold text-slate-900',
       dataset: { role: 'empty-title' },
       text: options.title ?? 'Sin contenido',
-    });
-    this.appendChild(title);
+    }).setParent(this);
 
     if (typeof options.description === 'string' && options.description !== '') {
       const description = component.create('p', {
         className: 'max-w-md text-sm text-slate-600',
         dataset: { role: 'empty-description' },
         text: options.description,
-      });
-      this.appendChild(description);
+      }).setParent(this);
     }
 
     if (options.action instanceof HTMLElement) {

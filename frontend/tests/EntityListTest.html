@@ -12,10 +12,18 @@
 
 <script type="module">
   import { EntityList } from '../src/js/views/pages/EntityList.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import { AppState } from '../src/js/models/StateModel.js';
+  import { DynamicTable } from '../src/js/views/modules/DynamicTable.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, mockFetchWithMap, finishTestRunner } from './js/helpers.js';
 
   initTestRunner('output');
+
+  function makeShellSandbox() {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    return { host, shell, content: shell.getTarget('shell-main-content') };
+  }
 
   // -------------------------------------------------------------------------
   // Tests
@@ -74,25 +82,60 @@
   });
 
   await test('loadEntity renders records section with table', async () => {
-    const container = makeSandbox();
+    const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
       '/entities': [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
       '/entities/clients/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
     });
 
-    const page = new EntityList(container);
+    const page = new EntityList(content, {
+      shellLayout: shell,
+      title: 'Clientes',
+      description: 'Explora registros y accede a acciones contextuales.',
+    });
     await page.init();
     await page.loadEntity('clients');
 
-    const section = container.querySelector('[data-role="records-section"]');
-    assertTrue(section !== null, 'Records section should exist');
+    const section = content.querySelector('[data-role="list-section"]');
+    assertTrue(section !== null, 'List section should exist');
+    assertTrue(section.classList.contains('overflow-visible'), 'List section must not clip table menus');
 
-    const heading = section.querySelector('[data-role="records-title"]');
+    const heading = shell.getTarget('shell-header').querySelector('[data-role="page-title"]');
     assertTrue(heading !== null, 'Should render section heading');
-    assertTrue(heading.textContent.includes('Clientes'), 'Heading should contain entity label');
+    assertEquals(heading.textContent, 'Clientes', 'Debe conservar el título canónico de la ruta');
+    const description = shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]');
+    assertEquals(description.textContent, 'Explora registros y accede a acciones contextuales.', 'Debe conservar la descripción canónica de la ruta');
+
+    const toolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
+    assertTrue(toolbar !== null, 'Should render the shared list toolbar');
+
+    assertTrue(!section.className.includes('border'), 'Records section should stay flat');
 
     const table = section.querySelector('table');
     assertTrue(table !== null, 'DynamicTable should render a <table>');
+  });
+
+  await test('loadEntity in shell mode mounts toolbar in shell header and does not create a local page-header', async () => {
+    const { host, shell, content } = makeShellSandbox();
+
+    mockFetchWithMap({
+      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
+      '/entities/clients/records': [{ name: 'ACME' }],
+    });
+
+    const page = new EntityList(content, { shellLayout: shell });
+    await page.init();
+    await page.loadEntity('clients');
+    await page.loadEntity('clients');
+
+    const localHeader = content.querySelector('[data-role="page-header"]');
+    const shellToolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
+    assertTrue(localHeader === null, 'No local page-header should be rendered in shell mode');
+    assertTrue(shellToolbar !== null, 'Toolbar should mount in shell header');
+    assertTrue(shellToolbar.parentElement.dataset.role === 'page-header-content', 'Toolbar should belong to PageHeaderComponent');
+    assertEquals(shellToolbar.querySelectorAll('[data-role="record-create"]').length, 1, 'Rerender should keep one create action');
+
+    host.remove();
   });
 
   await test('loadEntity stores records in AppState', async () => {
@@ -114,8 +157,66 @@
     assertEquals(AppState.getCurrentEntity(), 'clients', 'AppState.currentEntity should be set');
   });
 
-  await test('"Crear nuevo registro" button calls onCreateNew callback', async () => {
+  await test('loadEntity requests 20 records and delegates pagination and sorting to API', async () => {
     const container = makeSandbox();
+    const calls = [];
+    const api = {
+      async get(url) {
+        calls.push(url);
+        if (url === '/entities') {
+          return { data: [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+        }
+        return {
+          data: [{ id: String(calls.length), content: { name: 'Cliente paginado' } }],
+          meta: { page: url.includes('page=2') ? 2 : 1, page_size: 20, total: 45, total_pages: 3 },
+        };
+      },
+    };
+    const page = new EntityList(container, { api });
+    await page.init();
+    await page.loadEntity('clients');
+
+    assertTrue(calls[1].includes('page=1&page_size=20'), 'Initial request must use 20 records');
+    container.querySelector('[data-role="table-page"][data-page="2"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertTrue(calls[2].includes('page=2&page_size=20'), 'Page click must request only selected page');
+
+    container.querySelector('[data-role="table-sort"][data-column="name"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertTrue(calls[3].includes('sort=name&direction=asc'), 'Header click must request server sorting');
+
+    container.querySelector('[data-role="table-page-size"]').click();
+    container.querySelector('[data-role="table-page-size-option"][data-page-size="50"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assertTrue(calls[4].includes('page=1&page_size=50'), 'Page size must reset and request first page');
+  });
+
+  await test('loadEntity applies the saved page size to its initial request', async () => {
+    const container = makeSandbox();
+    const calls = [];
+    document.cookie = `${DynamicTable.PAGE_SIZE_COOKIE}=50; Max-Age=31536000; Path=/; SameSite=Lax`;
+    try {
+      const api = {
+        async get(url) {
+          calls.push(url);
+          if (url === '/entities') {
+            return { data: [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+          }
+          return { data: [], meta: { page: 1, page_size: 50, total: 0, total_pages: 1 } };
+        },
+      };
+      const page = new EntityList(container, { api });
+      await page.init();
+      await page.loadEntity('clients');
+
+      assertTrue(calls[1].includes('page=1&page_size=50'), 'Initial request must use the saved page size');
+    } finally {
+      document.cookie = `${DynamicTable.PAGE_SIZE_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+    }
+  });
+
+  await test('"Crear nuevo registro" button calls onCreateNew callback', async () => {
+    const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
       '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
       '/entities/clients/records': [],
@@ -124,11 +225,11 @@
     let calledWith = null;
     const onCreateNew = (slug) => { calledWith = slug; };
 
-    const page = new EntityList(container, { onCreateNew });
+    const page = new EntityList(content, { onCreateNew, shellLayout: shell });
     await page.init();
     await page.loadEntity('clients');
 
-    const createBtn = container.querySelector('[data-role="record-create"]');
+    const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     assertTrue(createBtn !== null, '"Crear nuevo registro" button should exist');
     createBtn.click();
 

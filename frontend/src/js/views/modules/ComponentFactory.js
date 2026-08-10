@@ -1,4 +1,4 @@
-import { BaseComponent, createComponentInstance } from '../components/BaseComponent.js';
+import { BaseComponent } from '../components/BaseComponent.js';
 import { AlertComponent } from '../components/Alert.js';
 import { BreadcrumbComponent } from '../components/Breadcrumb.js';
 import { ButtonComponent } from '../components/Button.js';
@@ -8,6 +8,8 @@ import { FormFieldComponent } from '../components/FormField.js';
 import { InputCheckComponent } from '../components/InputCheck.js';
 import { InputDateComponent } from '../components/InputDate.js';
 import { InputEmailComponent } from '../components/InputEmail.js';
+import { InputFileComponent } from '../components/InputFile.js';
+import { InputHiddenComponent } from '../components/InputHidden.js';
 import { InputPasswordComponent } from '../components/InputPassword.js';
 import { InputRadioComponent } from '../components/InputRadio.js';
 import { InputSelectComponent } from '../components/InputSelect.js';
@@ -18,6 +20,7 @@ import { InputSwitchComponent } from '../components/InputSwitch.js';
 import { ModalComponent } from '../components/Modal.js';
 import { PageComponent } from '../components/Page.js';
 import { PageHeaderComponent } from '../components/PageHeader.js';
+import { PasswordStrengthComponent } from '../components/PasswordStrength.js';
 import { SectionComponent } from '../components/Section.js';
 import { SkeletonComponent } from '../components/Skeleton.js';
 import { SpinnerComponent } from '../components/Spinner.js';
@@ -26,12 +29,11 @@ import { TabsComponent } from '../components/Tabs.js';
 import { TypographyComponent } from '../components/Typography.js';
 
 function createFactory(ComponentClass, tagName = 'div') {
-	return (options = {}) => createComponentInstance(ComponentClass, tagName, options);
+	return (options = {}) => ComponentClass.create(tagName, options);
 }
 
 function createFactoryWithTag(ComponentClass, tagNameResolver) {
-	return (options = {}) => createComponentInstance(
-		ComponentClass,
+	return (options = {}) => ComponentClass.create(
 		typeof tagNameResolver === 'function' ? tagNameResolver(options) : tagNameResolver,
 		options
 	);
@@ -72,6 +74,10 @@ const componentDefinitions = [
 		'Campo de hora'),
 	defineComponent('inputEmail', InputEmailComponent, 'input', 'dataEntry',
 		'Campo de email'),
+	defineComponent('inputFile', InputFileComponent, 'input', 'dataEntry',
+		'Selector de archivo'),
+	defineComponent('inputHidden', InputHiddenComponent, 'input', 'dataEntry',
+		'Campo de valor oculto'),
 	defineComponent('inputPassword', InputPasswordComponent, 'input', 'dataEntry',
 		'Campo de contraseña'),
 	defineComponent('inputRadio', InputRadioComponent, 'input', 'dataEntry',
@@ -90,6 +96,8 @@ const componentDefinitions = [
 		'Estado vacío con acción'),
 	defineComponent('alert', AlertComponent, 'div', 'feedback',
 		'Mensajes de estado y advertencia'),
+	defineComponent('passwordStrength', PasswordStrengthComponent, 'div', 'feedback',
+		'Indicador configurable de fortaleza de contraseña'),
 	defineComponent('modal', ModalComponent, 'div', 'feedback',
 		'Diálogos y confirmaciones'),
 	defineComponent('spinner', SpinnerComponent, 'div', 'feedback',

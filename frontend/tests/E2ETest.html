@@ -13,6 +13,7 @@
 <script type="module">
   import { EntityList } from '../src/js/views/pages/EntityList.js';
   import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import { AppState } from '../src/js/models/StateModel.js';
   import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from './js/helpers.js';
 
@@ -118,6 +119,12 @@
 
   const CREATED_RECORD = { id: '3', name: 'Carol', email: 'carol@test.com' };
 
+  function makeShellSandbox() {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    return { host, shell, content: shell.getTarget('shell-main-content') };
+  }
+
   // ── Tests ──────────────────────────────────────────────────────────────────
 
   log('── Flujo EntityList ───────────────────────────────────────────────────');
@@ -150,18 +157,18 @@
   });
 
   await test('loadEntity renders "Crear nuevo registro" button', async () => {
-    const container = makeSandbox();
+    const { host, shell, content } = makeShellSandbox();
     mockFetch([
       { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
-    const page = new EntityList(container);
+    const page = new EntityList(content, { shellLayout: shell });
     await page.init();
     await page.loadEntity('clients');
-    const createBtn = container.querySelector('[data-role="record-create"]');
+    const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     assertTrue(createBtn !== null, 'Expected primary button');
     assertTrue(createBtn.textContent.includes('Crear'), 'Button should say "Crear"');
-    container.remove();
+    host.remove();
   });
 
   await test('loadEntity renders "Editar" button per row when onEdit provided', async () => {
@@ -182,23 +189,24 @@
   log('── onCreateNew callback ───────────────────────────────────────────────');
 
   await test('clicking "Crear nuevo registro" calls onCreateNew with slug', async () => {
-    const container = makeSandbox();
+    const { host, shell, content } = makeShellSandbox();
     mockFetch([
       { url: '/entities/clients/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
 
     let receivedSlug = null;
-    const page = new EntityList(container, {
+    const page = new EntityList(content, {
+	  shellLayout: shell,
       onCreateNew: (slug) => { receivedSlug = slug; },
     });
     await page.init();
     await page.loadEntity('clients');
 
-    const createBtn = container.querySelector('[data-role="record-create"]');
+    const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     createBtn.click();
     assertEquals(receivedSlug, 'clients', 'onCreateNew should be called with "clients"');
-    container.remove();
+    host.remove();
   });
 
   await test('clicking "Editar" calls onEdit with slug, recordId and record', async () => {
@@ -330,7 +338,7 @@
   log('── E2E integrated flow ────────────────────────────────────────────────');
 
   await test('full flow: list → select entity → create record → list reloads', async () => {
-    const container = makeSandbox();
+    const { host, shell, content: container } = makeShellSandbox();
 
     mockFetch([
       { url: '/entities/clients/records', method: 'POST', data: CREATED_RECORD },
@@ -344,6 +352,7 @@
     let schemaEndpointLoaded = false;
     const reloadSlug = await new Promise((resolve) => {
       entityListPage = new EntityList(container, {
+		shellLayout: shell,
         onCreateNew: async (slug) => {
           const response = await fetch(`/entities/${slug}/schema`);
           const payload = await response.json();
@@ -351,6 +360,7 @@
           const schema = payload.data.schema;
           container.innerHTML = '';
           const editPage = new EntityEdit(container, slug, schema, {
+			shellLayout: shell,
             onSaved: () => { resolve(slug); },
           });
           assertTrue(editPage instanceof EntityEdit, 'EntityEdit instance should be created');
@@ -363,14 +373,14 @@
             if (phoneInput) phoneInput.value = '+34 600 000 000';
           }
           // EntityEdit listens to click on the save button, not form submit
-          const saveBtn = container.querySelector('[data-role="entity-edit-save"]');
+          const saveBtn = shell.getTarget('shell-main-actions').querySelector('[data-role="entity-edit-save"]');
           if (saveBtn) saveBtn.click();
         },
       });
       entityListPage.init().then(() => {
         entityListPage.loadEntity('clients').then(() => {
           // Click "Crear nuevo registro" to trigger onCreateNew
-          const btn = container.querySelector('[data-role="record-create"]');
+          const btn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
           if (btn) btn.click();
         });
       });
@@ -379,6 +389,7 @@
     // After save, simulate going back to EntityList and reloading
     container.innerHTML = '';
     const reloadedList = new EntityList(container, {
+	  shellLayout: shell,
       onCreateNew: (_s) => { /* no-op */ },
     });
     await reloadedList.init();
@@ -388,7 +399,7 @@
     assertEquals(rows.length, 2, 'EntityList should show 2 rows after reload');
     assertEquals(reloadSlug, 'clients', 'Reloaded entity slug should be "clients"');
     assertTrue(schemaEndpointLoaded, 'Create flow should load the full schema endpoint');
-    container.remove();
+    host.remove();
   });
 
   // ────────────────────────────────────────────────────────────────────────

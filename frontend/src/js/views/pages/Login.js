@@ -76,34 +76,33 @@ export class Login {
 		const page = component.create('page', {
 			dataRole: 'login-card',
 			children: component.create('div'),
-		});
-		page.className = 'mx-auto mt-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-panel sm:mt-16 sm:p-8';
+		}).setClassName('mx-auto mt-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-panel sm:mt-16 sm:p-8');
 
-		const title = component.create('typography', {
+		component.create('typography', {
 			as: 'h2',
 			text: 'Iniciar sesión',
 			size: 'xl',
 			weight: 'semibold',
 			color: 'slate-950',
-		});
-		title.dataset.role = 'login-title';
-		page.appendChild(title);
+		})
+			.setData('role', 'login-title')
+			.setParent(page);
 
-		const subtitle = component.create('typography', {
+		component.create('typography', {
 			text: 'Accede a tu espacio de trabajo para gestionar entidades y plugins.',
 			size: 'sm',
 			color: 'slate-500',
-		});
-		subtitle.className = 'mt-2';
-		page.appendChild(subtitle);
+		})
+			.setClassName('mt-2')
+			.setParent(page);
 
-		const banner = component.create('alert', {
+		component.create('alert', {
 			type: 'error',
 			message: '',
-		});
-		banner.dataset.role = 'login-error';
-		banner.hidden = true;
-		page.appendChild(banner);
+		})
+			.setData('role', 'login-error')
+			.setVisible(false)
+			.setParent(page);
 
 		const form = component.create('form', {
 			className: 'mt-6 grid gap-4',
@@ -123,26 +122,26 @@ export class Login {
 		if (emailInput instanceof HTMLInputElement) {
 			emailInput.autocomplete = 'email';
 		}
-		form.appendChild(emailField);
+		emailField.setParent(form);
 
 		const passwordField = component.create('formField', {
 			label: 'Password',
 			name: 'password',
 			input: component.create('inputPassword', { name: 'password', placeholder: '••••••••' }),
 		});
-		form.appendChild(passwordField);
+		passwordField.setParent(form);
 
-		const submit = component.create('button', {
+		component.create('button', {
 			label: 'Entrar',
 			variant: 'primary',
 			dataRole: 'login-submit',
 			type: 'submit',
-		});
-		submit.className = 'mt-2 inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60';
-		form.appendChild(submit);
+		})
+			.setClassName('mt-2 inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-60')
+			.setParent(form);
 
-		page.appendChild(form);
-		this.#container.appendChild(page);
+		form.setParent(page);
+		page.setParent(this.#container);
 	}
 
 	showFieldErrors(errors) {
@@ -161,8 +160,7 @@ export class Login {
 			});
 
 			for (const msg of msgList) {
-				const li = component.create('li', { text: msg });
-				errorEl.appendChild(li);
+				component.create('li', { text: msg }).setParent(errorEl);
 			}
 
 			if (input !== null && input.parentElement !== null) {

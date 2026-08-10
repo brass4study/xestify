@@ -15,8 +15,8 @@ export class SpinnerComponent extends BaseComponent {
       text: options.label ?? 'Cargando...',
     });
 
-    this.appendChild(spinner);
-    this.appendChild(label);
+    spinner.setParent(this);
+    label.setParent(this);
     return this;
   }
 }

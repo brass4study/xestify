@@ -7,24 +7,22 @@ export class SectionComponent extends BaseComponent {
     this.dataset.role = options.dataRole ?? 'ui-section';
 
     if (typeof options.title === 'string' && options.title !== '') {
-      const title = component.create('typography', {
+      component.create('typography', {
         as: 'h3',
         text: options.title,
         size: 'sm',
         weight: 'semibold',
         color: 'slate-900',
-      });
-      this.appendChild(title);
+      }).setParent(this);
     }
 
     if (typeof options.subtitle === 'string' && options.subtitle !== '') {
-      const subtitle = component.create('typography', {
+      component.create('typography', {
         as: 'p',
         text: options.subtitle,
         size: 'sm',
         color: 'slate-600',
-      });
-      this.appendChild(subtitle);
+      }).setParent(this);
     }
 
     if (options.children instanceof HTMLElement) {

@@ -13,6 +13,7 @@
 <script type="module">
   import { UserManager } from '../src/js/views/pages/UserManager.js';
   import { UserConfig } from '../src/js/views/pages/UserConfig.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
 
   initTestRunner('output');
@@ -107,7 +108,7 @@
     window.location.hash = '#/users';
     const openButton = Array.from(container.querySelectorAll('tbody button')).find((button) => button.textContent.trim().includes('Editar'));
     assertTrue(Boolean(openButton), 'Debe existir acción Editar');
-    const icon = openButton.querySelector('i.fa-solid.fa-pencil');
+    const icon = openButton.querySelector('i.fa-solid.fa-pen');
     assertTrue(icon !== null, 'La acción Editar debe incluir icono de lápiz');
     openButton.click();
 
@@ -166,6 +167,27 @@
 
     const output = container.querySelector('input[readonly]');
     assertEquals(output.value, 'Tmp-Pass-1234', 'Debe mostrar la password devuelta por backend');
+  });
+
+  await test('UserConfig conserva una sola acción Volver tras rerender', async () => {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    const content = shell.getTarget('shell-main-content');
+    const api = new MockApi();
+    const configPage = new UserConfig(content, {
+      mode: 'admin',
+      api,
+      shellLayout: shell,
+      currentUserId: 'u-admin',
+      user: { ...api.users[1] },
+      onBack: () => {},
+    });
+
+    configPage.setUser({ ...api.users[1], name: 'Operador Rerender' });
+
+    const backButtons = shell.getTarget('shell-header')
+      .querySelectorAll('[data-role="page-header-toolbar"] [data-role="user-config-back"]');
+    assertEquals(backButtons.length, 1, 'Rerender should keep one back action');
   });
 
   await test('UserConfig admin deshabilita borrar propio dentro de la ficha', async () => {

@@ -14,7 +14,7 @@ export class InputSelectComponent extends InputComponent {
         optionEl.value = String(option);
         optionEl.textContent = String(option);
       }
-      this.appendChild(optionEl);
+      optionEl.setParent(this);
     });
     if (options.value !== '' && options.value !== undefined && options.value !== null) {
       this.value = String(options.value);

@@ -10,7 +10,8 @@ export class TableComponent extends BaseComponent {
     this._tableWidth = options.tableWidth ?? '100%';
     this._tableDataRole = options.tableDataRole ?? 'table';
     this._rowDecorator = typeof options.rowDecorator === 'function' ? options.rowDecorator : null;
-    this.className = options.className ?? 'overflow-x-auto rounded-xl border border-slate-200 bg-white';
+    this._density = options.density ?? 'middle';
+    this.className = options.className ?? 'overflow-x-auto rounded-md border border-slate-200 bg-white';
     this.dataset.role = options.dataRole ?? 'table-wrapper';
     this._render();
     return this;
@@ -34,6 +35,12 @@ export class TableComponent extends BaseComponent {
   }
 
   _render() {
+    const densityClasses = {
+      compact: { header: 'px-3 py-2.5', cell: 'px-3 py-1' },
+      middle: { header: 'px-3 py-2.5', cell: 'px-3 py-2.5' },
+      relaxed: { header: 'px-3 py-4', cell: 'px-3 py-4' },
+    };
+    const spacing = densityClasses[this._density] ?? densityClasses.middle;
     const table = component.create('tableElement', {
       className: this._tableClassName,
       dataset: { role: this._tableDataRole },
@@ -43,14 +50,35 @@ export class TableComponent extends BaseComponent {
     const thead = component.create('thead');
     const headerRow = component.create('tr');
     this._columns.forEach((column) => {
-      const th = component.create('th', {
-        className: column.headerClassName ?? 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600',
-        text: column.label ?? '',
+      const isSorted = column.sortDirection === 'asc' || column.sortDirection === 'desc';
+      const header = component.create('th', {
+        className: column.headerClassName ?? `group border-b border-slate-100 bg-slate-50 ${spacing.header} text-xs font-semibold uppercase tracking-wide text-slate-600`,
       });
-      headerRow.appendChild(th);
+      header.classList.add('transition-colors', 'duration-300', 'ease-out', 'hover:bg-slate-200');
+      if (isSorted) {
+        header.classList.add('bg-slate-200');
+        header.setData('sorted', 'true');
+      }
+      if (column.sortable === true && typeof column.onSort === 'function') {
+        header.setData('sortable', 'true');
+        header.setAttribute('aria-sort', this.sortAriaValue(column.sortDirection));
+        const sortButton = component.create('button', {
+          label: column.label ?? '',
+          ariaLabel: `Ordenar por ${column.label ?? ''}`,
+          dataRole: 'table-sort',
+          onClick: column.onSort,
+        });
+        this.buildSortIndicator(column.sortDirection).setParent(sortButton);
+        sortButton.setClassName('inline-flex w-full items-center justify-between gap-2 bg-transparent text-left text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors duration-300 ease-out group-hover:text-brand-700 focus:outline-none');
+        sortButton.dataset.column = column.key;
+        sortButton.setParent(header);
+      } else {
+        header.textContent = column.label ?? '';
+      }
+      header.setParent(headerRow);
     });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
+    headerRow.setParent(thead);
+    thead.setParent(table);
 
     const tbody = component.create('tbody');
     if (this._rows.length === 0) {
@@ -60,32 +88,63 @@ export class TableComponent extends BaseComponent {
         text: this._emptyMessage ?? 'No hay registros',
       });
       emptyCell.colSpan = this._columns.length || 1;
-      emptyRow.appendChild(emptyCell);
-      tbody.appendChild(emptyRow);
+      emptyCell.setParent(emptyRow);
+      emptyRow.setParent(tbody);
     } else {
       this._rows.forEach((row, rowIndex) => {
-        const tr = component.create('tr');
-        tr.className = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
+        const tr = component.create('tr')
+          .setClassName(rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/40');
         this._columns.forEach((column) => {
+          const isSorted = column.sortDirection === 'asc' || column.sortDirection === 'desc';
           const td = component.create('td', {
-            className: column.cellClassName ?? 'border-b border-slate-100 px-3 py-2 text-sm text-slate-700',
+            className: column.cellClassName ?? `border-b border-slate-100 ${spacing.cell} text-sm text-slate-700 transition-all duration-200`,
           });
+          if (isSorted) {
+            td.classList.add('bg-slate-50');
+            td.setData('sorted', 'true');
+          }
           const value = this.addCell(row, column, rowIndex);
           if (value instanceof Node) {
             td.appendChild(value);
           } else if (value !== undefined && value !== null) {
             td.textContent = String(value);
           }
-          tr.appendChild(td);
+          td.setParent(tr);
         });
         if (this._rowDecorator !== null) {
           this._rowDecorator(tr, row, rowIndex);
         }
-        tbody.appendChild(tr);
+        tr.classList.add('transition-colors', 'duration-150', 'hover:bg-slate-50');
+        tr.setParent(tbody);
       });
     }
 
-    table.appendChild(tbody);
+    tbody.setParent(table);
     this.replaceChildren(table);
+  }
+
+  sortAriaValue(direction) {
+    if (direction === 'asc') {
+      return 'ascending';
+    }
+    if (direction === 'desc') {
+      return 'descending';
+    }
+    return 'none';
+  }
+
+  buildSortIndicator(direction) {
+    const indicator = component.create('span', {
+      className: 'ml-auto inline-flex h-4 w-3 shrink-0 flex-col items-center justify-center leading-none',
+    }).setData('role', 'table-sort-indicator');
+    component.create('i', {
+      className: `fa-solid fa-caret-up -mb-px text-[12px] transition-colors duration-300 ${direction === 'asc' ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'}`,
+      attributes: { 'aria-hidden': 'true' },
+    }).setData('role', 'table-sort-up').setParent(indicator);
+    component.create('i', {
+      className: `fa-solid fa-caret-down -mt-px text-[12px] transition-colors duration-300 ${direction === 'desc' ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'}`,
+      attributes: { 'aria-hidden': 'true' },
+    }).setData('role', 'table-sort-down').setParent(indicator);
+    return indicator;
   }
 }

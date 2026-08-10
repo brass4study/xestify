@@ -17,13 +17,8 @@ export class TabsComponent extends BaseComponent {
     });
 
     const tabList = component.create('div', {
-      className: 'relative flex flex-wrap gap-8 border-b border-slate-200',
+      className: 'flex flex-wrap gap-8 border-b border-slate-200',
       dataset: { role: 'tabs-list' },
-    });
-
-    const inkBar = component.create('div', {
-      className: 'pointer-events-none absolute bottom-[-1px] left-0 h-[2px] rounded-full bg-brand-500 transition-[width,transform] duration-300 ease-out',
-      dataset: { role: 'tabs-ink-bar' },
     });
 
     const content = component.create('div', {
@@ -34,16 +29,18 @@ export class TabsComponent extends BaseComponent {
 
     this._tabBar = tabBar;
     this._tabList = tabList;
-    this._inkBar = inkBar;
     this._content = content;
+    this._inkBar = component.create('span', {
+      className: 'tabs-ink-bar',
+      dataset: { role: 'tabs-ink-bar' },
+      attributes: { 'aria-hidden': 'true' },
+    });
 
     this._tabs.forEach((tab) => this._appendTabButton(tab));
-    tabList.appendChild(inkBar);
-    tabBar.appendChild(tabList);
-    this.appendChild(tabBar);
-    this.appendChild(content);
+    tabList.setParent(tabBar);
+    tabBar.setParent(this);
+    content.setParent(this);
     this.setActiveTab(this._activeId, false);
-    requestAnimationFrame(() => this._syncActiveInkBar());
     return this;
   }
 
@@ -53,8 +50,6 @@ export class TabsComponent extends BaseComponent {
     }
     this._tabs.push(tab);
     this._appendTabButton(tab);
-    this._tabList.appendChild(this._inkBar);
-    this._syncActiveInkBar();
     return this;
   }
 
@@ -62,18 +57,16 @@ export class TabsComponent extends BaseComponent {
     if (!this._tabs.some((tab) => tab.id === id)) {
       return this;
     }
+    const activeButton = this._tabList.querySelector(`[data-tab-id="${id}"]`);
+    const previousRect = this._inkBar.isConnected
+      ? this._inkBar.getBoundingClientRect()
+      : null;
     this._activeId = id;
-    let activeButton = null;
     this._tabList.querySelectorAll('[data-role="tabs-button"]').forEach((button) => {
       const isActive = button.dataset.tabId === id;
       this._applyButtonState(button, isActive);
-      if (isActive) {
-        activeButton = button;
-      }
     });
-    if (activeButton instanceof HTMLElement) {
-      this._syncInkBar(activeButton);
-    }
+    this._moveInkBar(activeButton, previousRect);
     this._renderActiveContent();
     if (notify && this._onChange !== null) {
       this._onChange(id);
@@ -86,14 +79,14 @@ export class TabsComponent extends BaseComponent {
       label: tab.label ?? tab.id,
       variant: 'ghost',
       dataRole: 'tabs-button',
-    });
-    button.className = this._tabButtonClass(false);
-    button.dataset.tabId = tab.id;
-    button.dataset.state = 'inactive';
-    button.setAttribute('role', 'tab');
+    })
+      .setClassName(this._tabButtonClass(false))
+      .setData('tabId', tab.id)
+      .setData('state', 'inactive')
+      .setAttribute('role', 'tab');
     button.addEventListener('click', () => this.setActiveTab(tab.id, true));
     button.addEventListener('keydown', (event) => this._handleKeydown(event, tab.id));
-    this._tabList.appendChild(button);
+    button.setParent(this._tabList);
   }
 
   _handleKeydown(event, currentId) {
@@ -118,7 +111,9 @@ export class TabsComponent extends BaseComponent {
 
   _tabButtonClass(isActive) {
     const baseClass = 'relative inline-flex items-center bg-transparent px-0 py-3 text-[14px] font-normal leading-[1.5715] transition-colors duration-300 focus:outline-none focus:ring-0';
-    const stateClass = isActive ? 'text-brand-500' : 'text-slate-800 hover:text-brand-400';
+    const stateClass = isActive
+      ? 'text-brand-500'
+      : 'text-slate-800 hover:text-brand-400';
     return `${baseClass} ${stateClass}`;
   }
 
@@ -129,16 +124,31 @@ export class TabsComponent extends BaseComponent {
     button.setAttribute('tabindex', isActive ? '0' : '-1');
   }
 
-  _syncActiveInkBar() {
-    const activeButton = this._tabList.querySelector('[data-state="active"]');
-    if (activeButton instanceof HTMLElement) {
-      this._syncInkBar(activeButton);
+  _moveInkBar(button, previousRect) {
+    if (!(button instanceof HTMLElement)) {
+      return;
     }
-  }
 
-  _syncInkBar(button) {
-    this._inkBar.style.width = `${button.offsetWidth}px`;
-    this._inkBar.style.transform = `translateX(${button.offsetLeft}px)`;
+    this._inkBar.getAnimations().forEach((animation) => animation.cancel());
+    button.appendChild(this._inkBar);
+
+    const currentRect = this._inkBar.getBoundingClientRect();
+    if (previousRect === null
+      || previousRect.width === 0
+      || currentRect.width === 0
+      || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    const offset = previousRect.left - currentRect.left;
+    const widthScale = previousRect.width / currentRect.width;
+    this._inkBar.animate([
+      { transform: `translateX(${offset}px) scaleX(${widthScale})` },
+      { transform: 'translateX(0) scaleX(1)' },
+    ], {
+      duration: 300,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    });
   }
 
   _renderActiveContent() {

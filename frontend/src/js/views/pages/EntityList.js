@@ -10,10 +10,12 @@
 
 import { Api, ApiError } from '../../models/ApiClientModel.js';
 import { AppState } from '../../models/StateModel.js';
+import { ListLayout } from '../layout/ListLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class EntityList {
+	static PAGE_SIZE = 20;
 	/** @type {Api} */
 	#api;
 
@@ -26,12 +28,15 @@ export class EntityList {
 	/** @type {Function|null} */
 	#onEdit;
 
-	/** @type {DynamicTable|null} */
-	#table = null;
+	#shellLayout;
+	#title;
+	#description;
+	#layout = null;
+	#notificationRole = null;
 
 	/**
 	 * @param {string|HTMLElement} container
-	 * @param {{api?: Api, onCreateNew?: Function, onEdit?: Function}} options
+	 * @param {{api?: Api, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onCreateNew?: Function, onEdit?: Function}} options
 	 */
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -44,6 +49,9 @@ export class EntityList {
 		this.#onEdit = typeof options.onEdit === 'function'
 			? options.onEdit
 			: null;
+		this.#shellLayout = options.shellLayout ?? null;
+		this.#title = typeof options.title === 'string' ? options.title : null;
+		this.#description = typeof options.description === 'string' ? options.description : null;
 	}
 
 	/**
@@ -52,9 +60,12 @@ export class EntityList {
 	 * @returns {Promise<void>}
 	 */
 	async init() {
-		this.#setLoading(true);
-		this.#clearError();
 		this.#container.replaceChildren();
+		this.#layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title ?? 'Entidades')
+			.setDescription(this.#description ?? 'Selecciona una entidad para consultar sus registros.')
+			.build();
+		this.#setLoading(true);
 
 		try {
 			const { data } = await this.#api.get('/entities');
@@ -62,12 +73,12 @@ export class EntityList {
 			AppState.setEntities(entities);
 
 			if (entities.length === 0) {
-				const empty = component.create('emptyState', {
+				component.create('emptyState', {
 					title: 'Sin entidades',
 					description: 'No hay entidades disponibles.',
-				});
-				empty.dataset.role = 'entity-empty';
-				this.#container.appendChild(empty);
+				})
+					.setData('role', 'entity-empty')
+					.setParent(this.#layout.getContentTarget());
 			}
 		} catch (err) {
 			this.#handleError(err);
@@ -88,12 +99,12 @@ export class EntityList {
 		AppState.setCurrentEntity(slug);
 
 		try {
-			const { data } = await this.#api.get(`/entities/${slug}/records`);
+			const { data, meta } = await this.#api.get(this.#recordsUrl(slug));
 			const records = this.#normalizeRecords(data);
 			AppState.setRecords(records);
 
 			const schema = this.#schemaForSlug(slug);
-			this.#renderRecords(records, schema, slug);
+			this.#renderRecords(records, schema, slug, meta);
 		} catch (err) {
 			this.#handleError(err);
 		} finally {
@@ -105,50 +116,15 @@ export class EntityList {
 	 * @param {Array<object>} records
 	 * @param {object} schema
 	 * @param {string} slug
+	 * @param {object|undefined} meta
 	 */
-	#renderRecords(records, schema, slug) {
-		let recordsSection = this.#container.querySelector('[data-role="records-section"]');
-
-		if (recordsSection === null) {
-			recordsSection = component.create('section', {
-				dataRole: 'records-section',
-				children: component.create('div'),
-			});
-			recordsSection.className = 'mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel';
-			this.#container.appendChild(recordsSection);
-		}
-
-		recordsSection.replaceChildren();
-
-		const createBtn = component.create('button', {
-			label: this.#createLabelForSlug(slug),
-			variant: 'primary',
-			dataRole: 'record-create',
-			onClick: () => {
-				if (this.#onCreateNew !== null) {
-					this.#onCreateNew(slug);
-				}
-			},
-		});
-		createBtn.className = 'inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300';
-		const header = component.create('pageHeader', {
-			title: this.#entityLabelForSlug(slug),
-			subtitle: this.#createLabelForSlug(slug),
-			actions: [createBtn],
-		});
-		header.dataset.role = 'records-header';
-		header.className = 'flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between';
-		const heading = header.querySelector('[data-role="page-title"]');
-		if (heading instanceof HTMLElement) {
-			heading.dataset.role = 'records-title';
-		}
-		recordsSection.appendChild(header);
-
-		const tableContainer = component.create('div', {
-			className: 'p-3',
-			dataset: { role: 'records-table-wrap' },
-		});
-		recordsSection.appendChild(tableContainer);
+	#renderRecords(records, schema, slug, meta = undefined) {
+		this.#layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title ?? this.#entityLabelForSlug(slug))
+			.setDescription(this.#description ?? this.#createLabelForSlug(slug))
+			.setHeaderToolbar(this.#createRecordButton(slug))
+			.build();
+		const layout = this.#layout;
 
 		const extraColumns = this.#onEdit === null
 			? []
@@ -169,8 +145,50 @@ export class EntityList {
 					},
 				];
 
-		this.#table = new DynamicTable(records, schema, tableContainer, { extraColumns });
-		this.#table.render();
+		layout.createTable(records, schema, {
+			extraColumns,
+			pageSize: DynamicTable.getPreferredPageSize(EntityList.PAGE_SIZE),
+			totalRecords: Number.isInteger(meta?.total) ? meta.total : records.length,
+			onQueryChange: async (query) => {
+				try {
+					const response = await this.#api.get(this.#recordsUrl(slug, query));
+					const refreshedRecords = this.#normalizeRecords(response.data);
+					AppState.setRecords(refreshedRecords);
+					return {
+						records: refreshedRecords,
+						total: Number.isInteger(response.meta?.total) ? response.meta.total : refreshedRecords.length,
+						page: Number.isInteger(response.meta?.page) ? response.meta.page : query.page,
+					};
+				} catch (error) {
+					this.#handleError(error);
+					return null;
+				}
+			},
+		});
+	}
+
+	#recordsUrl(slug, query = {}) {
+		const page = Number.isInteger(query.page) ? query.page : 1;
+		const pageSize = Number.isInteger(query.pageSize)
+			? query.pageSize
+			: DynamicTable.getPreferredPageSize(EntityList.PAGE_SIZE);
+		const sort = typeof query.sort === 'string' && query.sort !== '' ? query.sort : 'created_at';
+		const direction = query.direction === 'desc' ? 'desc' : 'asc';
+		return `/entities/${encodeURIComponent(slug)}/records?page=${page}&page_size=${pageSize}&sort=${encodeURIComponent(sort)}&direction=${direction}`;
+	}
+
+	#createRecordButton(slug) {
+		return component.create('button', {
+			label: this.#createLabelForSlug(slug),
+			variant: 'primary',
+			size: 'md',
+			dataRole: 'record-create',
+			onClick: () => {
+				if (this.#onCreateNew !== null) {
+					this.#onCreateNew(slug);
+				}
+			},
+		});
 	}
 
 	#schemaForSlug(slug) {
@@ -247,26 +265,19 @@ export class EntityList {
 	#setLoading(loading) {
 		AppState.setLoading(loading);
 
-		let indicator = this.#container.querySelector('[data-role="entity-loading"]');
 		if (loading) {
-			if (indicator === null) {
-				indicator = component.create('p', {
-					className: 'mb-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500',
-					dataset: { role: 'entity-loading' },
-					text: 'Cargando…',
-				});
-				this.#container.prepend(indicator);
-			}
-		} else if (indicator !== null) {
-			indicator.remove();
+			this.#showNotification('info', 'Cargando…', 'entity-loading');
+		} else if (this.#notificationRole === 'entity-loading') {
+			this.#layout?.setNotification(null);
+			this.#notificationRole = null;
 		}
 	}
 
 	#clearError() {
 		AppState.setError(null);
-		const errorEl = this.#container.querySelector('[data-role="entity-error"]');
-		if (errorEl !== null) {
-			errorEl.remove();
+		if (this.#notificationRole === 'entity-error') {
+			this.#layout?.setNotification(null);
+			this.#notificationRole = null;
 		}
 	}
 
@@ -274,12 +285,15 @@ export class EntityList {
 		const message = err instanceof ApiError ? err.message : 'Error desconocido';
 		AppState.setError({ message });
 
-		const errorEl = component.create('p', {
-			className: 'mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700',
-			dataset: { role: 'entity-error' },
-			text: message,
-		});
-		this.#container.appendChild(errorEl);
+		this.#showNotification('error', message, 'entity-error');
+	}
+
+	#showNotification(type, message, role) {
+		const banner = component.create('alert', { type, message })
+			.setData('role', role)
+			.setData('type', type);
+		this.#layout?.setNotification(banner);
+		this.#notificationRole = role;
 	}
 
 	resolveContainer(container) {

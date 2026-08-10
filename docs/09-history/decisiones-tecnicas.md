@@ -134,6 +134,10 @@ Si UX crece explosivamente, transición a Vue 3 es factible sin reescribir lógi
 **Alternativas consideradas:** CSS propio completo, Ant Design React (descartado por stack), Bootstrap
 **Fecha:** Agosto 6, 2026
 
+> **Estado:** decisión de integración inicial supersedida durante STORY 9.1. El
+> runtime actual usa CSS Tailwind generado localmente y no depende del Play CDN;
+> ver la decisión "CSS — Tailwind CSS como framework de estilos" más adelante.
+
 ### Justificación
 
 - Se necesita una base visual enterprise y coherente para la EPIC 9.
@@ -536,3 +540,42 @@ Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tai
 ### Cambio futuro
 
 Si el proyecto requiere URLs limpias en produccion (EPIC 9+), la migracion a History API es un cambio contenido en el modulo router sin afectar paginas ni componentes.
+
+---
+
+## DECISION 9: Shell SPA persistente y layouts de pagina
+
+**Seleccionado:** una única instancia de `ShellLayout` para páginas autenticadas,
+con `PageLayout`, `ListLayout` y `FormLayout` como contratos de composición.
+**Alternativas descartadas:** shell propio por página, búsqueda de zonas mediante
+selectores globales y layouts monolíticos dentro de `AppController`.
+**Fecha:** Agosto 10, 2026
+
+### Justificacion
+
+- La navegación, la cabecera y las zonas transversales deben persistir al cambiar
+    de vista sin reconstruir estructuras paralelas.
+- Las páginas necesitan publicar breadcrumbs, toolbars, tabs, notificaciones,
+    contenido y acciones mediante un contrato estable y testeable.
+- Los plugins deben disponer de puntos de extensión explícitos sin conocer ni
+    recorrer el DOM global de la aplicación.
+- Login no pertenece a la shell autenticada, pero debe reutilizar la misma base
+    de layouts para mantener una única forma de componer páginas.
+
+### Contrato
+
+- `AppController` crea `ShellLayout` una vez al iniciar la sesión autenticada y
+    pasa la instancia activa a cada página.
+- `ShellLayout` solo posee zonas estructurales y no renderiza contenido de página.
+- `PageLayout` compone cabecera, breadcrumbs, toolbar, tabs y contenido; sus
+    especializaciones `ListLayout` y `FormLayout` resuelven listados y formularios.
+- Login usa `PageLayout` standalone con template `login`, sin navbar autenticada.
+- No se permiten shells por vista ni accesos paralelos a las zonas mediante
+    `querySelector` global.
+
+### Verificacion
+
+- `FrontendArchitectureTest.html` valida el árbol de shell, los targets, los
+    layouts especializados y la plantilla Login.
+- El cierre de STORY 9.5 deja 17/17 runners HTML y 166/166 aserciones en verde.
+- El contrato detallado vive en `docs/05-frontend/layouts-guide.md`.

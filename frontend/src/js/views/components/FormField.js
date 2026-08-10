@@ -14,7 +14,7 @@ export class FormFieldComponent extends BaseComponent {
       if (typeof options.name === 'string' && options.name !== '') {
         label.setAttribute('for', options.name);
       }
-      this.appendChild(label);
+      label.setParent(this);
     }
 
     if (options.input instanceof HTMLElement) {
@@ -25,8 +25,7 @@ export class FormFieldComponent extends BaseComponent {
       const help = component.create('p', {
         className: 'text-xs text-slate-500',
         text: options.helpText,
-      });
-      this.appendChild(help);
+      }).setParent(this);
     }
 
     return this;

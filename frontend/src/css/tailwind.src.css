@@ -73,6 +73,10 @@
 }
 
 @layer utilities {
+	[data-role="tabs-ink-bar"] {
+		@apply pointer-events-none absolute bottom-[-1px] left-0 h-[2px] w-full origin-left rounded-full bg-brand-500;
+	}
+
 	[data-role="user-menu-items"][hidden] {
 		display: none !important;
 	}
@@ -81,11 +85,28 @@
 		display: none !important;
 	}
 
-	[data-role="password-fill"] {
-		transition: width 180ms ease;
+	[data-password-strength][hidden] {
+		display: none !important;
 	}
 
 	[data-role="password-rule-icon"] {
 		transition: color 180ms ease;
+	}
+
+	th[data-sortable="true"] {
+		transition: background-color 300ms ease-out;
+	}
+
+	th[data-sortable="true"] [data-role="table-sort"] {
+		transition: color 300ms ease-out;
+	}
+
+	th[data-sortable="true"]:hover,
+	th[data-sorted="true"] {
+		background-color: rgb(226 232 240);
+	}
+
+	th[data-sortable="true"]:hover [data-role="table-sort"] {
+		color: rgb(18 77 175);
 	}
 }

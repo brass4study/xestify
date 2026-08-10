@@ -3,6 +3,7 @@
  */
 
 import { Api } from '../../models/ApiClientModel.js';
+import { FormLayout } from '../layout/FormLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { component } from '../modules/ComponentFactory.js';
 
@@ -14,17 +15,29 @@ export class PluginConfig {
 	#state = null;
 	#message = '';
 	#messageType = '';
+	#shellLayout;
+	#title;
+	#description;
 
+	/**
+	 * @param {HTMLElement|string} container
+	 * @param {{slug?: string, api?: Object, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onBack?: Function}} options
+	 */
 	constructor(container, options) {
 		this.#container = this.resolveContainer(container);
 		this.#slug = String(options?.slug ?? '');
 		this.#api = options?.api ?? new Api();
 		this.#onBack = typeof options?.onBack === 'function' ? options.onBack : () => {};
+		this.#shellLayout = options?.shellLayout ?? null;
+		this.#title = typeof options?.title === 'string' ? options.title : 'Configuración de plugin';
+		this.#description = typeof options?.description === 'string'
+			? options.description
+			: 'Ajusta las opciones específicas del plugin activo.';
 	}
 
 	async init() {
 		if (this.#slug === '') {
-			this.renderError('Plugin slug is required.');
+			this.renderError('El identificador del plugin es obligatorio.');
 			return;
 		}
 
@@ -43,11 +56,10 @@ export class PluginConfig {
 
 	render() {
 		if (this.#state === null) {
-			this.renderError('No configuration data available.');
+			this.renderError('No hay datos de configuración disponibles.');
 			return;
 		}
 
-		const plugin = this.#state.plugin;
 		const isExtension = this.isExtensionPlugin();
 		const targetEntity = String(this.#state.config.target_entity ?? '*');
 		const entityOptions = Array.isArray(this.#state.config.entity_options)
@@ -58,84 +70,82 @@ export class PluginConfig {
 		const noticeMessage = this.#message === '' ? '' : this.#message;
 		const noticeType = this.noticeType();
 
-		const page = component.create('page', { dataRole: 'plugin-config-page' });
-		const header = component.create('pageHeader', {
-			title: `Configurar plugin: ${plugin.name || plugin.slug || this.#slug}`,
-			subtitle: `slug: ${plugin.slug || this.#slug} | version: ${plugin.version || '-'} | schema v${String(plugin.schema_version ?? '-')}`,
-		});
-		page.appendChild(header);
+		const layout = FormLayout.create(this.#container, {
+			shell: this.#shellLayout,
+		})
+			.setTitle(this.#title)
+			.setDescription(this.#description)
+			.build();
+		layout.setNotification(null);
+		const backButton = component.create('button', {
+					label: 'Volver',
+					variant: 'secondary',
+					size: 'sm',
+					dataRole: 'plugin-config-action',
+					dataAction: 'back',
+				});
+		const saveButton = component.create('button', {
+					label: 'Guardar',
+					variant: 'primary',
+					size: 'sm',
+					dataRole: 'plugin-config-action',
+					dataAction: 'save',
+				});
+		layout.addAction([backButton, saveButton]);
+		const panel = layout.getPanel();
 
 		if (noticeMessage !== '') {
-			const notice = component.create('alert', { type: noticeType, message: noticeMessage });
-			notice.dataset.role = 'plugin-config-notice';
-			page.appendChild(notice);
+			const banner = component.create('alert', {
+				type: noticeType,
+				message: noticeMessage,
+			}).setData('role', 'plugin-config-notice').setData('type', noticeType);
+			layout.setNotification(banner);
 		}
 
-		const shell = component.create('section', { dataRole: 'plugin-config-shell' });
-		shell.className = 'rounded-xl border border-slate-200 bg-slate-50 p-3';
-
 		if (isExtension) {
-			const relationshipTitle = component.create('typography', { as: 'h3', text: 'Relación de extension', size: 'sm', weight: 'semibold', color: 'slate-900' });
-			shell.appendChild(relationshipTitle);
+			component.create('typography', { as: 'h3', text: 'Relación de extensión', size: 'sm', weight: 'semibold', color: 'slate-900' })
+				.setParent(panel);
 
-			const relationshipHelp = component.create('typography', { text: 'Selecciona la entidad destino o Todos para aplicar la extension globalmente.', size: 'sm', color: 'slate-600' });
-			relationshipHelp.className = 'mt-1';
-			shell.appendChild(relationshipHelp);
+			component.create('typography', { text: 'Selecciona la entidad de destino o Todas para aplicar la extensión globalmente.', size: 'sm', color: 'slate-600' })
+				.setClassName('mt-1')
+				.setParent(panel);
 
-			const targetSelect = component.create('inputSelect', {
+			component.create('inputSelect', {
 				name: 'target-entity',
 				value: targetEntity,
 				options: targetOptions,
-			});
-			targetSelect.className = 'mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm';
-			targetSelect.dataset.name = 'target-entity';
-			shell.appendChild(targetSelect);
+			})
+				.setClassName('mt-2 w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500 sm:max-w-sm')
+				.setData('name', 'target-entity')
+				.setParent(panel);
 		}
 
-		const fieldsTitle = component.create('typography', { as: 'h3', text: 'Campos', size: 'sm', weight: 'semibold', color: 'slate-900' });
-		fieldsTitle.className = isExtension ? 'mt-5' : 'mt-0';
-		shell.appendChild(fieldsTitle);
+		component.create('typography', { as: 'h3', text: 'Campos', size: 'sm', weight: 'semibold', color: 'slate-900' })
+			.setClassName(isExtension ? 'mt-5' : 'mt-0')
+			.setParent(panel);
 
-		const fieldsHelp = component.create('typography', { text: fieldsHelperText, size: 'sm', color: 'slate-600' });
-		fieldsHelp.className = 'mt-1';
-		shell.appendChild(fieldsHelp);
+		component.create('typography', { text: fieldsHelperText, size: 'sm', color: 'slate-600' })
+			.setClassName('mt-1')
+			.setParent(panel);
 
-		const tableHost = component.create('div');
-		tableHost.className = 'mt-3';
-		tableHost.dataset.role = 'fields-table-host';
-		shell.appendChild(tableHost);
+		const tableHost = component.create('div')
+			.setClassName('list-table-host mt-3')
+			.setData('role', 'list-table-host')
+			.setParent(panel);
 
 		const addFieldButton = component.create('button', {
 			label: 'Añadir campo',
+			variant: 'secondary',
+			size: 'sm',
 			dataRole: 'plugin-config-action',
 			dataAction: 'add-field',
 		});
-		addFieldButton.className = 'mt-3 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-		shell.appendChild(addFieldButton);
-
-		page.appendChild(shell);
-
-		const footer = component.create('footer');
-		footer.className = 'mt-4 flex flex-wrap gap-2';
-		footer.appendChild(component.create('button', {
-			label: 'Volver',
-			dataRole: 'plugin-config-action',
-			dataAction: 'back',
-		}));
-		footer.appendChild(component.create('button', {
-			label: 'Guardar',
-			variant: 'primary',
-			dataRole: 'plugin-config-action',
-			dataAction: 'save',
-		}));
-		page.appendChild(footer);
+		addFieldButton.classList.add('mt-3');
+		panel.append(addFieldButton);
 
 		this.renderFieldsTable(tableHost);
-		this.bindTableEvents(page);
-		this.bindPageActions(page);
-
-		this.#container.replaceChildren();
-		this.#container.appendChild(page);
+		this.bindTableEvents(panel);
+		this.bindPageActions(panel, { addFieldButton, backButton, saveButton });
 	}
 
 	renderFieldsTable(container) {
@@ -153,7 +163,7 @@ export class PluginConfig {
 
 		const table = new DynamicTable(records, { fields: [] }, container, {
 			showPagination: false,
-			wrapperClassName: 'overflow-x-auto rounded-xl border border-slate-200 bg-white',
+			wrapperClassName: 'overflow-x-auto',
 			tableClassName: 'min-w-[920px] w-full border-separate border-spacing-0 text-left',
 			tableDataRole: 'plugin-config-table',
 			extraColumns,
@@ -162,7 +172,6 @@ export class PluginConfig {
 				row.className = (field.__rowIndex ?? 0) % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
 			},
 		});
-
 		table.render();
 	}
 
@@ -178,7 +187,7 @@ export class PluginConfig {
 
 	fieldsHelperText(isExtension) {
 		if (isExtension) {
-			return 'Define los campos de la extension y a que entidad se aplica. Desactiva una fila para excluirla del schema activo.';
+			return 'Define los campos de la extensión y a qué entidad se aplica. Desactiva una fila para excluirla del esquema activo.';
 		}
 
 		return 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
@@ -239,19 +248,16 @@ export class PluginConfig {
 
 	renderSourceBadge(field) {
 		const { source } = this.fieldMeta(field);
-		const badge = component.create('span');
-		badge.dataset.role = 'field-source';
-		badge.className = 'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide';
+		const badge = component.create('span')
+			.setData('role', 'field-source')
+			.setClassName('inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide');
 
 		if (source === 'base') {
-			badge.classList.add('bg-red-100', 'text-red-700');
-			badge.textContent = 'base';
+			badge.addClass('bg-red-100', 'text-red-700').setText('base');
 		} else if (source === 'suggested') {
-			badge.classList.add('bg-sky-100', 'text-sky-700');
-			badge.textContent = 'sugerido';
+			badge.addClass('bg-sky-100', 'text-sky-700').setText('sugerido');
 		} else {
-			badge.classList.add('bg-emerald-100', 'text-emerald-700');
-			badge.textContent = 'adicional';
+			badge.addClass('bg-emerald-100', 'text-emerald-700').setText('adicional');
 		}
 
 		return badge;
@@ -264,16 +270,15 @@ export class PluginConfig {
 			disabled: immutableField,
 			size: 'small',
 		});
-		input.dataset.name = 'active';
-		return input;
+		return input.setData('name', 'active');
 	}
 
 	renderKeyInput(field) {
 		const { keyReadonly } = this.fieldMeta(field);
-		const input = component.create('inputText');
-		input.className = 'w-full rounded-md border-slate-300 text-sm';
-		input.dataset.name = 'key';
-		input.value = String(field.key ?? '');
+		const input = component.create('inputText')
+			.setClassName('w-full rounded-md border-slate-300 text-sm')
+			.setData('name', 'key')
+			.setValue(String(field.key ?? ''));
 		input.readOnly = keyReadonly;
 		return input;
 	}
@@ -284,19 +289,19 @@ export class PluginConfig {
 			name: 'type',
 			value: field.type || 'string',
 			options: this.getFieldTypeOptions(),
-		});
-		select.className = 'w-full rounded-md border-slate-300 text-sm';
-		select.dataset.name = 'type';
+		})
+			.setClassName('w-full rounded-md border-slate-300 text-sm')
+			.setData('name', 'type');
 		select.disabled = !editable;
 		return select;
 	}
 
 	renderLabelInput(field) {
 		const { editable } = this.fieldMeta(field);
-		const input = component.create('inputText');
-		input.className = 'w-full rounded-md border-slate-300 text-sm';
-		input.dataset.name = 'label';
-		input.value = String(field.label ?? '');
+		const input = component.create('inputText')
+			.setClassName('w-full rounded-md border-slate-300 text-sm')
+			.setData('name', 'label')
+			.setValue(String(field.label ?? ''));
 		input.readOnly = !editable;
 		return input;
 	}
@@ -308,8 +313,7 @@ export class PluginConfig {
 			disabled: !editable,
 			size: 'small',
 		});
-		input.dataset.name = 'required';
-		return input;
+		return input.setData('name', 'required');
 	}
 
 	renderSummaryViewInput(field) {
@@ -319,24 +323,21 @@ export class PluginConfig {
 			disabled: !editable,
 			size: 'small',
 		});
-		input.dataset.name = 'summaryView';
-		return input;
+		return input.setData('name', 'summaryView');
 	}
 
 	renderActions(field) {
 		const { immutableField } = this.fieldMeta(field);
-		const actions = component.create('div');
-		actions.className = 'flex flex-wrap items-center gap-2';
+		const actions = component.create('div').setClassName('flex flex-wrap items-center gap-2');
 		const rowIndex = Number(field.__rowIndex ?? 0);
 		const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
 
-		actions.appendChild(this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0));
-		actions.appendChild(this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex));
+		this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0).setParent(actions);
+		this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex).setParent(actions);
 
 		if (!immutableField) {
 			const removeButton = this.buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false);
-			removeButton.classList.add('ml-2');
-			actions.appendChild(removeButton);
+			removeButton.addClass('ml-2').setParent(actions);
 		}
 
 		return actions;
@@ -351,8 +352,7 @@ export class PluginConfig {
 			disabled,
 			onClick: () => {},
 		});
-		button.dataset.rowIndex = String(rowIndex);
-		return button;
+		return button.setData('rowIndex', rowIndex);
 	}
 
 	bindTableEvents(wrapper) {
@@ -401,7 +401,7 @@ export class PluginConfig {
 
 			this.applySavedState(data);
 
-			this.#message = 'Configuracion guardada correctamente.';
+			this.#message = 'Configuración guardada correctamente.';
 			this.#messageType = 'success';
 			this.render();
 		} catch (error) {
@@ -429,11 +429,16 @@ export class PluginConfig {
 	}
 
 	renderError(message) {
-		const banner = component.create('div');
-		banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
-		banner.textContent = message;
 		this.#container.replaceChildren();
-		this.#container.appendChild(banner);
+		const layout = FormLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title)
+			.setDescription(this.#description)
+			.build();
+		const banner = component.create('alert', {
+			type: 'error',
+			message,
+		}).setData('role', 'plugin-config-error').setData('type', 'error');
+		layout.setNotification(banner);
 	}
 
 	getFieldTypeOptions() {
@@ -441,18 +446,18 @@ export class PluginConfig {
 			.map((type) => ({ value: type, label: type }));
 	}
 
-	bindPageActions(wrapper) {
-		wrapper.querySelector('[data-action="add-field"]').addEventListener('click', () => {
+	bindPageActions(wrapper, actions) {
+		actions.addFieldButton.addEventListener('click', () => {
 			this.#state.config.fields.push(this.createEmptyField());
 			this.clearNotice();
 			this.render();
 		});
 
-		wrapper.querySelector('[data-action="back"]').addEventListener('click', () => {
+		actions.backButton.addEventListener('click', () => {
 			this.#onBack();
 		});
 
-		wrapper.querySelector('[data-action="save"]').addEventListener('click', async () => {
+		actions.saveButton.addEventListener('click', async () => {
 			await this.saveFromDom(wrapper);
 		});
 	}

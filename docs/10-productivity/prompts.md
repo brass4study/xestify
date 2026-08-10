@@ -1093,3 +1093,17 @@ Ok, paremos una comprobacion final y detallada de la story 9.4 para asegurarnos 
 **Iteraciones:** 8
 **Lección:** En una refactorización arquitectónica de frontend sin bundler, el riesgo principal no es el código de negocio sino la coherencia entre rutas relativas, mocks de tests HTML standalone y documentación activa; si no se validan juntos, la arquitectura parece correcta pero la ejecución real se degrada.
 **Estado final:** STORY 9.4 implementada y verificada en navegador integrado con 17/17 runners HTML y 146/146 assertions, sin errores de consola; siguiente foco del backlog: STORY 9.5.
+
+### STORY 9.5 — Shell SPA y plantillas de navegacion
+**Prompt:**
+```
+Retomemos la story 9.5, comprueba su estado y valida los puntos que faltan por implementar
+```
+**Prompt de actualización documental:**
+```
+Actualiza el resto de documentacion para reflejar el estado actual
+```
+**Resultado:** Se auditó la implementación local contra los seis criterios de la story, se confirmó la integración del shell y las plantillas en las páginas principales, se migró Login desde una estructura DOM manual a la plantilla standalone `login` de `PageLayout`, se eliminó el duplicado sin uso `ShellLayoutView.js` y se añadió cobertura arquitectónica del contrato de Login.
+**Iteraciones:** 4
+**Lección:** Los requisitos de navegación básica del shell deben validarse en 9.5 sin adelantar los criterios de refresh, back/forward y mapa hash completo reservados para 9.6; separar ambos alcances evita cerrar una story con deuda ficticia o ampliar el cambio innecesariamente.
+**Estado final:** STORY 9.5 implementada y verificada en navegador integrado con 17/17 runners HTML y 166/166 assertions; el entrypoint real de Login monta una única plantilla sin navegación autenticada ni errores de consola. Siguiente foco: STORY 9.6.

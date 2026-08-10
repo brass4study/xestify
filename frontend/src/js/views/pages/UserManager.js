@@ -1,5 +1,6 @@
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { hashFromPage, userDetailPage } from '../../controllers/RouteMapController.js';
+import { ListLayout } from '../layout/ListLayout.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class UserManager {
@@ -9,7 +10,14 @@ export class UserManager {
 	#message;
 	#messageType;
 	#onViewUser;
+	#shellLayout;
+	#title;
+	#description;
 
+	/**
+	 * @param {HTMLElement|string} container
+	 * @param {{api?: Object, users?: Object[], shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onViewUser?: Function}|Object[]} options
+	 */
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
 		this.#api = null;
@@ -17,6 +25,11 @@ export class UserManager {
 		this.#message = null;
 		this.#messageType = null;
 		this.#onViewUser = null;
+		this.#shellLayout = options.shellLayout ?? null;
+		this.#title = typeof options.title === 'string' ? options.title : 'Gestión de usuarios';
+		this.#description = typeof options.description === 'string'
+			? options.description
+			: 'Administra cuentas, roles y accesos.';
 
 		if (Array.isArray(options)) {
 			this.#users = options;
@@ -52,42 +65,33 @@ export class UserManager {
 	}
 
 	#render() {
-		this.#container.replaceChildren();
-
-		const page = component.create('page', { dataRole: 'user-manager-page' });
-		page.appendChild(component.create('pageHeader', {
-			title: 'Gestión de usuarios',
-			subtitle: 'Administra usuarios, roles, accesos y recuperación de contraseña.',
-		}));
+		const layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title)
+			.setDescription(this.#description)
+			.build();
+		const contentHost = layout.getContentTarget();
+		layout.setNotification(null);
 
 		if (this.#message !== null) {
-			const feedback = component.create('alert', {
-				type: this.#messageType === 'error' ? 'error' : 'success',
+			const type = this.#messageType === 'error' ? 'error' : 'success';
+			const banner = component.create('alert', {
+				type,
 				message: this.#message,
-			});
-			feedback.dataset.role = 'user-manager-feedback';
-			page.appendChild(feedback);
+			}).setData('role', 'user-manager-feedback').setData('type', type);
+			layout.setNotification(banner);
 		}
-
-		const card = component.create('div');
-		card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-panel';
 
 		if (this.#users.length === 0) {
-			card.appendChild(component.create('emptyState', {
+			component.create('emptyState', {
 				title: 'Sin usuarios',
 				description: 'No hay usuarios disponibles todavía.',
-			}));
+			}).setParent(contentHost);
 		} else {
-			card.appendChild(this.#renderTable());
+			this.#renderTable(layout);
 		}
-
-		page.appendChild(card);
-		this.#container.appendChild(page);
 	}
 
-	#renderTable() {
-		const wrap = component.create('div');
-
+	#renderTable(layout) {
 		const rows = this.#users.map((user) => ({
 			__raw: user,
 			name: this.#displayName(user),
@@ -105,7 +109,17 @@ export class UserManager {
 			],
 		};
 
-		const table = new DynamicTable(rows, schema, wrap, {
+		layout.createTable(rows, schema, {
+			onRefresh: async (table) => {
+				await this.#loadUsers();
+				table.setRecords(this.#users.map((user) => ({
+					__raw: user,
+					name: this.#displayName(user),
+					email: this.#displayEmail(user),
+					roles: this.#displayRoles(user),
+					created_at: this.#formatDate(user?.created_at),
+				})));
+			},
 			extraColumns: [
 				{
 					label: 'Avatar',
@@ -118,41 +132,36 @@ export class UserManager {
 				},
 			],
 		});
-
-		table.render();
-		return wrap;
 	}
 
 	#avatarContent(user) {
-		const avatar = component.create('span');
-		avatar.className = 'inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-bold text-brand-700';
+		const avatar = component.create('span')
+			.setClassName('inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-bold text-brand-700');
 
 		if (typeof user?.avatar === 'string' && user.avatar !== '') {
-			const image = component.create('img');
-			image.src = user.avatar;
-			image.alt = `Avatar de ${this.#displayName(user)}`;
-			avatar.appendChild(image);
+			component.create('img')
+				.setAttributes({ src: user.avatar, alt: `Avatar de ${this.#displayName(user)}` })
+				.setParent(avatar);
 		} else {
-			avatar.textContent = this.#getInitials(this.#displayName(user), this.#displayEmail(user));
+			avatar.setText(this.#getInitials(this.#displayName(user), this.#displayEmail(user)));
 		}
 
 		return avatar;
 	}
 
 	#buildEditAction(user) {
-		const actions = component.create('div');
-		actions.className = 'flex flex-wrap gap-1.5';
+		const actions = component.create('div').setClassName('flex flex-wrap gap-1.5');
 
 		const view = DynamicTable.buildActionButton({
 			label: 'Editar',
-			icon: 'fa-pencil',
+			icon: 'fa-pen',
 			tone: 'sky',
 			onClick: () => {
 				this.#openUserDetail(user);
 			},
 		});
 
-		actions.appendChild(view);
+		view.setParent(actions);
 		return actions;
 	}
 

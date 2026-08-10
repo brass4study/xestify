@@ -16,30 +16,30 @@ export class Modal {
 			title: options.title ?? 'Mensaje',
 			content: options.content ?? '',
 			onClose: () => this.close(),
-		});
-		this.#overlay.hidden = true;
-		this.#overlay.classList.add('hidden');
-		this.#overlay.dataset.role = 'modal-overlay';
+		})
+			.setVisible(false)
+			.addClass('hidden')
+			.setData('role', 'modal-overlay');
 
 		this.#dialog = this.#overlay.querySelector('[data-role="ui-modal-dialog"]');
 		if (!(this.#dialog instanceof HTMLElement)) {
 			throw new TypeError('Modal dialog node not found');
 		}
-		this.#dialog.dataset.role = 'modal-dialog';
-		this.#dialog.setAttribute('role', 'dialog');
-		this.#dialog.setAttribute('aria-modal', 'true');
+		this.#dialog
+			.setData('role', 'modal-dialog')
+			.setAttributes({ role: 'dialog', 'aria-modal': 'true' });
 
 		this.#titleEl = this.#overlay.querySelector('[data-role="ui-modal-title"]');
 		if (!(this.#titleEl instanceof HTMLElement)) {
 			throw new TypeError('Modal title node not found');
 		}
-		this.#titleEl.dataset.role = 'modal-title';
+		this.#titleEl.setData('role', 'modal-title');
 
 		this.#contentEl = this.#overlay.querySelector('[data-role="ui-modal-content"]');
 		if (!(this.#contentEl instanceof HTMLElement)) {
 			throw new TypeError('Modal content node not found');
 		}
-		this.#contentEl.dataset.role = 'modal-content';
+		this.#contentEl.setData('role', 'modal-content');
 
 		this.setContent(options.content ?? '');
 

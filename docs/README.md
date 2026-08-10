@@ -6,7 +6,7 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 
 ## Estado actual y referencias clave
 
-- **Corte funcional:** STORY 7.3 incluida ([ver backlog](11-backlog/backlog.md))
+- **Corte funcional:** STORY 9.5 incluida; EPIC 9 en progreso y siguiente foco STORY 9.6 ([ver backlog](11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado solo por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Decisiones técnicas:** [09-history/decisiones-tecnicas.md](09-history/decisiones-tecnicas.md)
 - **Productividad y flujo IA:** [10-productivity/README.md](10-productivity/README.md)
@@ -21,7 +21,7 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 4. [03-api](03-api/README.md) — Especificación y contratos de la API REST
 5. [04-plugins](04-plugins/README.md) — Plantillas y desarrollo de plugins/extensiones
 6. [05-frontend](05-frontend/README.md) — UI dinámica y componentes frontend
-7. [06-backend](06-backend/README.md) — (Reservado para documentación backend)
+7. [06-backend](06-backend/README.md) — Backend PHP, responsabilidades y referencias técnicas
 8. [07-security](07-security/README.md) — Seguridad y modelo local
 9. [08-operations](08-operations/README.md) — Despliegue, actualizaciones y operación
 10. [09-history](09-history/README.md) — Historial de decisiones y migraciones

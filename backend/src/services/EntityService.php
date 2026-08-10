@@ -122,6 +122,52 @@ final class EntityService
         return $this->repository->all($entitySlug, $includeDeleted);
     }
 
+    /**
+     * @return array{records: array<int, array<string, mixed>>, total: int, sort: string}
+     */
+    public function listRecordsPage(
+        string $entitySlug,
+        int $page,
+        int $pageSize,
+        string $sort,
+        string $direction
+    ): array {
+        $schema = $this->fetchCurrentSchema($entitySlug);
+        $allowedSorts = array_merge(['id', 'created_at', 'updated_at'], $this->sortableSchemaFields($schema));
+        $resolvedSort = in_array($sort, $allowedSorts, true) ? $sort : 'created_at';
+        $result = $this->repository->paginate(
+            $entitySlug,
+            $page,
+            $pageSize,
+            $resolvedSort,
+            $direction
+        );
+        $result['sort'] = $resolvedSort;
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<int, string>
+     */
+    private function sortableSchemaFields(array $schema): array
+    {
+        $fields = [];
+        foreach (['fields', 'custom_fields'] as $sectionName) {
+            $section = $schema[$sectionName] ?? [];
+            if (!is_array($section)) {
+                continue;
+            }
+            foreach ($section as $key => $field) {
+                $name = is_string($key) ? $key : ($field['name'] ?? $field['key'] ?? null);
+                if (is_string($name) && preg_match('/^[A-Za-z_]\w*$/', $name) === 1) {
+                    $fields[] = $name;
+                }
+            }
+        }
+        return $fields;
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

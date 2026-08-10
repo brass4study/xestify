@@ -5,8 +5,10 @@ export class ButtonComponent extends BaseComponent {
   initialize(options = {}) {
     this.type = options.type ?? 'button';
     this.className = [
-      'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1',
+      'inline-flex items-center justify-center gap-2 rounded-lg font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1',
       this.variantClassName(options.variant),
+      this.sizeClassName(options.size),
+      typeof options.className === 'string' ? options.className : '',
     ].join(' ');
 
     if (typeof options.label === 'string' && options.label !== '') {
@@ -33,14 +35,32 @@ export class ButtonComponent extends BaseComponent {
       this.addEventListener('click', options.onClick);
     }
 
-    if (typeof options.icon === 'string' && options.icon !== '') {
-      const icon = component.create('i', {
-        className: `inline-flex items-center ${options.icon}`,
-        attributes: { 'aria-hidden': 'true' },
-      });
-      this.prepend(icon);
-    }
+    this.prependIcon(options.icon);
 
+    return this;
+  }
+
+  sizeClassName(size) {
+    const sizeClasses = {
+      xs: 'min-h-8 px-2 py-1 text-xs',
+      sm: 'min-h-8 px-3 py-1 text-xs',
+      md: 'min-h-10 px-4 py-2 text-sm',
+    };
+    return sizeClasses[size] ?? sizeClasses.md;
+  }
+
+  prependIcon(icon) {
+    if (typeof icon !== 'string' || icon === '') {
+      return this;
+    }
+    const iconClassName = icon.includes('fa-') && !icon.includes('fa-solid')
+      ? `fa-solid ${icon}`
+      : icon;
+    const iconElement = component.create('i', {
+      className: `inline-flex items-center ${iconClassName}`,
+      attributes: { 'aria-hidden': 'true' },
+    });
+    this.prepend(iconElement);
     return this;
   }
 

@@ -26,6 +26,7 @@ use Xestify\exceptions\RepositoryException;
 class GenericRepository
 {
     private const TABLE = 'plugin_entity_data';
+    private const SELECT_ALL = 'SELECT * FROM ';
     private const SQL_UPDATE = 'UPDATE plugin_entity_data';
 
     private PDO $pdo;
@@ -43,7 +44,7 @@ class GenericRepository
     public function find(string $id): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM ' . self::TABLE .
+            self::SELECT_ALL . self::TABLE .
             ' WHERE id = :id AND deleted_at IS NULL'
         );
         $this->execute($stmt, [':id' => $id]);
@@ -59,7 +60,7 @@ class GenericRepository
      */
     public function all(string $entitySlug, bool $includeDeleted = false): array
     {
-        $sql = 'SELECT * FROM ' . self::TABLE . ' WHERE entity_slug = :slug';
+        $sql = self::SELECT_ALL . self::TABLE . ' WHERE entity_slug = :slug';
         if (!$includeDeleted) {
             $sql .= ' AND deleted_at IS NULL';
         }
@@ -69,6 +70,42 @@ class GenericRepository
         $this->execute($stmt, [':slug' => $entitySlug]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * @return array{records: array<int, array<string, mixed>>, total: int}
+     */
+    public function paginate(
+        string $entitySlug,
+        int $page,
+        int $pageSize,
+        string $sort,
+        string $direction,
+        bool $includeDeleted = false
+    ): array {
+        $where = ' WHERE entity_slug = :slug';
+        if (!$includeDeleted) {
+            $where .= ' AND deleted_at IS NULL';
+        }
+
+        $countStmt = $this->pdo->prepare('SELECT COUNT(*) FROM ' . self::TABLE . $where);
+        $this->execute($countStmt, [':slug' => $entitySlug]);
+        $total = (int) $countStmt->fetchColumn();
+
+        $safeSort = preg_match('/^[A-Za-z_]\w*$/', $sort) === 1 ? $sort : 'created_at';
+        $safeDirection = $direction === 'DESC' ? 'DESC' : 'ASC';
+        $orderBy = in_array($safeSort, ['id', 'created_at', 'updated_at'], true)
+            ? $safeSort
+            : "content->>'{$safeSort}'";
+        $sql = self::SELECT_ALL . self::TABLE . $where
+            . " ORDER BY {$orderBy} {$safeDirection}, id ASC LIMIT :limit OFFSET :offset";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':slug', $entitySlug);
+        $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', ($page - 1) * $pageSize, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['records' => $stmt->fetchAll(), 'total' => $total];
     }
 
     /**

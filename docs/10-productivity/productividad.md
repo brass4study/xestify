@@ -1075,3 +1075,18 @@
   - Actualizó la documentación técnica y de backlog para reflejar el frontend MVC estricto y el nuevo punto de entrada del runtime.
 - **Iteraciones:** 8 (definición de criterio MVC, refactor de rutas, ajuste de imports, validación en navegador, corrección de tests, auditoría completa y limpieza de hallazgos de Sonar)
 - **Decisión manual:** Mantener `app.js` en la raíz como entrypoint localizable y sin lógica de aplicación; conservar el cliente API y el runtime de paneles de plugin en `models`, y mover la traducción de rutas y la orquestación de navegación a `controllers` sin abrir capas paralelas.
+
+### STORY 9.5: Shell SPA y plantillas de navegacion
+- **Fecha:** 2026-08-10
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** No medido; la sesión retomó una implementación local previa
+- **Aceleración:** No calculable con datos fiables
+- **Qué hizo IA:**
+  - Auditó cada criterio de aceptación contra el código y los tests locales, separando el alcance de shell de los requisitos futuros de routing de STORY 9.6.
+  - Validó `ShellLayout`, `PageLayout`, `ListLayout` y `FormLayout`, además de su integración en las páginas principales.
+  - Detectó que Login construía un shell manual paralelo y lo migró a la plantilla standalone `login` de `PageLayout`.
+  - Eliminó `ShellLayoutView.js`, implementación duplicada y sin consumidores.
+  - Añadió cobertura arquitectónica de Login y ejecutó los 17 runners HTML en el navegador integrado con 166/166 aserciones.
+  - Auditó y alineó README, índices documentales, arquitectura MVC, navegación, decisiones técnicas, backlog y roadmap con el cierre real de la story.
+- **Iteraciones:** 5 (auditoría de alcance, corrección focal, validación completa, alineación documental y normalización de naming)
+- **Decisión manual:** Mantener una única implementación persistente de `ShellLayout` para páginas autenticadas y resolver Login mediante `PageLayout` standalone, sin navbar y sin introducir otro layout paralelo.

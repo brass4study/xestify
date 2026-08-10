@@ -37,8 +37,9 @@ mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cad
 - Result states: `Area > Estado` cuando el contexto exista; si no, pantalla aislada.
 
 Estos breadcrumbs forman parte del contrato base definido en STORY 9.2. La
-implementacion visual completa y reusable se montara en STORY 9.5 junto al shell
-SPA, usando esta jerarquia como guia de render.
+implementacion visual reusable ya se materializa desde STORY 9.5 mediante
+`PageLayout` y el componente `Breadcrumb`, usando esta jerarquia como guia de
+render dentro del shell SPA.
 
 ## Mapa de rutas hash
 
@@ -111,8 +112,8 @@ Estas convenciones no externalizan textos todavia; solo dejan el contrato y la
 estructura listos para que STORY 9.7 aplique i18n y theming sin rehacer la
 anatomia de paginas definida aqui.
 
-## Implicaciones para stories siguientes
+## Estado de implementacion y stories siguientes
 
-- STORY 9.3 debe tomar estas plantillas como contrato para `Page`, `PageHeader`, `Breadcrumb`, `Empty` y `Alert`.
-- STORY 9.5 debe montar el shell SPA usando estas areas y jerarquias de pagina.
+- STORY 9.3 implementó los componentes `Page`, `PageHeader`, `Breadcrumb`, `Empty` y `Alert` sobre estas plantillas.
+- STORY 9.5 montó el shell SPA y los layouts de página usando estas áreas y jerarquías.
 - STORY 9.6 debe formalizar el router sobre el mapa ya centralizado en `RouteMapController.js` y `PluginRouteController.js`.

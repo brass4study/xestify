@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>UserProfileTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="../src/css/tailwind.generated.css">
   <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
@@ -12,6 +13,7 @@
 
 <script type="module">
   import { UserProfile } from '../src/js/views/pages/UserProfile.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import { AppState } from '../src/js/models/StateModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
 
@@ -40,6 +42,13 @@
     }
   }
 
+  async function waitForText(element, expectedText, timeout = 500) {
+    const startedAt = Date.now();
+    while (!element.textContent.includes(expectedText) && Date.now() - startedAt < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+
   separator();
 
   await test('renderiza campos de contraseña y no muestra reset/borrado', async () => {
@@ -53,13 +62,69 @@
     assertTrue(container.querySelector('input[name="currentPassword"]') !== null, 'Debe mostrar contraseña actual');
     assertTrue(container.querySelector('input[name="newPassword"]') !== null, 'Debe mostrar nueva contraseña');
     assertTrue(container.querySelector('input[name="confirmPassword"]') !== null, 'Debe mostrar repetir contraseña');
-    assertTrue(container.querySelector('[data-password-strength]') !== null, 'Debe mostrar medidor de contraseña');
+    const passwordStrength = container.querySelector('[data-password-strength]');
+    assertTrue(passwordStrength !== null, 'Debe renderizar el medidor de contraseña');
+    assertTrue(passwordStrength.hidden, 'El medidor debe permanecer oculto sin nueva contraseña inicial');
+    assertEquals(getComputedStyle(passwordStrength).display, 'none', 'El CSS debe ocultar el medidor aunque use grid');
     assertTrue(container.querySelector('[data-userconfig-reset]') === null, 'No debe mostrar botón reset en perfil');
     assertTrue(container.querySelector('[data-userconfig-delete]') === null, 'No debe mostrar botón borrar en perfil');
     assertTrue(container.querySelector('[data-userconfig-avatar-file]') !== null, 'Debe mostrar control para subir/cambiar avatar');
 
     const createdAtInput = container.querySelector('input[name="createdAt"]');
     assertEquals(createdAtInput.value, '2026-05-15', 'Debe mostrar la fecha de alta real');
+
+    assertTrue(container.querySelector('[data-role="form-section"]') === null, 'FormLayout no debe crear una sección intermedia');
+    assertTrue(container.querySelector('[data-role="form-content-host"]') === null, 'FormLayout no debe crear un content host intermedio');
+    const panel = container.querySelector('[data-role="form-panel"]');
+    const actions = container.querySelector('[data-role="form-actions"]');
+    const saveButton = [...actions.querySelectorAll('button')].find((button) => button.textContent === 'Guardar cambios');
+    assertTrue(panel.className.includes('bg-white'), 'UserProfile debe usar el panel visual de FormLayout');
+    assertTrue(panel.querySelector('form') !== null, 'El formulario de usuario debe estar dentro del panel');
+    assertTrue(actions.parentElement === panel.parentElement, 'Las acciones de usuario deben quedar fuera del panel');
+    assertTrue(saveButton !== undefined, 'Guardar cambios debe renderizarse en las acciones compartidas');
+  });
+
+  await test('muestra el medidor al editar nueva contraseña o recibir un valor inicial', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    const newPassword = container.querySelector('input[name="newPassword"]');
+    const passwordStrength = container.querySelector('[data-password-strength]');
+
+    newPassword.dispatchEvent(new Event('input', { bubbles: true }));
+    assertTrue(!passwordStrength.hidden, 'Editar nueva contraseña debe mostrar el medidor');
+
+    const widgetWithInitialValue = page.buildPasswordStrengthWidget('InitialPass!123');
+    assertTrue(!widgetWithInitialValue.hidden, 'Un valor inicial debe mostrar el medidor desde el render');
+  });
+
+  await test('representa las cinco reglas con seis niveles de fortaleza', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    const page = new UserProfile(container, { ...api.user }, api);
+    const passwordStrength = container.querySelector('[data-password-strength]');
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+    const cases = [
+      { value: '', rules: 0, color: 'rgb(220 38 38)' },
+      { value: '1', rules: 1, color: 'rgb(232 69 32)' },
+      { value: 'a', rules: 2, color: 'rgb(243 100 25)' },
+      { value: 'Aa', rules: 3, color: 'rgb(204 125 32)' },
+      { value: 'Aa!', rules: 4, color: 'rgb(113 144 53)' },
+      { value: 'LongPass!1', rules: 5, color: 'rgb(22 163 74)' },
+    ];
+
+    for (const testCase of cases) {
+      const complexity = passwordStrength.update({
+        value: testCase.value,
+        context: { currentPassword: 'OldPass!123' },
+      });
+      const fill = passwordStrength.querySelector('[data-role="password-fill"]');
+      assertEquals(complexity.metRules, testCase.rules, `Conteo incorrecto para nivel ${testCase.rules}`);
+      assertEquals(fill.dataset.color, testCase.color, `Color incorrecto para nivel ${testCase.rules}`);
+    }
+    assertEquals(passwordStrength.dataset.levelCount, '6', 'Cinco reglas deben generar seis niveles');
   });
 
   await test('usa utilidades genéricas para el bloque de avatar', async () => {
@@ -72,9 +137,44 @@
 
     const avatarEditor = container.querySelector('[data-userconfig-avatar-file]');
     assertTrue(avatarEditor !== null, 'Debe renderizar el editor de avatar con clase genérica');
-    assertTrue(container.querySelector('[data-userconfig-avatar-value]') !== null, 'Debe renderizar el valor oculto del avatar');
-    assertTrue(container.querySelector('[data-userconfig-select-avatar]') !== null, 'Debe renderizar las acciones del avatar');
+    const avatarValue = container.querySelector('[data-userconfig-avatar-value]');
+    const selectAvatarButton = container.querySelector('[data-userconfig-select-avatar]');
+    assertEquals(avatarEditor.type, 'file', 'El selector de avatar debe ser un input file');
+    assertTrue(avatarEditor.hidden, 'El selector de archivo nativo debe permanecer oculto');
+    assertTrue(avatarValue !== null, 'Debe renderizar el valor oculto del avatar');
+    assertEquals(avatarValue.type, 'hidden', 'El valor del avatar no debe mostrarse como input de texto');
+    assertTrue(selectAvatarButton !== null, 'Debe renderizar las acciones del avatar');
+    let fileSelectorOpened = false;
+    avatarEditor.click = () => {
+      fileSelectorOpened = true;
+    };
+    selectAvatarButton.click();
+    assertTrue(fileSelectorOpened, 'Subir avatar debe abrir el selector de archivo');
     assertTrue(container.querySelector('[data-role="profile-avatar-legacy"]') === null, 'No debe usar clases específicas de la vista');
+  });
+
+  await test('cambiar avatar no duplica las acciones de la shell', async () => {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    const api = new MockApi();
+    api.user.avatar = 'data:image/png;base64,abc';
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(shell.getTarget('shell-main-content'), { ...api.user }, api, { shellLayout: shell });
+    assertTrue(page instanceof UserProfile, 'Debe crear el perfil dentro de la shell');
+
+    const avatarInput = shell.getTarget('shell-main-content').querySelector('[data-userconfig-avatar-file]');
+    const avatarFile = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+    const avatarFiles = { 0: avatarFile, length: 1, item: () => avatarFile };
+    Object.defineProperty(avatarInput, 'files', { value: avatarFiles, configurable: true });
+    avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
+    const notifications = shell.getTarget('shell-main-notifications');
+    await waitForText(notifications, 'Avatar actualizado.');
+
+    assertTrue(notifications.textContent.includes('Avatar actualizado.'), 'El cambio de avatar debe completar el rerender');
+    const saveButtons = [...shell.getTarget('shell-main-actions').querySelectorAll('button')]
+      .filter((button) => button.textContent === 'Guardar cambios');
+    assertEquals(saveButtons.length, 1, 'Cambiar avatar debe conservar una única acción Guardar cambios');
   });
 
   await test('permite limpiar avatar y lo envía al guardar', async () => {
@@ -88,6 +188,14 @@
 
     const removeAvatarButton = container.querySelector('[data-userconfig-remove-avatar]');
     assertTrue(removeAvatarButton !== null, 'Debe mostrar botón para quitar avatar cuando existe');
+    const changeAvatarButton = container.querySelector('[data-userconfig-select-avatar]');
+    const avatarEditor = container.querySelector('[data-userconfig-avatar-file]');
+    let fileSelectorOpened = false;
+    avatarEditor.click = () => {
+      fileSelectorOpened = true;
+    };
+    changeAvatarButton.click();
+    assertTrue(fileSelectorOpened, 'Cambiar avatar debe abrir el selector de archivo');
 
     removeAvatarButton.click();
 
@@ -120,7 +228,7 @@
     const hasPutCall = api.calls.some((call) => call.method === 'PUT' && call.url === '/users/me');
     assertTrue(!hasPutCall, 'No debe enviar PUT si falta la contraseña actual');
 
-    const feedback = container.querySelector('div.rounded-lg.border.px-3.py-2.text-sm');
+    const feedback = container.querySelector('[data-role="user-config-feedback"]');
     assertTrue(feedback !== null, 'Debe mostrar feedback de error');
     assertTrue(feedback.textContent.includes('contraseña actual'), 'Debe indicar que falta contraseña actual');
   });

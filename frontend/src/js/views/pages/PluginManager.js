@@ -3,6 +3,7 @@
  */
 
 import { Api } from '../../models/ApiClientModel.js';
+import { ListLayout } from '../layout/ListLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { Modal } from '../modules/Modal.js';
 import { component } from '../modules/ComponentFactory.js';
@@ -15,12 +16,25 @@ export class PluginManager {
 	#updatesBySlug = {};
 	#feedbackMessage = null;
 	#feedbackType = null;
+	#shellLayout;
+	#title;
+	#description;
 
+	/**
+	 * @param {HTMLElement|string} container
+	 * @param {Object|undefined} api
+	 * @param {{shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onConfigure?: Function}} options
+	 */
 	constructor(container, api = undefined, options = {}) {
 		const resolved = this.resolveContainer(container);
 		this.#container = resolved;
 		this.#api = api ?? new Api();
 		this.#onConfigure = typeof options.onConfigure === 'function' ? options.onConfigure : () => {};
+		this.#shellLayout = options.shellLayout ?? null;
+		this.#title = typeof options.title === 'string' ? options.title : 'Gestión de plugins';
+		this.#description = typeof options.description === 'string'
+			? options.description
+			: 'Sincroniza, activa y configura plugins del sistema.';
 	}
 
 	async init() {
@@ -35,11 +49,11 @@ export class PluginManager {
 			]);
 
 			if (pluginsResponse?.ok === false) {
-				throw new Error(pluginsResponse?.error?.message ?? 'Error loading plugins');
+				throw new Error(pluginsResponse?.error?.message ?? 'Error al cargar los plugins');
 			}
 
 			if (updatesResponse?.ok === false) {
-				throw new Error(updatesResponse?.error?.message ?? 'Error loading plugin updates');
+				throw new Error(updatesResponse?.error?.message ?? 'Error al cargar las actualizaciones de plugins');
 			}
 
 			const pluginsPayload = pluginsResponse?.data ?? pluginsResponse;
@@ -49,7 +63,7 @@ export class PluginManager {
 			this.#updatesBySlug = this.#indexUpdates(Array.isArray(updatesPayload?.updates) ? updatesPayload.updates : []);
 			this.#render();
 		} catch (error) {
-			this.renderError(`Error loading plugins: ${error.message}`);
+			this.renderError(`Error al cargar los plugins: ${error.message}`);
 		}
 	}
 
@@ -64,53 +78,58 @@ export class PluginManager {
 	}
 
 	#render() {
-		const page = component.create('page', { dataRole: 'plugin-manager-page' });
+		const syncButton = this.#createSyncButton();
+
+		const layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title)
+			.setDescription(this.#description)
+			.setHeaderToolbar(syncButton)
+			.build();
+		const contentHost = layout.getContentTarget();
+		layout.setNotification(null);
+		this.#appendFeedback(layout);
+		this.#renderContent(layout, contentHost);
+	}
+
+	#createSyncButton() {
 		const syncButton = component.create('button', {
-			label: 'Synchronize',
+			label: 'Sincronizar',
 			variant: 'primary',
+			size: 'md',
 			dataRole: 'plugin-sync',
 			dataAction: 'sync',
 			onClick: () => {
 				this.#handleSync(syncButton);
 			},
 		});
-		syncButton.className = 'inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-700';
+		return syncButton;
+	}
 
-		const header = component.create('pageHeader', {
-			title: 'Plugin Manager',
-			subtitle: 'Manage installed plugins',
-			actions: [syncButton],
-		});
-		page.appendChild(header);
-
-		if (this.#feedbackMessage !== null) {
-			const feedback = component.create('alert', {
-				type: this.#feedbackType === 'error' ? 'error' : 'success',
-				message: this.#feedbackMessage,
-			});
-			feedback.dataset.role = 'plugin-feedback';
-			page.appendChild(feedback);
-		}
-
-		const content = component.create('div');
-		content.className = 'mt-4 overflow-x-auto rounded-xl border border-slate-200';
-		content.dataset.role = 'plugin-content';
-
-		if (this.#plugins.length === 0) {
-			const emptyState = component.create('emptyState', {
-				title: 'No plugins installed',
-				description: 'No plugins installed.',
-			});
-			emptyState.dataset.role = 'plugin-empty';
-			content.appendChild(emptyState);
-			page.appendChild(content);
-			this.#container.replaceChildren();
-			this.#container.appendChild(page);
+	#appendFeedback(layout) {
+		if (this.#feedbackMessage === null) {
 			return;
 		}
 
-		const tableHost = component.create('div');
-		content.appendChild(tableHost);
+		const type = this.#feedbackType === 'error' ? 'error' : 'success';
+		const banner = component.create('alert', {
+			type,
+			message: this.#feedbackMessage,
+		}).setData('role', 'plugin-feedback').setData('type', type);
+		layout.setNotification(banner);
+	}
+
+	#renderContent(layout, content) {
+		if (this.#plugins.length === 0) {
+			component.create('emptyState', {
+				title: 'No hay plugins instalados',
+				description: 'Sincroniza los plugins disponibles para comenzar.',
+			})
+				.setData('role', 'plugin-empty')
+				.setParent(content);
+			return;
+		}
+
+		const tableHost = layout.createTableHost();
 
 		const rows = this.#plugins.map((plugin) => ({
 			__plugin: plugin,
@@ -120,26 +139,35 @@ export class PluginManager {
 
 		const schema = {
 			fields: [
-				{ name: 'name', label: 'Name' },
+				{ name: 'name', label: 'Nombre' },
 			],
 		};
 
-		const table = new DynamicTable(rows, schema, tableHost, {
+		layout.createTable(rows, schema, {
+			container: tableHost,
+			onRefresh: () => this.#refreshData(),
 			extraColumns: [
 				{
-					label: 'Type',
+					key: 'type',
+					label: 'Tipo',
+					sortValue: (row) => row.__plugin?.plugin_type,
 					renderCell: (row) => this.#renderTypeBadge(row.__plugin),
 				},
 				{
-					label: 'Version',
+					key: 'version',
+					label: 'Versión',
+					sortValue: (row) => row.__plugin?.version,
 					renderCell: (row) => this.#renderVersionCell(row.__plugin, row.__update),
 				},
 				{
-					label: 'Status',
+					key: 'status',
+					label: 'Estado',
+					sortValue: (row) => row.__plugin?.status,
 					renderCell: (row) => this.#renderStatusBadge(row.__plugin),
 				},
 				{
-					label: 'Actions',
+					key: 'actions',
+					label: 'Acciones',
 					renderCell: (row) => this.#renderActionsCell(row.__plugin, row.__update),
 				},
 			],
@@ -155,7 +183,6 @@ export class PluginManager {
 				}
 			},
 		});
-		table.render();
 
 		const renderedTable = tableHost.querySelector('table');
 		if (renderedTable instanceof HTMLTableElement) {
@@ -163,61 +190,57 @@ export class PluginManager {
 		}
 
 		const actionButtons = tableHost.querySelectorAll('[data-role="plugin-action"]');
-		actionButtons.forEach((button) => {
-			button.addEventListener('click', () => {
-				const slug = button.dataset.slug ?? '';
-				const plugin = this.#plugins.find((item) => String(item.slug) === slug);
-				if (!plugin) {
-					return;
-				}
+		actionButtons.forEach((button) => this.#bindActionButton(button));
 
-				if (button.dataset.action === 'configure') {
-					this.#onConfigure(plugin);
-					return;
-				}
+	}
 
-				if (button.dataset.action === 'update') {
-					this.#handleUpdate(plugin, button);
-					return;
-				}
+	#bindActionButton(button) {
+		button.addEventListener('click', () => {
+			const slug = button.dataset.slug ?? '';
+			const plugin = this.#plugins.find((item) => String(item.slug) === slug);
+			if (!plugin) {
+				return;
+			}
 
-				if (button.dataset.action === 'rollback') {
-					this.#handleRollback(plugin, button);
-					return;
-				}
+			if (button.dataset.action === 'configure') {
+				this.#onConfigure(plugin);
+				return;
+			}
 
-				this.#handleActionClick(plugin, button);
-			});
+			if (button.dataset.action === 'update') {
+				this.#handleUpdate(plugin, button);
+				return;
+			}
+
+			if (button.dataset.action === 'rollback') {
+				this.#handleRollback(plugin, button);
+				return;
+			}
+
+			this.#handleActionClick(plugin, button);
 		});
-
-		page.appendChild(content);
-		this.#container.replaceChildren();
-		this.#container.appendChild(page);
 	}
 
 	#renderTypeBadge(plugin) {
 		const badge = component.create('span');
 		const isEntity = plugin.plugin_type === 'entity';
-		badge.className = `${isEntity ? 'bg-sky-100 text-sky-700' : 'bg-fuchsia-100 text-fuchsia-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`;
-		badge.dataset.role = 'plugin-type-badge';
-		badge.textContent = String(plugin.plugin_type ?? '');
-		return badge;
+		return badge
+			.setClassName(`${isEntity ? 'bg-sky-100 text-sky-700' : 'bg-fuchsia-100 text-fuchsia-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`)
+			.setData('role', 'plugin-type-badge')
+			.setText(isEntity ? 'entidad' : 'extensión');
 	}
 
 	#renderVersionCell(plugin, updateInfo) {
-		const container = component.create('div');
-		container.className = 'flex flex-col gap-1';
+		const container = component.create('div').setClassName('flex flex-col gap-1');
 
-		const current = component.create('span');
-		current.textContent = String(plugin.version ?? '');
-		container.appendChild(current);
+		component.create('span').setText(String(plugin.version ?? '')).setParent(container);
 
 		if (updateInfo !== null) {
-			const badge = component.create('span');
-			badge.className = 'inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide';
-			badge.dataset.role = 'plugin-update-badge';
-			badge.textContent = `Update available: ${String(updateInfo.available_version ?? '')}`;
-			container.appendChild(badge);
+			component.create('span')
+				.setClassName('inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide')
+				.setData('role', 'plugin-update-badge')
+				.setText(`Actualización disponible: ${String(updateInfo.available_version ?? '')}`)
+				.setParent(container);
 		}
 
 		return container;
@@ -226,36 +249,35 @@ export class PluginManager {
 	#renderStatusBadge(plugin) {
 		const badge = component.create('span');
 		const isActive = plugin.status === 'active';
-		badge.className = `${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`;
-		badge.dataset.role = 'plugin-status-badge';
-		badge.textContent = String(plugin.status ?? '');
-		return badge;
+		return badge
+			.setClassName(`${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`)
+			.setData('role', 'plugin-status-badge')
+			.setText(isActive ? 'Activo' : 'Inactivo');
 	}
 
 	#renderActionsCell(plugin, updateInfo) {
-		const actions = component.create('div');
-		actions.className = 'flex flex-wrap gap-1.5';
+		const actions = component.create('div').setClassName('flex flex-wrap gap-1.5');
 
 		const isActive = plugin.status === 'active';
-		actions.appendChild(this.#pluginActionButton(
-			isActive ? 'Deactivate' : 'Activate',
+		this.#pluginActionButton(
+			isActive ? 'Desactivar' : 'Activar',
 			isActive ? 'fa-power-off' : 'fa-play',
 			isActive ? 'amber' : 'emerald',
 			isActive ? 'deactivate' : 'activate',
 			plugin
-		));
-
-		if (updateInfo !== null) {
-			actions.appendChild(this.#pluginActionButton('Update', 'fa-rotate', 'amber', 'update', plugin));
-		}
-
-		if (this.#canRollback(plugin)) {
-			actions.appendChild(this.#pluginActionButton('Rollback', 'fa-clock-rotate-left', 'violet', 'rollback', plugin));
-		}
+		).setParent(actions);
 
 		const canConfigure = plugin.status === 'active' && (plugin.plugin_type === 'entity' || plugin.plugin_type === 'extension');
 		if (canConfigure) {
-			actions.appendChild(this.#pluginActionButton('Configure', 'fa-sliders', 'brand', 'configure', plugin));
+			this.#pluginActionButton('Configurar', 'fa-sliders', 'brand', 'configure', plugin).setParent(actions);
+		}
+
+		if (updateInfo !== null) {
+			this.#pluginActionButton('Actualizar', 'fa-rotate', 'amber', 'update', plugin).setParent(actions);
+		}
+
+		if (this.#canRollback(plugin)) {
+			this.#pluginActionButton('Revertir', 'fa-clock-rotate-left', 'violet', 'rollback', plugin).setParent(actions);
 		}
 
 		return actions;
@@ -289,12 +311,12 @@ export class PluginManager {
 
 		const newStatus = button.dataset.action === 'activate' ? 'active' : 'inactive';
 		button.disabled = true;
-		button.textContent = newStatus === 'active' ? 'Activating...' : 'Deactivating...';
+		button.textContent = newStatus === 'active' ? 'Activando...' : 'Desactivando...';
 
 		this.#api.put(`/plugins/${plugin.slug}/status`, { status: newStatus })
 			.then((response) => {
 				if (response?.ok === false) {
-					throw new Error(response.error?.message ?? 'Update failed');
+					throw new Error(response.error?.message ?? 'No se pudo actualizar el estado');
 				}
 				const updated = response?.data ?? response;
 
@@ -306,8 +328,8 @@ export class PluginManager {
 			})
 			.catch((error) => {
 				button.disabled = false;
-				button.textContent = newStatus === 'active' ? 'Activate' : 'Deactivate';
-				this.renderError(`Failed to update plugin: ${error.message}`);
+				button.textContent = newStatus === 'active' ? 'Activar' : 'Desactivar';
+				this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 			});
 	}
 
@@ -315,28 +337,28 @@ export class PluginManager {
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
 		button.disabled = true;
-		button.textContent = 'Synchronizing...';
+		button.textContent = 'Sincronizando...';
 
 		try {
 			const response = await this.#api.post('/plugins/sync', {});
 			const payload = response?.data ?? response;
 			const outdated = Number(payload?.summary?.outdated ?? 0);
 			this.#feedbackType = 'success';
-			this.#feedbackMessage = `Synchronization complete. ${outdated} plugin(s) with updates available.`;
+			this.#feedbackMessage = `Sincronización completada. Plugins con actualizaciones disponibles: ${outdated}.`;
 			await this.#refreshData();
 		} catch (error) {
-			this.renderError(`Failed to synchronize plugins: ${error.message}`);
+			this.renderError(`No se pudieron sincronizar los plugins: ${error.message}`);
 		} finally {
 			button.disabled = false;
-			button.textContent = 'Synchronize';
+			button.textContent = 'Sincronizar';
 		}
 	}
 
 	async #handleUpdate(plugin, button) {
 		const accepted = await this.#confirmAction(
-			'Confirm plugin update',
-			`Update plugin "${plugin.name || plugin.slug}" to the latest available version?`,
-			'Update'
+			'Confirmar actualización del plugin',
+			`¿Actualizar el plugin "${plugin.name || plugin.slug}" a la última versión disponible?`,
+			'Actualizar'
 		);
 
 		if (!accepted) {
@@ -346,26 +368,26 @@ export class PluginManager {
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
 		button.disabled = true;
-		button.textContent = 'Updating...';
+		button.textContent = 'Actualizando...';
 
 		try {
 			await this.#api.post(`/plugins/${plugin.slug}/update`, {});
 			this.#feedbackType = 'success';
-			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" updated successfully.`;
+			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" actualizado correctamente.`;
 			await this.#refreshData();
 		} catch (error) {
-			this.renderError(`Failed to update plugin: ${error.message}`);
+			this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 		} finally {
 			button.disabled = false;
-			button.textContent = 'Update';
+			button.textContent = 'Actualizar';
 		}
 	}
 
 	async #handleRollback(plugin, button) {
 		const accepted = await this.#confirmAction(
-			'Confirm plugin rollback',
-			`Rollback plugin "${plugin.name || plugin.slug}" to the previous version snapshot?`,
-			'Rollback'
+			'Confirmar reversión del plugin',
+			`¿Revertir el plugin "${plugin.name || plugin.slug}" a la versión anterior?`,
+			'Revertir'
 		);
 
 		if (!accepted) {
@@ -375,41 +397,45 @@ export class PluginManager {
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
 		button.disabled = true;
-		button.textContent = 'Rolling back...';
+		button.textContent = 'Revirtiendo...';
 
 		try {
 			await this.#api.post(`/plugins/${plugin.slug}/rollback`, {});
 			this.#feedbackType = 'success';
-			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" rolled back successfully.`;
+			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" revertido correctamente.`;
 			await this.#refreshData();
 		} catch (error) {
-			this.renderError(`Failed to rollback plugin: ${error.message}`);
+			this.renderError(`No se pudo revertir el plugin: ${error.message}`);
 		} finally {
 			button.disabled = false;
-			button.textContent = 'Rollback';
+			button.textContent = 'Revertir';
 		}
 	}
 
 	#confirmAction(title, message, confirmLabel) {
 		return new Promise((resolve) => {
 			const modal = new Modal(this.#container, { title });
-			const body = component.create('div');
-			body.className = 'grid gap-3';
+			const body = component.create('div').setClassName('grid gap-3');
 
-			const text = component.create('p');
-			text.className = 'text-sm text-slate-700';
-			text.textContent = message;
+			const text = component.create('p')
+				.setClassName('text-sm text-slate-700')
+				.setText(message);
 
-			const actions = component.create('div');
-			actions.className = 'flex justify-end gap-2';
+			const actions = component.create('div').setClassName('flex justify-end gap-2');
 
-			const cancelButton = component.create('button', { label: 'Cancel' });
-			cancelButton.className = 'inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700';
-			cancelButton.dataset.action = 'cancel-modal';
+			const cancelButton = component.create('button', {
+				label: 'Cancelar',
+				variant: 'secondary',
+				size: 'xs',
+				dataAction: 'cancel-modal',
+			});
 
-			const confirmButton = component.create('button', { label: confirmLabel });
-			confirmButton.className = 'inline-flex items-center rounded-md border border-brand-700 bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white';
-			confirmButton.dataset.action = 'confirm-modal';
+			const confirmButton = component.create('button', {
+				label: confirmLabel,
+				variant: 'primary',
+				size: 'xs',
+				dataAction: 'confirm-modal',
+			});
 
 			const closeWith = (result) => {
 				modal.close();
@@ -421,8 +447,8 @@ export class PluginManager {
 
 			actions.appendChild(cancelButton);
 			actions.appendChild(confirmButton);
-			body.appendChild(text);
-			body.appendChild(actions);
+			text.setParent(body);
+			actions.setParent(body);
 
 			modal.setContent(body);
 			modal.show();
@@ -430,12 +456,16 @@ export class PluginManager {
 	}
 
 	renderError(message) {
-		const banner = component.create('div');
-		banner.className = 'rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
-		banner.dataset.role = 'plugin-error';
-		banner.textContent = message;
 		this.#container.replaceChildren();
-		this.#container.appendChild(banner);
+		const layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
+			.setTitle(this.#title)
+			.setDescription(this.#description)
+			.build();
+		const banner = component.create('alert', {
+			type: 'error',
+			message,
+		}).setData('role', 'plugin-error').setData('type', 'error');
+		layout.setNotification(banner);
 	}
 
 	resolveContainer(container) {

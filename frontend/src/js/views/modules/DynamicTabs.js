@@ -2,6 +2,8 @@ import { component } from './ComponentFactory.js';
 
 export class DynamicTabs {
 	#container;
+	#tabBarContainer;
+	#externalTabBar = null;
 	#tabs = [];
 	#activeId = null;
 	#root = null;
@@ -15,6 +17,8 @@ export class DynamicTabs {
 		if (!this.#container) {
 			throw new Error('DynamicTabs: container not found');
 		}
+
+		this.#tabBarContainer = this.resolveTabBarContainer(options.tabBarContainer);
 
 		const initialTabs = options.tabs ?? [];
 		for (const tab of initialTabs) {
@@ -66,6 +70,11 @@ export class DynamicTabs {
 	}
 
 	destroy() {
+		if (this.#externalTabBar !== null) {
+			this.#externalTabBar.remove();
+			this.#externalTabBar = null;
+		}
+
 		if (this.#root) {
 			this.#root.remove();
 			this.#root = null;
@@ -85,9 +94,41 @@ export class DynamicTabs {
 			renderContent: (id) => this.#tabs.find((tab) => tab.id === id)?.content() ?? '',
 		});
 		this.#container.appendChild(this.#root);
+		this.mountExternalTabBar();
 		if (activeId !== null) {
 			this.#root.setActiveTab(activeId, false);
 		}
+	}
+
+	mountExternalTabBar() {
+		if (!(this.#tabBarContainer instanceof HTMLElement) || this.#root === null) {
+			return;
+		}
+
+		const tabBar = this.#root.querySelector('[data-role="tabs-bar"]');
+		if (!(tabBar instanceof HTMLElement)) {
+			return;
+		}
+
+		tabBar.classList.remove('mb-4');
+		tabBar.classList.add('mb-0', 'w-full');
+		this.#tabBarContainer.replaceChildren(tabBar);
+		this.#externalTabBar = tabBar;
+	}
+
+	resolveTabBarContainer(containerOption) {
+		if (containerOption instanceof HTMLElement) {
+			return containerOption;
+		}
+
+		if (typeof containerOption === 'string') {
+			const found = document.querySelector(containerOption);
+			if (found instanceof HTMLElement) {
+				return found;
+			}
+		}
+
+		return null;
 	}
 
 	resolveInitialTab() {

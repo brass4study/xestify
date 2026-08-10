@@ -1,4 +1,8 @@
 export class BaseComponent extends HTMLElement {
+  static create(tagName = 'div', options = {}) {
+    return createComponentInstance(this, tagName, options);
+  }
+
   append(child) {
     if (child instanceof Node) {
       this.appendChild(child);

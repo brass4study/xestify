@@ -68,8 +68,15 @@
   ];
   const AVATAR_DATA_URI = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
+  function createNavbar(host, options = {}) {
+    const navigation = document.createElement('div');
+    const userConfiguration = document.createElement('div');
+    host.append(navigation, userConfiguration);
+    return new Navbar(navigation, { ...options, userContainer: userConfiguration });
+  }
+
   it('renders nav element with brand text', (container) => {
-    const navbar = new Navbar(container);
+      const navbar = createNavbar(container);
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const nav = container.querySelector('[data-role="navbar"]');
     assertTrue(nav !== null, 'Expected [data-role="navbar"] element');
@@ -79,7 +86,7 @@
   });
 
   it('renders one nav link per entity and Plugins', (container) => {
-    const navbar = new Navbar(container, { entities: ENTITIES, canManagePlugins: true });
+      const navbar = createNavbar(container, { entities: ENTITIES, canManagePlugins: true });
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const links = container.querySelectorAll('[data-role="navbar-link"]');
     assertEquals(links.length, 3, 'Expected 3 nav links');
@@ -90,7 +97,7 @@
   });
 
   it('renders avatar initials and user name in the user menu', (container) => {
-    const navbar = new Navbar(container, { userEmail: 'ana.garcia@xestify.local', userName: 'Ana García' });
+      const navbar = createNavbar(container, { userEmail: 'ana.garcia@xestify.local', userName: 'Ana García' });
     assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
     const avatar = container.querySelector('[data-role="user-menu-avatar"]');
     assertTrue(avatar !== null, 'Expected avatar element');
@@ -128,7 +135,7 @@
 
   it('dispatches profile navigation from the dropdown', (container) => {
     let navigatedTo = null;
-    const navbar = new Navbar(container, {
+    const navbar = createNavbar(container, {
       userEmail: 'ana.garcia@xestify.local',
       userName: 'Ana García',
       onNavigate: (page) => { navigatedTo = page; },

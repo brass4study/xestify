@@ -12,6 +12,7 @@
 
 <script type="module">
   import { PluginManager } from '../src/js/views/pages/PluginManager.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -80,6 +81,12 @@
     return div;
   }
 
+  function makeShellSandbox() {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    return { host, shell, content: shell.getTarget('shell-main-content') };
+  }
+
   log('────────────────────────────────────────────────────────────────────────\n');
 
   await test('renders list of plugins', async () => {
@@ -103,6 +110,8 @@
     assertEquals(rows.length, 2, 'Should render 2 rows');
     assertEquals(rows[0].dataset.slug, 'clients', 'First row slug');
     assertEquals(rows[1].dataset.slug, 'comments', 'Second row slug');
+    const headers = [...container.querySelectorAll('thead th')].map((header) => header.textContent.trim());
+    assertEquals(headers.join('|'), 'Nombre|Tipo|Versión|Estado|Acciones', 'Las columnas deben estar en español');
   });
 
   await test('renders empty state when no plugins', async () => {
@@ -140,8 +149,8 @@
 
     const badges = container.querySelectorAll('[data-role="plugin-type-badge"]');
     assertEquals(badges.length, 2, 'Should have 2 type badges');
-    assertTrue(badges[0].textContent.includes('entity'), 'First badge is entity');
-    assertTrue(badges[1].textContent.includes('extension'), 'Second badge is extension');
+    assertTrue(badges[0].textContent.includes('entidad'), 'La primera insignia debe indicar entidad');
+    assertTrue(badges[1].textContent.includes('extensión'), 'La segunda insignia debe indicar extensión');
   });
 
   await test('shows activate button for inactive plugins', async () => {
@@ -163,7 +172,7 @@
     const btn = container.querySelector('[data-role="plugin-action"]');
     assertTrue(btn !== null, 'Action button should exist');
     assertEquals(btn.dataset.action, 'activate', 'Button action should be activate');
-    assertTrue(btn.textContent.includes('Activate'), 'Button text should say Activate');
+    assertTrue(btn.textContent.includes('Activar'), 'El botón debe indicar Activar');
   });
 
   await test('shows deactivate button for active plugins', async () => {
@@ -184,7 +193,7 @@
 
     const btn = container.querySelector('[data-role="plugin-action"]');
     assertEquals(btn.dataset.action, 'deactivate', 'Button action should be deactivate');
-    assertTrue(btn.textContent.includes('Deactivate'), 'Button text should say Deactivate');
+    assertTrue(btn.textContent.includes('Desactivar'), 'El botón debe indicar Desactivar');
   });
 
   await test('calls PUT /plugins/{slug}/status when activate clicked', async () => {
@@ -242,7 +251,7 @@
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     const statusBadge = container.querySelector('[data-role="plugin-status-badge"]');
-    assertTrue(statusBadge.textContent.includes('active'), 'Status badge should show active');
+    assertTrue(statusBadge.textContent.includes('Activo'), 'La insignia de estado debe indicar Activo');
   });
 
   await test('shows error banner on API failure', async () => {
@@ -283,7 +292,7 @@
   });
 
   await test('shows sync button in header', async () => {
-    const container = makeSandbox();
+    const { shell, content } = makeShellSandbox();
     const api = new MockApi({
       '/plugins': {
         ok: true,
@@ -291,15 +300,20 @@
       },
     });
 
-    const manager = new PluginManager(container, api);
+    const manager = new PluginManager(content, api, { shellLayout: shell });
     await manager.init();
 
-    const button = container.querySelector('[data-action="sync"]');
+    const toolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
+    const button = toolbar.querySelector('[data-action="sync"]');
     assertTrue(button !== null, 'Synchronize button should exist');
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-title"]').textContent, 'Gestión de plugins', 'El título debe estar en español');
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent, 'Sincroniza, activa y configura plugins del sistema.', 'La descripción debe estar en español');
+
+    assertTrue(toolbar !== null, 'Synchronize button should live in the page header toolbar');
   });
 
   await test('calls POST /plugins/sync when synchronize is clicked', async () => {
-    const container = makeSandbox();
+    const { shell, content } = makeShellSandbox();
     const api = new MockApi({
       '/plugins': {
         ok: true,
@@ -322,14 +336,16 @@
       },
     });
 
-    const manager = new PluginManager(container, api);
+    const manager = new PluginManager(content, api, { shellLayout: shell });
     await manager.init();
 
-    const syncButton = container.querySelector('[data-action="sync"]');
+    const syncButton = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-action="sync"]');
     syncButton.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/sync'), 'Sync endpoint should be called');
+    const syncButtons = shell.getTarget('shell-header').querySelectorAll('[data-role="page-header-toolbar"] [data-action="sync"]');
+    assertEquals(syncButtons.length, 1, 'Synchronize should keep a single toolbar button after rerender');
   });
 
   await test('shows update badge and update action when update is available', async () => {
@@ -362,6 +378,35 @@
     assertTrue(updateBtn !== null, 'Update button should be visible');
   });
 
+  await test('shows configure before update and rollback actions', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: true },
+          ],
+        },
+      },
+      '/plugins/updates': {
+        ok: true,
+        data: {
+          updates: [
+            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const actions = [...container.querySelectorAll('[data-role="plugin-row"] [data-role="plugin-action"]')]
+      .map((button) => button.dataset.action);
+    assertEquals(actions.join(','), 'deactivate,configure,update,rollback', 'Optional plugin actions should follow Configure');
+  });
+
   await test('shows rollback button only when can_rollback is true', async () => {
     const container = makeSandbox();
     const api = new MockApi({
@@ -391,7 +436,7 @@
   });
 
   await test('asks confirmation before update and calls endpoint on confirm', async () => {
-    const container = makeSandbox();
+    const { shell, content } = makeShellSandbox();
     const api = new MockApi({
       '/plugins': {
         ok: true,
@@ -418,13 +463,13 @@
       },
     });
 
-    const manager = new PluginManager(container, api);
+    const manager = new PluginManager(content, api, { shellLayout: shell });
     await manager.init();
 
-    const updateBtn = container.querySelector('[data-action="update"]');
+    const updateBtn = content.querySelector('[data-action="update"]');
     updateBtn.click();
 
-    const confirmBtn = container.querySelector('[data-action="confirm-modal"]');
+    const confirmBtn = content.querySelector('[data-action="confirm-modal"]');
     assertTrue(confirmBtn !== null, 'Confirm button should exist in modal');
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -433,7 +478,7 @@
   });
 
   await test('asks confirmation before rollback and calls endpoint on confirm', async () => {
-    const container = makeSandbox();
+    const { shell, content } = makeShellSandbox();
     const api = new MockApi({
       '/plugins': {
         ok: true,
@@ -456,13 +501,13 @@
       },
     });
 
-    const manager = new PluginManager(container, api);
+    const manager = new PluginManager(content, api, { shellLayout: shell });
     await manager.init();
 
-    const rollbackBtn = container.querySelector('[data-action="rollback"]');
+    const rollbackBtn = content.querySelector('[data-action="rollback"]');
     rollbackBtn.click();
 
-    const confirmBtn = container.querySelector('[data-action="confirm-modal"]');
+    const confirmBtn = content.querySelector('[data-action="confirm-modal"]');
     assertTrue(confirmBtn !== null, 'Confirm button should exist in rollback modal');
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
