@@ -2,10 +2,11 @@
 
 ## Estado implementado auditado (2026-08-10)
 
-El corte funcional actual queda fijado en **STORY 9.6 incluida**.
+El corte funcional actual queda fijado en **STORY 9.7 incluida**.
 
-- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.6` implementadas y `STORY 9.7` como siguiente foco.
+- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.7` implementadas y `STORY 9.8` como siguiente foco.
 - **STORY 9.6** ya implementada: mapa hash completo, navegación programática, entrada directa, refresh y back/forward con persistencia de contexto.
+- **STORY 9.7** ya implementada: estado global ampliado, resiliencia de UI, feedback compartido, i18n base y theming persistido.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
 
 ## Objetivo
@@ -42,13 +43,13 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - Adición MVP A2: Matriz de permisos fina (más granular que admin/no-admin)
 
 ### ❌ OUT OF SCOPE (para futuro/thesis)
-- Adición post-MVP A3: Hardening de sesiones (expiración, revocación, refresh)
-- Adición post-MVP A4: Panel de health técnico (DB, hooks, plugins activos)
-- Adición post-MVP A5: Exportación/importación de configuración entre entornos
+- Adición post-MVP A7: Hardening de sesiones (expiración, revocación, refresh)
+- Adición post-MVP A8: Panel de health técnico (DB, hooks, plugins activos)
+- Adición post-MVP A9: Exportación/importación de configuración entre entornos
 
 ### 📌 Decisiones de Alcance (2026-05-02)
 - **IN SCOPE MVP:** EPIC 0-12 + A1 (Auditoría funcional) + A2 (Matriz de permisos fina)
-- **POSTERIOR A MVP:** A3 (Hardening de sesiones) + A4 (Panel health técnico) + A5 (Export/import configuración)
+- **POSTERIOR A MVP:** A7 (Hardening de sesiones) + A8 (Panel health técnico) + A9 (Export/import configuración)
 
 ---
 
@@ -1074,6 +1075,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Verificacion:** 17/17 runners HTML y 169/169 assertions; mapa completo, entrada directa, refresh, back/forward, navegación por tabs y fallback de inicio en navegador integrado
 
 ### STORY 9.7: Infraestructura transversal de frontend y resiliencia
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -1088,6 +1090,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Consolidacion de estado global + error handling + servicios UI transversales + bases de i18n/theming
 - **Dependencias:** STORY 3.7, STORY 9.2, STORY 9.3, STORY 9.5
 - **Blockers:** Ninguno
+- **Verificación:** 17/17 runners HTML, smoke test de resiliencia/tema y checks de sintaxis en verde; estado global, notificaciones, confirmaciones, i18n y theming persistido aplicados en shell y páginas principales
 
 ### STORY 9.8: UX transversal, accesibilidad y microinteracciones
 - **Points:** 5
@@ -1116,6 +1119,22 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Ejecucion documentada y estable sobre el runtime Apache+PHP same-origin del proyecto
 - **IA Usage:** Documentacion tecnica frontend + bootstrap de Playwright + casos smoke/E2E de UI
 - **Dependencias:** STORY 9.3, STORY 9.4, STORY 9.5, STORY 9.7
+- **Blockers:** Ninguno
+
+### STORY 9.10: Documentacion funcional WYSIWYG y cobertura real de ThemeModel
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Frontend / Documentacion
+- **Criteria:**
+  - ✅ Documento funcional unico del flujo WYSIWYG actual: origen de preferencias, previsualizacion en tiempo real, persistencia local/remota y aplicacion en shell/componentes
+  - ✅ Matriz trazable opcion -> implementacion para todas las claves de `UI_THEME_SCHEMA` en `ThemeModel.js`
+  - ✅ Inventario de opciones ya operativas en runtime (con referencia a archivo/modulo que las consume)
+  - ✅ Inventario de opciones definidas en `ThemeModel.js` que aun no se usan en UI o no tienen efecto visual completo
+  - ✅ Para cada opcion no usada: estado (`sin UI`, `UI parcial`, `runtime parcial`), impacto esperado y propuesta de activacion
+  - ✅ Actualizacion de docs de frontend para evitar divergencia entre lo "definido" y lo "realmente cableado"
+  - ✅ Checklist de verificacion manual en navegador para validar que cada opcion aplicada en Configuracion UI se refleja inmediatamente (WYSIWYG)
+- **IA Usage:** Auditoria cruzada de ThemeModel/UI/runtime + generacion de matriz de cobertura funcional
+- **Dependencias:** STORY 9.1, STORY 9.7, STORY 9.9
 - **Blockers:** Ninguno
 
 ---
@@ -1484,7 +1503,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 - **Puntos son relativos:** Si una historia toma más de lo previsto, ajusta estimación en tiempo real.
 - **IA va a acelerar:** Usa CodeVibe para generar boilerplate, tests, documentación.
 - **Foco en flujo E2E:** Semana 4 debe tener el flujo completo: login → crear entidad → guardar funcionando end-to-end.
-- **OUT OF SCOPE para Master:** A3 (Hardening sesiones), A4 (Panel health técnico), A5 (Export/import config).
+- **OUT OF SCOPE para Master:** A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
 
 ---
 

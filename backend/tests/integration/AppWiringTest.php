@@ -118,6 +118,16 @@ TestSuite::run('protected entity route returns 401 without token', function (): 
     assertEquals(401, $result['error']['code'] ?? null, 'protected route must return 401');
 });
 
+TestSuite::run('protected configuration route returns 401 without token', function (): void {
+    $container = new Container();
+    $router = buildAppRouter($container);
+
+    $result = dispatchApp($router, 'GET', '/api/v1/configurations/ui-preferences');
+
+    assertFalse($result['ok'] ?? true, 'configuration route must fail without token');
+    assertEquals(401, $result['error']['code'] ?? null, 'configuration route must return 401');
+});
+
 TestSuite::run('protected entity route accepts valid token', function (): void {
     $container = new Container();
     $router = buildAppRouter($container);

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ThemeSettingsPanelTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="../src/css/tailwind.generated.css">
+  <link rel="stylesheet" href="../src/css/theme.runtime.css">
+</head>
+<body>
+  <h2>ThemeSettingsPanelTest</h2>
+  <div id="sandbox" style="display:none"></div>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      initTestRunner,
+      separator,
+      test,
+      assertEquals,
+      assertTrue,
+      finishTestRunner,
+      makeSandbox,
+    } from './js/helpers.js';
+    import { AppState } from '../src/js/models/StateModel.js';
+    import { applyUiPreferencesToDocument, createDefaultUiPreferences } from '../src/js/models/ThemeModel.js';
+    import { ThemeSettingsPanel } from '../src/js/views/modules/ThemeSettingsPanel.js';
+
+    initTestRunner('output');
+
+    function mountPanel() {
+      const host = makeSandbox();
+      const panel = new ThemeSettingsPanel(host);
+      return { host, panel };
+    }
+
+    function cleanupHost(host) {
+      host.remove();
+      delete document.documentElement.dataset.uiThemeColor;
+      document.documentElement.style.removeProperty('--x-brand-500');
+      document.body.style.removeProperty('--x-brand-500');
+    }
+
+    separator();
+
+    await test('el boton UI abre y cierra el panel de configuracion', async () => {
+      AppState.setUiPreferences(createDefaultUiPreferences());
+      const { host, panel } = mountPanel();
+
+      try {
+        const trigger = host.querySelector('[data-role="theme-settings-trigger"]');
+        const popover = host.querySelector('[data-role="theme-settings-panel"]');
+        const root = host.querySelector('[data-role="theme-settings-root"]');
+        const triggerIcon = host.querySelector('[data-role="theme-settings-trigger"] i.fa-palette');
+
+        assertTrue(trigger !== null, 'El trigger del panel debe existir');
+        assertEquals(trigger.tagName, 'DIV', 'El trigger debe renderizarse como contenedor, no como button');
+        assertTrue(triggerIcon !== null, 'El trigger debe mostrar el icono de paleta');
+        assertEquals(trigger.textContent.trim(), '', 'El trigger no debe mostrar texto, solo icono');
+        assertEquals(getComputedStyle(trigger).height, '48px', 'El trigger debe mantener la misma altura visual que user-menu');
+        assertEquals(getComputedStyle(triggerIcon).fontSize, '24px', 'El icono debe mostrarse en tamaño intermedio');
+        assertTrue(popover !== null, 'El panel debe existir');
+        assertTrue(root !== null, 'La raiz del panel debe existir');
+        assertTrue(popover.hidden, 'El panel debe iniciar cerrado');
+
+        trigger.click();
+        assertTrue(!popover.hidden, 'El panel debe abrir al hacer click en UI');
+        assertEquals(root.dataset.state, 'open', 'La raiz debe marcar estado open');
+        assertEquals(getComputedStyle(popover).position, 'fixed', 'El panel debe mostrarse como drawer lateral fijo');
+        assertEquals(getComputedStyle(popover).right, '0px', 'El drawer debe anclarse al borde derecho');
+
+        trigger.click();
+        assertTrue(popover.hidden, 'El panel debe cerrarse al hacer segundo click');
+        assertEquals(root.dataset.state, 'closed', 'La raiz debe marcar estado closed');
+      } finally {
+        panel.destroy();
+        cleanupHost(host);
+      }
+    });
+
+    await test('renderiza secciones en orden y opciones graficas cuadradas', async () => {
+      AppState.setUiPreferences(createDefaultUiPreferences());
+      const { host, panel } = mountPanel();
+
+      try {
+        const sections = host.querySelectorAll('[data-role^="theme-section-"]');
+        const headings = Array.from(host.querySelectorAll('h4')).map((node) => node.textContent.trim());
+        const activePageStyle = host.querySelector('[data-role="theme-page-style-option"].is-active');
+        const activePageStyleCheck = activePageStyle?.querySelector('.fa-check');
+
+        assertEquals(sections.length, 3, 'El panel debe exponer 3 secciones');
+        assertEquals(headings, ['Estilo de pagina', 'Color del tema', 'Modo de navegacion'], 'Los titulos del panel no coinciden');
+        assertEquals(host.querySelectorAll('[data-role="theme-page-style-option"]').length, 2, 'Debe renderizar 2 opciones de page style');
+        assertEquals(host.querySelectorAll('[data-role="theme-navigation-mode-option"]').length, 3, 'Debe renderizar 3 modos de navegacion');
+        assertEquals(host.querySelectorAll('[data-role="theme-color-option"]').length, 9, 'Debe renderizar 9 colores de tema');
+        const pageStyleOption = host.querySelector('[data-role="theme-page-style-option"]');
+        const navModeOption = host.querySelector('[data-role="theme-navigation-mode-option"]');
+        const colorGroup = host.querySelector('[data-role="theme-color-group"]');
+        const activeColorOption = host.querySelector('[data-role="theme-color-option"].is-active');
+        const activeColorCheck = activeColorOption?.querySelector('.fa-check');
+        assertTrue(colorGroup !== null, 'El grupo de colores debe existir');
+        assertEquals(getComputedStyle(colorGroup).display, 'flex', 'El grupo de colores debe usar flex en una sola linea');
+        assertEquals(getComputedStyle(colorGroup).gap, '8px', 'El espaciado entre opciones debe ser de 8px');
+        assertTrue(pageStyleOption !== null, 'Debe existir al menos una opción de estilo de página');
+        assertTrue(navModeOption !== null, 'Debe existir al menos una opción de modo de navegación');
+        assertEquals(getComputedStyle(pageStyleOption).width, getComputedStyle(pageStyleOption).height, 'Las opciones de estilo de pagina deben ser cuadradas');
+        assertEquals(getComputedStyle(navModeOption).width, getComputedStyle(navModeOption).height, 'Las opciones de modo de navegación deben ser cuadradas');
+        assertEquals((navModeOption.textContent || '').trim(), '', 'Las opciones de modo de navegación no deben mostrar texto');
+        assertTrue(activePageStyle !== null, 'Debe existir una opción de page style activa');
+        assertEquals(getComputedStyle(activePageStyle).borderTopWidth, '0px', 'La opción activa de page style no debe usar borde');
+        assertEquals(getComputedStyle(activePageStyle).boxShadow, 'none', 'La opción activa de page style no debe usar sombra');
+        assertTrue(activeColorOption !== null, 'Debe existir una opción de color activa');
+        assertEquals(getComputedStyle(activeColorOption).borderTopWidth, '0px', 'La opción activa de color no debe usar borde');
+        assertEquals(getComputedStyle(activeColorOption).boxShadow, 'none', 'La opción activa de color no debe usar sombra');
+        assertTrue(activeColorCheck !== null, 'La opción activa debe mostrar el check');
+        assertTrue(activePageStyleCheck !== null, 'La opción activa de page style debe mostrar el check');
+        assertEquals(getComputedStyle(activeColorCheck).textShadow, 'none', 'El check no debe usar ningún tipo de sombra');
+      } finally {
+        panel.destroy();
+        cleanupHost(host);
+      }
+    });
+
+    await test('pageStyle cambia a dark al seleccionar la tarjeta oscura', async () => {
+      AppState.setUiPreferences(createDefaultUiPreferences());
+      const { host, panel } = mountPanel();
+
+      try {
+        const darkOption = host.querySelector('[data-role="theme-page-style-option"][data-value="dark"]');
+        assertTrue(darkOption !== null, 'La opción dark debe existir');
+
+        darkOption.click();
+
+        assertEquals(AppState.getUiPreferences().pageStyle, 'dark', 'El estado global debe cambiar a dark');
+      } finally {
+        panel.destroy();
+        cleanupHost(host);
+      }
+    });
+
+    await test('navigationMode cambia al seleccionar Side menu', async () => {
+      AppState.setUiPreferences(createDefaultUiPreferences());
+      const { host, panel } = mountPanel();
+
+      try {
+        const sideOption = host.querySelector('[data-role="theme-navigation-mode-option"][data-value="side"]');
+        assertTrue(sideOption !== null, 'La opción side debe existir');
+
+        sideOption.click();
+        assertEquals(AppState.getUiPreferences().navigationMode, 'side', 'El estado global debe cambiar a side');
+      } finally {
+        panel.destroy();
+        cleanupHost(host);
+      }
+    });
+
+    await test('themeColor cambia a teal y actualiza la variable --x-brand-500', async () => {
+      AppState.setUiPreferences(createDefaultUiPreferences());
+      const { host, panel } = mountPanel();
+
+      try {
+        const tealOption = host.querySelector('[data-role="theme-color-option"][data-value="teal"]');
+        assertTrue(tealOption !== null, 'La opción teal debe existir');
+
+        tealOption.click();
+        const settings = AppState.getUiPreferences();
+        applyUiPreferencesToDocument(settings, {
+          root: document.documentElement,
+          body: document.body,
+          app: document.body,
+        });
+
+        assertEquals(settings.themeColor, 'teal', 'El estado global debe cambiar a teal');
+        assertEquals(document.documentElement.style.getPropertyValue('--x-brand-500').trim(), '#14b8a6', 'La variable CSS principal debe reflejar el color teal');
+      } finally {
+        panel.destroy();
+        cleanupHost(host);
+      }
+    });
+
+    separator();
+    finishTestRunner('output');
+  </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { createApi, createApiWithToken, isUnauthorizedError } from '../models/ApiClientModel.js';
+import { loadUiPreferences, saveUiPreferences } from '../models/AppConfigurationModel.js';
 import { PluginRouteController } from './PluginRouteController.js';
 import {
   entityCreatePage,
@@ -11,6 +12,10 @@ import {
   userDetailPage,
 } from './RouteMapController.js';
 import { SessionModel } from '../models/SessionModel.js';
+import { AppState } from '../models/StateModel.js';
+import { applyUiPreferencesToDocument } from '../models/ThemeModel.js';
+import { t } from '../models/I18nModel.js';
+import { UiResilienceService } from '../services/UiResilienceService.js';
 import { PageLayout } from '../views/layout/PageLayout.js';
 import { ShellLayout } from '../views/layout/ShellLayout.js';
 import { EntityEdit } from '../views/pages/EntityEdit.js';
@@ -22,7 +27,7 @@ import { UserConfig } from '../views/pages/UserConfig.js';
 import { UserManager } from '../views/pages/UserManager.js';
 import { UserProfile } from '../views/pages/UserProfile.js';
 import { Navbar } from '../views/modules/Navbar.js';
-import { component } from '../views/modules/ComponentFactory.js';
+import { ThemeSettingsPanel } from '../views/modules/ThemeSettingsPanel.js';
 import { RouteController } from './RouteController.js';
 
 export class AppController {
@@ -36,6 +41,12 @@ export class AppController {
     this.contentContainer = null;
     this.currentEntityEdit = null;
     this.currentEntityRoute = null;
+    this.themeSettingsPanel = null;
+    this.currentThemeSettingsNavigationMode = null;
+    this.uiSubscription = null;
+    this.uiHydrating = false;
+    this.uiSaveTimer = null;
+    this.currentNavbarNavigationMode = null;
 
     this.router = new RouteController({
       onNavigate: async (page) => {
@@ -45,9 +56,24 @@ export class AppController {
         await this.navigateTo(page);
       },
     });
+    this.globalErrorHandler = (event) => {
+      const error = event?.error ?? event?.reason ?? null;
+      const message = UiResilienceService.handleError(error, t('ui.error.generic', 'Ha ocurrido un error inesperado.'));
+      UiResilienceService.showNotification({
+        type: 'error',
+        title: t('ui.error.generic', 'Error'),
+        message,
+      });
+      this.renderGlobalNotifications();
+    };
+    window.addEventListener('error', this.globalErrorHandler);
+    window.addEventListener('unhandledrejection', this.globalErrorHandler);
   }
 
   async start() {
+    this.subscribeUiPreferences();
+    this.syncUiPreferences();
+
     const storedSession = SessionModel.readStoredSession();
 
     if (typeof storedSession.token === 'string' && storedSession.token !== '') {
@@ -83,10 +109,14 @@ export class AppController {
   renderLogin() {
     this.router.stop();
     this.unsubscribeNavbar();
+    this.destroyThemeSettingsPanel();
+    this.clearUiSaveTimer();
     this.currentNavbar = null;
+    this.currentNavbarNavigationMode = null;
     this.dashboardApi = null;
     this.shellLayout = null;
     this.contentContainer = null;
+    this.renderGlobalNotifications();
 
     if (window.location.hash === '' || window.location.hash === '#') {
       window.history.replaceState(null, '', '#/login');
@@ -126,16 +156,180 @@ export class AppController {
   async renderDashboard() {
     this.shellLayout = ShellLayout.create(this.container).build();
     this.contentContainer = this.shellLayout.getTarget('shell-main-content');
-    const navbarContainer = this.shellLayout.getTarget('shell-menu-nav');
-    const userMenuContainer = this.shellLayout.getTarget('shell-menu-config-user');
+    const uiPreferences = AppState.getUiPreferences();
+    const isMixedNavigation = uiPreferences.navigationMode === 'mixed';
+    let navbarContainer;
+    let themeSettingsContainer;
+    let userMenuContainer;
+    let linksContainer;
+    if (isMixedNavigation) {
+      ({
+        navbarContainer,
+        themeSettingsContainer,
+        userMenuContainer,
+        linksContainer,
+      } = this.#resolveMixedNavbarTargets());
+    } else {
+      ({
+        navbarContainer,
+        themeSettingsContainer,
+        userMenuContainer,
+        linksContainer,
+      } = this.#resolveDefaultNavbarTargets());
+    }
+    let navbarOrientation = 'side';
+    if (uiPreferences.navigationMode === 'top' || isMixedNavigation) {
+      navbarOrientation = 'top';
+    }
 
     this.dashboardApi = createApiWithToken(SessionModel.getToken());
+    await this.hydrateUiPreferences();
+    this.syncUiPreferences();
 
     const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
     if (entitiesForNav === null) {
       return;
     }
 
+    const {
+      isAdmin,
+      fallbackPage,
+      initialPage,
+      userName,
+      avatar,
+      userRoles,
+    } = this.#resolveDashboardIdentity(entitiesForNav);
+
+    this.destroyThemeSettingsPanel();
+    if (isAdmin && themeSettingsContainer instanceof HTMLElement) {
+      this.themeSettingsPanel = new ThemeSettingsPanel(themeSettingsContainer);
+      this.currentThemeSettingsNavigationMode = uiPreferences.navigationMode;
+    }
+
+    this.unsubscribeNavbar();
+
+    const navbarOptions = {
+      orientation: navbarOrientation,
+      userEmail: SessionModel.getUserEmail(),
+      userName,
+      avatar,
+      roles: userRoles,
+      userContainer: userMenuContainer,
+      linksContainer,
+      linksOrientation: isMixedNavigation ? 'side' : 'top',
+      entities: entitiesForNav,
+      currentPage: initialPage,
+      canManagePlugins: isAdmin,
+      onLogout: () => {
+        this.clearAuth();
+        this.renderLogin();
+      },
+      onNavigate: async (page) => {
+        await this.router.navigate(page, { updateHash: true });
+      },
+    };
+
+    this.currentNavbar = new Navbar(navbarContainer, navbarOptions);
+    this.currentNavbarNavigationMode = uiPreferences.navigationMode;
+
+    this.syncNavbarFromState();
+    this.navbarSubscription = SessionModel.subscribe(() => {
+      this.syncNavbarFromState();
+    });
+
+    await this.router.start(fallbackPage);
+  }
+
+  /**
+   * @returns {{ navbarContainer: HTMLElement|null, themeSettingsContainer: HTMLElement|null, userMenuContainer: HTMLElement|null, linksContainer: HTMLElement|null }}
+   */
+  #resolveMixedNavbarTargets() {
+    return {
+      navbarContainer: this.shellLayout.getTarget('shell-mixed-bar-nav'),
+      themeSettingsContainer: this.shellLayout.getTarget('shell-mixed-bar-config-theme'),
+      userMenuContainer: this.shellLayout.getTarget('shell-mixed-bar-config-user'),
+      linksContainer: this.shellLayout.getTarget('shell-menu-nav'),
+    };
+  }
+
+  /**
+   * @returns {{ navbarContainer: HTMLElement|null, themeSettingsContainer: HTMLElement|null, userMenuContainer: HTMLElement|null, linksContainer: HTMLElement|null }}
+   */
+  #resolveDefaultNavbarTargets() {
+    return {
+      navbarContainer: this.shellLayout.getTarget('shell-menu-nav'),
+      themeSettingsContainer: this.shellLayout.getTarget('shell-menu-config-theme'),
+      userMenuContainer: this.shellLayout.getTarget('shell-menu-config-user'),
+      linksContainer: null,
+    };
+  }
+
+  /**
+   * @param {string} navigationMode
+   * @returns {{ navbarContainer: HTMLElement|null, themeSettingsContainer: HTMLElement|null, userMenuContainer: HTMLElement|null, linksContainer: HTMLElement|null }|null}
+   */
+  #resolveNavigationTargets(navigationMode) {
+    if (!(this.shellLayout instanceof ShellLayout)) {
+      return null;
+    }
+
+    if (navigationMode === 'mixed') {
+      return this.#resolveMixedNavbarTargets();
+    }
+
+    return this.#resolveDefaultNavbarTargets();
+  }
+
+  /**
+   * @param {string} navigationMode
+   * @param {{ navbarContainer: HTMLElement|null, themeSettingsContainer: HTMLElement|null, userMenuContainer: HTMLElement|null, linksContainer: HTMLElement|null }|null} targets
+   */
+  #syncThemeSettingsPanelTargets(navigationMode, targets) {
+    if (!(targets && targets.themeSettingsContainer instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!(this.themeSettingsPanel instanceof ThemeSettingsPanel)) {
+      return;
+    }
+
+    if (this.currentThemeSettingsNavigationMode === navigationMode) {
+      return;
+    }
+
+    this.themeSettingsPanel.setContainer(targets.themeSettingsContainer);
+    this.currentThemeSettingsNavigationMode = navigationMode;
+  }
+
+  /**
+   * @param {string} navigationMode
+   * @param {{ navbarContainer: HTMLElement|null, themeSettingsContainer: HTMLElement|null, userMenuContainer: HTMLElement|null, linksContainer: HTMLElement|null }|null} targets
+   */
+  #syncNavbarTargets(navigationMode, targets) {
+    if (!(targets && this.currentNavbar instanceof Navbar)) {
+      return;
+    }
+
+    if (this.currentNavbarNavigationMode !== navigationMode) {
+      this.currentNavbar.setLayoutTargets({
+        container: targets.navbarContainer,
+        userContainer: targets.userMenuContainer,
+        linksContainer: targets.linksContainer,
+        linksOrientation: navigationMode === 'mixed' ? 'side' : 'top',
+        orientation: navigationMode === 'side' ? 'side' : 'top',
+      });
+      this.currentNavbarNavigationMode = navigationMode;
+      return;
+    }
+
+    this.currentNavbar.setOrientation(navigationMode === 'side' ? 'side' : 'top');
+  }
+
+  /**
+   * @param {Array<{slug?: string}>} entitiesForNav
+   * @returns {{ isAdmin: boolean, fallbackPage: string, initialPage: string, userName: string|null, avatar: string|null, userRoles: string[] }}
+   */
+  #resolveDashboardIdentity(entitiesForNav) {
     const isAdmin = SessionModel.currentUserIsAdmin();
     const firstEntitySlug = entitiesForNav[0]?.slug ?? '';
     let fallbackPage = isAdmin ? 'plugins' : 'home';
@@ -148,6 +342,7 @@ export class AppController {
       initialPage = fallbackPage;
       window.history.replaceState(null, '', hashFromPage(fallbackPage));
     }
+
     const currentUser = SessionModel.getUser();
     const userName = currentUser && typeof currentUser === 'object' && typeof currentUser.name === 'string'
       ? currentUser.name
@@ -159,38 +354,105 @@ export class AppController {
       ? currentUser.roles
       : [];
 
-    this.unsubscribeNavbar();
-
-    this.currentNavbar = new Navbar(navbarContainer, {
-      userEmail: SessionModel.getUserEmail(),
+    return {
+      isAdmin,
+      fallbackPage,
+      initialPage,
       userName,
       avatar,
-      roles: userRoles,
-      userContainer: userMenuContainer,
-      entities: entitiesForNav,
-      currentPage: initialPage,
-      canManagePlugins: isAdmin,
-      onLogout: () => {
-        this.clearAuth();
-        this.renderLogin();
-      },
-      onNavigate: async (page) => {
-        await this.router.navigate(page, { updateHash: true });
-      },
+      userRoles,
+    };
+  }
+
+  subscribeUiPreferences() {
+    if (this.uiSubscription !== null) {
+      return;
+    }
+
+    this.uiSubscription = AppState.subscribeUi(() => {
+      this.syncUiPreferences();
+      this.scheduleUiPreferencesSave();
+    });
+  }
+
+  syncUiPreferences() {
+    const uiPreferences = AppState.getUiPreferences();
+    applyUiPreferencesToDocument(uiPreferences, {
+      app: this.container,
     });
 
-    this.syncNavbarFromState();
-    this.navbarSubscription = SessionModel.subscribe(() => {
-      this.syncNavbarFromState();
-    });
+    if (this.shellLayout instanceof ShellLayout) {
+      this.shellLayout.applyUiPreferences(uiPreferences);
+    }
 
-    await this.router.start(fallbackPage);
+    const targets = this.#resolveNavigationTargets(uiPreferences.navigationMode);
+    this.#syncThemeSettingsPanelTargets(uiPreferences.navigationMode, targets);
+    this.#syncNavbarTargets(uiPreferences.navigationMode, targets);
+    this.renderGlobalNotifications();
+  }
+
+  destroyThemeSettingsPanel() {
+    if (this.themeSettingsPanel instanceof ThemeSettingsPanel) {
+      this.themeSettingsPanel.destroy();
+      this.themeSettingsPanel = null;
+      this.currentThemeSettingsNavigationMode = null;
+    }
+  }
+
+  async hydrateUiPreferences() {
+    if (this.dashboardApi === null) {
+      return;
+    }
+
+    this.uiHydrating = true;
+    try {
+      const settings = await loadUiPreferences(this.dashboardApi);
+      if (settings !== null) {
+        AppState.setUiPreferences(settings);
+      }
+    } catch {
+      // La UI ya dispone de fallback local/default; no bloquear el arranque.
+    } finally {
+      this.uiHydrating = false;
+    }
+  }
+
+  scheduleUiPreferencesSave() {
+    if (this.uiHydrating || this.dashboardApi === null || !SessionModel.currentUserIsAdmin()) {
+      return;
+    }
+
+    this.clearUiSaveTimer();
+    this.uiSaveTimer = window.setTimeout(() => {
+      void this.persistUiPreferences();
+    }, 180);
+  }
+
+  clearUiSaveTimer() {
+    if (this.uiSaveTimer !== null) {
+      window.clearTimeout(this.uiSaveTimer);
+      this.uiSaveTimer = null;
+    }
+  }
+
+  async persistUiPreferences() {
+    if (this.dashboardApi === null || !SessionModel.currentUserIsAdmin()) {
+      return;
+    }
+
+    try {
+      await saveUiPreferences(this.dashboardApi, AppState.getUiPreferences());
+    } catch {
+      // Mantener la UX local aunque falle el guardado remoto.
+    }
   }
 
   async navigateTo(page) {
     if (!(this.contentContainer instanceof HTMLElement)) {
       return;
     }
+
+    this.renderGlobalNotifications();
 
     this.currentEntityEdit = null;
     this.currentEntityRoute = null;
@@ -599,6 +861,7 @@ export class AppController {
     this.router.stop();
     this.unsubscribeNavbar();
     this.currentNavbar = null;
+    this.currentNavbarNavigationMode = null;
     this.dashboardApi = null;
     this.shellLayout = null;
     this.contentContainer = null;
@@ -659,10 +922,43 @@ export class AppController {
   showPlaceholder(message) {
     const placeholder = component.create('p', {
       className: 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500',
-      text: message,
+      text: typeof message === 'string' && message !== '' ? message : t('ui.error.generic', 'Ha ocurrido un error inesperado.'),
     }).setData('role', 'placeholder');
     PageLayout.create(this.contentContainer, { shell: this.shellLayout })
       .setContent(placeholder);
+  }
+
+  renderGlobalNotifications() {
+    if (!(this.shellLayout instanceof ShellLayout)) {
+      return;
+    }
+
+    const target = this.shellLayout.getTarget('shell-floating-ui');
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const notification = AppState.getNotification();
+    target.replaceChildren();
+
+    if (!notification || typeof notification !== 'object') {
+      return;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'mx-4 mt-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur';
+    card.dataset.role = 'global-notification';
+
+    const title = document.createElement('div');
+    title.className = 'text-sm font-semibold text-slate-900';
+    title.textContent = typeof notification.title === 'string' && notification.title !== '' ? notification.title : 'Aviso';
+
+    const message = document.createElement('div');
+    message.className = 'mt-1 text-sm text-slate-600';
+    message.textContent = typeof notification.message === 'string' ? notification.message : '';
+
+    card.append(title, message);
+    target.append(card);
   }
 
   buildTemplateDefinition(page) {

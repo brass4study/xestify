@@ -5,6 +5,8 @@
 import { Api, ApiError } from '../../models/ApiClientModel.js';
 import { buildPluginModuleUrl } from '../../models/BasePathModel.js';
 import { PluginPanelRegistry } from '../../models/PluginPanelModel.js';
+import { t } from '../../models/I18nModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { DynamicForm } from '../modules/DynamicForm.js';
 import { DynamicTabs } from '../modules/DynamicTabs.js';
@@ -119,7 +121,7 @@ export class EntityEdit {
 		this.#form.render();
 
 		const saveBtn = component.create('button', {
-			label: 'Guardar',
+			label: t('forms.save', 'Guardar'),
 			variant: 'primary',
 			size: 'md',
 			dataRole: 'entity-edit-save',
@@ -131,7 +133,7 @@ export class EntityEdit {
 
 		if (this.#onCancel !== null) {
 			const cancelBtn = component.create('button', {
-				label: 'Cancelar',
+				label: t('ui.actions.cancel', 'Cancelar'),
 				variant: 'secondary',
 				size: 'md',
 				dataRole: 'entity-edit-cancel',
@@ -381,6 +383,11 @@ export class EntityEdit {
 	}
 
 	#showGlobalError(message) {
+		UiResilienceService.showNotification({
+			type: 'error',
+			title: t('ui.error.title', 'Error'),
+			message,
+		});
 		if (this.#errorBanner !== null && this.#layout !== null) {
 			this.#errorBanner.textContent = message;
 			this.#layout.setNotification(this.#errorBanner);
@@ -400,7 +407,16 @@ export class EntityEdit {
 		const saveBtn = this.#container.querySelector('[data-role="entity-edit-save"]');
 		if (saveBtn !== null) {
 			saveBtn.disabled = loading;
-			saveBtn.textContent = loading ? 'Guardando…' : 'Guardar';
+			saveBtn.textContent = loading ? `${t('forms.saving', 'Guardando…')}` : t('forms.save', 'Guardar');
+		}
+		if (loading) {
+			UiResilienceService.showNotification({
+				type: 'info',
+				title: t('ui.loading', 'Cargando…'),
+				message: t('forms.saving', 'Guardando…'),
+			});
+		} else {
+			UiResilienceService.clearNotification();
 		}
 	}
 

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>UiResilienceTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<h2>UiResilienceTest</h2>
+<pre id="output"></pre>
+
+<script type="module">
+  import { AppState } from '../src/js/models/StateModel.js';
+  import { UiResilienceService } from '../src/js/services/UiResilienceService.js';
+  import { setLocale, t } from '../src/js/models/I18nModel.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from './js/helpers.js';
+
+  initTestRunner('output');
+
+  separator();
+
+  await test('AppState tracks global notification and navigation state', async () => {
+    AppState.clearNotification();
+    AppState.setNavigationState({ page: 'entity', entity: 'clients' });
+
+    UiResilienceService.showNotification({
+      type: 'info',
+      title: 'Procesando',
+      message: 'Cargando datos',
+    });
+
+    const notification = AppState.getNotification();
+    assertTrue(notification !== null, 'Debe existir una notificación global');
+    assertEquals(notification.message, 'Cargando datos');
+    assertEquals(AppState.getNavigationState().entity, 'clients');
+
+    AppState.clearNotification();
+    assertTrue(AppState.getNotification() === null, 'La notificación debe limpiarse');
+  });
+
+  await test('UiResilienceService normalizes errors into friendly messages', async () => {
+    const message = UiResilienceService.handleError(new Error('boom'), 'Fallback local');
+    assertEquals(message, 'Ha ocurrido un error inesperado.');
+
+    const networkMessage = UiResilienceService.handleError({ type: 'network' }, 'Fallback local');
+    assertEquals(networkMessage, 'No se pudo completar la solicitud. Revise la conexión e intente nuevamente.');
+  });
+
+  await test('i18n helper resolves translations and locale fallbacks', async () => {
+    setLocale('es');
+    assertEquals(t('ui.loading'), 'Cargando…');
+    assertEquals(t('ui.unknown', 'Texto alternativo'), 'Texto alternativo');
+  });
+
+  await test('UiResilienceService confirm flow resolves user choice', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const confirmation = UiResilienceService.confirm({
+      container,
+      title: 'Confirmar acción',
+      message: '¿Desea continuar?',
+      confirmLabel: 'Sí',
+      cancelLabel: 'No',
+    });
+
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay !== null, 'Debe renderizar el modal de confirmación');
+
+    const cancelButton = overlay.querySelector('[data-action="cancel-modal"]');
+    assertTrue(cancelButton instanceof HTMLElement, 'Debe existir el botón de cancelación');
+    cancelButton.click();
+
+    assertEquals(await confirmation, false, 'Debe resolver con false al cancelar');
+    container.remove();
+  });
+
+  await test('Theme preferences persist in localStorage and normalize correctly', async () => {
+    const before = window.localStorage.getItem('xestify_ui_preferences');
+    AppState.setUiPreferences({ pageStyle: 'dark', themeColor: 'red', navigationMode: 'side' });
+
+    const stored = window.localStorage.getItem('xestify_ui_preferences');
+    assertTrue(typeof stored === 'string' && stored.includes('dark'), 'Debe persistir el estilo de página');
+    assertTrue(typeof stored === 'string' && stored.includes('red'), 'Debe persistir el color del tema');
+
+    const preferences = AppState.getUiPreferences();
+    assertEquals(preferences.pageStyle, 'dark');
+    assertEquals(preferences.themeColor, 'red');
+    assertEquals(preferences.navigationMode, 'side');
+
+    if (before === null) {
+      window.localStorage.removeItem('xestify_ui_preferences');
+    } else {
+      window.localStorage.setItem('xestify_ui_preferences', before);
+    }
+  });
+
+  separator();
+  finishTestRunner('output');
+</script>
+</body>
+</html>

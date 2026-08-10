@@ -76,6 +76,48 @@
     assertEquals(AppState.getError(), error);
   });
 
+  await test('updateUiPreferences merges WYSIWYG shell settings', async () => {
+    AppState.resetUiPreferences();
+    AppState.updateUiPreferences({
+      contentWidth: 'fluid',
+      themeColor: 'cyan',
+      regions: { footer: false },
+      tokens: { radiusPreset: 'expressive' },
+    });
+
+    const ui = AppState.getUiPreferences();
+    assertEquals(ui.contentWidth, 'fluid');
+    assertEquals(ui.themeColor, 'cyan');
+    assertEquals(ui.regions.footer, false);
+    assertEquals(ui.regions.header, true);
+    assertEquals(ui.tokens.radiusPreset, 'expressive');
+  });
+
+  await test('subscribeUi receives normalized preference snapshots', async () => {
+    AppState.resetUiPreferences();
+    const snapshots = [];
+    const unsubscribe = AppState.subscribeUi((settings) => {
+      snapshots.push(settings);
+    });
+
+    AppState.updateUiPreferences({ navigationMode: 'invalid', regions: { menuHeader: false } });
+    unsubscribe();
+
+    assertEquals(snapshots.length, 1, 'Debe notificarse una sola vez');
+    assertEquals(snapshots[0].navigationMode, 'top');
+    assertEquals(snapshots[0].regions.menuHeader, false);
+  });
+
+  await test('resetUiPreferences restores default visual settings', async () => {
+    AppState.updateUiPreferences({ pageStyle: 'dark', weakMode: true });
+    AppState.resetUiPreferences();
+
+    const ui = AppState.getUiPreferences();
+    assertEquals(ui.pageStyle, 'light');
+    assertEquals(ui.contentWidth, 'boxed');
+    assertEquals(ui.weakMode, false);
+  });
+
   await test('reset() restores initial state', async () => {
     AppState.setUser({ id: 'u1' });
     AppState.setCurrentEntity('client');
@@ -96,6 +138,9 @@
     assertTrue(AppState.getToken() === null, 'token must be null');
     assertTrue(AppState.isLoading() === false, 'loading must be false');
     assertTrue(AppState.getError() === null, 'error must be null');
+
+    const ui = AppState.getUiPreferences();
+    assertEquals(ui.contentWidth, 'boxed');
   });
 
   separator();

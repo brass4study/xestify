@@ -32,13 +32,13 @@ export class DynamicTable {
 	static buildActionButton(options) {
 		const tone = typeof options?.tone === 'string' ? options.tone : 'slate';
 		const palette = {
-			sky: 'text-sky-700 hover:text-sky-800 focus:ring-sky-200',
-			emerald: 'text-emerald-700 hover:text-emerald-800 focus:ring-emerald-200',
-			amber: 'text-amber-700 hover:text-amber-800 focus:ring-amber-200',
+			sky: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			emerald: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			amber: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
 			red: 'text-red-700 hover:text-red-800 focus:ring-red-200',
-			violet: 'text-violet-700 hover:text-violet-800 focus:ring-violet-200',
-			brand: 'text-brand-700 hover:text-brand-800 focus:ring-brand-200',
-			slate: 'text-slate-700 hover:text-slate-900 focus:ring-slate-200',
+			violet: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			brand: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			slate: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
 		};
 
 		const colorClasses = palette[tone] ?? palette.slate;
@@ -51,6 +51,7 @@ export class DynamicTable {
 			disabled: options.disabled === true,
 			onClick: options.onClick,
 		});
+		button.setData('role', 'table-action-button');
 		const icon = button.querySelector('i');
 		if (icon instanceof HTMLElement) {
 			icon.classList.add('text-lg', 'leading-none');

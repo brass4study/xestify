@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
+use Xestify\controllers\ConfigurationController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
@@ -19,6 +20,11 @@ if (!defined('ROUTE_USER_ITEM')) {
 
 $router->get('/health', [HealthController::class, 'index']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
+
+// Global configuration endpoints
+$router->get('/api/v1/configurations', [ConfigurationController::class, 'index']);
+$router->get('/api/v1/configurations/{key}', [ConfigurationController::class, 'show']);
+$router->put('/api/v1/configurations/{key}', [ConfigurationController::class, 'update']);
 
 // User endpoints
 $router->get('/api/v1/users/me', [UserController::class, 'me']);

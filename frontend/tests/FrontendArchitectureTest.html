@@ -33,6 +33,7 @@
     import { PageLayout } from '../src/js/views/layout/PageLayout.js';
     import { ListLayout } from '../src/js/views/layout/ListLayout.js';
     import { FormLayout } from '../src/js/views/layout/FormLayout.js';
+    import { Navbar } from '../src/js/views/modules/Navbar.js';
     import { component } from '../src/js/views/modules/ComponentFactory.js';
 
     initTestRunner('output');
@@ -165,7 +166,10 @@
 
       assertEquals(shell.getTarget('shell-menu-nav').parentElement.dataset.role, 'shell-menu', 'Nav fuera de shell-menu');
       assertEquals(shell.getTarget('shell-menu-config').parentElement.dataset.role, 'shell-menu', 'Config fuera de shell-menu');
+      assertEquals(shell.getTarget('shell-menu-config-theme').parentElement.dataset.role, 'shell-menu-config', 'Theme fuera de config');
       assertEquals(shell.getTarget('shell-menu-config-user').parentElement.dataset.role, 'shell-menu-config', 'Usuario fuera de config');
+      assertEquals(shell.getTarget('shell-floating-ui').parentElement.dataset.role, 'shell', 'Panel flotante fuera de shell');
+      assertEquals(shell.getTarget('shell-main').parentElement.dataset.role, 'shell-body', 'Main fuera de body');
       assertEquals(shell.getTarget('shell-header').parentElement.dataset.role, 'shell-main', 'Header fuera de main');
       assertEquals(shell.getTarget('shell-header').childElementCount, 0, 'ShellLayout no debe inyectar componentes de página');
       assertTrue(shell.getTarget('page-header-title') === null, 'ShellLayout no debe registrar targets de PageLayout');
@@ -194,6 +198,109 @@
       assertTrue(notifications.hidden, 'Notificaciones deben ocultarse al vaciarse');
       assertTrue(!notifications.classList.contains('pb-4'), 'Notificaciones vacías deben retirar el padding');
       assertEquals(shell.getTarget('shell-footer').parentElement.dataset.role, 'shell', 'Footer fuera de shell');
+
+      host.remove();
+    });
+
+    await test('ShellLayout aplica preferencias globales de UI al shell activo', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+
+      shell.applyUiPreferences({
+        contentWidth: 'fluid',
+        menuStyle: 'light',
+        fixedHeader: false,
+        navigationMode: 'side',
+        sideMenuType: 'compact',
+        fixedSidebar: true,
+        regions: {
+          header: false,
+          footer: false,
+          menu: true,
+          menuHeader: false,
+        },
+      });
+
+      assertEquals(shell.getTarget('shell').dataset.uiContentWidth, 'fluid', 'El shell debe reflejar el width activo');
+      assertEquals(shell.getTarget('shell').dataset.uiNavigationMode, 'side', 'El shell debe reflejar el modo de navegación');
+      assertEquals(shell.getTarget('shell-menu-nav').parentElement.dataset.role, 'shell-menu', 'La navegación superior debe permanecer en shell-menu');
+      assertTrue(!shell.getTarget('shell-menu-nav').hidden, 'En modo side la navegación debe mostrarse en shell-menu');
+      assertTrue(shell.getTarget('shell-menu-config').hidden, 'Menu header false debe ocultar la zona de configuración');
+      assertTrue(shell.getTarget('shell-header').hidden, 'Header false debe ocultar la cabecera de página');
+      assertTrue(shell.getTarget('shell-footer').hidden, 'Footer false debe ocultar el pie');
+
+      host.remove();
+    });
+
+    await test('ShellLayout en modo side transforma shell-menu en panel lateral', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+
+      shell.applyUiPreferences({
+        contentWidth: 'boxed',
+        menuStyle: 'brand',
+        fixedHeader: true,
+        navigationMode: 'side',
+        sideMenuType: 'default',
+        fixedSidebar: true,
+        regions: {
+          header: true,
+          footer: true,
+          menu: true,
+          menuHeader: true,
+        },
+      });
+
+      assertTrue(!shell.getTarget('shell-menu').hidden, 'En modo side el shell-menu debe permanecer visible');
+      assertEquals(shell.getTarget('shell-menu-config').parentElement.dataset.role, 'shell-menu', 'La configuración debe quedarse dentro de shell-menu');
+
+      host.remove();
+    });
+
+    await test('ShellLayout en modo mixed añade una barra superior de ancho completo', async () => {
+      const host = document.createElement('div');
+      document.body.append(host);
+      const shell = ShellLayout.create(host).build();
+
+      shell.applyUiPreferences({
+        contentWidth: 'boxed',
+        menuStyle: 'brand',
+        fixedHeader: true,
+        navigationMode: 'mixed',
+        sideMenuType: 'default',
+        fixedSidebar: true,
+        regions: {
+          header: true,
+          footer: true,
+          menu: true,
+          menuHeader: true,
+        },
+      });
+
+      const mixedNavbar = new Navbar(shell.getTarget('shell-mixed-bar-nav'), {
+        entities: [{ slug: 'clients', label: 'Clientes' }],
+        currentPage: 'entity:clients',
+        userContainer: shell.getTarget('shell-mixed-bar-config-user'),
+        linksContainer: shell.getTarget('shell-menu-nav'),
+        linksOrientation: 'side',
+        showUserMenu: false,
+      });
+      mixedNavbar.setActive('entity:clients');
+      assertTrue(shell.getTarget('shell-mixed-bar').querySelector('[data-role="navbar-brand"]') !== null, 'La barra mixed debe renderizar la marca');
+
+      assertEquals(shell.getTarget('shell').dataset.uiNavigationMode, 'mixed', 'El shell debe conservar el modo mixed');
+      assertTrue(!shell.getTarget('shell-mixed-bar').hidden, 'En modo mixed debe existir la barra superior');
+      assertEquals(shell.getTarget('shell-mixed-bar').parentElement.dataset.role, 'shell', 'La barra mixed debe colgar directamente de shell');
+      assertEquals(shell.getTarget('shell-mixed-bar-config').parentElement.dataset.role, 'shell-mixed-bar', 'La configuración debe moverse a la barra superior');
+      assertEquals(shell.getTarget('shell-mixed-bar-config-theme').parentElement.dataset.role, 'shell-mixed-bar-config', 'Theme debe vivir en el config superior');
+      assertEquals(shell.getTarget('shell-mixed-bar-config-user').parentElement.dataset.role, 'shell-mixed-bar-config', 'Usuario debe vivir en el config superior');
+      const mixedBrand = shell.getTarget('shell-mixed-bar').querySelector('[data-role="navbar-brand"]');
+      assertTrue(mixedBrand !== null, 'La barra mixed debe renderizar la marca');
+      assertTrue(!shell.getTarget('shell-menu').hidden, 'En modo mixed el shell-menu lateral debe permanecer visible');
+      assertEquals(shell.getTarget('shell-menu').parentElement.dataset.role, 'shell-body', 'El menú lateral debe permanecer en shell-body');
+      assertTrue(!shell.getTarget('shell-menu-nav').hidden, 'En modo mixed la navegación lateral debe mostrarse');
 
       host.remove();
     });

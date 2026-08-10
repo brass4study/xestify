@@ -3,6 +3,8 @@
  */
 
 import { Api, ApiError } from '../../models/ApiClientModel.js';
+import { t } from '../../models/I18nModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class Login {
@@ -60,10 +62,9 @@ export class Login {
 		} catch (err) {
 			if (err instanceof ApiError && Object.keys(err.details).length > 0) {
 				this.showFieldErrors(err.details);
-			} else if (err instanceof ApiError) {
-				this.showGlobalError(err.message);
 			} else {
-				this.showGlobalError('Error desconocido');
+				const message = UiResilienceService.handleError(err, t('ui.error.generic', 'No se pudo iniciar sesión.'));
+				this.showGlobalError(message);
 			}
 		} finally {
 			this.setLoading(false);

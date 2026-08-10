@@ -10,6 +10,8 @@
 
 import { Api, ApiError } from '../../models/ApiClientModel.js';
 import { AppState } from '../../models/StateModel.js';
+import { t } from '../../models/I18nModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { ListLayout } from '../layout/ListLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { component } from '../modules/ComponentFactory.js';
@@ -74,8 +76,8 @@ export class EntityList {
 
 			if (entities.length === 0) {
 				component.create('emptyState', {
-					title: 'Sin entidades',
-					description: 'No hay entidades disponibles.',
+					title: t('entities.empty.title', 'Sin entidades'),
+					description: t('entities.empty.description', 'No hay entidades disponibles.'),
 				})
 					.setData('role', 'entity-empty')
 					.setParent(this.#layout.getContentTarget());
@@ -289,7 +291,13 @@ export class EntityList {
 	}
 
 	#showNotification(type, message, role) {
-		const banner = component.create('alert', { type, message })
+		const normalizedMessage = typeof message === 'string' && message.trim() !== '' ? message : t('ui.error.generic', 'Ha ocurrido un error inesperado.');
+		UiResilienceService.showNotification({
+			type,
+			title: type === 'error' ? t('ui.error.title', 'Error') : t('ui.loading', 'Cargando…'),
+			message: normalizedMessage,
+		});
+		const banner = component.create('alert', { type, message: normalizedMessage })
 			.setData('role', role)
 			.setData('type', type);
 		this.#layout?.setNotification(banner);

@@ -2,6 +2,13 @@ const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
 const STORAGE_USER_NAME_KEY = 'xestify_user_name';
 const STORAGE_USER_AVATAR_KEY = 'xestify_user_avatar';
 
+import {
+	createDefaultUiPreferences,
+	mergeUiPreferences,
+	persistUiPreferences,
+	readStoredUiPreferences,
+} from './ThemeModel.js';
+
 function normalizeRoles(roles) {
 	if (Array.isArray(roles)) {
 		return roles.filter((role) => typeof role === 'string' && role !== '');
@@ -68,6 +75,7 @@ function persistUserIdentity(user) {
 export const AppState = {
 	user: null,
 	listeners: [],
+	uiListeners: [],
 	currentEntity: null,
 	entities: [],
 	records: [],
@@ -75,6 +83,9 @@ export const AppState = {
 	token: null,
 	loading: false,
 	error: null,
+	notification: null,
+	navigationState: {},
+	uiPreferences: readStoredUiPreferences(typeof window !== 'undefined' ? window.localStorage : null),
 
 	subscribe(listener) {
 		if (typeof listener !== 'function') {
@@ -90,6 +101,24 @@ export const AppState = {
 	notify() {
 		for (const listener of this.listeners) {
 			listener(this.user);
+		}
+	},
+
+	subscribeUi(listener) {
+		if (typeof listener !== 'function') {
+			return () => {};
+		}
+
+		this.uiListeners.push(listener);
+		return () => {
+			this.uiListeners = this.uiListeners.filter((entry) => entry !== listener);
+		};
+	},
+
+	notifyUi() {
+		const snapshot = this.getUiPreferences();
+		for (const listener of this.uiListeners) {
+			listener(snapshot);
 		}
 	},
 
@@ -166,6 +195,48 @@ export const AppState = {
 		return this.error;
 	},
 
+	setNotification(notification) {
+		this.notification = notification && typeof notification === 'object' ? { ...notification } : null;
+	},
+
+	getNotification() {
+		return this.notification;
+	},
+
+	clearNotification() {
+		this.notification = null;
+	},
+
+	setNavigationState(state) {
+		this.navigationState = state && typeof state === 'object' ? { ...state } : {};
+	},
+
+	getNavigationState() {
+		return this.navigationState;
+	},
+
+	setUiPreferences(preferences) {
+		this.uiPreferences = mergeUiPreferences(createDefaultUiPreferences(), preferences);
+		persistUiPreferences(this.uiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+		this.notifyUi();
+	},
+
+	updateUiPreferences(patch) {
+		this.uiPreferences = mergeUiPreferences(this.uiPreferences, patch);
+		persistUiPreferences(this.uiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+		this.notifyUi();
+	},
+
+	getUiPreferences() {
+		return mergeUiPreferences(createDefaultUiPreferences(), this.uiPreferences);
+	},
+
+	resetUiPreferences() {
+		this.uiPreferences = createDefaultUiPreferences();
+		persistUiPreferences(this.uiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+		this.notifyUi();
+	},
+
 	reset() {
 		this.user = null;
 		this.currentEntity = null;
@@ -175,6 +246,8 @@ export const AppState = {
 		this.token = null;
 		this.loading = false;
 		this.error = null;
+		this.notification = null;
+		this.navigationState = {};
 		this.notify();
 	},
 };

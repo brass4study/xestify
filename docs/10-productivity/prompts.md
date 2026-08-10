@@ -1167,3 +1167,13 @@ Las rutas #/entity/:slug/:id/:tab no estan funcionando o no se invocan desde nav
 Ahora, cuando cambio de una pestaña a otra hace algo que se siente raro, hace un rerenderizado de la pagina, esto hace que la navegacion no se vea fluida. Optimicemosla para que no rerenderice toda la pagina, solo las partes necesarias, y en caso de ser nevesario que las tengra pre-cargadas
 ```
 **Resultado:** `RouteController` permite actualizar historial sin despachar la página. `AppController` conserva la instancia activa de `EntityEdit` y, para tabs del mismo registro, actualiza solo panel y breadcrumbs. Formulario y paneles se precargan una vez; Apache confirmó identidad DOM estable, conservación de valores sin guardar y back/forward sin rerender.
+
+### STORY 9.7 — Infraestructura transversal de frontend y resiliencia
+**Prompt:**
+```
+Retomemos la implementación de la story 9.7, revisemos qué está implementado, si lo está correctamente, y los puntos/implementaciones que pueden faltar.
+```
+**Resultado:** Se consolidó la capa transversal de frontend con estado global extendido para shell, navegación y preferencias UI; se añadió `UiResilienceService` para notificaciones, errores amigables y confirmaciones; se preparó una base de i18n y theming persistido para la UI; y se integró el nuevo feedback en las páginas principales sin duplicar handlers por vista.
+**Iteraciones:** 4
+**Lección:** Las preocupaciones transversales de UX deben resolverse una vez en una capa compartida y después consumirse desde toda la aplicación; si no, cada página vuelve a reinventar loading, error y confirmación.
+**Estado final:** STORY 9.7 implementada y validada con smoke test de UI, panel de tema y checks de sintaxis; el siguiente foco del backlog pasa a STORY 9.8.

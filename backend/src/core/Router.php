@@ -18,7 +18,7 @@ class Router
     private array $routes = [];
 
     /** @var string[] */
-    private array $protectedPrefixes = ['/api/v1/entities', '/api/v1/plugins', '/api/v1/users'];
+    private array $protectedPrefixes = ['/api/v1/entities', '/api/v1/plugins', '/api/v1/users', '/api/v1/configurations'];
 
     public function __construct(
         private Container $container,

@@ -1109,3 +1109,18 @@
   - Amplió los tests de tabs y ejecutó los 17 runners HTML en navegador integrado con 169/169 aserciones.
 - **Iteraciones:** 12 (auditoría local, núcleo del mapa, integración de tabs, cobertura de historial, unificación de home, simplificación de plugins, reproducción en Apache, consistencia de retornos, fallback de inicio, navegación interactiva por tabs, optimización sin rerender y limpieza final)
 - **Decisión manual:** Mantener identificadores internos para las vistas y exponer hashes canónicos como contrato público del router; hasta implementar una pagina de inicio, `#/home` y `#/` redirigen a la primera entidad activa. La configuración usa `#/plugins/:slug` sin segmentos redundantes y los tabs usan `#/entity/:slug/:id/:tab`, con `data` como pestaña base. Los tabs del mismo registro actualizan historial sin despachar de nuevo la página y back/forward reutiliza la instancia precargada.
+
+### STORY 9.7: Infraestructura transversal de frontend y resiliencia
+- **Fecha:** 2026-08-10
+- **Estimado sin IA:** 6h
+- **Tiempo real con IA:** No medido; la implementación se cerró en una sesión de consolidación sobre la base ya existente
+- **Aceleración:** No calculable con datos fiables
+- **Qué hizo IA:**
+  - Extendió el estado global de la app para incluir notificaciones, navegación transversal y preferencias UI compartidas.
+  - Implementó `UiResilienceService` como servicio único para feedback global, mensajes amigables de error, confirmaciones modales y notificaciones de éxito/error.
+  - Añadió una base de i18n ligera (`I18nModel`) y conectó textos reutilizables en shell, formularios y páginas clave.
+  - Implementó el modelo y panel de tema con preferencias persistidas por cliente y aplicación global en tiempo real.
+  - Integró `AppController` con el nuevo pipeline de resiliencia para capturar errores JS/red y mostrar feedback coherente en la shell.
+  - Actualizó `Login`, `EntityList`, `EntityEdit`, `PluginManager` y `UserManager` para consumir la infraestructura común en lugar de duplicar handlers y estados locales.
+- **Iteraciones:** 4 (estado transversal, feedback global, i18n/theming y validación final en navegador)
+- **Decisión manual:** Mantener la capa transversal como una única fuente de verdad para feedback y preferencias; no abrir un segundo store paralelo para cada página.

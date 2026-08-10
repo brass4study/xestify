@@ -13,6 +13,11 @@ export class Navbar {
 	#entities;
 	#activePage;
 	#canManagePlugins;
+	#showUserMenu;
+	#showBrand;
+	#orientation;
+	#linksContainer;
+	#linksOrientation;
 
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -22,10 +27,45 @@ export class Navbar {
 		this.#avatar = typeof options.avatar === 'string' ? options.avatar : null;
 		this.#roles = Array.isArray(options.roles) ? options.roles : [];
 		this.#entities = Array.isArray(options.entities) ? [...options.entities] : [];
+		this.#linksContainer = this.resolveOptionalContainer(options.linksContainer);
+		this.#linksOrientation = options.linksOrientation === 'side' ? 'side' : 'top';
 		this.#activePage = typeof options.currentPage === 'string' ? options.currentPage : '';
 		this.#canManagePlugins = Boolean(options.canManagePlugins);
+		this.#showUserMenu = options.showUserMenu !== false;
+		this.#showBrand = options.showBrand !== false;
+		this.#orientation = options.orientation === 'top' ? 'top' : 'side';
 		this.#onLogout = typeof options.onLogout === 'function' ? options.onLogout : null;
 		this.#onNavigate = typeof options.onNavigate === 'function' ? options.onNavigate : null;
+
+		this.render();
+	}
+
+	setShowBrand(showBrand) {
+		const normalized = Boolean(showBrand);
+		if (this.#showBrand === normalized) {
+			return;
+		}
+
+		this.#showBrand = normalized;
+		this.render();
+	}
+
+	setLayoutTargets(options = {}) {
+		if (options.container !== undefined) {
+			this.#container = this.resolveContainer(options.container);
+		}
+		if (options.userContainer !== undefined) {
+			this.#userContainer = this.resolveContainer(options.userContainer);
+		}
+		if (options.linksContainer !== undefined) {
+			this.#linksContainer = this.resolveOptionalContainer(options.linksContainer);
+		}
+		if (options.linksOrientation !== undefined) {
+			this.#linksOrientation = options.linksOrientation === 'side' ? 'side' : 'top';
+		}
+		if (options.orientation !== undefined) {
+			this.#orientation = options.orientation === 'top' ? 'top' : 'side';
+		}
 
 		this.render();
 	}
@@ -50,7 +90,21 @@ export class Navbar {
 		this.renderUserMenu();
 	}
 
+	setOrientation(orientation) {
+		const normalized = orientation === 'top' ? 'top' : 'side';
+		if (this.#orientation === normalized) {
+			return;
+		}
+
+		this.#orientation = normalized;
+		this.render();
+	}
+
 	renderUserMenu() {
+		if (!this.#showUserMenu) {
+			return;
+		}
+
 		const userEl = this.#userContainer.querySelector('[data-role="navbar-user"]');
 		if (userEl === null) {
 			return;
@@ -92,22 +146,35 @@ export class Navbar {
 
 	render() {
 		this.#container.replaceChildren();
-		this.#userContainer.replaceChildren();
+		if (this.#showUserMenu) {
+			this.#userContainer.replaceChildren();
+		}
+
+		const navClassName = this.#orientation === 'side'
+			? 'flex min-w-0 flex-col items-stretch gap-3'
+			: 'flex min-w-0 flex-wrap items-center gap-3 text-white';
 
 		const nav = component.create('nav', {
-			className: 'flex min-w-0 flex-wrap items-center gap-3 text-white',
+			className: navClassName,
 			dataset: { role: 'navbar' },
 			attributes: { 'aria-label': 'Navegación principal' },
 		});
 
-		component.create('span', {
-			className: 'pr-2 text-xl font-semibold tracking-tight',
-			dataset: { role: 'navbar-brand' },
-			text: 'Xestify',
-		}).setParent(nav);
+		if (this.#showBrand) {
+			component.create('span', {
+				className: 'pr-2 text-xl font-semibold tracking-tight',
+				dataset: { role: 'navbar-brand' },
+				text: 'Xestify',
+			}).setParent(nav);
+		}
+
+		const linksOrientation = this.#linksOrientation ?? this.#orientation;
+		const linksClassName = linksOrientation === 'side'
+			? 'order-1 flex w-full flex-col gap-1.5 pt-0'
+			: 'order-3 flex w-full flex-wrap gap-1.5 pt-1 sm:order-2 sm:w-auto sm:pt-0';
 
 		const links = component.create('ul', {
-			className: 'order-3 flex w-full flex-wrap gap-1.5 pt-1 sm:order-2 sm:w-auto sm:pt-0',
+			className: linksClassName,
 			dataset: { role: 'navbar-links' },
 		});
 
@@ -124,14 +191,18 @@ export class Navbar {
 			links.appendChild(this.makeNavItem('plugins', 'Plugins'));
 		}
 
-		links.setParent(nav);
+		links.setParent(this.#linksContainer ?? nav);
 
-		component.create('div', {
-			className: 'relative min-w-0',
-			dataset: { role: 'navbar-user' },
-		}).setParent(this.#userContainer);
+		if (this.#showUserMenu) {
+			component.create('div', {
+				className: 'relative min-w-0',
+				dataset: { role: 'navbar-user' },
+			}).setParent(this.#userContainer);
+		}
 		nav.setParent(this.#container);
-		this.renderUserMenu();
+		if (this.#showUserMenu) {
+			this.renderUserMenu();
+		}
 
 		if (this.#activePage !== '') {
 			this.setActive(this.#activePage);
@@ -159,7 +230,8 @@ export class Navbar {
 
 	setActive(page) {
 		this.#activePage = page;
-		const links = this.#container.querySelectorAll('[data-role="navbar-link"]');
+		const searchRoot = this.#linksContainer instanceof HTMLElement ? this.#linksContainer : this.#container;
+		const links = searchRoot.querySelectorAll('[data-role="navbar-link"]');
 		for (const link of links) {
 			if (link instanceof HTMLElement) {
 				const isActive = link.dataset.page === page;
@@ -183,5 +255,13 @@ export class Navbar {
 		}
 
 		throw new TypeError(`Navbar: container "${String(container)}" not found`);
+	}
+
+	resolveOptionalContainer(container) {
+		if (container === undefined || container === null) {
+			return null;
+		}
+
+		return this.resolveContainer(container);
 	}
 }

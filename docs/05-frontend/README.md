@@ -51,7 +51,7 @@ para agrupar la configuración inicial y el montaje del nodo:
 
 ```js
 const navbarContainer = component.create('div')
-	.setClassName('sticky top-0 z-50')
+	.setClassName('top-0 z-50')
 	.setData('role', 'shell-navbar')
 	.setParent(shell);
 ```

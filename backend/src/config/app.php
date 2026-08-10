@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xestify\controllers\AuthController;
+use Xestify\controllers\ConfigurationController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\ExtensionPluginContentService;
 use Xestify\controllers\ExtensionPluginDataStore;
@@ -16,6 +17,7 @@ use Xestify\core\RuntimePathNormalizer;
 use Xestify\middleware\AuthMiddleware;
 use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
+use Xestify\repositories\ConfigurationRepository;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
 use Xestify\repositories\UserRepository;
@@ -99,6 +101,9 @@ if (!function_exists('xestifyRegisterEntityServices')) {
             $container->get(Database::class)
         ));
         $container->singleton(UserRepository::class, fn() => new UserRepository(
+            $container->get(Database::class)
+        ));
+        $container->singleton(ConfigurationRepository::class, fn() => new ConfigurationRepository(
             $container->get(Database::class)
         ));
         $container->singleton(EntityService::class, fn() => new EntityService(
@@ -206,6 +211,11 @@ if (!function_exists('xestifyRegisterControllers')) {
     {
         $container->singleton(AuthController::class, fn() => new AuthController(
             $container->get(JwtService::class),
+            $container->get(RequestFactory::class)
+        ));
+
+        $container->singleton(ConfigurationController::class, fn() => new ConfigurationController(
+            $container->get(ConfigurationRepository::class),
             $container->get(RequestFactory::class)
         ));
 

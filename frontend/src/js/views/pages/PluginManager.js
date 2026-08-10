@@ -3,9 +3,10 @@
  */
 
 import { Api } from '../../models/ApiClientModel.js';
+import { t } from '../../models/I18nModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { ListLayout } from '../layout/ListLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
-import { Modal } from '../modules/Modal.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class PluginManager {
@@ -93,7 +94,7 @@ export class PluginManager {
 
 	#createSyncButton() {
 		const syncButton = component.create('button', {
-			label: 'Sincronizar',
+			label: t('plugins.sync', 'Sincronizar'),
 			variant: 'primary',
 			size: 'md',
 			dataRole: 'plugin-sync',
@@ -121,8 +122,8 @@ export class PluginManager {
 	#renderContent(layout, content) {
 		if (this.#plugins.length === 0) {
 			component.create('emptyState', {
-				title: 'No hay plugins instalados',
-				description: 'Sincroniza los plugins disponibles para comenzar.',
+				title: t('plugins.empty.title', 'No hay plugins instalados'),
+				description: t('plugins.empty.description', 'Sincroniza los plugins disponibles para comenzar.'),
 			})
 				.setData('role', 'plugin-empty')
 				.setParent(content);
@@ -227,7 +228,7 @@ export class PluginManager {
 		return badge
 			.setClassName(`${isEntity ? 'bg-sky-100 text-sky-700' : 'bg-fuchsia-100 text-fuchsia-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`)
 			.setData('role', 'plugin-type-badge')
-			.setText(isEntity ? 'entidad' : 'extensión');
+			.setText(isEntity ? t('plugins.type.entity', 'entidad') : t('plugins.type.extension', 'extensión'));
 	}
 
 	#renderVersionCell(plugin, updateInfo) {
@@ -239,7 +240,7 @@ export class PluginManager {
 			component.create('span')
 				.setClassName('inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide')
 				.setData('role', 'plugin-update-badge')
-				.setText(`Actualización disponible: ${String(updateInfo.available_version ?? '')}`)
+				.setText(`${t('plugins.update.available', 'Actualización disponible')}: ${String(updateInfo.available_version ?? '')}`)
 				.setParent(container);
 		}
 
@@ -252,7 +253,7 @@ export class PluginManager {
 		return badge
 			.setClassName(`${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`)
 			.setData('role', 'plugin-status-badge')
-			.setText(isActive ? 'Activo' : 'Inactivo');
+			.setText(isActive ? t('plugins.status.active', 'Activo') : t('plugins.status.inactive', 'Inactivo'));
 	}
 
 	#renderActionsCell(plugin, updateInfo) {
@@ -260,7 +261,7 @@ export class PluginManager {
 
 		const isActive = plugin.status === 'active';
 		this.#pluginActionButton(
-			isActive ? 'Desactivar' : 'Activar',
+			isActive ? t('plugins.deactivate', 'Desactivar') : t('plugins.activate', 'Activar'),
 			isActive ? 'fa-power-off' : 'fa-play',
 			isActive ? 'amber' : 'emerald',
 			isActive ? 'deactivate' : 'activate',
@@ -269,15 +270,15 @@ export class PluginManager {
 
 		const canConfigure = plugin.status === 'active' && (plugin.plugin_type === 'entity' || plugin.plugin_type === 'extension');
 		if (canConfigure) {
-			this.#pluginActionButton('Configurar', 'fa-sliders', 'brand', 'configure', plugin).setParent(actions);
+			this.#pluginActionButton(t('plugins.configure', 'Configurar'), 'fa-sliders', 'brand', 'configure', plugin).setParent(actions);
 		}
 
 		if (updateInfo !== null) {
-			this.#pluginActionButton('Actualizar', 'fa-rotate', 'amber', 'update', plugin).setParent(actions);
+			this.#pluginActionButton(t('plugins.update', 'Actualizar'), 'fa-rotate', 'amber', 'update', plugin).setParent(actions);
 		}
 
 		if (this.#canRollback(plugin)) {
-			this.#pluginActionButton('Revertir', 'fa-clock-rotate-left', 'violet', 'rollback', plugin).setParent(actions);
+			this.#pluginActionButton(t('plugins.rollback', 'Revertir'), 'fa-clock-rotate-left', 'violet', 'rollback', plugin).setParent(actions);
 		}
 
 		return actions;
@@ -311,7 +312,7 @@ export class PluginManager {
 
 		const newStatus = button.dataset.action === 'activate' ? 'active' : 'inactive';
 		button.disabled = true;
-		button.textContent = newStatus === 'active' ? 'Activando...' : 'Desactivando...';
+button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar')}...` : `${t('plugins.deactivate', 'Desactivar')}...`;
 
 		this.#api.put(`/plugins/${plugin.slug}/status`, { status: newStatus })
 			.then((response) => {
@@ -324,11 +325,16 @@ export class PluginManager {
 				if (index !== -1) {
 					this.#plugins[index] = updated;
 				}
+				UiResilienceService.showNotification({
+					type: 'success',
+					title: t('ui.success', 'Éxito'),
+					message: `Plugin "${plugin.name || plugin.slug}" ${newStatus === 'active' ? 'activado' : 'desactivado'} correctamente.`,
+				});
 				this.#render();
 			})
 			.catch((error) => {
 				button.disabled = false;
-				button.textContent = newStatus === 'active' ? 'Activar' : 'Desactivar';
+				button.textContent = newStatus === 'active' ? t('plugins.activate', 'Activar') : t('plugins.deactivate', 'Desactivar');
 				this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 			});
 	}
@@ -337,7 +343,7 @@ export class PluginManager {
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
 		button.disabled = true;
-		button.textContent = 'Sincronizando...';
+		button.textContent = `${t('plugins.sync', 'Sincronizar')}...`;
 
 		try {
 			const response = await this.#api.post('/plugins/sync', {});
@@ -345,12 +351,17 @@ export class PluginManager {
 			const outdated = Number(payload?.summary?.outdated ?? 0);
 			this.#feedbackType = 'success';
 			this.#feedbackMessage = `Sincronización completada. Plugins con actualizaciones disponibles: ${outdated}.`;
+			UiResilienceService.showNotification({
+				type: 'success',
+				title: t('ui.success', 'Éxito'),
+				message: this.#feedbackMessage,
+			});
 			await this.#refreshData();
 		} catch (error) {
 			this.renderError(`No se pudieron sincronizar los plugins: ${error.message}`);
 		} finally {
 			button.disabled = false;
-			button.textContent = 'Sincronizar';
+			button.textContent = t('plugins.sync', 'Sincronizar');
 		}
 	}
 
@@ -374,6 +385,11 @@ export class PluginManager {
 			await this.#api.post(`/plugins/${plugin.slug}/update`, {});
 			this.#feedbackType = 'success';
 			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" actualizado correctamente.`;
+			UiResilienceService.showNotification({
+				type: 'success',
+				title: t('ui.success', 'Éxito'),
+				message: this.#feedbackMessage,
+			});
 			await this.#refreshData();
 		} catch (error) {
 			this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
@@ -403,6 +419,11 @@ export class PluginManager {
 			await this.#api.post(`/plugins/${plugin.slug}/rollback`, {});
 			this.#feedbackType = 'success';
 			this.#feedbackMessage = `Plugin "${plugin.name || plugin.slug}" revertido correctamente.`;
+			UiResilienceService.showNotification({
+				type: 'success',
+				title: t('ui.success', 'Éxito'),
+				message: this.#feedbackMessage,
+			});
 			await this.#refreshData();
 		} catch (error) {
 			this.renderError(`No se pudo revertir el plugin: ${error.message}`);
@@ -413,45 +434,12 @@ export class PluginManager {
 	}
 
 	#confirmAction(title, message, confirmLabel) {
-		return new Promise((resolve) => {
-			const modal = new Modal(this.#container, { title });
-			const body = component.create('div').setClassName('grid gap-3');
-
-			const text = component.create('p')
-				.setClassName('text-sm text-slate-700')
-				.setText(message);
-
-			const actions = component.create('div').setClassName('flex justify-end gap-2');
-
-			const cancelButton = component.create('button', {
-				label: 'Cancelar',
-				variant: 'secondary',
-				size: 'xs',
-				dataAction: 'cancel-modal',
-			});
-
-			const confirmButton = component.create('button', {
-				label: confirmLabel,
-				variant: 'primary',
-				size: 'xs',
-				dataAction: 'confirm-modal',
-			});
-
-			const closeWith = (result) => {
-				modal.close();
-				resolve(result);
-			};
-
-			cancelButton.addEventListener('click', () => closeWith(false));
-			confirmButton.addEventListener('click', () => closeWith(true));
-
-			actions.appendChild(cancelButton);
-			actions.appendChild(confirmButton);
-			text.setParent(body);
-			actions.setParent(body);
-
-			modal.setContent(body);
-			modal.show();
+		return UiResilienceService.confirm({
+			container: this.#container,
+			title,
+			message,
+			confirmLabel,
+			cancelLabel: t('ui.actions.cancel', 'Cancelar'),
 		});
 	}
 
@@ -461,6 +449,11 @@ export class PluginManager {
 			.setTitle(this.#title)
 			.setDescription(this.#description)
 			.build();
+		UiResilienceService.showNotification({
+			type: 'error',
+			title: t('ui.error.title', 'Error'),
+			message,
+		});
 		const banner = component.create('alert', {
 			type: 'error',
 			message,

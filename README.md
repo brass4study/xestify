@@ -6,12 +6,13 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 8 cerrada y STORY 9.6 incluida; EPIC 9 en progreso con STORY 9.7 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 8 cerrada y STORY 9.7 incluida; EPIC 9 en progreso con STORY 9.8 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos y validación server-side
-- **Frontend:** SPA MVC con shell persistente, layouts reutilizables, UI dinámica basada en metadata y plugins, gestión de usuarios y base visual inspirada en Ant Design
+- **Frontend:** SPA MVC con shell persistente, layouts reutilizables, routing hash bidireccional, feedback global, base de i18n y theming visual persistido por cliente
 - **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
+- **Estado actual del MVP:** la base funcional del producto está consolidada y la capa transversal de frontend ya está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
 
@@ -160,7 +161,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 9.6 incluida**:
+MVP implementado hasta **STORY 9.7 incluida**:
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -173,9 +174,10 @@ MVP implementado hasta **STORY 9.6 incluida**:
 - Base visual frontend consolidada: tablas unificadas vía `DynamicTable`, tabs alineadas con patrón Ant Design y hoja Tailwind generada localmente sin CDN runtime.
 - Frontend organizado bajo MVC estricto, con `ShellLayout` persistente para páginas autenticadas y `PageLayout`, `ListLayout` y `FormLayout` como plantillas reutilizables.
 - Routing SPA hash completo con navegación programática, entrada directa, refresh y back/forward preservando el contexto de vistas parametrizadas.
-- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios y perfil.
+- Infraestructura transversal de frontend implementada con estado global ampliado, feedback compartido, notificaciones/error handling, confirmaciones modales, base de i18n y preferencias visuales persistidas por cliente.
+- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema y resiliencia.
 
-Pendiente tras STORY 9.6: infraestructura transversal y resiliencia frontend, operación técnica, auditoría, permisos finos y marketplace.
+Pendiente tras STORY 9.7: UX transversal, accesibilidad y microinteracciones frontend, operación técnica, auditoría, permisos finos y marketplace.
 
 Operaciones manuales de setup:
 

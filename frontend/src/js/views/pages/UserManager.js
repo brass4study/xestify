@@ -1,5 +1,7 @@
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { hashFromPage, userDetailPage } from '../../controllers/RouteMapController.js';
+import { t } from '../../models/I18nModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { ListLayout } from '../layout/ListLayout.js';
 import { component } from '../modules/ComponentFactory.js';
 
@@ -61,6 +63,11 @@ export class UserManager {
 		} catch (error) {
 			this.#users = [];
 			this.#setMessage(error?.message ?? 'No se pudo cargar la lista de usuarios.', 'error');
+			UiResilienceService.showNotification({
+				type: 'error',
+				title: t('ui.error.title', 'Error'),
+				message: this.#message,
+			});
 		}
 	}
 
@@ -83,8 +90,8 @@ export class UserManager {
 
 		if (this.#users.length === 0) {
 			component.create('emptyState', {
-				title: 'Sin usuarios',
-				description: 'No hay usuarios disponibles todavía.',
+				title: t('users.empty.title', 'Sin usuarios'),
+				description: t('users.empty.description', 'No hay usuarios disponibles todavía.'),
 			}).setParent(contentHost);
 		} else {
 			this.#renderTable(layout);
@@ -122,12 +129,12 @@ export class UserManager {
 			},
 			extraColumns: [
 				{
-					label: 'Avatar',
+					label: t('users.avatar', 'Avatar'),
 					position: 'start',
 					renderCell: (row) => this.#avatarContent(row.__raw),
 				},
 				{
-					label: 'Acciones',
+					label: t('ui.actions.actions', 'Acciones'),
 					renderCell: (row) => this.#buildEditAction(row.__raw),
 				},
 			],
@@ -153,7 +160,7 @@ export class UserManager {
 		const actions = component.create('div').setClassName('flex flex-wrap gap-1.5');
 
 		const view = DynamicTable.buildActionButton({
-			label: 'Editar',
+			label: t('ui.actions.edit', 'Editar'),
 			icon: 'fa-pen',
 			tone: 'sky',
 			onClick: () => {
@@ -182,6 +189,11 @@ export class UserManager {
 		}
 
 		this.#setMessage('No se pudo navegar a la ficha del usuario.', 'error');
+		UiResilienceService.showNotification({
+			type: 'error',
+			title: t('ui.error.title', 'Error'),
+			message: this.#message,
+		});
 		this.#render();
 	}
 

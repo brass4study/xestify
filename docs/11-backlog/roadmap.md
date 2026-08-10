@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-10
-> **Estado del proyecto:** **STORY 9.6 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.7`
+> **Estado del proyecto:** **STORY 9.7 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.8`
 
 ---
 
@@ -35,7 +35,7 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.6` completada
 - `EPIC 8` cerrada
 - `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.7` (infraestructura transversal de frontend y resiliencia)
+- siguiente foco funcional: `STORY 9.8` (UX transversal, accesibilidad y microinteracciones)
 
 ### Funcionalidades nucleares (Core)
 
@@ -139,7 +139,7 @@ La estrategia vigente de implementación es:
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
-| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.6 cerradas; siguiente foco 9.7 |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.7 cerradas; siguiente foco 9.8 |
 | 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
 | 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
@@ -288,7 +288,7 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - ✅ Story 9.4 implementada: frontend reorganizado bajo MVC estricto con `controllers`, `models` y `views` como únicas capas principales, entrypoint en `app.js` en la raíz de `frontend/src/js` y routing centralizado en controladores
 - ✅ Story 9.5 implementada: shell persistente, plantillas `login`, `list`, `detail` y `plugin-management`, layouts reutilizables y zonas explícitas para extensiones
 - ✅ Story 9.6 implementada: mapa hash bidireccional completo, navegación programática, entrada directa, refresh y back/forward con contexto persistente
-- ⏭ Siguiente punto: Story 9.7 para consolidar infraestructura transversal y resiliencia frontend
+- ⏭ Siguiente punto: Story 9.8 para consolidar UX transversal, accesibilidad y microinteracciones frontend
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas

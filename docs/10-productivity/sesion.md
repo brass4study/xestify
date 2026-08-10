@@ -10,7 +10,7 @@
 
 **Fecha:** 2026-08-10
 **EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.7 - Infraestructura transversal de frontend y resiliencia
+**Próxima story:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones
 
 ---
 
@@ -23,7 +23,28 @@
 - `AppController` y `EntityEdit` preservan slug, registro y tab activo, junto con la plantilla, breadcrumbs y navbar correspondientes.
 - `DynamicTabs` propaga la seleccion del usuario y `EntityEdit` navega a `#/entity/:slug/:id/:tab` sin rerender completo; formulario y paneles precargados conservan su estado.
 - Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 169/169 assertions; `FrontendArchitectureTest` 9/0.
-- Próxima acción: abordar STORY 9.7 para consolidar estado transversal, resiliencia, i18n y theming.
+- Próxima acción: abordar STORY 9.8 para consolidar accesibilidad, UX transversal y microinteracciones.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.7 Infraestructura transversal de frontend y resiliencia
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `AppState` amplía el estado global para notificaciones, navegación transversal, preferencias UI y contexto de shell compartido.
+- `UiResilienceService` centraliza feedback global, mensajes amigables de error, confirmaciones modales y notificaciones sin duplicar handlers por página.
+- `I18nModel` introduce una base ligera de traducciones reutilizable para textos de UI, plugins, formularios y tema.
+- `ThemeModel` y `ThemeSettingsPanel` añaden preferencias visuales persistidas por cliente y aplicación global en tiempo real.
+- `AppController` intercepta errores JS/red y renderiza un feedback global coherente; las páginas principales `Login`, `EntityList`, `EntityEdit`, `PluginManager` y `UserManager` pasan a consumir la infraestructura compartida.
+- Se añadieron pruebas de UI para el panel de tema y la resiliencia (`ThemeSettingsPanelTest.html`, `UiResilienceTest.html`).
+
+**Verificaciones finales:**
+- `node --check` sobre los módulos JS que integran estado, i18n, tema y resiliencia.
+- smoke test frontend en navegador integrado para el panel de configuración visual y la capa de feedback compartida.
+- suite frontend completa en navegador integrado con 17/17 runners y 169/169 assertions sin errores de consola.
+
+**Siguiente foco:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones.
 
 ### ✅ Release B completado: consolidación de migraciones y fixes
 
@@ -414,7 +435,7 @@ Story implementada y verificada.
 - `frontend/tests/FrontendArchitectureTest.html` - `9 passed, 0 failed`
 - suite frontend completa en navegador integrado - 17/17 runners, `169 passed, 0 failed`
 
-**Siguiente foco:** STORY 9.7 - Infraestructura transversal de frontend y resiliencia.
+**Siguiente foco:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones.
 
 ---
 

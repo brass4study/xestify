@@ -39,7 +39,7 @@ La Story 9.1 establece las bases para la librería de 9.3 con equivalencias conc
 
 - `Button`: botón semántico (primario/secundario/peligro) implementado con utilidades Tailwind y atributos `data-role` cuando se necesita anclaje estable.
 - `Typography`: títulos/subtítulos con jerarquía estable.
-- `Layout`: shell principal con navbar sticky + área de contenido.
+- `Layout`: shell principal con navbar + área de contenido.
 - `Form` / `Input` / `Select`: estilos unificados para formularios dinámicos.
 - `Table`: tabla base con cabeceras, densidad y acciones.
 - `Tabs`: estructura para pestañas core + tabs de plugins.
