@@ -8,6 +8,8 @@ export class Modal {
 	#contentEl;
 	#isOpen = false;
 	#onKeyDown;
+	#returnFocusElement = null;
+	#focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 	constructor(container = document.body, options = {}) {
 		this.#host = this.resolveContainer(container);
@@ -41,6 +43,16 @@ export class Modal {
 		}
 		this.#contentEl.setData('role', 'modal-content');
 
+		const contentId = this.#contentEl.id || 'xestify-modal-content';
+		const titleId = this.#titleEl.id || 'xestify-modal-title';
+		this.#contentEl.id = contentId;
+		this.#titleEl.id = titleId;
+		this.#overlay.setAttribute('aria-labelledby', this.#titleEl.id);
+		this.#overlay.setAttribute('aria-describedby', this.#contentEl.id);
+		this.#dialog.setAttribute('tabindex', '-1');
+		this.#dialog.setAttribute('aria-labelledby', this.#titleEl.id);
+		this.#dialog.setAttribute('aria-describedby', this.#contentEl.id);
+
 		this.setContent(options.content ?? '');
 
 		this.#overlay.addEventListener('click', (event) => {
@@ -51,12 +63,24 @@ export class Modal {
 
 		this.#onKeyDown = (event) => {
 			if (event.key === 'Escape') {
+				event.preventDefault();
 				this.close();
+				return;
+			}
+
+			if (event.key === 'Tab') {
+				this.#handleTabKey(event);
 			}
 		};
 	}
 
-	show() {
+	show(returnFocusElement = null) {
+		if (returnFocusElement instanceof HTMLElement) {
+			this.#returnFocusElement = returnFocusElement;
+		} else {
+			this.#returnFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		}
+
 		if (!this.#overlay.isConnected) {
 			this.#host.appendChild(this.#overlay);
 		}
@@ -67,6 +91,10 @@ export class Modal {
 		this.#overlay.classList.add('flex');
 		document.addEventListener('keydown', this.#onKeyDown);
 		this.#isOpen = true;
+
+		window.requestAnimationFrame(() => {
+			this.#focusInitialElement();
+		});
 	}
 
 	close() {
@@ -76,6 +104,54 @@ export class Modal {
 		this.#overlay.classList.remove('flex');
 		document.removeEventListener('keydown', this.#onKeyDown);
 		this.#isOpen = false;
+
+		if (this.#returnFocusElement instanceof HTMLElement && document.contains(this.#returnFocusElement)) {
+			this.#returnFocusElement.focus();
+		}
+		this.#returnFocusElement = null;
+	}
+
+	#handleTabKey(event) {
+		const focusable = this.#getFocusableElements();
+		if (focusable.length === 0) {
+			event.preventDefault();
+			this.#dialog.focus();
+			return;
+		}
+
+		const first = focusable[0];
+		const last = focusable.at(-1);
+		const activeElement = document.activeElement;
+		if (event.shiftKey && activeElement === first) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && activeElement === last) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
+
+	#getFocusableElements() {
+		return Array.from(this.#dialog.querySelectorAll(this.#focusableSelector))
+			.filter((element) => element instanceof HTMLElement)
+			.filter((element) => {
+				if (element.hasAttribute('disabled')) {
+					return false;
+				}
+				const tabIndex = element.getAttribute('tabindex');
+				if (tabIndex === '-1') {
+					return false;
+				}
+				return element.getAttribute('aria-hidden') !== 'true';
+			});
+	}
+
+	#focusInitialElement() {
+		const focusable = this.#getFocusableElements();
+		const target = focusable[0] ?? this.#dialog;
+		if (target instanceof HTMLElement) {
+			target.focus();
+		}
 	}
 
 	setContent(content) {

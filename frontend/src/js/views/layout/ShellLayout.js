@@ -35,7 +35,16 @@ export class ShellLayout {
     this.#targets.clear();
 
     const shell = this.#createTarget('shell', 'section',
-      'mx-auto flex min-h-screen w-full max-w-[1280px] flex-col');
+      'relative mx-auto flex min-h-screen w-full max-w-[1280px] flex-col');
+    const floatingUi = this.#createTarget('shell-floating-ui', 'div',
+      'pointer-events-none flex justify-center px-4 pt-4', shell);
+    floatingUi.style.position = 'fixed';
+    floatingUi.style.inset = '0';
+    floatingUi.style.zIndex = '9999';
+    floatingUi.style.isolation = 'isolate';
+    floatingUi.style.pointerEvents = 'none';
+    floatingUi.style.display = 'flex';
+    floatingUi.style.justifyContent = 'center';
     const menu = this.#createTarget('shell-menu', 'header',
       'top-0 z-50 flex flex-wrap items-center gap-3 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white', shell);
     this.#createTarget('shell-menu-nav', 'div', 'min-w-0 flex-1', menu);
@@ -48,7 +57,6 @@ export class ShellLayout {
     const mixedBarConfig = this.#createTarget('shell-mixed-bar-config', 'div', 'ml-auto flex items-center gap-2', mixedBar);
     this.#createTarget('shell-mixed-bar-config-theme', 'div', '', mixedBarConfig);
     this.#createTarget('shell-mixed-bar-config-user', 'div', '', mixedBarConfig);
-    this.#createTarget('shell-floating-ui', 'div', '', shell);
 
     const body = this.#createTarget('shell-body', 'div', 'flex flex-1 gap-4', shell);
     const main = this.#createTarget('shell-main', 'main', 'flex flex-1 flex-col pb-4', body);

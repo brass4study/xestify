@@ -43,6 +43,11 @@ export class PluginManager {
 	}
 
 	async #refreshData() {
+		UiResilienceService.setViewState(this.#container, {
+			type: 'loading',
+			title: t('ui.loading', 'Cargando…'),
+			message: 'Estamos revisando plugins y actualizaciones disponibles.',
+		});
 		try {
 			const [pluginsResponse, updatesResponse] = await Promise.all([
 				this.#api.get('/plugins'),
@@ -65,6 +70,8 @@ export class PluginManager {
 			this.#render();
 		} catch (error) {
 			this.renderError(`Error al cargar los plugins: ${error.message}`);
+		} finally {
+			UiResilienceService.clearViewState(this.#container);
 		}
 	}
 
@@ -311,8 +318,7 @@ export class PluginManager {
 		this.#feedbackType = null;
 
 		const newStatus = button.dataset.action === 'activate' ? 'active' : 'inactive';
-		button.disabled = true;
-button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar')}...` : `${t('plugins.deactivate', 'Desactivar')}...`;
+		UiResilienceService.setButtonPending(button, newStatus === 'active' ? `${t('plugins.activate', 'Activar')}...` : `${t('plugins.deactivate', 'Desactivar')}...`);
 
 		this.#api.put(`/plugins/${plugin.slug}/status`, { status: newStatus })
 			.then((response) => {
@@ -333,8 +339,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 				this.#render();
 			})
 			.catch((error) => {
-				button.disabled = false;
-				button.textContent = newStatus === 'active' ? t('plugins.activate', 'Activar') : t('plugins.deactivate', 'Desactivar');
+				UiResilienceService.clearButtonPending(button, newStatus === 'active' ? t('plugins.activate', 'Activar') : t('plugins.deactivate', 'Desactivar'));
 				this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 			});
 	}
@@ -342,8 +347,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 	async #handleSync(button) {
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
-		button.disabled = true;
-		button.textContent = `${t('plugins.sync', 'Sincronizar')}...`;
+		UiResilienceService.setButtonPending(button, `${t('plugins.sync', 'Sincronizar')}...`);
 
 		try {
 			const response = await this.#api.post('/plugins/sync', {});
@@ -360,8 +364,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 		} catch (error) {
 			this.renderError(`No se pudieron sincronizar los plugins: ${error.message}`);
 		} finally {
-			button.disabled = false;
-			button.textContent = t('plugins.sync', 'Sincronizar');
+			UiResilienceService.clearButtonPending(button, t('plugins.sync', 'Sincronizar'));
 		}
 	}
 
@@ -378,8 +381,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
-		button.disabled = true;
-		button.textContent = 'Actualizando...';
+		UiResilienceService.setButtonPending(button, 'Actualizando...');
 
 		try {
 			await this.#api.post(`/plugins/${plugin.slug}/update`, {});
@@ -394,8 +396,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 		} catch (error) {
 			this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 		} finally {
-			button.disabled = false;
-			button.textContent = 'Actualizar';
+			UiResilienceService.clearButtonPending(button, 'Actualizar');
 		}
 	}
 
@@ -412,8 +413,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 
 		this.#feedbackMessage = null;
 		this.#feedbackType = null;
-		button.disabled = true;
-		button.textContent = 'Revirtiendo...';
+		UiResilienceService.setButtonPending(button, 'Revirtiendo...');
 
 		try {
 			await this.#api.post(`/plugins/${plugin.slug}/rollback`, {});
@@ -428,8 +428,7 @@ button.textContent = newStatus === 'active' ? `${t('plugins.activate', 'Activar'
 		} catch (error) {
 			this.renderError(`No se pudo revertir el plugin: ${error.message}`);
 		} finally {
-			button.disabled = false;
-			button.textContent = 'Revertir';
+			UiResilienceService.clearButtonPending(button, 'Revertir');
 		}
 	}
 

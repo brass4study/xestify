@@ -162,7 +162,6 @@ export class UserManager {
 		const view = DynamicTable.buildActionButton({
 			label: t('ui.actions.edit', 'Editar'),
 			icon: 'fa-pen',
-			tone: 'sky',
 			onClick: () => {
 				this.#openUserDetail(user);
 			},

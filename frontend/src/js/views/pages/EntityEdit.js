@@ -32,6 +32,7 @@ export class EntityEdit {
 	#renderToken = 0;
 	#layout = null;
 	#errorBanner = null;
+	#isSubmitting = false;
 
 	/**
 	 * @param {HTMLElement|string} container
@@ -59,10 +60,11 @@ export class EntityEdit {
 	}
 
 	async submit() {
-		if (this.#form === null) {
+		if (this.#form === null || this.#isSubmitting) {
 			return;
 		}
 
+		this.#isSubmitting = true;
 		this.#clearErrors();
 
 		if (!this.#validateFormBeforeSubmit()) {
@@ -78,6 +80,7 @@ export class EntityEdit {
 		} catch (err) {
 			this.#handleSubmitError(err);
 		} finally {
+			this.#isSubmitting = false;
 			this.#setLoading(false);
 		}
 	}
@@ -145,6 +148,12 @@ export class EntityEdit {
 		}
 
 		void this.#loadAndRenderTabs(wrapper, renderToken, layout);
+		requestAnimationFrame(() => {
+			const firstInput = this.#container.querySelector('input, textarea, select');
+			if (firstInput instanceof HTMLElement) {
+				firstInput.focus();
+			}
+		});
 	}
 
 	async #loadAndRenderTabs(wrapper, renderToken, layout) {
@@ -406,16 +415,25 @@ export class EntityEdit {
 	#setLoading(loading) {
 		const saveBtn = this.#container.querySelector('[data-role="entity-edit-save"]');
 		if (saveBtn !== null) {
-			saveBtn.disabled = loading;
-			saveBtn.textContent = loading ? `${t('forms.saving', 'Guardando…')}` : t('forms.save', 'Guardar');
+			if (loading) {
+				UiResilienceService.setButtonPending(saveBtn, t('forms.saving', 'Guardando…'));
+			} else {
+				UiResilienceService.clearButtonPending(saveBtn, t('forms.save', 'Guardar'));
+			}
 		}
 		if (loading) {
+			UiResilienceService.setViewState(this.#container, {
+				type: 'loading',
+				title: t('forms.saving', 'Guardando…'),
+				message: 'Estamos guardando tus cambios y sincronizando extensiones.',
+			});
 			UiResilienceService.showNotification({
 				type: 'info',
 				title: t('ui.loading', 'Cargando…'),
 				message: t('forms.saving', 'Guardando…'),
 			});
 		} else {
+			UiResilienceService.clearViewState(this.#container);
 			UiResilienceService.clearNotification();
 		}
 	}

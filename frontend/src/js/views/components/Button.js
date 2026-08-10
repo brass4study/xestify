@@ -19,6 +19,10 @@ export class ButtonComponent extends BaseComponent {
       this.setAttribute('aria-label', options.ariaLabel);
     }
 
+    if (options.disabled === true) {
+      this.setAttribute('aria-disabled', 'true');
+    }
+
     if (typeof options.dataRole === 'string' && options.dataRole !== '') {
       this.dataset.role = options.dataRole;
     }

@@ -13,6 +13,8 @@
   import { AppState } from '../src/js/models/StateModel.js';
   import { UiResilienceService } from '../src/js/services/UiResilienceService.js';
   import { setLocale, t } from '../src/js/models/I18nModel.js';
+  import { AppController } from '../src/js/controllers/AppController.js';
+  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from './js/helpers.js';
 
   initTestRunner('output');
@@ -73,6 +75,230 @@
 
     assertEquals(await confirmation, false, 'Debe resolver con false al cancelar');
     container.remove();
+  });
+
+  await test('UiResilienceService renders a shared view state and pending button state', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    UiResilienceService.setViewState(host, {
+      type: 'loading',
+      title: 'Cargando datos',
+      message: 'Estamos preparando la vista',
+    });
+
+    const viewState = host.querySelector('[data-role="view-state"]');
+    assertTrue(viewState instanceof HTMLElement, 'Debe crear un estado compartido en el contenedor');
+    assertEquals(viewState.dataset.state, 'loading');
+    assertTrue(viewState.textContent.includes('Cargando datos'));
+
+    const button = document.createElement('button');
+    button.textContent = 'Guardar';
+    host.appendChild(button);
+
+    UiResilienceService.setButtonPending(button, 'Guardando...');
+    assertTrue(button.disabled, 'El botón debe quedar deshabilitado mientras se procesa');
+    assertEquals(button.getAttribute('aria-busy'), 'true');
+
+    UiResilienceService.clearViewState(host);
+    assertTrue(host.querySelector('[data-role="view-state"]') === null, 'Debe poder limpiar el estado compartido');
+
+    host.remove();
+  });
+
+  await test('Confirm modal exposes accessible labeling and focus management', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const confirmation = UiResilienceService.confirm({
+      container,
+      title: 'Confirmar acción',
+      message: '¿Desea continuar?',
+      confirmLabel: 'Sí',
+      cancelLabel: 'No',
+    });
+
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay instanceof HTMLElement, 'Debe existir el overlay del modal');
+    assertTrue(typeof overlay.getAttribute('aria-labelledby') === 'string' && overlay.getAttribute('aria-labelledby') !== '', 'Debe etiquetar el modal con aria-labelledby');
+
+    const confirmButton = overlay.querySelector('[data-action="confirm-modal"]');
+    assertTrue(confirmButton instanceof HTMLButtonElement, 'Debe existir el botón principal del modal');
+    assertTrue(document.activeElement === confirmButton, 'El foco debe moverse al botón principal al abrir el modal');
+
+    confirmButton.click();
+    assertEquals(await confirmation, true, 'Debe resolver con true al confirmar');
+    container.remove();
+  });
+
+  await test('Confirm modal restores focus to the trigger after dismissal', async () => {
+    const container = document.createElement('div');
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Abrir';
+    document.body.appendChild(container);
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const confirmation = UiResilienceService.confirm({
+      container,
+      title: 'Confirmar acción',
+      message: '¿Desea continuar?',
+      confirmLabel: 'Sí',
+      cancelLabel: 'No',
+    });
+
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay instanceof HTMLElement, 'Debe existir el overlay del modal');
+
+    const cancelButton = overlay.querySelector('[data-action="cancel-modal"]');
+    assertTrue(cancelButton instanceof HTMLButtonElement, 'Debe existir el botón de cancelación');
+    cancelButton.click();
+
+    assertEquals(await confirmation, false, 'Debe resolver con false al cancelar');
+    assertTrue(document.activeElement === trigger, 'El foco debe volver al disparador después de cerrar el modal');
+
+    container.remove();
+    trigger.remove();
+  });
+
+  await test('AppController placeholder rendering does not crash when component factory is unavailable', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const controller = new AppController(container);
+    controller.showPlaceholder('Vista de prueba');
+
+    const placeholder = container.querySelector('[data-role="placeholder"]');
+    assertTrue(placeholder instanceof HTMLElement, 'Debe crear un placeholder renderizable');
+    assertEquals(placeholder.textContent, 'Vista de prueba');
+
+    container.remove();
+  });
+
+  await test('AppController routes page notifications to shell-main-notifications without using the global overlay', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = ShellLayout.create(host);
+    controller.shellLayout.build();
+
+    UiResilienceService.showNotification({
+      type: 'success',
+      title: 'Plugin actualizado',
+      message: 'El cambio se aplicó correctamente',
+    });
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    const pageNotification = host.querySelector('[data-role="page-notification"]');
+    assertTrue(pageNotification instanceof HTMLElement, 'Debe mostrar la notificación de acción en shell-main-notifications');
+    assertTrue(pageNotification.textContent.includes('Plugin actualizado'));
+    assertTrue(host.querySelector('[data-role="global-notification"]') === null, 'Las notificaciones de acción no deben usar la capa global');
+
+    host.remove();
+  });
+
+  await test('AppController renders a global notification when the event is emitted through window', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = ShellLayout.create(host);
+    controller.shellLayout.build();
+
+    window.dispatchEvent(new CustomEvent('xestify:notification-changed', {
+      detail: {
+        type: 'warning',
+        title: 'Activación',
+        message: 'El plugin se ha activado',
+        global: true,
+      },
+    }));
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    assertTrue(notification instanceof HTMLElement, 'Debe pintar la notificación global al recibir el evento desde window');
+    assertTrue(notification.textContent.includes('Activación'));
+
+    host.remove();
+  });
+
+  await test('AppController renders floating notifications as a modal toast in shell-floating-ui', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = ShellLayout.create(host);
+    controller.shellLayout.build();
+
+    UiResilienceService.showNotification({
+      type: 'error',
+      title: 'Error global',
+      message: 'Se requiere atención',
+    });
+    controller.renderGlobalNotifications();
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    assertTrue(notification instanceof HTMLElement, 'Debe renderizar la notificación global en la capa flotante');
+    const closeButton = notification.querySelector('[data-action="dismiss-global-notification"]');
+    assertTrue(closeButton instanceof HTMLButtonElement, 'Debe exponer un botón de cierre en la notificación flotante');
+
+    host.remove();
+  });
+
+  await test('AppController renders a blocking backdrop and closes the notification with a fade-out animation', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = ShellLayout.create(host);
+    controller.shellLayout.build();
+
+    UiResilienceService.showNotification({
+      type: 'error',
+      title: 'Actualización completada',
+      message: 'El plugin quedó actualizado',
+    });
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    const backdrop = host.querySelector('[data-role="modal-backdrop"]');
+    assertTrue(backdrop instanceof HTMLElement, 'Debe renderizar un backdrop que bloquee la interacción');
+    assertTrue(backdrop.classList.contains('modal-backdrop'), 'Debe reutilizar la clase compartida del backdrop');
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    const closeButton = notification?.querySelector('[data-action="dismiss-global-notification"]');
+    assertTrue(closeButton instanceof HTMLButtonElement, 'Debe exponer un botón de cierre en la notificación flotante');
+
+    closeButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 260));
+
+    assertTrue(host.querySelector('[data-role="global-notification"]') === null, 'La notificación debe cerrarse con la animación de salida');
+
+    host.remove();
+  });
+
+  await test('AppController creates a fallback floating host when the shell target is unavailable', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = null;
+
+    UiResilienceService.showNotification({
+      type: 'error',
+      title: 'Plugin actualizado',
+      message: 'El cambio se aplicó correctamente',
+    });
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    assertTrue(notification instanceof HTMLElement, 'Debe crear un host flotante de respaldo y pintar la notificación');
+
+    host.remove();
   });
 
   await test('Theme preferences persist in localStorage and normalize correctly', async () => {

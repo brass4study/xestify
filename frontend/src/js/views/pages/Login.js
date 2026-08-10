@@ -143,6 +143,13 @@ export class Login {
 
 		form.setParent(page);
 		page.setParent(this.#container);
+
+		requestAnimationFrame(() => {
+			const emailInput = this.#container.querySelector('[name="email"]');
+			if (emailInput instanceof HTMLInputElement) {
+				emailInput.focus();
+			}
+		});
 	}
 
 	showFieldErrors(errors) {
@@ -196,8 +203,17 @@ export class Login {
 	setLoading(loading) {
 		const button = this.#container.querySelector('[data-role="login-submit"]');
 		if (button instanceof HTMLButtonElement) {
-			button.disabled = loading;
-			button.textContent = loading ? 'Entrando...' : 'Entrar';
+			if (loading) {
+				UiResilienceService.setButtonPending(button, 'Entrando...');
+				UiResilienceService.setViewState(this.#container, {
+					type: 'loading',
+					title: 'Iniciando sesión',
+					message: 'Estamos verificando tus credenciales.',
+				});
+			} else {
+				UiResilienceService.clearButtonPending(button, 'Entrar');
+				UiResilienceService.clearViewState(this.#container);
+			}
 		}
 	}
 

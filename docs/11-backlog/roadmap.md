@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-10
-> **Estado del proyecto:** **STORY 9.7 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.8`
+> **Estado del proyecto:** **STORY 9.8 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.9`
 
 ---
 
@@ -35,7 +35,7 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.6` completada
 - `EPIC 8` cerrada
 - `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.8` (UX transversal, accesibilidad y microinteracciones)
+- siguiente foco funcional: `STORY 9.9` (documentación de arquitectura frontend y testing UI automatizado)
 
 ### Funcionalidades nucleares (Core)
 

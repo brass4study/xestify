@@ -29,6 +29,7 @@ import { UserProfile } from '../views/pages/UserProfile.js';
 import { Navbar } from '../views/modules/Navbar.js';
 import { ThemeSettingsPanel } from '../views/modules/ThemeSettingsPanel.js';
 import { RouteController } from './RouteController.js';
+import { component } from '../views/modules/ComponentFactory.js';
 
 export class AppController {
   /** @param {HTMLElement} container */
@@ -44,6 +45,7 @@ export class AppController {
     this.themeSettingsPanel = null;
     this.currentThemeSettingsNavigationMode = null;
     this.uiSubscription = null;
+    this.notificationSubscription = null;
     this.uiHydrating = false;
     this.uiSaveTimer = null;
     this.currentNavbarNavigationMode = null;
@@ -64,15 +66,65 @@ export class AppController {
         title: t('ui.error.generic', 'Error'),
         message,
       });
-      this.renderGlobalNotifications();
+      this.scheduleGlobalNotificationsRender(true);
+    };
+    this.notificationEventHandler = (event) => {
+      const detail = event?.detail ?? null;
+      if (detail && typeof detail === 'object') {
+        const type = typeof detail.type === 'string' && detail.type !== '' ? detail.type : 'info';
+        const normalized = {
+          ...detail,
+          id: detail.id ?? (globalThis.crypto?.randomUUID?.() ?? `notify-${Date.now()}-${Date.now().toString(16)}-${performance.now().toString(16)}`),
+          type,
+          title: typeof detail.title === 'string' ? detail.title : '',
+          message: typeof detail.message === 'string' ? detail.message : '',
+          persistent: Boolean(detail.persistent),
+          global: detail.global === true || type === 'error' || type === 'warning',
+        };
+        AppState.setNotification(normalized);
+      } else {
+        AppState.clearNotification();
+      }
+      this.scheduleGlobalNotificationsRender(true);
     };
     window.addEventListener('error', this.globalErrorHandler);
     window.addEventListener('unhandledrejection', this.globalErrorHandler);
+    window.addEventListener('xestify:notification-changed', this.notificationEventHandler);
+    document.addEventListener('xestify:notification-changed', this.notificationEventHandler);
+    this.notificationSubscription = AppState.subscribeNotification(() => {
+      this.scheduleGlobalNotificationsRender();
+    });
+  }
+
+  scheduleGlobalNotificationsRender(immediate = false) {
+    if (this.notificationRenderScheduled && !immediate) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      this.renderGlobalNotifications();
+      return;
+    }
+
+    this.notificationRenderScheduled = true;
+
+    const runRender = () => {
+      this.notificationRenderScheduled = false;
+      this.renderGlobalNotifications();
+    };
+
+    if (immediate || typeof window.requestAnimationFrame !== 'function') {
+      runRender();
+      return;
+    }
+
+    window.requestAnimationFrame(runRender);
   }
 
   async start() {
     this.subscribeUiPreferences();
     this.syncUiPreferences();
+    this.scheduleGlobalNotificationsRender();
 
     const storedSession = SessionModel.readStoredSession();
 
@@ -185,6 +237,7 @@ export class AppController {
     this.dashboardApi = createApiWithToken(SessionModel.getToken());
     await this.hydrateUiPreferences();
     this.syncUiPreferences();
+    this.renderGlobalNotifications();
 
     const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
     if (entitiesForNav === null) {
@@ -924,16 +977,113 @@ export class AppController {
       className: 'rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-10 text-center text-sm text-slate-500',
       text: typeof message === 'string' && message !== '' ? message : t('ui.error.generic', 'Ha ocurrido un error inesperado.'),
     }).setData('role', 'placeholder');
-    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
-      .setContent(placeholder);
+
+    const target = this.contentContainer instanceof HTMLElement ? this.contentContainer : this.container;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (this.shellLayout instanceof ShellLayout) {
+      PageLayout.create(target, { shell: this.shellLayout }).setContent(placeholder);
+      return;
+    }
+
+    target.replaceChildren(placeholder);
   }
 
-  renderGlobalNotifications() {
+  #resolveNotificationHost() {
+    if (this.shellLayout instanceof ShellLayout) {
+      const shellTarget = this.shellLayout.getTarget('shell-floating-ui');
+      if (shellTarget instanceof HTMLElement) {
+        return shellTarget;
+      }
+    }
+
+    if (this.globalNotificationHost instanceof HTMLElement) {
+      return this.globalNotificationHost;
+    }
+
+    const fallbackHost = component.create('div');
+    fallbackHost.setData('role', 'shell-floating-ui');
+    fallbackHost.setClassName('pointer-events-none fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-4');
+    fallbackHost.style.position = 'fixed';
+    fallbackHost.style.inset = '0';
+    fallbackHost.style.zIndex = '9999';
+    fallbackHost.style.isolation = 'isolate';
+    fallbackHost.style.pointerEvents = 'none';
+    fallbackHost.style.display = 'flex';
+    fallbackHost.style.alignItems = 'flex-start';
+    fallbackHost.style.justifyContent = 'center';
+
+    const appRoot = this.container instanceof HTMLElement ? this.container : document.body;
+    if (appRoot instanceof HTMLElement) {
+      appRoot.appendChild(fallbackHost);
+    }
+
+    this.globalNotificationHost = fallbackHost;
+    return fallbackHost;
+  }
+
+  renderPageNotification(notification = AppState.getNotification()) {
     if (!(this.shellLayout instanceof ShellLayout)) {
       return;
     }
 
-    const target = this.shellLayout.getTarget('shell-floating-ui');
+    if (!notification || typeof notification !== 'object' || notification.global === true) {
+      this.shellLayout.clearZone('shell-main-notifications');
+      return;
+    }
+
+    const type = typeof notification.type === 'string' && notification.type !== '' ? notification.type : 'info';
+    const title = typeof notification.title === 'string' && notification.title !== '' ? notification.title : '';
+    const message = typeof notification.message === 'string' ? notification.message : '';
+    const toneClasses = this.#resolvePageNotificationTone(type);
+
+    const banner = component.create('div')
+      .setData('role', 'page-notification')
+      .setData('type', type)
+      .setClassName(`flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ${toneClasses}`);
+    banner.setAttribute('role', 'status');
+    banner.setAttribute('aria-live', 'polite');
+
+    const content = component.create('div');
+    if (title !== '') {
+      component.create('div', {
+        className: 'font-semibold',
+        text: title,
+      }).setParent(content);
+    }
+
+    if (message !== '') {
+      const messageClassName = title !== '' ? 'mt-1' : '';
+      component.create('div', {
+        className: messageClassName,
+        text: message,
+      }).setParent(content);
+    }
+
+    content.setParent(banner);
+    this.shellLayout.setZone('shell-main-notifications', banner);
+  }
+
+  #resolvePageNotificationTone(type) {
+    if (type === 'error') {
+      return 'bg-red-50 text-red-700';
+    }
+
+    if (type === 'warning') {
+      return 'bg-amber-50 text-amber-700';
+    }
+
+    if (type === 'success') {
+      return 'bg-emerald-50 text-emerald-700';
+    }
+
+    return 'bg-slate-50 text-slate-700';
+  }
+
+  renderGlobalNotifications() {
+    const target = this.#resolveNotificationHost();
     if (!(target instanceof HTMLElement)) {
       return;
     }
@@ -942,23 +1092,89 @@ export class AppController {
     target.replaceChildren();
 
     if (!notification || typeof notification !== 'object') {
+      target.hidden = true;
+      this.renderPageNotification(null);
       return;
     }
 
-    const card = document.createElement('div');
-    card.className = 'mx-4 mt-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur';
-    card.dataset.role = 'global-notification';
+    if (notification.global !== true) {
+      target.hidden = true;
+      this.renderPageNotification(notification);
+      return;
+    }
 
-    const title = document.createElement('div');
-    title.className = 'text-sm font-semibold text-slate-900';
-    title.textContent = typeof notification.title === 'string' && notification.title !== '' ? notification.title : 'Aviso';
+    const type = typeof notification.type === 'string' && notification.type !== '' ? notification.type : 'info';
+    const title = typeof notification.title === 'string' && notification.title !== '' ? notification.title : 'Aviso';
+    const message = typeof notification.message === 'string' ? notification.message : '';
 
-    const message = document.createElement('div');
-    message.className = 'mt-1 text-sm text-slate-600';
-    message.textContent = typeof notification.message === 'string' ? notification.message : '';
+    const backdrop = component.create('div');
+    backdrop.setData('role', 'modal-backdrop');
+    backdrop.setClassName('modal-backdrop');
+    backdrop.style.zIndex = '10000';
+    backdrop.style.pointerEvents = 'auto';
 
-    card.append(title, message);
-    target.append(card);
+    const dialog = component.create('div', {
+      className: 'pointer-events-auto relative z-[10001] mt-2 w-full max-w-lg rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl shadow-slate-900/20 backdrop-blur transition-all duration-200',
+    });
+    dialog.setData('role', 'global-notification');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('tabindex', '-1');
+
+    const accentClassName = this.#resolveGlobalNotificationAccent(type);
+
+    dialog.setClassName(`pointer-events-auto w-full max-w-lg rounded-2xl border p-4 shadow-2xl shadow-slate-900/20 backdrop-blur transition-all duration-200 ${accentClassName}`);
+    dialog.style.animation = 'toast-slide-in 220ms ease-out';
+
+    const header = component.create('div', { className: 'flex items-start justify-between gap-3' });
+    const content = component.create('div');
+    component.create('div', {
+      className: 'text-sm font-semibold',
+      text: title,
+    }).setParent(content);
+    component.create('div', {
+      className: 'mt-1 text-sm opacity-90',
+      text: message,
+    }).setParent(content);
+
+    const closeButton = component.create('button', {
+      label: '×',
+      variant: 'ghost',
+      ariaLabel: 'Cerrar notificación',
+      dataAction: 'dismiss-global-notification',
+    });
+    closeButton.setClassName('inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-lg text-slate-600 transition hover:bg-slate-100');
+    closeButton.addEventListener('click', () => {
+      dialog.style.animation = 'toast-slide-out 220ms ease-in forwards';
+      backdrop.style.animation = 'theme-backdrop-exit 220ms ease-in forwards';
+      window.setTimeout(() => {
+        AppState.clearNotification();
+        this.renderGlobalNotifications();
+      }, 220);
+    });
+
+    content.setParent(header);
+    closeButton.setParent(header);
+    header.setParent(dialog);
+    target.appendChild(backdrop);
+    target.appendChild(dialog);
+    target.hidden = false;
+
+    window.requestAnimationFrame(() => {
+      dialog.focus();
+    });
+  }
+
+  #resolveGlobalNotificationAccent(type) {
+    if (type === 'error') {
+      return 'border-red-200 bg-red-50 text-red-800';
+    }
+
+    if (type === 'warning') {
+      return 'border-amber-200 bg-amber-50 text-amber-800';
+    }
+
+    return 'border-slate-200 bg-white text-slate-800';
   }
 
   buildTemplateDefinition(page) {

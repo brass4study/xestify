@@ -13,6 +13,8 @@
 <script type="module">
   import { PluginManager } from '../src/js/views/pages/PluginManager.js';
   import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
+  import { DynamicTable } from '../src/js/views/modules/DynamicTable.js';
+  import { AppController } from '../src/js/controllers/AppController.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -223,6 +225,40 @@
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should be called');
+  });
+
+  await test('renders a global notification after plugin activation inside the shell', async () => {
+    const host = makeSandbox();
+    const shell = ShellLayout.create(host).build();
+    const content = shell.getTarget('shell-main-content');
+    const controller = new AppController(host);
+    controller.shellLayout = shell;
+
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments/status': {
+        ok: true,
+        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      },
+    });
+
+    const manager = new PluginManager(content, api, { shellLayout: shell });
+    await manager.init();
+
+    const btn = content.querySelector('[data-role="plugin-action"]');
+    btn.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    assertTrue(notification instanceof HTMLElement, 'Debe renderizar la notificación global al activar el plugin');
+    assertTrue(notification.textContent.includes('Plugin'), 'La notificación debe mostrar el texto del cambio del plugin');
   });
 
   await test('re-renders after activation', async () => {
@@ -541,6 +577,32 @@
     configureBtn.click();
 
     assertEquals(configuredSlug, 'clients', 'onConfigure should receive plugin slug');
+  });
+
+  await test('buildActionButton defaults to theme color when no explicit tone is passed', () => {
+    const button = DynamicTable.buildActionButton({
+      label: 'Editar',
+      icon: 'fa-pen',
+      dataRole: 'record-edit',
+      onClick: () => {},
+    });
+
+    assertTrue(button.className.includes('text-brand-700'), 'Action button should default to the theme brand color');
+    assertTrue(button.className.includes('hover:text-brand-500'), 'Action button should use the theme hover color');
+    assertTrue(button.className.includes('focus:ring-brand-200'), 'Action button should keep the theme focus ring');
+  });
+
+  await test('buildActionButton preserves explicit tone colors', () => {
+    const button = DynamicTable.buildActionButton({
+      label: 'Desactivar',
+      icon: 'fa-power-off',
+      tone: 'amber',
+      dataRole: 'plugin-action',
+      onClick: () => {},
+    });
+
+    assertTrue(button.className.includes('text-amber-700'), 'Action button should preserve the explicit amber tone');
+    assertTrue(button.className.includes('hover:text-amber-600'), 'Action button should preserve the explicit amber hover tone');
   });
 
   // ─────────────────────────────────────────────────────────────────────────

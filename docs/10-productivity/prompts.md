@@ -1177,3 +1177,13 @@ Retomemos la implementación de la story 9.7, revisemos qué está implementado,
 **Iteraciones:** 4
 **Lección:** Las preocupaciones transversales de UX deben resolverse una vez en una capa compartida y después consumirse desde toda la aplicación; si no, cada página vuelve a reinventar loading, error y confirmación.
 **Estado final:** STORY 9.7 implementada y validada con smoke test de UI, panel de tema y checks de sintaxis; el siguiente foco del backlog pasa a STORY 9.8.
+
+### STORY 9.8 — UX transversal, accesibilidad y microinteracciones
+**Prompt:**
+```
+Retomemos la story 9.8: falta cerrar el pulido de UX transversal, accesibilidad básica y microinteracciones. Quiero que consolides loading/empty/error/success, confirmaciones en acciones sensibles, feedback de operaciones en curso y foco/retorno en modales y notificaciones.
+```
+**Resultado:** Se unificó el feedback visual en `UiResilienceService`, se añadieron estados compartidos de loading/vacío/error/éxito y pending buttons, los modales de confirmación ahora gestionan foco y restauración, y las notificaciones globales/página se renderizan con comportamiento consistente. Los tests en navegador quedaron en 13/13 y 7/7.
+**Iteraciones:** 3
+**Lección:** La UX transversal debe resolverse desde una capa compartida; si se deja en cada página, el comportamiento se fragmenta y el foco/accesibilidad se rompe.
+**Estado final:** STORY 9.8 implementada y validada con tests de UI; se dejó preparada la transición a STORY 9.9.

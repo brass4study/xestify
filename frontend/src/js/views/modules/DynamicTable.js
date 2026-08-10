@@ -30,18 +30,19 @@ export class DynamicTable {
 	#onQueryChange = null;
 
 	static buildActionButton(options) {
-		const tone = typeof options?.tone === 'string' ? options.tone : 'slate';
+		const tone = typeof options?.tone === 'string' ? options.tone : 'theme';
 		const palette = {
-			sky: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
-			emerald: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
-			amber: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
-			red: 'text-red-700 hover:text-red-800 focus:ring-red-200',
-			violet: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			theme: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
 			brand: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
 			slate: 'text-brand-700 hover:text-brand-500 focus:ring-brand-200',
+			sky: 'text-sky-700 hover:text-sky-600 focus:ring-sky-200',
+			emerald: 'text-emerald-700 hover:text-emerald-600 focus:ring-emerald-200',
+			amber: 'text-amber-700 hover:text-amber-600 focus:ring-amber-200',
+			red: 'text-red-700 hover:text-red-600 focus:ring-red-200',
+			violet: 'text-violet-700 hover:text-violet-600 focus:ring-violet-200',
 		};
 
-		const colorClasses = palette[tone] ?? palette.slate;
+		const colorClasses = palette[tone] ?? palette.theme;
 
 		const button = component.create('button', {
 			label: options.label,
@@ -51,12 +52,12 @@ export class DynamicTable {
 			disabled: options.disabled === true,
 			onClick: options.onClick,
 		});
-		button.setData('role', 'table-action-button');
 		const icon = button.querySelector('i');
 		if (icon instanceof HTMLElement) {
 			icon.classList.add('text-lg', 'leading-none');
 		}
 		button.setClassName(`inline-flex items-center gap-1.5 bg-transparent px-1 py-1 text-xs font-semibold transition duration-150 focus:outline-none focus:ring-2 ${colorClasses}`);
+		button.dataset.tableActionButton = 'true';
 
 		return button;
 	}

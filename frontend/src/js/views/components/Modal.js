@@ -5,11 +5,14 @@ export class ModalComponent extends BaseComponent {
   initialize(options = {}) {
     this.className = 'fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/50 p-4';
     this.dataset.role = 'ui-modal-overlay';
+    this.setAttribute('aria-labelledby', 'ui-modal-title');
 
     const dialog = component.create('sectionTag', {
       className: 'w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-float',
       dataset: { role: 'ui-modal-dialog' },
     });
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
 
     const header = component.create('header', {
       className: 'flex items-center justify-between border-b border-slate-200 px-4 py-3',
@@ -19,7 +22,12 @@ export class ModalComponent extends BaseComponent {
       className: 'text-base font-semibold text-slate-900',
       dataset: { role: 'ui-modal-title' },
       text: options.title ?? 'Mensaje',
-    }).setParent(header);
+    }).setId('ui-modal-title').setParent(header);
+
+    const titleElement = header.querySelector('[data-role="ui-modal-title"]');
+    if (titleElement instanceof HTMLElement) {
+      titleElement.id = 'ui-modal-title';
+    }
 
     if (typeof options.onClose === 'function') {
       const closeButton = component.create('button', { label: '×', variant: 'ghost', ariaLabel: 'Cerrar diálogo', onClick: options.onClose });

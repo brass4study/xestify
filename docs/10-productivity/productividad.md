@@ -1124,3 +1124,17 @@
   - Actualizó `Login`, `EntityList`, `EntityEdit`, `PluginManager` y `UserManager` para consumir la infraestructura común en lugar de duplicar handlers y estados locales.
 - **Iteraciones:** 4 (estado transversal, feedback global, i18n/theming y validación final en navegador)
 - **Decisión manual:** Mantener la capa transversal como una única fuente de verdad para feedback y preferencias; no abrir un segundo store paralelo para cada página.
+
+## STORY 9.8 UX transversal, accesibilidad y microinteracciones
+
+- **Fecha:** 2026-08-10
+- **Estimado sin IA:** 4h
+- **Tiempo real con IA:** ~1h 20m
+- **Aceleración:** ~70% ⚡
+- **Qué hizo IA:**
+  - Consolidó estados compartidos de loading, vacío, error y éxito para las páginas clave del frontend.
+  - Reforzó la capa de confirmación y pending states para acciones sensibles como borrar, activar/desactivar plugins o guardar cambios.
+  - Mejoró el modal y las notificaciones con foco inicial, trampa de foco, cierre con Escape y retorno de foco al disparador.
+  - Añadió y validó pruebas de regresión en navegador integrado para la resiliencia y la gestión de usuarios.
+- **Iteraciones:** 3 (ajustes de modal, validación de tests y alineación documental)
+- **Decisión manual:** Mantener la capa de UX en un servicio compartido y no repartirse la lógica por páginas; la validación de accesibilidad debe hacerse en navegador real.

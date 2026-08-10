@@ -1,5 +1,5 @@
 import { Api } from '../../models/ApiClientModel.js';
-import { AppState } from '../../models/StateModel.js';
+import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { component } from '../modules/ComponentFactory.js';
 
@@ -611,12 +611,22 @@ export class UserConfig {
 			return;
 		}
 
-		const accepted = window.confirm(`¿Seguro que quieres borrar al usuario ${this.#displayName(user)}? Esta acción es irreversible.`);
+		const accepted = await UiResilienceService.confirm({
+			container: this.#container,
+			title: 'Confirmar borrado de usuario',
+			message: `¿Seguro que quieres borrar al usuario ${this.#displayName(user)}? Esta acción es irreversible.`,
+			confirmLabel: 'Borrar usuario',
+			cancelLabel: 'Cancelar',
+		});
 		if (!accepted) {
 			return;
 		}
 
 		const errorNode = form.querySelector('[data-userconfig-error]');
+		const deleteButton = form.querySelector('[data-userconfig-delete]');
+		if (deleteButton instanceof HTMLButtonElement) {
+			UiResilienceService.setButtonPending(deleteButton, 'Borrando...');
+		}
 
 		try {
 			const userId = this.#getUserId(user);
@@ -631,6 +641,10 @@ export class UserConfig {
 				errorNode.hidden = false;
 			}
 			this.setPageMessage(apiError?.message ?? 'No se pudo borrar el usuario.', 'error');
+		} finally {
+			if (deleteButton instanceof HTMLButtonElement) {
+				UiResilienceService.clearButtonPending(deleteButton, 'Borrar usuario');
+			}
 		}
 	}
 

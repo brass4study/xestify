@@ -75,12 +75,13 @@ export class EntityList {
 			AppState.setEntities(entities);
 
 			if (entities.length === 0) {
-				component.create('emptyState', {
+				UiResilienceService.setViewState(this.#layout.getContentTarget(), {
+					type: 'empty',
 					title: t('entities.empty.title', 'Sin entidades'),
-					description: t('entities.empty.description', 'No hay entidades disponibles.'),
-				})
-					.setData('role', 'entity-empty')
-					.setParent(this.#layout.getContentTarget());
+					message: t('entities.empty.description', 'No hay entidades disponibles.'),
+				});
+			} else {
+				UiResilienceService.clearViewState(this.#layout.getContentTarget());
 			}
 		} catch (err) {
 			this.#handleError(err);
@@ -136,7 +137,6 @@ export class EntityList {
 						renderCell: (record) => DynamicTable.buildActionButton({
 							label: 'Editar',
 							icon: 'fa-pen',
-							tone: 'sky',
 							dataRole: 'record-edit',
 							onClick: () => {
 								if (this.#onEdit !== null) {
@@ -268,10 +268,18 @@ export class EntityList {
 		AppState.setLoading(loading);
 
 		if (loading) {
+			UiResilienceService.setViewState(this.#layout?.getContentTarget() ?? this.#container, {
+				type: 'loading',
+				title: t('ui.loading', 'Cargando…'),
+				message: 'Estamos preparando la vista y sus datos.',
+			});
 			this.#showNotification('info', 'Cargando…', 'entity-loading');
-		} else if (this.#notificationRole === 'entity-loading') {
-			this.#layout?.setNotification(null);
-			this.#notificationRole = null;
+		} else {
+			UiResilienceService.clearViewState(this.#layout?.getContentTarget() ?? this.#container);
+			if (this.#notificationRole === 'entity-loading') {
+				this.#layout?.setNotification(null);
+				this.#notificationRole = null;
+			}
 		}
 	}
 

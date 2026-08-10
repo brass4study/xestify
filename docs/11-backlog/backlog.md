@@ -1093,6 +1093,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Verificación:** 17/17 runners HTML, smoke test de resiliencia/tema y checks de sintaxis en verde; estado global, notificaciones, confirmaciones, i18n y theming persistido aplicados en shell y páginas principales
 
 ### STORY 9.8: UX transversal, accesibilidad y microinteracciones
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** SHOULD
 - **Type:** Frontend
@@ -1101,10 +1102,11 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
   - ✅ Confirmacion consistente en acciones destructivas o sensibles
   - ✅ Prevencion de doble submit y feedback claro de operaciones en curso
   - ✅ Mejora de foco, accesibilidad basica por teclado y continuidad de contexto tras guardar/cancelar
-  - ✅ Responsive, densidad razonable y microinteracciones suaves aplicadas al menos en Login, EntityList, EntityEdit y PluginManager
+  - ✅ Responsive, densidad razonable y microinteracciones suaves aplicadas al menos en Login, EntityList, EntityEdit, PluginManager y UserConfig
 - **IA Usage:** Refinamiento UX + estados comunes + accesibilidad basica + microinteracciones y continuidad de contexto
 - **Dependencias:** STORY 9.2, STORY 9.4, STORY 9.5, STORY 9.6
 - **Blockers:** Ninguno
+- **Verificación:** 13/13 assertions en UiResilienceTest y 7/7 assertions en UserManagementTest; validación en navegador integrado con foco, modal de confirmación y notificaciones globales/página verificados
 
 ### STORY 9.9: Documentacion de arquitectura frontend y testing UI automatizado
 - **Points:** 5

@@ -76,6 +76,7 @@ export const AppState = {
 	user: null,
 	listeners: [],
 	uiListeners: [],
+	notificationListeners: [],
 	currentEntity: null,
 	entities: [],
 	records: [],
@@ -119,6 +120,23 @@ export const AppState = {
 		const snapshot = this.getUiPreferences();
 		for (const listener of this.uiListeners) {
 			listener(snapshot);
+		}
+	},
+
+	subscribeNotification(listener) {
+		if (typeof listener !== 'function') {
+			return () => {};
+		}
+
+		this.notificationListeners.push(listener);
+		return () => {
+			this.notificationListeners = this.notificationListeners.filter((entry) => entry !== listener);
+		};
+	},
+
+	notifyNotification() {
+		for (const listener of this.notificationListeners) {
+			listener(this.notification);
 		}
 	},
 
@@ -197,6 +215,7 @@ export const AppState = {
 
 	setNotification(notification) {
 		this.notification = notification && typeof notification === 'object' ? { ...notification } : null;
+		this.notifyNotification();
 	},
 
 	getNotification() {
@@ -205,6 +224,7 @@ export const AppState = {
 
 	clearNotification() {
 		this.notification = null;
+		this.notifyNotification();
 	},
 
 	setNavigationState(state) {
@@ -248,6 +268,7 @@ export const AppState = {
 		this.error = null;
 		this.notification = null;
 		this.navigationState = {};
+		this.notifyNotification();
 		this.notify();
 	},
 };

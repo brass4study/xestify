@@ -6,61 +6,198 @@
 
 ---
 
-## Última actualización
+## Estructura de archivos relevantes
 
-**Fecha:** 2026-08-10
-**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones
+```
+backend/
+├── public/index.php              ← Entry point
+├── database/
+│   └── migrations/
+│       ├── 001_users.sql                  ✅ Tabla users
+│       ├── 002_plugin_entity_data.sql     ✅ Tabla plugin_entity_data
+│       ├── 003_plugins.sql                ✅ Tabla plugins (name, slug, type, status, schema)
+│       ├── 004_plugin_hooks.sql           ✅ Tabla plugin_hooks
+│       └── 005_plugin_extension_data.sql  ✅ Tabla plugin_extension_data
+├── src/
+│   ├── bootstrap.php             ← Autoloader + env loader
+│   ├── app.php                   ← Wiring Container + Router + Seeders
+│   ├── Core/
+│   │   ├── Container.php         ✅ DI container
+│   │   ├── Router.php            ✅ HTTP router (soporta {param} y :param)
+│   │   ├── Request.php           ✅ + setUser/user (STORY 1.4)
+│   │   ├── Response.php          ✅ + apiSuccess/apiError + charset UTF-8
+│   │   └── Database.php          ✅ PDO singleton + client_encoding UTF8
+│   ├── Controllers/
+│   │   ├── HealthController.php  ✅ GET /health
+│   │   ├── AuthController.php    ✅ POST /api/auth/login
+│   │   └── EntityController.php  ✅ CRUD + GET /api/v1/entities (con label_singular)
+│   ├── Database/
+│   │   └── Seeders/
+│   │       ├── UserSeeder.php    ✅ Seed admin on boot
+│   │       └── EntitySeeder.php  ✅ Seed entidades demo (client, product) con label_singular
+│   ├── Exceptions/
+│   │   ├── AuthException.php          ✅ Dominio: auth errors
+│   │   ├── DatabaseException.php      ✅ Dominio: db errors
+│   │   ├── RepositoryException.php    ✅ Dominio: repository errors
+│   │   ├── EntityServiceException.php ✅ Dominio: entity errors
+│   │   └── ValidationException.php    ✅ Dominio: validation errors
+│   ├── Repositories/
+│   │   └── GenericRepository.php ✅ find, all, create, update (JSONB ||), delete (soft), restore
+│   ├── Middleware/
+│   │   └── AuthMiddleware.php    ✅ Valida JWT en rutas protegidas
+│   ├── Models/
+│   │   └── SystemEntity.php      ✅ getActive, getBySlug, findOrFail (+ caché en memoria)
+│   ├── Services/
+│   │   ├── JwtService.php        ✅ HS256 puro PHP
+│   │   ├── ValidationService.php ✅ valida contra schema JSONB (6 tipos + identities/fields/custom_fields/relations)
+│   │   └── EntityService.php     ✅ CRUD orquestado + hooks beforeSave/afterSave
+│   └── config/
+│       ├── app.php               ✅ Registra todos los servicios + Seeders en boot
+│       └── routes.php            ✅ /health + /api/auth/login + /api/v1/entities/*
+├── plugins/
+│   └── clients/                  ✅ Plugin entity tipo 'entity' (manifest, schema, Hooks, Installer)
+└── tests/
+    ├── unit/
+    │   ├── helpers.php                    ← TestSuite + assertion helpers
+    │   ├── ContainerTest.php              ✅ 8 tests
+    │   ├── RouterTest.php                 ✅ 10 tests
+    │   ├── RequestResponseTest.php        ✅ 24 tests
+    │   ├── JwtServiceTest.php             ✅ 8 tests
+    │   ├── AuthMiddlewareTest.php         ✅ 6 tests
+    │   └── ValidationServiceTest.php      ✅ 8 tests
+    └── integration/
+        ├── DatabaseTest.php               ✅ 8 tests
+        ├── AuthControllerTest.php         ✅ 8 tests
+        ├── SystemEntitiesTableTest.php    ✅ 3 tests (STORY 2.1)
+        ├── EntityMetadataTableTest.php    ✅ 4 tests (STORY 2.2)
+        ├── EntityDataTableTest.php        ✅ 5 tests (STORY 2.3)
+        ├── PluginsRegistryTableTest.php   ✅ 5 tests (STORY 2.4)
+        ├── PluginHookRegistryTableTest.php✅ 5 tests (STORY 2.5)
+        ├── GenericRepositoryTest.php      ✅ 7 tests (STORY 2.6)
+        ├── MigrationIdempotenceTest.php   ✅ 3 tests (STORY 2.7)
+        ├── EntityServiceTest.php          ✅ 6 tests (STORY 3.2)
+        ├── EntityControllerTest.php       ✅ 9 tests (STORY 3.3)
+        ├── SystemEntityTest.php           ✅ 7 tests (STORY 3.5)
+        ├── PluginLoaderTest.php           ✅ 8 tests (STORY 4.1)
+        ├── HookDispatcherTest.php         ✅ 11 tests (STORY 4.2)
+        ├── HookIntegrationTest.php        ✅ 10 tests (STORY 4.3)
+        ├── PluginClientTest.php           ✅ 13 tests (STORY 4.4)
+        ├── PluginLifecycleTest.php        ✅ 8 tests (STORY 4.5)
+        ├── PluginMetadataTest.php         ✅ 6 tests (STORY 4.6)
+        └── SchemaExtensionTest.php        ✅ 14 tests (STORY 4.7)
+```
 
 ---
 
-### 🔧 Cambios recientes (2026-08-10)
-- STORY 9.6 cerrada: `RouteController` formaliza navegación hash, entrada directa, refresh y back/forward sin recarga.
-- `RouteMapController` implementa el mapa bidireccional completo; `#/home`, `#/` y el hash vacio redirigen a la primera entidad activa mientras no exista una pagina de inicio.
-- La configuración frontend de plugins usa `#/plugins/:slug`; el sufijo `/config` queda reservado a los endpoints API.
-- `PluginRouteController` consume el parser compartido de `RouteMapController`, evitando divergencias entre resolución del hash y despacho de página.
-- `router.navigate('#/ruta')` acepta hashes públicos además de los identificadores internos existentes.
-- `AppController` y `EntityEdit` preservan slug, registro y tab activo, junto con la plantilla, breadcrumbs y navbar correspondientes.
-- `DynamicTabs` propaga la seleccion del usuario y `EntityEdit` navega a `#/entity/:slug/:id/:tab` sin rerender completo; formulario y paneles precargados conservan su estado.
-- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 169/169 assertions; `FrontendArchitectureTest` 9/0.
-- Próxima acción: abordar STORY 9.8 para consolidar accesibilidad, UX transversal y microinteracciones.
+## Stack decidido
+
+| Capa | Tecnología | Notas |
+|------|-----------|-------|
+| Backend | PHP 8.1+ nativo | Sin frameworks |
+| Autoload | Manual (`spl_autoload_register`) | Sin Composer |
+| Frontend | Vanilla JS ES2020+ | Sin build step |
+| Base de datos | PostgreSQL local | Sin Docker en dev |
+| Auth | JWT HS256 | `Xestify\Services\JwtService` |
+| Schema | Custom minimalista | ~100 líneas PHP |
 
 ---
 
-## Sesion 2026-08-10 - STORY 9.7 Infraestructura transversal de frontend y resiliencia
+## Convenciones establecidas
 
-Story implementada y verificada.
+- **Namespace raíz:** `Xestify\`
+- **Autoload:** `Xestify\Core\Container` → `backend/src/Core/Container.php`
+- **Tests:** PHP scripts standalone (sin PHPUnit) en `backend/tests/unit/` e `integration/`
+- **Ejecutar tests:** `php backend/tests/unit/NombreTest.php`
+- **Response envelope éxito:** `{ ok: true, data: {...}, meta?: {...} }`
+- **Response envelope error:** `{ ok: false, error: { code, message, details? } }`
+- **Rutas dinámicas:** soporta tanto `:param` como `{param}` (Router normaliza ambos)
+- **Schema de entidad:** estructura `identities` + `fields` + `custom_fields` + `relations`
+- **`label_singular`:** definido explícitamente en schema metadata, nunca inferido por heurística
+- **Frontend routing:** rutas tipo `entity:{slug}` para entidades dinámicas, `plugins` para gestor
+- **Font Awesome:** cargado vía CDN en `frontend/src/index.html` para iconografía
+- **Servidor dev:** `php -S localhost:8081 -t frontend/src tools/dev/frontend-router.php` — sirve `/tests/` y `/src/` además de la app
+- **Handler de ruta:** `[Controller::class, 'method']` o `callable`
 
-**Cambios principales:**
-- `AppState` amplía el estado global para notificaciones, navegación transversal, preferencias UI y contexto de shell compartido.
-- `UiResilienceService` centraliza feedback global, mensajes amigables de error, confirmaciones modales y notificaciones sin duplicar handlers por página.
-- `I18nModel` introduce una base ligera de traducciones reutilizable para textos de UI, plugins, formularios y tema.
-- `ThemeModel` y `ThemeSettingsPanel` añaden preferencias visuales persistidas por cliente y aplicación global en tiempo real.
-- `AppController` intercepta errores JS/red y renderiza un feedback global coherente; las páginas principales `Login`, `EntityList`, `EntityEdit`, `PluginManager` y `UserManager` pasan a consumir la infraestructura compartida.
-- Se añadieron pruebas de UI para el panel de tema y la resiliencia (`ThemeSettingsPanelTest.html`, `UiResilienceTest.html`).
+---
 
-**Verificaciones finales:**
-- `node --check` sobre los módulos JS que integran estado, i18n, tema y resiliencia.
-- smoke test frontend en navegador integrado para el panel de configuración visual y la capa de feedback compartida.
-- suite frontend completa en navegador integrado con 17/17 runners y 169/169 assertions sin errores de consola.
+## Decisiones técnicas clave
 
-**Siguiente foco:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones.
+1. **Sin Docker en desarrollo** — PHP nativo + PostgreSQL local. Docker solo como archivo documental al final.
+2. **Sin Composer/autoload PSR-4** — autoload manual propio en `bootstrap.php`
+3. **Sin frameworks** — PHP nativo con Container/Router propios
+4. **JWT HS256** — `JwtService` próximo en STORY 1.2
+5. **Tests standalone** — scripts PHP puros, sin dependencias externas
 
-### ✅ Release B completado: consolidación de migraciones y fixes
+---
 
-| Paso | Descripción | Estado |
-|------|-------------|--------|
-| Migración 010 | `010_drop_system_entities.sql` — DROP TABLE IF EXISTS | ✅ aplicado |
-| SystemEntity.php | Redirigido a `plugins WHERE plugin_type='entity'` | ✅ |
-| SystemEntitiesTableTest | Reescrito para verificar que la tabla NO existe | ✅ 3/3 |
-| MigrationIdempotenceTest | Actualizado a migraciones 001-005 | ✅ 3/3 |
-| SystemEntityTest | Fixtures redirigidos a plugins (INSERT + DELETE) | ✅ 7/7 |
-| Migraciones consolidadas | Eliminados 002/008/009/010; renombrados a 001-005 | ✅ |
-| `003_plugins.sql` | Añadida columna `name` + índice desde el inicio | ✅ |
-| `Response.php` | Añadida cabecera `Cache-Control: no-store` | ✅ |
-| `EntitySeeder.php` | `ensureSingularLabels` ya no sobreescribe `name` en BD | ✅ |
+## Comandos útiles
 
-**Suite completa post-Release B:** EntityControllerTest 9/9, EntityServiceTest 6/6, ClientsPluginTest 14/14, PluginLifecycleTest 8/8, PluginDependenciesTest 6/6, HookFilterApiTest 10/10, CommentsPluginTest 9/9, PluginsRegistryTableTest 6/6, MigrationIdempotenceTest 3/3, SystemEntitiesTableTest 3/3, SystemEntityTest 7/7 ✅
+```bash
+# Arrancar servidor
+php -S localhost:8080 -t backend/public/
+
+# Ejecutar tests unitarios
+php backend/tests/unit/ContainerTest.php
+php backend/tests/unit/RouterTest.php
+php backend/tests/unit/RequestResponseTest.php
+
+# Ver log de commits
+git log --oneline
+```
+
+---
+
+## Próximos pasos (STORY 1.1)
+
+1. Crear `backend/database/migrations/001_users.sql`
+2. Crear `backend/src/Core/Database.php` (conexión PDO singleton)
+3. Ejecutar migración: `psql -U postgres -d xestify_dev -f backend/database/migrations/001_users.sql`
+4. Crear seeder: `backend/database/seeders/UserSeeder.php`
+5. Registrar `Database` como singleton en `backend/src/config/app.php`
+6. Tests: migración idempotente + seeder crea admin
+# Sesion 2026-05-03 - Cierre tecnico MVP hasta STORY 6.4
+
+Correcciones implementadas tras auditoria:
+
+- `Router -> AuthMiddleware -> Controller` como pipeline real para `/api/v1/entities/*` y `/api/v1/plugins/*`.
+- `EntityService` recibe el `HookDispatcher` compartido del contenedor.
+- `PluginLoader` exige y persiste `schema.json` en plugins de tipo `entity`.
+- `clients` queda como slug canonico; datos legacy `client` migran a `clients`.
+- `PluginExtensionController` valida plugin extension activo y registro padre existente.
+- Nuevo `AppWiringTest.php` cubre seguridad y wiring real.
+- Nuevo runner agrupado: `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
+
+# Sesion 2026-05-04 - STORY 6.5 Frontend - Página PluginManager
+
+Story completada. Archivos creados/modificados:
+
+**Nuevos (backend):**
+- `backend/src/controllers/PluginManagerController.php` — GET /api/v1/plugins y PUT /api/v1/plugins/{slug}/status
+- `backend/tests/integration/PluginManagerApiTest.php` — 8 tests con stubs TestPdo/TestStatement
+
+**Nuevos (frontend):**
+- `frontend/src/js/pages/PluginManager.js` — página de gestión de plugins (lista, activa/desactiva)
+- `frontend/tests/PluginManagerTest.html` — 8/8 tests ✅
+- `frontend/tests/css/` y `frontend/tests/js/` — assets de soporte para test runner
+
+**Modificados:**
+- `backend/src/config/app.php` — registra PluginManagerController
+- `backend/src/config/routes.php` — rutas GET y PUT /api/v1/plugins
+- `backend/tests/run.php` — añade PluginManagerApiTest al grupo integration-plugins
+- `frontend/src/css/main.css` — estilos para PluginManager
+- `frontend/src/js/main.js` — integra PluginManager en el flujo de navegación
+- `frontend/src/js/modules/Navbar.js` — link Plugins condicional por `canManagePlugins`
+- Todos los tests HTML de frontend — correcciones de regresiones: slug `clients` canónico, E2E flow completo
+
+**Tests finales:**
+- Backend: 28/28 archivos pasan (runner agrupado)
+- Frontend: todos los tests 100% (NavbarTest 10/10, LoginTest 5/5, EntityListTest 7/7, E2ETest 12/12, PluginManagerTest 8/8, y demás)
+
+**Cierre verificado (2026-05-04):**
+- Commit de story: `7d2d313`
+- Verificacion backend: `php backend/tests/run.php all` → 28/28 archivos pasan
+- Verificacion frontend sintaxis: `node --check frontend/src/js/pages/PluginManager.js` y `node --check frontend/src/js/main.js`
+- Backlog alineado: el siguiente punto es STORY 7.1
 
 ---
 
@@ -269,186 +406,13 @@ Story implementada y verificada.
 - Se eliminó la dependencia runtime del Play CDN de Tailwind: `frontend/src/index.html` carga ahora `frontend/src/css/tailwind.generated.css`, con fuente en `frontend/src/css/tailwind.src.css` y configuración en `frontend/tailwind.config.cjs`.
 - Los estilos residuales necesarios dejaron de vivir en `main.css` y pasaron a capas `@layer base` / `@layer utilities` dentro de Tailwind.
 
-## Sesion 2026-08-06 - STORY 9.1 Fundamentos de diseño
-
-Story implementada.
-
-**Modificados (frontend):**
-- `frontend/src/index.html` - fuentes, favicon inline y carga de CSS Tailwind generado localmente
-- `frontend/tailwind.config.cjs`, `frontend/src/css/tailwind.src.css`, `frontend/src/css/tailwind.generated.css` - configuración, fuente y salida Tailwind para sustituir el CDN runtime
-- `frontend/src/js/modules/DynamicTable.js` - tabla base unificada con columnas extra, decorado de filas y helper común de acciones
-- `frontend/src/js/modules/DynamicTabs.js` - tabs tipo Ant Design con `ink bar` y barra de navegación más fiel al patrón actual
-- `frontend/src/js/pages/EntityList.js`, `frontend/src/js/pages/UserManager.js`, `frontend/src/js/pages/PluginManager.js`, `frontend/src/js/pages/PluginConfig.js` - tablas migradas a `DynamicTable`
-- `frontend/src/js/pages/EntityEdit.js` - wrapper ajustado para tabs en primera posición sin padding superior
-- `frontend/src/js/modules/DynamicForm.js`, `frontend/src/js/pages/Login.js`, `frontend/src/js/pages/UserConfig.js`, `frontend/src/js/pages/UserProfile.js`, `plugins/comments/plugin.js` y tests HTML asociados - endurecimiento visual, consistencia y regresiones UI
-
-**Docs actualizadas:**
-- `docs/05-frontend/ui-foundations-ant.md` - fundamentos visuales y tokens base de la UI
-- `docs/09-history/decisiones-tecnicas.md` - decisión técnica de Tailwind sin dependencia runtime del CDN
-- `docs/11-backlog/backlog.md` - story 9.1 alineada con el estado real del frontend
-
-**Verificaciones finales:**
-- `node --check frontend/src/js/modules/DynamicTable.js`
-- `node --check frontend/src/js/modules/DynamicTabs.js`
-- `node --check frontend/src/js/pages/EntityEdit.js`
-- diagnósticos sin errores en los archivos frontend tocados
-
-**Cierre verificado (2026-08-06):**
-- Commit de story: pendiente (este commit)
-- Verificación crítica: tablas, tabs, formularios y shell cargan desde una base visual unificada sin CDN runtime de Tailwind
-- Backlog alineado: STORY 9.2 queda cerrada; el siguiente punto es STORY 9.3
-- `backend/src/controllers/UserController.php` y `backend/src/config/routes.php` incorporan reset admin (`PUT /api/v1/users/{id}/password`) y edición de roles.
-- `backend/src/repositories/UserRepository.php` permite persistir `roles` junto a nombre/email/avatar.
-- `frontend/tests/UserManagementTest.html` añade cobertura de render tabla, modal editar, modal reset y restricción de borrado propio (4/4).
-- Verificación aplicada: test frontend 4/4 en navegador; `php backend/tests/integration/UserControllerTest.php` quedó `SKIP` por PostgreSQL no disponible en el entorno.
-
-### Sesion 2026-08-07 - STORY 9.2 Fundamentos de navegacion y anatomia de paginas
-
-Story implementada.
-
-**Modificados (frontend/docs):**
-- `frontend/src/js/modules/Routes.js` - contrato central de navegación hash en inglés, con parseo y generación para perfil, usuarios, plugins y entidades.
-- `frontend/src/js/main.js` - integración del contrato de rutas con navegación y carga de formularios de entidad.
-- `frontend/src/js/modules/DynamicTabs.js` - tabs sin mutación de hash para no romper la navegación SPA.
-- `frontend/src/js/pages/EntityEdit.js` - guardas de render para evitar escrituras tardías y botones duplicados.
-- `frontend/src/js/pages/UserManager.js` - navegación a `#/users/:id` con contrato compartido.
-- `frontend/tests/UserManagementTest.html` - adaptación de la cobertura a rutas canónicas.
-- `docs/05-frontend/navegacion-anatomia.md`, `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md`, `docs/11-backlog/roadmap.md` - alineación del contrato de navegación y del alcance de la story.
-
-**Verificaciones finales:**
-- `node --check frontend/src/js/modules/Routes.js`
-- `node --check frontend/src/js/main.js`
-- `node --check frontend/src/js/modules/DynamicTabs.js`
-- `node --check frontend/src/js/pages/EntityEdit.js`
-
-**Cierre verificado (2026-08-07):**
-- Contrato canónico de rutas ya cerrado en inglés, sin aliases legacy en español.
-- La navegación directa a entidades y usuarios queda coordinada desde un único módulo.
-- Backlog y roadmap ya reflejan que STORY 9.2 está implementada y que el siguiente foco es STORY 9.3.
-
-### Sesion 2026-08-07 - STORY 9.3 Libreria de componentes UI base
-
-Story implementada.
-
-**Modificados (frontend):**
-- `frontend/src/js/modules/ComponentFactory.js` - entrada pública única de la
-  librería UI, con registro canónico, catálogo derivado y rechazo de nombres no
-  registrados.
-- La fachada y el catálogo duplicados se eliminaron tras consolidarlos en
-  `ComponentFactory.js`.
-- `frontend/tests/ComponentsTest.html` - smoke test del contrato único, catálogo,
-  primitivas nativas y creación estricta.
-
-**Verificaciones finales:**
-- `node --check frontend/src/js/modules/ComponentFactory.js`
-- `node --check frontend/src/js/modules/Routes.js`
-- `node --check frontend/src/js/main.js`
-- Prueba de humo en navegador: `8 passed, 0 failed`
-- Suite frontend relacionada: `95 passed, 0 failed` en 12 runners HTML.
-- Smoke del runtime Apache: shell, navegación y tabla de clientes sin errores
-  propios de consola ni tags personalizados accidentales.
-
-**Cierre verificado (2026-08-07):**
-- La librería UI base expone exclusivamente `component.create()` y
-  `component.getCatalog()` para layout, acciones, feedback y estados vacíos.
-- DynamicForm, DynamicTable, Modal y futuras páginas pueden migrar a esta base sin crear patrones visuales paralelos.
-- El backlog queda alineado con la implementación real de la story 9.3.
-
-### Sesion 2026-08-08 - STORY 9.4 Arquitectura frontend y modularizacion
-
-Story implementada.
-
-**Modificados (frontend):**
-- `frontend/src/index.html` - el runtime carga ahora `js/app.js` como entrypoint de la SPA.
-- `frontend/src/js/app.js` - entrypoint raiz del runtime SPA.
-- `frontend/src/js/controllers/RouteController.js`, `frontend/src/js/controllers/RouteMapController.js`, `frontend/src/js/controllers/PluginRouteController.js` - routing SPA y traducción hash/página consolidados en `controllers`.
-- `frontend/src/js/controllers/AppController.js` y `frontend/src/js/views/pages/UserManager.js` - consumidores actualizados al nuevo contrato de routing.
-- `frontend/src/js/models/PluginPanelModel.js` y `plugins/comments/plugin.js` - runtime de paneles de plugin alineado con MVC estricto desde `models`.
-- `frontend/tests/FrontendArchitectureTest.html`, `frontend/tests/StateTest.html` y `frontend/tests/E2ETest.html` - cobertura adaptada a la nueva organización y al contrato actual de estado/routing.
-- `frontend/src/js/views/pages/UserProfile.js` - corregido el render heredado para no invocar métodos privados de la subclase durante el constructor base.
-- `frontend/tests/EntityEditTest.html` y `frontend/tests/NavbarTest.html` - red aislada con fixtures locales para eliminar `404` y DNS espurios de la consola.
-- `frontend/src/js/controllers/app.js`, `frontend/src/js/models/RouteModel.js` y `frontend/src/js/models/PluginRouteModel.js` se eliminan; el bootstrap real queda en `app.js` y toda la lógica de rutas permanece en `controllers`.
-
-**Docs actualizadas:**
-- `docs/05-frontend/navegacion-anatomia.md` - fuente de verdad del routing ajustada a `RouteMapController` y `PluginRouteController`.
-- `docs/05-frontend/README.md` y `docs/01-architecture/mvc.md` - descripción explícita del frontend MVC estricto.
-- `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` - trazabilidad alineada con el estado real de la story.
-
-**Verificaciones finales:**
-- `node --check` sobre `frontend/src/js` y `plugins/comments/plugin.js`
-- `frontend/tests/StateTest.html` - `11 passed, 0 failed` en navegador integrado
-- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed` en navegador integrado
-- `frontend/tests/E2ETest.html` - `13 passed, 0 failed` en navegador integrado
-- suite frontend completa - 17/17 runners, `146 passed, 0 failed`, sin errores de consola
-- diagnósticos sin errores en controladores, modelos, plugin `comments` y tests tocados
-
-**Cierre verificado (2026-08-08):**
-- `frontend/src/js` queda reducido a `controllers/`, `models/` y `views/` como únicas capas principales.
-- El routing deja de vivir en `models` y pasa a la capa `controllers`.
-- Los tests HTML relevantes siguen funcionando en ejecución standalone sin bundler y el flujo canónico de validación queda fijado en el navegador integrado de VS Code.
-- El siguiente foco del EPIC 9 pasa a STORY 9.5.
-
 ---
 
-## Sesion 2026-08-10 - STORY 9.5 Shell SPA y plantillas de navegacion
+## Última actualización
 
-Story implementada y verificada.
-
-**Cambios principales:**
-- `ShellLayout` define un único armazón persistente con navegación, cabecera, notificaciones, contenido, acciones y footer opcional.
-- `PageLayout`, `ListLayout` y `FormLayout` componen las plantillas de páginas y sus zonas de extensión sin buscar nodos mediante selectores globales.
-- EntityList, EntityEdit, PluginManager, PluginConfig, UserProfile y UserManagement consumen la instancia activa de shell.
-- Login usa `PageLayout` en modo standalone con template `login`, contenido y footer propios, sin navbar autenticada ni layout paralelo.
-- Se eliminó `ShellLayoutView.js`, que duplicaba la implementación activa y no tenía referencias.
-- `layouts-guide.md` documenta el árbol, el wiring, los contratos fluent y las reglas de extensión.
-
-**Verificaciones finales:**
-- sintaxis Node sobre `AppController.js`, `PageLayout.js` y `ShellLayout.js`
-- diagnósticos de VS Code sin errores en el slice modificado
-- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed`
-- suite frontend completa en navegador integrado - 17/17 runners, `166 passed, 0 failed`
-- entrypoint real de Login - un único `login-shell`, contenido y footer correctos, sin `shell-menu` ni errores de consola
-
-**Siguiente foco:** STORY 9.6 - Implementacion del routing SPA.
-
----
-
-## Sesion 2026-08-10 - STORY 9.6 Implementacion del routing SPA
-
-Story implementada y verificada.
-
-**Cambios principales:**
-- `RouteMapController` resuelve y genera todas las rutas canónicas de la story, con parsing estricto, segmentos codificados y soporte de query adicional sin perder el tab.
-- El parser de configuración de plugins queda centralizado y cubierto de extremo a extremo desde hash hasta handler de `AppController`.
-- `RouteController.navigate()` acepta hashes públicos y usa el historial del navegador para navegación programática sin recarga.
-- La entrada directa y el reinicio del router restauran la vista activa; back/forward recupera también el contexto parametrizado.
-- `AppController` integra home, login y tabs de entidad, manteniendo plantilla, breadcrumbs y estado activo de navbar.
-- Los cambios de pestaña en `EntityEdit` invocan el router: `data` identifica la pestaña base y los plugins usan su slug, preservando back/forward.
-- Los tabs del mismo registro usan una ruta rápida de historial: solo cambian panel activo y breadcrumbs, sin recargar schema, registro, formulario ni plugins.
-- `#/home`, `#/` y el hash vacio actuan como aliases de entrada y se reemplazan por la primera ruta `#/entity/:slug` del menu; `#/workbench` permanece eliminado.
-- `EntityEdit` recibe el tab inicial de la URL y lo activa tras cargar las extensiones.
-- `Volver` y `Volver al listado` quedan unificados en `page-header-toolbar` con variant `secondary`; los comandos de formulario permanecen en `shell-main-actions`.
-
-**Verificaciones finales:**
-- `node --check` sobre los cuatro módulos JavaScript modificados
-- diagnósticos de VS Code sin errores en código y test modificados
-- `frontend/tests/FrontendArchitectureTest.html` - `9 passed, 0 failed`
-- suite frontend completa en navegador integrado - 17/17 runners, `169 passed, 0 failed`
-
-**Siguiente foco:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones.
-
----
-
-## Stack decidido
-
-| Capa | Tecnología | Notas |
-|------|-----------|-------|
-| Backend | PHP 8.1+ nativo | Sin frameworks |
-| Autoload | Manual (`spl_autoload_register`) | Sin Composer |
-| Frontend | Vanilla JS ES2020+ | Sin build step |
-| Base de datos | PostgreSQL local | Sin Docker en dev |
-| Auth | JWT HS256 | `Xestify\Services\JwtService` |
-| Schema | Custom minimalista | ~100 líneas PHP |
+**Fecha:** 2026-08-10
+**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
+**Próxima story:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones
 
 ---
 
@@ -464,142 +428,43 @@ Story implementada y verificada.
 - La verificacion manual en navegador confirmó shell con estilos, pagina de
   plugins y acciones de tabla con iconos mas grandes.
 
-## Estructura de archivos relevantes
+---
 
-```
-backend/
-├── public/index.php              ← Entry point
-├── database/
-│   └── migrations/
-│       ├── 001_users.sql                  ✅ Tabla users
-│       ├── 002_plugin_entity_data.sql     ✅ Tabla plugin_entity_data
-│       ├── 003_plugins.sql                ✅ Tabla plugins (name, slug, type, status, schema)
-│       ├── 004_plugin_hooks.sql           ✅ Tabla plugin_hooks
-│       └── 005_plugin_extension_data.sql  ✅ Tabla plugin_extension_data
-├── src/
-│   ├── bootstrap.php             ← Autoloader + env loader
-│   ├── app.php                   ← Wiring Container + Router + Seeders
-│   ├── Core/
-│   │   ├── Container.php         ✅ DI container
-│   │   ├── Router.php            ✅ HTTP router (soporta {param} y :param)
-│   │   ├── Request.php           ✅ + setUser/user (STORY 1.4)
-│   │   ├── Response.php          ✅ + apiSuccess/apiError + charset UTF-8
-│   │   └── Database.php          ✅ PDO singleton + client_encoding UTF8
-│   ├── Controllers/
-│   │   ├── HealthController.php  ✅ GET /health
-│   │   ├── AuthController.php    ✅ POST /api/auth/login
-│   │   └── EntityController.php  ✅ CRUD + GET /api/v1/entities (con label_singular)
-│   ├── Database/
-│   │   └── Seeders/
-│   │       ├── UserSeeder.php    ✅ Seed admin on boot
-│   │       └── EntitySeeder.php  ✅ Seed entidades demo (client, product) con label_singular
-│   ├── Exceptions/
-│   │   ├── AuthException.php          ✅ Dominio: auth errors
-│   │   ├── DatabaseException.php      ✅ Dominio: db errors
-│   │   ├── RepositoryException.php    ✅ Dominio: repository errors
-│   │   ├── EntityServiceException.php ✅ Dominio: entity errors
-│   │   └── ValidationException.php    ✅ Dominio: validation errors
-│   ├── Repositories/
-│   │   └── GenericRepository.php ✅ find, all, create, update (JSONB ||), delete (soft), restore
-│   ├── Middleware/
-│   │   └── AuthMiddleware.php    ✅ Valida JWT en rutas protegidas
-│   ├── Models/
-│   │   └── SystemEntity.php      ✅ getActive, getBySlug, findOrFail (+ caché en memoria)
-│   ├── Services/
-│   │   ├── JwtService.php        ✅ HS256 puro PHP
-│   │   ├── ValidationService.php ✅ valida contra schema JSONB (6 tipos + identities/fields/custom_fields/relations)
-│   │   └── EntityService.php     ✅ CRUD orquestado + hooks beforeSave/afterSave
-│   └── config/
-│       ├── app.php               ✅ Registra todos los servicios + Seeders en boot
-│       └── routes.php            ✅ /health + /api/auth/login + /api/v1/entities/*
-├── plugins/
-│   └── clients/                  ✅ Plugin entity tipo 'entity' (manifest, schema, Hooks, Installer)
-└── tests/
-    ├── unit/
-    │   ├── helpers.php                    ← TestSuite + assertion helpers
-    │   ├── ContainerTest.php              ✅ 8 tests
-    │   ├── RouterTest.php                 ✅ 10 tests
-    │   ├── RequestResponseTest.php        ✅ 24 tests
-    │   ├── JwtServiceTest.php             ✅ 8 tests
-    │   ├── AuthMiddlewareTest.php         ✅ 6 tests
-    │   └── ValidationServiceTest.php      ✅ 8 tests
-    └── integration/
-        ├── DatabaseTest.php               ✅ 8 tests
-        ├── AuthControllerTest.php         ✅ 8 tests
-        ├── SystemEntitiesTableTest.php    ✅ 3 tests (STORY 2.1)
-        ├── EntityMetadataTableTest.php    ✅ 4 tests (STORY 2.2)
-        ├── EntityDataTableTest.php        ✅ 5 tests (STORY 2.3)
-        ├── PluginsRegistryTableTest.php   ✅ 5 tests (STORY 2.4)
-        ├── PluginHookRegistryTableTest.php✅ 5 tests (STORY 2.5)
-        ├── GenericRepositoryTest.php      ✅ 7 tests (STORY 2.6)
-        ├── MigrationIdempotenceTest.php   ✅ 3 tests (STORY 2.7)
-        ├── EntityServiceTest.php          ✅ 6 tests (STORY 3.2)
-        ├── EntityControllerTest.php       ✅ 9 tests (STORY 3.3)
-        ├── SystemEntityTest.php           ✅ 7 tests (STORY 3.5)
-        ├── PluginLoaderTest.php           ✅ 8 tests (STORY 4.1)
-        ├── HookDispatcherTest.php         ✅ 11 tests (STORY 4.2)
-        ├── HookIntegrationTest.php        ✅ 10 tests (STORY 4.3)
-        ├── PluginClientTest.php           ✅ 13 tests (STORY 4.4)
-        ├── PluginLifecycleTest.php        ✅ 8 tests (STORY 4.5)
-        ├── PluginMetadataTest.php         ✅ 6 tests (STORY 4.6)
-        └── SchemaExtensionTest.php        ✅ 14 tests (STORY 4.7)
-```
+### 🔧 Cambios recientes (2026-08-10)
+- STORY 9.6 cerrada: `RouteController` formaliza navegación hash, entrada directa, refresh y back/forward sin recarga.
+- `RouteMapController` implementa el mapa bidireccional completo; `#/home`, `#/` y el hash vacio redirigen a la primera entidad activa mientras no exista una pagina de inicio.
+- La configuración frontend de plugins usa `#/plugins/:slug`; el sufijo `/config` queda reservado a los endpoints API.
+- `PluginRouteController` consume el parser compartido de `RouteMapController`, evitando divergencias entre resolución del hash y despacho de página.
+- `router.navigate('#/ruta')` acepta hashes públicos además de los identificadores internos existentes.
+- `AppController` y `EntityEdit` preservan slug, registro y tab activo, junto con la plantilla, breadcrumbs y navbar correspondientes.
+- `DynamicTabs` propaga la seleccion del usuario y `EntityEdit` navega a `#/entity/:slug/:id/:tab` sin rerender completo; formulario y paneles precargados conservan su estado.
+- Verificación aplicada en navegador integrado de VS Code: 17/17 runners HTML y 169/169 assertions; `FrontendArchitectureTest` 9/0.
+- Próxima acción: abordar STORY 9.8 para consolidar accesibilidad, UX transversal y microinteracciones.
 
 ---
 
-## Convenciones establecidas
+### ✅ Release B completado: consolidación de migraciones y fixes
 
-- **Namespace raíz:** `Xestify\`
-- **Autoload:** `Xestify\Core\Container` → `backend/src/Core/Container.php`
-- **Tests:** PHP scripts standalone (sin PHPUnit) en `backend/tests/unit/` e `integration/`
-- **Ejecutar tests:** `php backend/tests/unit/NombreTest.php`
-- **Response envelope éxito:** `{ ok: true, data: {...}, meta?: {...} }`
-- **Response envelope error:** `{ ok: false, error: { code, message, details? } }`
-- **Rutas dinámicas:** soporta tanto `:param` como `{param}` (Router normaliza ambos)
-- **Schema de entidad:** estructura `identities` + `fields` + `custom_fields` + `relations`
-- **`label_singular`:** definido explícitamente en schema metadata, nunca inferido por heurística
-- **Frontend routing:** rutas tipo `entity:{slug}` para entidades dinámicas, `plugins` para gestor
-- **Font Awesome:** cargado vía CDN en `frontend/src/index.html` para iconografía
-- **Servidor dev:** `php -S localhost:8081 -t frontend/src tools/dev/frontend-router.php` — sirve `/tests/` y `/src/` además de la app
-- **Handler de ruta:** `[Controller::class, 'method']` o `callable`
+| Paso | Descripción | Estado |
+|------|-------------|--------|
+| Migración 010 | `010_drop_system_entities.sql` — DROP TABLE IF EXISTS | ✅ aplicado |
+| SystemEntity.php | Redirigido a `plugins WHERE plugin_type='entity'` | ✅ |
+| SystemEntitiesTableTest | Reescrito para verificar que la tabla NO existe | ✅ 3/3 |
+| MigrationIdempotenceTest | Actualizado a migraciones 001-005 | ✅ 3/3 |
+| SystemEntityTest | Fixtures redirigidos a plugins (INSERT + DELETE) | ✅ 7/7 |
+| Migraciones consolidadas | Eliminados 002/008/009/010; renombrados a 001-005 | ✅ |
+| `003_plugins.sql` | Añadida columna `name` + índice desde el inicio | ✅ |
+| `Response.php` | Añadida cabecera `Cache-Control: no-store` | ✅ |
+| `EntitySeeder.php` | `ensureSingularLabels` ya no sobreescribe `name` en BD | ✅ |
 
----
-
-## Decisiones técnicas clave
-
-1. **Sin Docker en desarrollo** — PHP nativo + PostgreSQL local. Docker solo como archivo documental al final.
-2. **Sin Composer/autoload PSR-4** — autoload manual propio en `bootstrap.php`
-3. **Sin frameworks** — PHP nativo con Container/Router propios
-4. **JWT HS256** — `JwtService` próximo en STORY 1.2
-5. **Tests standalone** — scripts PHP puros, sin dependencias externas
+**Suite completa post-Release B:** EntityControllerTest 9/9, EntityServiceTest 6/6, ClientsPluginTest 14/14, PluginLifecycleTest 8/8, PluginDependenciesTest 6/6, HookFilterApiTest 10/10, CommentsPluginTest 9/9, PluginsRegistryTableTest 6/6, MigrationIdempotenceTest 3/3, Sys
 
 ---
 
-## Comandos útiles
-
-```bash
-# Arrancar servidor
-php -S localhost:8080 -t backend/public/
-
-# Ejecutar tests unitarios
-php backend/tests/unit/ContainerTest.php
-php backend/tests/unit/RouterTest.php
-php backend/tests/unit/RequestResponseTest.php
-
-# Ver log de commits
-git log --oneline
-```
+### Historico de sesiones
 
 ---
 
-## Próximos pasos (STORY 1.1)
-
-1. Crear `backend/database/migrations/001_users.sql`
-2. Crear `backend/src/Core/Database.php` (conexión PDO singleton)
-3. Ejecutar migración: `psql -U postgres -d xestify_dev -f backend/database/migrations/001_users.sql`
-4. Crear seeder: `backend/database/seeders/UserSeeder.php`
-5. Registrar `Database` como singleton en `backend/src/config/app.php`
-6. Tests: migración idempotente + seeder crea admin
 # Sesion 2026-05-03 - Cierre tecnico MVP hasta STORY 6.4
 
 Correcciones implementadas tras auditoria:
@@ -611,6 +476,8 @@ Correcciones implementadas tras auditoria:
 - `PluginExtensionController` valida plugin extension activo y registro padre existente.
 - Nuevo `AppWiringTest.php` cubre seguridad y wiring real.
 - Nuevo runner agrupado: `php backend/tests/run.php unit|integration-db|integration-plugins|all`.
+
+---
 
 # Sesion 2026-05-04 - STORY 6.5 Frontend - Página PluginManager
 
@@ -644,6 +511,8 @@ Story completada. Archivos creados/modificados:
 - Verificacion frontend sintaxis: `node --check frontend/src/js/pages/PluginManager.js` y `node --check frontend/src/js/main.js`
 - Backlog alineado: el siguiente punto es STORY 7.1
 
+---
+
 # Sesion 2026-05-06 - STORY 7.1 Detección de actualizaciones disponibles en PluginLoader
 
 Story completada. Archivos creados/modificados:
@@ -667,6 +536,8 @@ Story completada. Archivos creados/modificados:
 - Commit de story: pendiente (este commit)
 - Verificación crítica: `load()` ya no consume la actualización durante el boot
 - Backlog alineado: el siguiente punto es STORY 7.2
+
+---
 
 # Sesion 2026-05-07 - Runtime Apache+PHP, sync explicito y rendimiento local
 
@@ -868,3 +739,221 @@ Story implementada.
 - Commit de story: pendiente (este commit)
 - Verificacion critica: UI admin permite sincronizar, actualizar y hacer rollback con confirmacion modal; rollback solo visible cuando `can_rollback` es verdadero
 - Backlog alineado: el siguiente punto es STORY 8.1
+
+---
+
+## Sesion 2026-08-06 - STORY 9.1 Fundamentos de diseño
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/index.html` - fuentes, favicon inline y carga de CSS Tailwind generado localmente
+- `frontend/tailwind.config.cjs`, `frontend/src/css/tailwind.src.css`, `frontend/src/css/tailwind.generated.css` - configuración, fuente y salida Tailwind para sustituir el CDN runtime
+- `frontend/src/js/modules/DynamicTable.js` - tabla base unificada con columnas extra, decorado de filas y helper común de acciones
+- `frontend/src/js/modules/DynamicTabs.js` - tabs tipo Ant Design con `ink bar` y barra de navegación más fiel al patrón actual
+- `frontend/src/js/pages/EntityList.js`, `frontend/src/js/pages/UserManager.js`, `frontend/src/js/pages/PluginManager.js`, `frontend/src/js/pages/PluginConfig.js` - tablas migradas a `DynamicTable`
+- `frontend/src/js/pages/EntityEdit.js` - wrapper ajustado para tabs en primera posición sin padding superior
+- `frontend/src/js/modules/DynamicForm.js`, `frontend/src/js/pages/Login.js`, `frontend/src/js/pages/UserConfig.js`, `frontend/src/js/pages/UserProfile.js`, `plugins/comments/plugin.js` y tests HTML asociados - endurecimiento visual, consistencia y regresiones UI
+
+**Docs actualizadas:**
+- `docs/05-frontend/ui-foundations-ant.md` - fundamentos visuales y tokens base de la UI
+- `docs/09-history/decisiones-tecnicas.md` - decisión técnica de Tailwind sin dependencia runtime del CDN
+- `docs/11-backlog/backlog.md` - story 9.1 alineada con el estado real del frontend
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/DynamicTable.js`
+- `node --check frontend/src/js/modules/DynamicTabs.js`
+- `node --check frontend/src/js/pages/EntityEdit.js`
+- diagnósticos sin errores en los archivos frontend tocados
+
+**Cierre verificado (2026-08-06):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: tablas, tabs, formularios y shell cargan desde una base visual unificada sin CDN runtime de Tailwind
+- Backlog alineado: STORY 9.2 queda cerrada; el siguiente punto es STORY 9.3
+- `backend/src/controllers/UserController.php` y `backend/src/config/routes.php` incorporan reset admin (`PUT /api/v1/users/{id}/password`) y edición de roles.
+- `backend/src/repositories/UserRepository.php` permite persistir `roles` junto a nombre/email/avatar.
+- `frontend/tests/UserManagementTest.html` añade cobertura de render tabla, modal editar, modal reset y restricción de borrado propio (4/4).
+- Verificación aplicada: test frontend 4/4 en navegador; `php backend/tests/integration/UserControllerTest.php` quedó `SKIP` por PostgreSQL no disponible en el entorno.
+
+### Sesion 2026-08-07 - STORY 9.2 Fundamentos de navegacion y anatomia de paginas
+
+Story implementada.
+
+**Modificados (frontend/docs):**
+- `frontend/src/js/modules/Routes.js` - contrato central de navegación hash en inglés, con parseo y generación para perfil, usuarios, plugins y entidades.
+- `frontend/src/js/main.js` - integración del contrato de rutas con navegación y carga de formularios de entidad.
+- `frontend/src/js/modules/DynamicTabs.js` - tabs sin mutación de hash para no romper la navegación SPA.
+- `frontend/src/js/pages/EntityEdit.js` - guardas de render para evitar escrituras tardías y botones duplicados.
+- `frontend/src/js/pages/UserManager.js` - navegación a `#/users/:id` con contrato compartido.
+- `frontend/tests/UserManagementTest.html` - adaptación de la cobertura a rutas canónicas.
+- `docs/05-frontend/navegacion-anatomia.md`, `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md`, `docs/11-backlog/roadmap.md` - alineación del contrato de navegación y del alcance de la story.
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/Routes.js`
+- `node --check frontend/src/js/main.js`
+- `node --check frontend/src/js/modules/DynamicTabs.js`
+- `node --check frontend/src/js/pages/EntityEdit.js`
+
+**Cierre verificado (2026-08-07):**
+- Contrato canónico de rutas ya cerrado en inglés, sin aliases legacy en español.
+- La navegación directa a entidades y usuarios queda coordinada desde un único módulo.
+- Backlog y roadmap ya reflejan que STORY 9.2 está implementada y que el siguiente foco es STORY 9.3.
+
+### Sesion 2026-08-07 - STORY 9.3 Libreria de componentes UI base
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/js/modules/ComponentFactory.js` - entrada pública única de la
+  librería UI, con registro canónico, catálogo derivado y rechazo de nombres no
+  registrados.
+- La fachada y el catálogo duplicados se eliminaron tras consolidarlos en
+  `ComponentFactory.js`.
+- `frontend/tests/ComponentsTest.html` - smoke test del contrato único, catálogo,
+  primitivas nativas y creación estricta.
+
+**Verificaciones finales:**
+- `node --check frontend/src/js/modules/ComponentFactory.js`
+- `node --check frontend/src/js/modules/Routes.js`
+- `node --check frontend/src/js/main.js`
+- Prueba de humo en navegador: `8 passed, 0 failed`
+- Suite frontend relacionada: `95 passed, 0 failed` en 12 runners HTML.
+- Smoke del runtime Apache: shell, navegación y tabla de clientes sin errores
+  propios de consola ni tags personalizados accidentales.
+
+**Cierre verificado (2026-08-07):**
+- La librería UI base expone exclusivamente `component.create()` y
+  `component.getCatalog()` para layout, acciones, feedback y estados vacíos.
+- DynamicForm, DynamicTable, Modal y futuras páginas pueden migrar a esta base sin crear patrones visuales paralelos.
+- El backlog queda alineado con la implementación real de la story 9.3.
+
+### Sesion 2026-08-08 - STORY 9.4 Arquitectura frontend y modularizacion
+
+Story implementada.
+
+**Modificados (frontend):**
+- `frontend/src/index.html` - el runtime carga ahora `js/app.js` como entrypoint de la SPA.
+- `frontend/src/js/app.js` - entrypoint raiz del runtime SPA.
+- `frontend/src/js/controllers/RouteController.js`, `frontend/src/js/controllers/RouteMapController.js`, `frontend/src/js/controllers/PluginRouteController.js` - routing SPA y traducción hash/página consolidados en `controllers`.
+- `frontend/src/js/controllers/AppController.js` y `frontend/src/js/views/pages/UserManager.js` - consumidores actualizados al nuevo contrato de routing.
+- `frontend/src/js/models/PluginPanelModel.js` y `plugins/comments/plugin.js` - runtime de paneles de plugin alineado con MVC estricto desde `models`.
+- `frontend/tests/FrontendArchitectureTest.html`, `frontend/tests/StateTest.html` y `frontend/tests/E2ETest.html` - cobertura adaptada a la nueva organización y al contrato actual de estado/routing.
+- `frontend/src/js/views/pages/UserProfile.js` - corregido el render heredado para no invocar métodos privados de la subclase durante el constructor base.
+- `frontend/tests/EntityEditTest.html` y `frontend/tests/NavbarTest.html` - red aislada con fixtures locales para eliminar `404` y DNS espurios de la consola.
+- `frontend/src/js/controllers/app.js`, `frontend/src/js/models/RouteModel.js` y `frontend/src/js/models/PluginRouteModel.js` se eliminan; el bootstrap real queda en `app.js` y toda la lógica de rutas permanece en `controllers`.
+
+**Docs actualizadas:**
+- `docs/05-frontend/navegacion-anatomia.md` - fuente de verdad del routing ajustada a `RouteMapController` y `PluginRouteController`.
+- `docs/05-frontend/README.md` y `docs/01-architecture/mvc.md` - descripción explícita del frontend MVC estricto.
+- `docs/09-history/decisiones-tecnicas.md`, `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` - trazabilidad alineada con el estado real de la story.
+
+**Verificaciones finales:**
+- `node --check` sobre `frontend/src/js` y `plugins/comments/plugin.js`
+- `frontend/tests/StateTest.html` - `11 passed, 0 failed` en navegador integrado
+- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed` en navegador integrado
+- `frontend/tests/E2ETest.html` - `13 passed, 0 failed` en navegador integrado
+- suite frontend completa - 17/17 runners, `146 passed, 0 failed`, sin errores de consola
+- diagnósticos sin errores en controladores, modelos, plugin `comments` y tests tocados
+
+**Cierre verificado (2026-08-08):**
+- `frontend/src/js` queda reducido a `controllers/`, `models/` y `views/` como únicas capas principales.
+- El routing deja de vivir en `models` y pasa a la capa `controllers`.
+- Los tests HTML relevantes siguen funcionando en ejecución standalone sin bundler y el flujo canónico de validación queda fijado en el navegador integrado de VS Code.
+- El siguiente foco del EPIC 9 pasa a STORY 9.5.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.5 Shell SPA y plantillas de navegacion
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `ShellLayout` define un único armazón persistente con navegación, cabecera, notificaciones, contenido, acciones y footer opcional.
+- `PageLayout`, `ListLayout` y `FormLayout` componen las plantillas de páginas y sus zonas de extensión sin buscar nodos mediante selectores globales.
+- EntityList, EntityEdit, PluginManager, PluginConfig, UserProfile y UserManagement consumen la instancia activa de shell.
+- Login usa `PageLayout` en modo standalone con template `login`, contenido y footer propios, sin navbar autenticada ni layout paralelo.
+- Se eliminó `ShellLayoutView.js`, que duplicaba la implementación activa y no tenía referencias.
+- `layouts-guide.md` documenta el árbol, el wiring, los contratos fluent y las reglas de extensión.
+
+**Verificaciones finales:**
+- sintaxis Node sobre `AppController.js`, `PageLayout.js` y `ShellLayout.js`
+- diagnósticos de VS Code sin errores en el slice modificado
+- `frontend/tests/FrontendArchitectureTest.html` - `7 passed, 0 failed`
+- suite frontend completa en navegador integrado - 17/17 runners, `166 passed, 0 failed`
+- entrypoint real de Login - un único `login-shell`, contenido y footer correctos, sin `shell-menu` ni errores de consola
+
+**Siguiente foco:** STORY 9.6 - Implementacion del routing SPA.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.6 Implementacion del routing SPA
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `RouteMapController` resuelve y genera todas las rutas canónicas de la story, con parsing estricto, segmentos codificados y soporte de query adicional sin perder el tab.
+- El parser de configuración de plugins queda centralizado y cubierto de extremo a extremo desde hash hasta handler de `AppController`.
+- `RouteController.navigate()` acepta hashes públicos y usa el historial del navegador para navegación programática sin recarga.
+- La entrada directa y el reinicio del router restauran la vista activa; back/forward recupera también el contexto parametrizado.
+- `AppController` integra home, login y tabs de entidad, manteniendo plantilla, breadcrumbs y estado activo de navbar.
+- Los cambios de pestaña en `EntityEdit` invocan el router: `data` identifica la pestaña base y los plugins usan su slug, preservando back/forward.
+- Los tabs del mismo registro usan una ruta rápida de historial: solo cambian panel activo y breadcrumbs, sin recargar schema, registro, formulario ni plugins.
+- `#/home`, `#/` y el hash vacio actuan como aliases de entrada y se reemplazan por la primera ruta `#/entity/:slug` del menu; `#/workbench` permanece eliminado.
+- `EntityEdit` recibe el tab inicial de la URL y lo activa tras cargar las extensiones.
+- `Volver` y `Volver al listado` quedan unificados en `page-header-toolbar` con variant `secondary`; los comandos de formulario permanecen en `shell-main-actions`.
+
+**Verificaciones finales:**
+- `node --check` sobre los cuatro módulos JavaScript modificados
+- diagnósticos de VS Code sin errores en código y test modificados
+- `frontend/tests/FrontendArchitectureTest.html` - `9 passed, 0 failed`
+- suite frontend completa en navegador integrado - 17/17 runners, `169 passed, 0 failed`
+
+**Siguiente foco:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.7 Infraestructura transversal de frontend y resiliencia
+
+Story implementada y verificada.
+
+**Cambios principales:**
+- `AppState` amplía el estado global para notificaciones, navegación transversal, preferencias UI y contexto de shell compartido.
+- `UiResilienceService` centraliza feedback global, mensajes amigables de error, confirmaciones modales y notificaciones sin duplicar handlers por página.
+- `I18nModel` introduce una base ligera de traducciones reutilizable para textos de UI, plugins, formularios y tema.
+- `ThemeModel` y `ThemeSettingsPanel` añaden preferencias visuales persistidas por cliente y aplicación global en tiempo real.
+- `AppController` intercepta errores JS/red y renderiza un feedback global coherente; las páginas principales `Login`, `EntityList`, `EntityEdit`, `PluginManager` y `UserManager` pasan a consumir la infraestructura compartida.
+- Se añadieron pruebas de UI para el panel de tema y la resiliencia (`ThemeSettingsPanelTest.html`, `UiResilienceTest.html`).
+
+**Verificaciones finales:**
+- `node --check` sobre los módulos JS que integran estado, i18n, tema y resiliencia.
+- smoke test frontend en navegador integrado para el panel de configuración visual y la capa de feedback compartida.
+- suite frontend completa en navegador integrado con 17/17 runners y 169/169 assertions sin errores de consola.
+
+---
+
+## Sesion 2026-08-10 - STORY 9.8 UX transversal, accesibilidad y microinteracciones
+
+Story cerrada con validación en navegador integrado.
+
+**Decisiones tomadas en esta sesión:**
+- Centralizar la UX transversal en `UiResilienceService` para evitar que cada página replique estados de cargando, vacío, error o éxito.
+- Mantener los mensajes de éxito/error en una única capa compartida y reservar la capa global para eventos críticos o de bloqueo.
+- Mejorar el modal de confirmación con foco inicial, trampa de foco, cierre con Escape y restauración del foco al disparador original.
+- Utilizar `pending` en botones y estados de vista compartidos para evitar dobles submits y dejar claro cuándo una acción está en curso.
+- Validar el comportamiento en navegador integrado en lugar de solo con sintaxis, porque el objetivo era comprobar accesibilidad y microinteracciones reales.
+
+**Cambios principales:**
+- `UiResilienceService` ahora cubre estados de vista, pending buttons y confirmaciones reutilizables.
+- `AppController` renderiza notificaciones de página y globales con una política clara de routing visual.
+- `Modal` soporta focus management y retorno de foco tras cerrar.
+- `UserManagementTest` y `UiResilienceTest` cubren el comportamiento real de la nueva UX.
+
+**Verificaciones finales:**
+- `node --check` sobre los módulos JS modificados.
+- Validación en navegador integrado de `UiResilienceTest` (13/13) y `UserManagementTest` (7/7).
+
+---
+
+**Próxima story:** STORY 9.9 - Documentación de arquitectura frontend y testing UI automatizado
+
+---

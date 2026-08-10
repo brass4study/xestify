@@ -11,6 +11,7 @@ export class FormFieldComponent extends BaseComponent {
         className: 'text-sm font-medium text-slate-700',
         text: options.label,
       });
+      label.setData('role', 'form-field-label');
       if (typeof options.name === 'string' && options.name !== '') {
         label.setAttribute('for', options.name);
       }
@@ -22,7 +23,7 @@ export class FormFieldComponent extends BaseComponent {
     }
 
     if (typeof options.helpText === 'string' && options.helpText !== '') {
-      const help = component.create('p', {
+      component.create('p', {
         className: 'text-xs text-slate-500',
         text: options.helpText,
       }).setParent(this);
