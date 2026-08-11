@@ -9,9 +9,11 @@ plugins, gestión de usuarios, actualizaciones con rollback y frontend MVC con
 shell SPA persistente, layouts reutilizables y routing hash completo.
 
 **Siguiente foco:** STORY 9.7, infraestructura transversal y resiliencia del
-frontend. Después quedan UX y testing UI de EPIC 9, que cierra el MVP.
-Ajustes finos de UI/UX, operación, marketplace, QA, auditoría y permisos finos (`A1`-`A6`)
-quedan como adiciones post-MVP.
+frontend. Después quedan UX y testing UI de EPIC 9, y a continuación EPIC 10
+(login, `persons`, `plugin_name`/slug y plugins de demostración) y EPIC 11
+(cierre formal y exhaustivo del MVP para la defensa del TFM), que es quien
+cierra el MVP. Ajustes finos de UI/UX, operación, marketplace, QA, auditoría
+y permisos finos (`A1`-`A6`) quedan como adiciones post-MVP.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
 
@@ -89,6 +91,15 @@ Demostrar que:
 - ✅ STORY 9.1-9.6: diseño, navegación, componentes, MVC, shell y routing completo
 - ⏭ STORY 9.7-9.9: resiliencia, UX y testing UI
 
+**EPIC 10 - Login, Persons y Plugins de Demostración**
+- ⏭ Login pulido (logo, nombre, descripción, acceso rápido en modo debug)
+- ⏭ Rename `clients` → `persons`; `plugin_name` desacoplado de `slug` editable
+- ⏭ Plugins de demostración (`orders`, `invoices`, `optometry`, `contact-lenses`) y datos de ejemplo
+
+**EPIC 11 - Cierre Formal y Exhaustivo del MVP**
+- ⏭ Auditoría de código limpio y de coherencia de documentación
+- ⏭ Guion de defensa del TFM y verificación funcional E2E final
+
 ### ❌ OUT OF SCOPE (thesis posterior)
 
 - A1: Ajustes finos de UI/UX (i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado)
@@ -142,8 +153,10 @@ Demostrar que:
 **Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
 shell SPA persistente, plantillas de página reutilizables y routing hash completo.
 
-### ⏭ Próximas fases: STORY 9.7-9.9 (cierre del MVP) + A1-A6 (post-MVP)
-**Objetivo:** completar resiliencia y UX frontend para cerrar el MVP; operación,
+### ⏭ Próximas fases: STORY 9.7-9.9 + EPIC 10 + EPIC 11 (cierre del MVP) + A1-A6 (post-MVP)
+**Objetivo:** completar resiliencia y UX frontend, pulir login, generalizar
+`persons`, flexibilizar la identidad de plugins, crear plugins de
+demostración y cerrar formalmente el MVP para la defensa del TFM; operación,
 permisos, auditoría, marketplace y QA quedan como adiciones post-MVP.
 
 ---

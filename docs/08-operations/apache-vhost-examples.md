@@ -74,6 +74,6 @@ Notas:
 - Quitar la regla `SetEnvIf ... ENABLE_TEST=1` en produccion.
 - Con esta configuracion funcionan `/xestify/`, `/xestify/api/*`,
   `/xestify/plugins/*` y, en desarrollo, `/xestify/tests/*`.
-- El enrutado vive en [/.htaccess](C:/Proyectos/Xestify/.htaccess:1).
+- El enrutado vive en [/.htaccess](../../.htaccess).
 - Los tests HTML tambien quedan accesibles desde el propio servidor
   (`Require local`) aunque no se expongan a clientes remotos.

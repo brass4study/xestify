@@ -120,7 +120,7 @@ La estrategia vigente de implementación es:
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
 - el siguiente bloque transversal prioritario ya abierto es `EPIC 9` (SPA y sistema UI)
-- el MVP académico cierra con `EPIC 9`; ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
+- el MVP académico cierra con `EPIC 11` (login/persons/plugins de demostración en `EPIC 10` + cierre formal en `EPIC 11`); ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
 
 ---
 
@@ -140,6 +140,8 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.7 cerradas; siguiente foco 9.8 |
+| 10 | Login, Persons y Plugins de Demostración | ⏭ Pendiente | Login pulido, rename persons, plugin_name/slug, plugins demo |
+| 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | A3 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
@@ -312,6 +314,44 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - cierre operativo de Fase 7
 - base frontend ya consolidada en Fases 3, 5 y 6
 
+### Fase 10 - Login, Persons y Plugins de Demostración
+
+**Objetivo**
+Completar el MVP para la defensa del TFM: pulir la experiencia de login,
+generalizar el modelo de personas, flexibilizar la identidad de los plugins y
+dotar al sistema de plugins de demostración con datos reales de un caso de
+uso óptico.
+
+**Alcance**
+- mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
+- rename `clients` → `persons`
+- desacoplar `plugin_name` (identidad fija) de `slug` (editable)
+- plugin de configuración con descripción editable e i18n
+- plugins de demostración: `orders`, `invoices`, `optometry`, `contact-lenses`
+- datos de ejemplo para los plugins de demostración
+
+**Dependencias**
+- Fase 1
+- Fase 8
+- Fase A1 (STORY A1.1, patrón i18n editable)
+
+### Fase 11 - Cierre Formal y Exhaustivo del MVP
+
+**Objetivo**
+Cerrar el proyecto con el rigor de un entregable de TFM: código limpio y
+auditado, documentación coherente con la implementación real, guion de
+defensa verificado y una verificación funcional E2E completa.
+
+**Alcance**
+- auditoría de código limpio (SonarQube, código muerto, naming)
+- auditoría de coherencia de documentación
+- guion de defensa del TFM
+- verificación funcional E2E final
+
+**Dependencias**
+- Fase 10
+- todas las fases MUST del MVP (0-10)
+
 ### Fase A1 - Ajustes finos de UI/UX
 
 **Objetivo**
@@ -406,7 +446,7 @@ Permisos granulares por recurso y acción más allá de `admin/no-admin`.
 
 El backlog vigente considera **in scope del MVP académico**:
 
-- `EPIC 0` a `EPIC 9`
+- `EPIC 0` a `EPIC 11`
 
 Y deja fuera, por ahora (post-MVP):
 
@@ -434,6 +474,8 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | ✅ Completada | MUST |
 | 8 | ✅ Completada | MUST |
 | 9 | 🔄 En progreso | SHOULD |
+| 10 | ⏭ Pendiente | MUST |
+| 11 | ⏭ Pendiente | MUST |
 | A1 | ⏭ Pendiente | POST-MVP |
 | A2 | ⏭ Pendiente | POST-MVP |
 | A3 | ⏭ Pendiente | POST-MVP |
@@ -458,6 +500,8 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Gestión de Usuarios | ✅ | Fase 8 | 19 pts | MUST |
 | 9 | Sistema UI, Shell Frontend y Arquitectura SPA | 🔄 | Fase 9 | 38 pts | MUST |
+| 10 | Login, Persons y Plugins de Demostración | ⏭ | Fase 10 | 31 pts | MUST |
+| 11 | Cierre Formal y Exhaustivo del MVP | ⏭ | Fase 11 | 18 pts | MUST |
 | A1 | Ajustes Finos de UI/UX | ⏭ | Adición post-MVP | 37 pts | POST-MVP |
 | A2 | Operación Técnica y Observabilidad | ⏭ | Fase A2 | 12 pts | POST-MVP |
 | A3 | Marketplace de Plugins | ⏭ | Fase A3 | 16 pts | POST-MVP |
@@ -533,13 +577,13 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Abrir la Fase 8 como siguiente bloque transversal**
+1. **Abrir la Fase 10 como siguiente bloque transversal**
    - sistema UI
    - shell SPA
    - routing
    - resiliencia frontend
    - UX y testing UI
 
-3. **Cerrar el MVP con la Fase 9 y luego abordar las adiciones post-MVP**
-   - Fase 9 (dentro del MVP)
+2. **Cerrar el MVP con la Fase 11 y luego abordar las adiciones post-MVP**
+   - Fase 11 (dentro del MVP)
    - A1-A6 (post-MVP: ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos)

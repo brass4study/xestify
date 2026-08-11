@@ -126,8 +126,11 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Convenciones de entidades y plugins
 
-- `clients` es el slug canonico de clientes.
-- No reintroducir `client` como slug funcional, fixture o dato demo.
+- `persons` es el slug canonico de personas (STORY 10.2 renombra el plugin
+  desde `clients` para generalizar el modelo a clientes/distribuidores/
+  oculistas). Hasta que STORY 10.2 se implemente, el codigo real todavia usa
+  `clients`; una vez completada esa migracion, no reintroducir `client`/
+  `clients` como slug funcional, fixture o dato demo.
 - Los plugins de tipo `entity` son la fuente de verdad del catalogo de entidades.
 - El catalogo debe salir de plugins instalados y activos, no de seeders de entidades.
 - Los seeders deben limitarse a usuario admin y datos demo explicitos cuando se pidan.
@@ -197,8 +200,8 @@ git config --local core.eol lf
 
 ## Documentacion
 
-- Mantener alineados `README.md`, `docs/mvp/backlog.md`,
-  `docs/mvp/decisiones-tecnicas.md` y documentacion de plugins cuando cambie
+- Mantener alineados `README.md`, `docs/11-backlog/backlog.md`,
+  `docs/09-history/decisiones-tecnicas.md` y documentacion de plugins cuando cambie
   arquitectura o contrato.
 - Evitar referencias nuevas a `system_entities`, `entity_metadata` o migraciones
   obsoletas salvo como contexto historico.  
@@ -206,8 +209,8 @@ git config --local core.eol lf
 ## Referencias clave
 
 - Estado del proyecto: `docs/10-productivity/sesion.md`
-- Backlog: `docs/mvp/backlog.md`
-- Decisiones tecnicas: `docs/mvp/decisiones-tecnicas.md`
+- Backlog: `docs/11-backlog/backlog.md`
+- Decisiones tecnicas: `docs/09-history/decisiones-tecnicas.md`
 - Calidad y contribucion: `CONTRIBUTING.md`
 - Skills locales: `skills/`
 

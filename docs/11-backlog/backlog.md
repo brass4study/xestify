@@ -36,6 +36,8 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - EPIC 7: Actualizaciones de plugins y rollback
 - EPIC 8: Gestión de usuarios
 - EPIC 9: Sistema UI, shell frontend y arquitectura SPA
+- EPIC 10: Login, Persons y Plugins de Demostración
+- EPIC 11: Cierre Formal y Exhaustivo del MVP
 
 ### ❌ OUT OF SCOPE (para futuro/thesis)
 - Adición post-MVP A1: Ajustes finos de UI/UX (i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado)
@@ -60,6 +62,10 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 ### 📌 Nueva Adición post-MVP (2026-08-11)
 - Se define `A1` (Ajustes Finos de UI/UX, 7 stories, 37 pts): internacionalización real, búsqueda server-side en tablas, documentación WYSIWYG (movida desde STORY 9.10), rendimiento/skeleton loaders, animaciones/transiciones, accesibilidad WCAG + testing UI, y funcionalidad avanzada de tablas/CRUD.
 - **POSTERIOR A MVP (vigente):** A1 + A2 + A3 + A4 + A5 + A6 + A7 + A8 + A9
+
+### 📌 Cierre de MVP para defensa de TFM (2026-08-11)
+- Se incorporan `EPIC 10` (Login, Persons y Plugins de Demostración, 6 stories, 31 pts) y `EPIC 11` (Cierre Formal y Exhaustivo del MVP, 4 stories, 18 pts) como parte del MVP académico, necesarios para la defensa del TFM.
+- **IN SCOPE MVP (vigente):** EPIC 0-11
 
 ---
 
@@ -393,7 +399,7 @@ Objetivo: CRUD genérico con validación por schema.
 - **Type:** Feature
 - **Criteria:**
   - ✅ Métodos: `createRecord()`, `updateRecord()`, `deleteRecord()`, `getRecord()`, `listRecords()`
-  - ✅ Obtiene schema vigenteSi
+  - ✅ Obtiene schema vigente
   - ✅ Valida con ValidationService
   - ✅ Persiste en entity_data
   - ✅ Dispara hooks (implementado vacío por ahora)
@@ -458,7 +464,7 @@ Objetivo: CRUD genérico con validación por schema.
 - **Criteria:**
   - ✅ Objeto AppState con setUser(), getUser(), setCurrentEntity(), etc.
   - ✅ Métodos setter/getter simples
-  - ✅ Sem listeners, sem Proxy (Vanilla puro)
+  - ✅ Sin listeners, sin Proxy (Vanilla puro)
 - **Dependencias:** STORY 0.6
 - **Blockers:** Ninguno
 
@@ -1135,6 +1141,154 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 
 ---
 
+## EPIC 10: Login, Persons y Plugins de Demostración (Fase 10)
+
+Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de login, generalizar el modelo de personas, flexibilizar la identidad de los plugins, y dotar al sistema de plugins de demostración con datos reales de un caso de uso óptico.
+
+### STORY 10.1: Mejoras en la sección de login
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Logo tipo wordmark ("Xestify" estilizado) visible en la pantalla de login
+  - ✅ Nombre de la aplicación y una descripción breve visibles junto al logo
+  - ✅ `APP_DEBUG` se expone al frontend (vía `/health` o endpoint equivalente) para poder condicionar UI de desarrollo
+  - ✅ Si `APP_DEBUG=true`, aparecen dos botones de acceso rápido: "Entrar como admin" y "Entrar como usuario", que inician sesión con credenciales fijas de los usuarios seed sin que el usuario las escriba
+  - ✅ Nuevo `UserSeeder` para un usuario "normal" (rol no-admin) fijo, análogo al seed de `admin@xestify.local` ya existente
+  - ✅ Ambos usuarios seed (admin y normal) quedan protegidos: no editables ni eliminables desde Gestión de Usuarios, para no romper el login automático
+  - ✅ Los botones de acceso rápido no aparecen si `APP_DEBUG=false`
+- **IA Usage:** Diseño del wordmark + wiring de `APP_DEBUG` a `/health` + nuevo seeder + botones de login automático + protección de usuarios seed
+- **Dependencias:** STORY 1.2, STORY 1.3, STORY 8.2
+- **Blockers:** Ninguno
+
+### STORY 10.2: Renombrar plugin `clients` a `persons`
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Carpeta `plugins/clients/` renombrada a `plugins/persons/`
+  - ✅ Namespace PHP actualizado de `Xestify\plugins\clients` a `Xestify\plugins\persons` en `Hooks.php`, `Installer.php`, `Lifecycle.php`
+  - ✅ `manifest.json` y `schema.json` actualizados (`slug`, `entity`) a `persons`
+  - ✅ Migración que renombra las filas existentes en `plugins.slug` y `plugin_entity_data.entity_slug` de `clients` a `persons`, sin pérdida de datos
+  - ✅ Mismos campos que tenía `clients` (rename directo, sin ampliar el modelo): `name`, `surnames`, `email` + `custom_fields` opcionales (`phone`, `creation_stamp`, `is_active`)
+  - ✅ Regla de `AGENTS.md` actualizada: `persons` pasa a ser el slug canónico de personas, documentando el motivo del cambio; se retira la prohibición sobre `client`
+- **IA Usage:** Rename asistido de carpeta/namespace/manifest/schema + script de migración de datos + actualización de AGENTS.md
+- **Dependencias:** Ninguna (plugin ya existente desde EPIC 3)
+- **Blockers:** Ninguno
+
+### STORY 10.3: Desacoplar `plugin_name` de `slug` y descripción editable con i18n
+- **Points:** 8
+- **Priority:** MUST
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Nueva columna `plugin_name` en tabla `plugins`: identidad fija = nombre de carpeta/namespace PHP, usada por `PluginClassLoader`/`PluginDiscoveryService` para determinar tipo y construcción del plugin (sustituye el uso actual del slug)
+  - ✅ Nueva columna `description` en tabla `plugins`
+  - ✅ `slug` pasa a ser editable desde `PluginConfig`, usado solo para navegación/URL (`RouteMapController`) y como clave visible de datos
+  - ✅ Al renombrar el `slug` desde `PluginConfig`, se actualiza en cascada `plugin_entity_data.entity_slug` y `plugin_extension_data.entity_slug`/`plugin_slug` de forma transaccional
+  - ✅ La navegación (`#/entity/:slug`, `#/plugins/:slug`) sigue funcionando por `slug`, no por `plugin_name`
+  - ✅ Edición de `name` y `description` del plugin añadida a `PluginConfig`
+  - ✅ Tests de regresión que confirman que renombrar un slug no rompe la carga del plugin (que sigue dependiendo de `plugin_name`, no del slug)
+- **IA Usage:** Diseño de la separación `plugin_name`/`slug` + migración de columnas + wiring de `PluginConfig` + integración con el patrón i18n de A1.1
+- **Dependencias:** STORY A1.1 (patrón i18n editable), STORY 7.3 (`PluginConfig`)
+- **Blockers:** Ninguno
+
+### STORY 10.4: Plugins de demostración — entidades
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Plugin de entidad `orders` (pedidos): relación `belongs_to` → `persons` (primer uso real del bloque `relations` del schema, hasta ahora sin uso), campos: fecha del pedido, estado (pendiente/en proceso/entregado/cancelado), importe total, notas
+  - ✅ Plugin de entidad `invoices` (facturas): relación `belongs_to` → `orders`, campos: número de factura, fecha de emisión, importe, estado de pago (pendiente/pagada)
+  - ✅ Ambos siguen el patrón de `plugins/persons/` (manifest, schema, Installer, Lifecycle, Hooks) y usan `plugin_name` como identidad desde el diseño de STORY 10.3
+- **IA Usage:** Generación de manifest/schema/Installer/Lifecycle siguiendo el patrón existente + primer caso real de uso de `relations`
+- **Dependencias:** STORY 10.2 (`persons`), STORY 10.3 (`plugin_name`)
+- **Blockers:** Ninguno
+
+### STORY 10.5: Plugins de demostración — extensiones
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Plugin de extensión `optometry` (ficha de optometría), `target_entity: persons`, campos: fecha de examen, esfera/cilindro/eje OD, esfera/cilindro/eje OS, distancia pupilar, notas
+  - ✅ Plugin de extensión `contact-lenses` (ficha de lentillas), `target_entity: persons`, campos: marca, tipo de lentilla, calendario de reemplazo, curva base, diámetro, notas
+  - ✅ Ambos siguen el patrón de `plugins/comments/` (manifest con `target_entity`, Hooks con `registerTabs`, `plugin.js` con panel propio vía `PluginPanelRegistry`)
+- **IA Usage:** Generación de manifest/schema/Hooks/plugin.js siguiendo el patrón de extensión existente
+- **Dependencias:** STORY 10.2 (`persons`), STORY 6.2 (hooks `registerTabs`)
+- **Blockers:** Ninguno
+
+### STORY 10.6: Datos de ejemplo para los plugins de demostración
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Backend
+- **Criteria:**
+  - ✅ Nuevo seeder de datos de negocio (no solo usuario admin) que carga registros de ejemplo para `persons`, `orders`, `invoices`, `optometry` y `contact-lenses`
+  - ✅ Volumen mínimo: 8-10 personas, con pedidos/facturas y fichas asociadas a varias de ellas, suficiente para una demo en vivo realista
+  - ✅ Datos coherentes entre sí (pedidos con personas reales del seed, facturas con pedidos reales, fechas plausibles)
+  - ✅ Seeder idempotente (no duplica datos si se ejecuta más de una vez)
+- **IA Usage:** Generación de datos de ejemplo realistas + script de seeder idempotente
+- **Dependencias:** STORY 10.4, STORY 10.5
+- **Blockers:** Ninguno
+
+---
+
+## EPIC 11: Cierre Formal y Exhaustivo del MVP (Fase 11)
+
+Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpio y auditado, documentación coherente con la implementación real, guion de defensa verificado, y una verificación funcional E2E completa.
+
+### STORY 11.1: Auditoría de código limpio
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** QA
+- **Criteria:**
+  - ✅ Pase de SonarQube (`skills/review-sonarqube-clean-code/SKILL.md`) sobre backend y frontend, sin hallazgos críticos/bloqueantes pendientes
+  - ✅ Eliminación de código muerto y TODOs obsoletos
+  - ✅ Revisión y limpieza de decisiones técnicas superadas marcadas como vigentes por error en `decisiones-tecnicas.md`
+  - ✅ Sin ningún rastro de `clients` que debiera ser `persons` tras STORY 10.2 (código, nombres de tabla/columna, comentarios, tests)
+  - ✅ Naming consistente revisado en todo el proyecto (claves técnicas en inglés, labels en español, sin mezcla, según convención de `AGENTS.md`)
+- **IA Usage:** Auditoría asistida de código con SonarQube + búsqueda de rastros obsoletos + revisión de naming
+- **Dependencias:** Todas las stories MUST de EPIC 0-10
+- **Blockers:** Ninguno
+
+### STORY 11.2: Auditoría de coherencia de documentación
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** Documentacion
+- **Criteria:**
+  - ✅ Cada carpeta de `docs/` (01-architecture, 03-api, 04-plugins, 05-frontend, 07-security, 08-operations, 09-history, 10-productivity, 11-backlog) revisada contra el código real, sin contradicciones ni referencias rotas
+  - ✅ Verificación de que la numeración de EPICs/STORIES es coherente entre `backlog.md`, `roadmap.md`, `MASTER-brief.md` e `ia-productivity-template.md`, sin restos de renombrados anteriores
+  - ✅ `docs/03-api/endpoints.md` refleja todos los endpoints reales, incluyendo los nuevos de EPIC 10
+  - ✅ `docs/04-plugins` refleja el nuevo modelo `plugin_name`/`slug` y los plugins de demostración creados
+  - ✅ `docs/10-productivity/sesion.md` refleja el estado final real del proyecto al cierre
+- **IA Usage:** Auditoría cruzada de documentación vs código real + generación de matriz de discrepancias
+- **Dependencias:** STORY 11.1
+- **Blockers:** Ninguno
+
+### STORY 11.3: Guion de defensa del TFM
+- **Points:** 3
+- **Priority:** MUST
+- **Type:** Documentacion
+- **Criteria:**
+  - ✅ Guion de defensa del TFM redactado (en `docs/09-history` o ubicación equivalente), usando solo funcionalidades y métricas verificadas, no proyecciones
+  - ✅ Flujo de demo en vivo documentado paso a paso, coherente con el checklist de STORY 11.4
+  - ✅ `ia-productivity-analysis.md`/`productividad.md` completo con métricas reales de todas las stories cerradas del proyecto, no solo un subconjunto
+- **IA Usage:** Borrador asistido del guion de defensa + consolidación de métricas de productividad
+- **Dependencias:** STORY 11.2
+- **Blockers:** Ninguno
+
+### STORY 11.4: Verificación funcional E2E final
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** QA
+- **Criteria:**
+  - ✅ Checklist de verificación funcional E2E ejecutado y documentado: login (usuario normal + admin + botones de acceso rápido en debug) → crear/editar/eliminar persona → crear pedido/factura relacionados → gestionar plugins (activar/desactivar/desinstalar) → ficha de optometría/lentillas → exportar CSV → búsqueda/filtro en tablas → cambio de idioma → todo sin errores en el runtime real Apache+PHP
+  - ✅ Suite de tests (backend + frontend) ejecutada en verde como parte del checklist final
+  - ✅ Cualquier incidencia detectada durante la verificación queda corregida o documentada explícitamente como limitación conocida
+- **IA Usage:** Generación del checklist E2E + ejecución asistida de la suite de tests
+- **Dependencias:** STORY 10.1, STORY 10.2, STORY 10.3, STORY 10.4, STORY 10.5, STORY 10.6, STORY 11.1
+- **Blockers:** Ninguno
+
+---
+
 ## EPIC A1: Ajustes Finos de UI/UX (Adición post-MVP)
 
 Objetivo: Cerrar brechas de experiencia de usuario y calidad frontend detectadas tras EPIC 9: internacionalización real, búsqueda en tablas, rendimiento percibido, consistencia visual, accesibilidad y operaciones avanzadas de tabla/CRUD.
@@ -1152,7 +1306,8 @@ Objetivo: Cerrar brechas de experiencia de usuario y calidad frontend detectadas
   - ✅ Si `navigator.language` no coincide con ningún idioma soportado, se aplica español por defecto
   - ✅ Cambiar el idioma aplica la traducción en caliente en toda la interfaz visible, sin recargar la página
   - ✅ Cambiar el idioma actualiza la cookie para que la preferencia persista en la siguiente visita
-- **IA Usage:** Traducción asistida es→en/gl/pt de claves existentes y nuevas + wiring del selector, lectura de `navigator.language` y persistencia en cookie
+  - ✅ Se define un patrón reutilizable para campos de contenido editables por el usuario en varios idiomas (no textos fijos de interfaz): columnas JSONB `<campo>_i18n` con objeto `{es, en, gl, pt}`, resolviendo el valor a mostrar según el idioma activo con fallback a español si falta la traducción para ese idioma
+- **IA Usage:** Traducción asistida es→en/gl/pt de claves existentes y nuevas + wiring del selector, lectura de `navigator.language` y persistencia en cookie + diseño del patrón de columnas `*_i18n` reutilizable
 - **Dependencias:** STORY 9.5, STORY 9.7
 - **Blockers:** Ninguno
 
@@ -1537,7 +1692,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ---
 
-## 📊 Resumen del Backlog Académico (MVP: EPIC 0-9 · post-MVP: A1-A6)
+## 📊 Resumen del Backlog Académico (MVP: EPIC 0-11 · post-MVP: A1-A6)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 

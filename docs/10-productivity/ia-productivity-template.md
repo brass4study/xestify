@@ -221,6 +221,22 @@ Generate a comprehensive .gitignore that includes:
 - [X] STORY 9.8: UX transversal, accesibilidad y microinteracciones
 - [ ] STORY 9.9: Documentación de arquitectura frontend y testing UI automatizado
 
+### EPIC 10: Login, Persons y Plugins de Demostración
+
+- [ ] STORY 10.1: Mejoras en la sección de login
+- [ ] STORY 10.2: Renombrar plugin `clients` a `persons`
+- [ ] STORY 10.3: Desacoplar `plugin_name` de `slug` y descripción editable con i18n
+- [ ] STORY 10.4: Plugins de demostración — entidades
+- [ ] STORY 10.5: Plugins de demostración — extensiones
+- [ ] STORY 10.6: Datos de ejemplo para los plugins de demostración
+
+### EPIC 11: Cierre Formal y Exhaustivo del MVP
+
+- [ ] STORY 11.1: Auditoría de código limpio
+- [ ] STORY 11.2: Auditoría de coherencia de documentación
+- [ ] STORY 11.3: Guion de defensa del TFM
+- [ ] STORY 11.4: Verificación funcional E2E final
+
 ### Adición post-MVP: A1 (Ajustes Finos de UI/UX)
 
 - [ ] STORY A1.1: Internacionalización real con selector de idioma
@@ -320,7 +336,7 @@ Generate a comprehensive .gitignore that includes:
 
 1. **Semana 1:** Completa primeras 10 tareas, calcula aceleración por semana.
 2. **Semana 2-3:** Actualiza conforme terminas historias de EPIC 2-5.
-3. **EPIC 6-9 y A1-A6:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
+3. **EPIC 6-11 y A1-A6:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
 4. **Fase final:** Completa sección "Resumen Final" para defensa.
 5. **Presentation:** Usa datos reales (no especules) para defenderse académicamente.
 

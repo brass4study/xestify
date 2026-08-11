@@ -1,11 +1,3 @@
-# Especificacion REST
-
-## Base URL local
-
-`/api/v1`
-
-## Convenciones
-
 # Especificación REST: Arquitectura y principios generales
 
 ## Base URL
@@ -22,6 +14,14 @@
 - [contratos/](contratos/): Contratos y ejemplos por recurso
 - [errores.md](errores.md): Catálogo de errores y respuestas
 - [autenticacion.md](autenticacion.md): Autenticación y autorización
+
+## Respuesta exitosa (ejemplo)
+
+```json
+{
+  "ok": true,
+  "data": {},
+  "meta": {}
 }
 ```
 

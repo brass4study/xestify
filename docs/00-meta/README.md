@@ -13,7 +13,7 @@ Decisiones técnicas resueltas y referencia para futuras iteraciones:
 
 ## Orden de lectura recomendado (después de MVP)
 
-1. [00-meta/inicial.md](../00-meta/inicial.md)
+1. [00-meta/plan-fundacional-gemini.md](../00-meta/plan-fundacional-gemini.md)
 2. [01-architecture/overview.md](../01-architecture/overview.md)
 3. [01-architecture/mvc.md](../01-architecture/mvc.md)
 4. [01-architecture/plugins.md](../01-architecture/plugins.md)

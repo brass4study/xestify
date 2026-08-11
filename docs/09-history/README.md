@@ -7,7 +7,6 @@ Esta carpeta centraliza el historial de decisiones, migraciones y cambios releva
 - [decisiones-tecnicas.md](decisiones-tecnicas.md)
 - [historial-decisiones.md](historial-decisiones.md)
 - [MASTER-brief.md](MASTER-brief.md)
-- [migracion-009-checklist.md](migracion-009-checklist.md)
 
 ---
 
