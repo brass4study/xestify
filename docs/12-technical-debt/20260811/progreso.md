@@ -1,10 +1,8 @@
 # Progreso de corrección — auditoría 2026-08-11
 
-← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md) · [Convenciones (reglas comunes)](../CONVENCIONES.md)
+← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md) · [Convenciones de corrección](../convenciones-correccion.md) · [Formato de esta tabla](../convenciones-progreso.md)
 
-Este fichero **sí se actualiza** con el tiempo (a diferencia de los informes `00`-`07`, que son la fotografía inmutable de la auditoría). Es el mecanismo para que sesiones nuevas sepan qué está ya resuelto sin releer los informes completos ni repetir trabajo.
-
-**Antes de tocar código, lee [`../CONVENCIONES.md`](../CONVENCIONES.md)** — ahí están las reglas de cómo usar y actualizar esta tabla (cuándo actualizar una fila, commit único por hallazgo, formato del asunto, leyenda de estado, notación de solape entre hallazgos). Este fichero solo trae el estado real de esta auditoría concreta, no repite esas reglas.
+**Antes de tocar código, lee [`../convenciones-correccion.md`](../convenciones-correccion.md)** (reglas de sesión, commit único, formato de asunto) y [`../convenciones-progreso.md`](../convenciones-progreso.md) (qué es este fichero, columnas, leyenda de estado). Este fichero solo trae el estado real de esta auditoría concreta, no repite esas reglas.
 
 ## Resumen
 

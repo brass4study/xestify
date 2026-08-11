@@ -2,7 +2,7 @@
 
 Esta carpeta guarda **auditorías de calidad de código / deuda técnica** del proyecto como instantáneas fechadas. Cada auditoría vive en su propia subcarpeta `YYYYMMDD/` (fecha en que se realizó el análisis), de modo que el histórico completo queda navegable y ninguna auditoría nueva sobreescribe o borra las anteriores.
 
-Las reglas, formatos y prompts reutilizables (estructura de carpeta, severidad, formato de ID, columnas de `progreso.md`, convención de commit, metodología para generar una auditoría) viven en **[CONVENCIONES.md](CONVENCIONES.md)** — un único punto de verdad común a todas las auditorías, pasadas y futuras. Este README es solo el índice histórico; no repitas esas reglas aquí ni dentro de una subcarpeta fechada.
+Las reglas, formatos y prompts reutilizables (estructura de carpeta, severidad, formato de ID, columnas de `progreso.md`, convención de commit, metodología para generar una auditoría) viven en **[CONVENCIONES.md](CONVENCIONES.md)** — el índice de un conjunto de ficheros de convenciones, uno por etapa (generar auditoría / corregir hallazgos / formato de `progreso.md`), común a todas las auditorías pasadas y futuras. Este README es solo el índice histórico; no repitas esas reglas aquí ni dentro de una subcarpeta fechada.
 
 ## Auditorías realizadas
 

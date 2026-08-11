@@ -8,7 +8,7 @@
 
 ## Método (resumen)
 
-Siete agentes de investigación en paralelo, cada uno acotado a un subsistema, con lectura completa de los ficheros de su ámbito (no solo `grep`) y contraste contra la documentación de `docs/` y `docs/11-backlog/backlog.md`. La metodología completa y reutilizable (para lanzar la próxima auditoría) está en el [índice histórico](../README.md).
+Siete agentes de investigación en paralelo, cada uno acotado a un subsistema, con lectura completa de los ficheros de su ámbito (no solo `grep`) y contraste contra la documentación de `docs/` y `docs/11-backlog/backlog.md`. La metodología completa y reutilizable (para lanzar la próxima auditoría) está en [`../convenciones-auditoria.md`](../convenciones-auditoria.md).
 
 > **Límite:** es una auditoría **estática** de lectura de código — no se ejecutó la aplicación ni la suite de tests real en este entorno. Los hallazgos de "camino roto en producción" deberían confirmarse manualmente antes de citarlos en la defensa.
 
