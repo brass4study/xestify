@@ -35,6 +35,29 @@ final class ExtensionPluginDataStore
     }
 
     /**
+     * @return array<string, mixed>|false
+     */
+    public function findRow(string $itemId, string $pluginSlug, string $entity, string $recordId): array|false
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, plugin_slug, entity_slug, record_id, content, created_at
+               FROM plugin_extension_data
+              WHERE id          = :item_id
+                AND plugin_slug = :plugin
+                AND entity_slug = :entity
+                AND record_id   = :record_id'
+        );
+        $stmt->execute([
+            ':item_id' => $itemId,
+            ':plugin' => $pluginSlug,
+            ':entity' => $entity,
+            ':record_id' => $recordId,
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @return array<string, mixed>|false
      */

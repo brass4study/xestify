@@ -34,6 +34,7 @@ class PluginExtensionController
     private const MSG_ITEM_NOT_FOUND   = 'Item not found.';
     private const MSG_PLUGIN_NOT_ACTIVE = 'Extension plugin is not active.';
     private const MSG_PARENT_NOT_FOUND = 'Parent entity record not found.';
+    private const MSG_NOT_OWNER = 'You do not have permission to modify this item.';
 
     public function __construct(
         private PDO $pdo,
@@ -103,7 +104,11 @@ class PluginExtensionController
             return;
         }
 
-        $data = $this->contentService->normalizeContentBySchema($context['plugin_slug'], $data, $context['request']);
+        if (!$this->guardOwnership($context)) {
+            return;
+        }
+
+        $data = $this->contentService->normalizeContentBySchema($context['plugin_slug'], $data, $context['request'], true);
 
         $row = $this->dataStore->updateRow(
             $context['item_id'],
@@ -132,6 +137,10 @@ class PluginExtensionController
     {
         $context = $this->resolveItemContext($params, $request);
         if (!$this->ensureDeleteRequest($context)) {
+            return;
+        }
+
+        if (!$this->guardOwnership($context)) {
             return;
         }
 
@@ -366,6 +375,35 @@ class PluginExtensionController
         }
 
         return $isValid;
+    }
+
+    /**
+     * @param array{request: Request, plugin_slug: string, entity: string, record_id: string, item_id: string} $context
+     */
+    private function guardOwnership(array $context): bool
+    {
+        $row = $this->dataStore->findRow($context['item_id'], $context['plugin_slug'], $context['entity'], $context['record_id']);
+        if ($row === false) {
+            // Let the caller's own lookup return 404 for a missing item.
+            return true;
+        }
+
+        $content = $this->decodeContent($row)['content'] ?? [];
+        $authorId = trim((string) ($content['author_id'] ?? ''));
+        if ($authorId === '') {
+            // Item type has no authorship concept (or legacy row without it): nothing to guard.
+            return true;
+        }
+
+        $user = $context['request']->user() ?? [];
+        $requesterId = trim((string) ($user['sub'] ?? ''));
+
+        if ($requesterId !== '' && $requesterId === $authorId) {
+            return true;
+        }
+
+        Response::make()->forbidden(self::MSG_NOT_OWNER);
+        return false;
     }
 
     private function isActiveExtensionPlugin(string $pluginSlug): bool

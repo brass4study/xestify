@@ -100,6 +100,21 @@ function callComments(PluginExtensionController $ctrl, string $method, array $pa
     return is_array($decoded) ? $decoded : [];
 }
 
+function callCommentsAsUser(PluginExtensionController $ctrl, string $method, array $params, array $body, string $userId): array
+{
+    $request = new Request([], $body, [], $params);
+    $request->setUser(['sub' => $userId, 'email' => $userId . '@test.local']);
+    ob_start();
+    try {
+        $ctrl->$method($params, $request);
+    } finally {
+        $output = ob_get_clean();
+    }
+
+    $decoded = json_decode((string) $output, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
 function authHeaders(): array
 {
     static $token = null;
@@ -490,6 +505,117 @@ TestSuite::run('GET comments resolves UUID author_name to user email', function 
 
     cleanComments();
     deleteUser($authorId);
+});
+
+TestSuite::run('PUT keeps the original author_id even when a different one is sent', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+    $author = '00000000-0000-4000-8000-0000000000a1';
+    $impostor = '00000000-0000-4000-8000-0000000000a2';
+
+    $created = callCommentsAsUser(
+        $ctrl,
+        'create',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        ['body' => 'Comentario original'],
+        $author
+    );
+    $itemId = (string) ($created['data']['id'] ?? '');
+    assertTrue($itemId !== '', 'Created comment must have an id');
+
+    $updated = callCommentsAsUser(
+        $ctrl,
+        'update',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD, 'item_id' => $itemId],
+        ['body' => 'Comentario editado por su autor', 'author_id' => $impostor],
+        $author
+    );
+
+    assertTrue($updated['ok'] ?? false, 'Owner update should succeed');
+    $content = $updated['data']['content'] ?? [];
+    assertEquals('Comentario editado por su autor', $content['body'] ?? null, MSG_BODY_MUST_MATCH);
+    assertEquals($author, $content['author_id'] ?? null, 'author_id must stay the original author, not the spoofed value');
+
+    cleanComments();
+});
+
+TestSuite::run('PUT by a user other than the author is forbidden and leaves content unchanged', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+    $author = '00000000-0000-4000-8000-0000000000b1';
+    $otherUser = '00000000-0000-4000-8000-0000000000b2';
+
+    $created = callCommentsAsUser(
+        $ctrl,
+        'create',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        ['body' => 'Comentario ajeno'],
+        $author
+    );
+    $itemId = (string) ($created['data']['id'] ?? '');
+    assertTrue($itemId !== '', 'Created comment must have an id');
+
+    $updated = callCommentsAsUser(
+        $ctrl,
+        'update',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD, 'item_id' => $itemId],
+        ['body' => 'Intento de edicion ajena'],
+        $otherUser
+    );
+
+    assertFalse(($updated['ok'] ?? true) === true, 'Update by a non-author must fail');
+    assertEquals(403, (int) ($updated['error']['code'] ?? 0), 'Non-author update must return 403');
+
+    $listResult = callCommentsAsUser(
+        $ctrl,
+        'index',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        [],
+        $otherUser
+    );
+    $content = $listResult['data'][0]['content'] ?? [];
+    assertEquals('Comentario ajeno', $content['body'] ?? null, 'Content must remain untouched after a forbidden update');
+
+    cleanComments();
+});
+
+TestSuite::run('DELETE by a user other than the author is forbidden', function (): void {
+    cleanComments();
+    $ctrl = new PluginExtensionController(Database::connection());
+    $author = '00000000-0000-4000-8000-0000000000c1';
+    $otherUser = '00000000-0000-4000-8000-0000000000c2';
+
+    $created = callCommentsAsUser(
+        $ctrl,
+        'create',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        ['body' => 'Comentario a proteger'],
+        $author
+    );
+    $itemId = (string) ($created['data']['id'] ?? '');
+    assertTrue($itemId !== '', 'Created comment must have an id');
+
+    $deleted = callCommentsAsUser(
+        $ctrl,
+        'delete',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD, 'item_id' => $itemId],
+        [],
+        $otherUser
+    );
+
+    assertFalse(($deleted['ok'] ?? true) === true, 'Delete by a non-author must fail');
+    assertEquals(403, (int) ($deleted['error']['code'] ?? 0), 'Non-author delete must return 403');
+
+    $listResult = callCommentsAsUser(
+        $ctrl,
+        'index',
+        ['plugin_slug' => 'comments', 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
+        [],
+        $otherUser
+    );
+    assertEquals(1, count($listResult['data'] ?? []), 'Item must still exist after a forbidden delete');
+
+    cleanComments();
 });
 
 TestSuite::run('POST with empty body returns 422', function (): void {

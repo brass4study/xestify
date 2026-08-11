@@ -20,11 +20,11 @@ Este fichero **sí se actualiza** con el tiempo (a diferencia de los informes `0
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 1 | 13 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 0 | 12 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 0 | 13 | 0 |
-| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 0 | 11 | 0 |
+| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 1 | 10 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 0 | 7 | 0 |
-| **Total** | **85** | **1** | **84** | **0** |
+| **Total** | **85** | **2** | **83** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -90,7 +90,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 |---|---|---|---|---|---|
 | 04.01 | ⏳ | Crítico | `custom_fields` cambia de significado tras `saveConfig()` (= **P4**) | | |
 | 04.02 | ⏳ | Mayor | Update de plugins `extension` es no-op silencioso de schema | | |
-| 04.03 | ⏳ | Mayor | Comments: sin control de propiedad en `PUT` (= **P5**) | | |
+| 04.03 | ✅ | Mayor | Comments: sin control de propiedad en `PUT` (= **P5**) | `2c78714` | `ExtensionPluginContentService::normalizeContentBySchema()` ya no recalcula `author_id` en `update` (parámetro `$isUpdate`); `author_id` queda inmutable tras la creación. `PluginExtensionController` añade `guardOwnership()` en `update()`/`delete()`: compara `content.author_id` con `request.user.sub` y responde 403 si no coincide (permisivo si el item no tiene concepto de autoría). Sin excepción para admin — no estaba en el alcance del hallazgo. Tests: 3 nuevos en `CommentsPluginTest.php` (author_id inmutable ante spoofing, PUT ajeno → 403 sin tocar contenido, DELETE ajeno → 403). Confirmado por reversión manual: 2 de los 3 tests nuevos fallan sin el fix. |
 | 04.04 | ⏳ | Mayor | Atomicidad inconsistente: `syncAll`/`activate`/`deactivate` sin transacción | | |
 | 04.05 | ⏳ | Mayor | `PluginAdministrationService` no es fachada limpia (closures) | | |
 | 04.06 | ⏳ | Menor | `ensureInstalledTypeMatchesManifest()` duplicado en 2 servicios | | |
