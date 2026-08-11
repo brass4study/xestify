@@ -67,13 +67,13 @@ export class EntityEdit {
 		this.#isSubmitting = true;
 		this.#clearErrors();
 
-		if (!this.#validateFormBeforeSubmit()) {
-			return;
-		}
-
-		this.#setLoading(true);
-
 		try {
+			if (!this.#validateFormBeforeSubmit()) {
+				return;
+			}
+
+			this.#setLoading(true);
+
 			const saved = await this.#persistFormData();
 			await this.#flushPendingPlugins(saved);
 			this.#notifySaved(saved);

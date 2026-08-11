@@ -14,8 +14,8 @@
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 1 | 10 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
-| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 0 | 7 | 0 |
-| **Total** | **85** | **2** | **83** | **0** |
+| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 1 | 6 | 0 |
+| **Total** | **85** | **3** | **82** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -133,7 +133,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 07.01 | ⏳ | Crítico | `EntityEdit.submit()` bloquea el formulario tras error (= **P2**) | | |
+| 07.01 | ✅ | Crítico | `EntityEdit.submit()` bloquea el formulario tras error (= **P2**) | `ec694d0` | El `return` de la rama de validación fallida estaba fuera del `try/finally` que resetea `#isSubmitting`; ahora todo el cuerpo (validación incluida) vive dentro del `try`. Test nuevo en `EntityEditTest.html`: envía con "name" vacío (falla validación, 0 llamadas POST), corrige y reenvía (debe llegar a la API). Verificado con Playwright contra Apache real (`http://127.0.0.1/xestify/`): sin el fix, el segundo intento nunca llega al backend (botón atascado); con el fix, 18/18 tests pasan. |
 | 07.02 | ⏳ | Crítico | Botones `PluginManager`/`PluginConfig` rotos tras usar el toolbar (= **P3**) | | |
 | 07.03 | ⏳ | Mayor | `normalizeRoleList()` duplicada `UserManager`/`UserConfig` | | |
 | 07.04 | ⏳ | Mayor | `DynamicForm` sin rama `number`/`time`; `inputTime` sin conectar | | |

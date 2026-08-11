@@ -312,6 +312,36 @@
     assertTrue(banner.textContent.includes('Server error'), 'Banner should show error message');
   });
 
+  await test('submit() allows retry after a validation failure on first attempt', async () => {
+    const container = makeSandbox();
+    let postCount = 0;
+    globalThis.fetch = async (_url, init) => {
+      if ((init?.method ?? 'GET') !== 'POST') {
+        return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+      }
+      postCount += 1;
+      const body = JSON.parse(init.body);
+      return { status: 201, json: async () => ({ ok: true, data: { id: 1, ...body } }) };
+    };
+
+    const page = new EntityEdit(container, 'client', SCHEMA);
+
+    // First attempt: required "name" field left empty, validation must fail
+    // client-side without ever reaching fetch().
+    await page.submit();
+    assertEquals(postCount, 0, 'First invalid submit should not call the API');
+
+    const saveBtn = container.querySelector('[data-role="entity-edit-save"]');
+    assertTrue(saveBtn !== null && saveBtn.disabled !== true, 'Save button must not stay disabled after a validation failure');
+
+    // Second attempt: fix the field and retry — this must actually submit,
+    // not silently no-op because #isSubmitting was left stuck at true.
+    container.querySelector('[name="name"]').value = 'ACME';
+    await page.submit();
+
+    assertEquals(postCount, 1, 'Retry after fixing validation errors should reach the API');
+  });
+
   await test('cancel button calls onCancel callback', async () => {
     const container = makeSandbox();
     let cancelled = false;
