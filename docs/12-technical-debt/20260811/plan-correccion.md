@@ -13,7 +13,7 @@ Cada hallazgo tiene un ID estable (`01.1`, `07.2`, ...) que se rastrea en [`prog
 3. **Limpieza MENOR/NIT** — opcional, solo si queda tiempo antes de la defensa; son mejoras de mantenibilidad, no bugs.
 4. **Re-auditoría incremental** — cierra el círculo y deja constancia de qué se resolvió.
 
-Regla general para cada sesión nueva: que empiece leyendo `progreso.md` (o la fila del hallazgo que toque) para confirmar que nadie lo tocó ya; que relea fichero:línea antes de tocar nada (los números pudieron desplazarse desde la auditoría); que aplique el arreglo mínimo descrito sin aprovechar para refactorizar de más; que añada/ajuste el test que debería haber cazado el bug; que verifique de verdad antes de dar por cerrado el hallazgo — con `/run` para los dos bugs de frontend, que se dedujeron leyendo código, no ejecutando la app; y que actualice su fila en `progreso.md` (estado, commit, notas) antes de pasar al siguiente. Convención de commit: el asunto incluye el ID entre corchetes, p. ej. `fix: [01.1] password_hash ya no se filtra en /api/v1/users`.
+Regla general para cada sesión nueva: que empiece leyendo `progreso.md` (o la fila del hallazgo que toque) para confirmar que nadie lo tocó ya; que relea fichero:línea antes de tocar nada (los números pudieron desplazarse desde la auditoría); que aplique el arreglo mínimo descrito sin aprovechar para refactorizar de más; que añada/ajuste el test que debería haber cazado el bug; que verifique de verdad antes de dar por cerrado el hallazgo — con `/run` para los dos bugs de frontend, que se dedujeron leyendo código, no ejecutando la app; y que actualice su fila en `progreso.md` (estado, commit, notas) **en el mismo commit que el arreglo** (código + test + `progreso.md` juntos; nunca un commit de docs aparte) antes de pasar al siguiente. Convención de commit: el asunto incluye el ID entre corchetes con padding a dos dígitos, p. ej. `fix: [01.01] password_hash ya no se filtra en /api/v1/users`. Para el hash en la fila `Commit`: commitea, copia el hash corto (`git log -1 --format=%h`), rellénalo en `progreso.md`, y **un único** `git commit --amend --no-edit`. No repitas el amend intentando que coincida exacto — un commit no puede contener su propio hash final (cada amend lo cambia de nuevo), así que un hash "una versión por detrás" es el resultado esperado y suficiente; la referencia exacta siempre está en `git log --oneline --grep`.
 
 ---
 
@@ -25,9 +25,9 @@ confirmar que ninguno de estos 5 hallazgos está ya resuelto o en
 progreso por otra sesión. Vamos a corregir los 5 hallazgos de "Antes
 de la defensa" en docs/12-technical-debt/20260811/README.md (detalle
 completo en 00-informe-consolidado.md). Ábordalos uno a uno, en este
-orden: 01.1/P1 (password_hash filtrado), 04.3/P5 (comments sin
-control de propiedad), 07.1/P2 (EntityEdit bloqueado tras error),
-07.2/P3 (botones de PluginManager/PluginConfig rotos), 04.1/P4
+orden: 01.01/P1 (password_hash filtrado), 04.03/P5 (comments sin
+control de propiedad), 07.01/P2 (EntityEdit bloqueado tras error),
+07.02/P3 (botones de PluginManager/PluginConfig rotos), 04.01/P4
 (custom_fields cambia de significado).
 
 Para cada uno:
@@ -38,10 +38,16 @@ Para cada uno:
 4. Verifica: ejecuta la suite de tests relevante para P1/P4/P5, y usa
    el skill /run para reproducir P2 y P3 en el navegador antes y
    después del arreglo.
-5. Haz un commit con el ID en el asunto, p. ej.
-   "fix: [01.1] password_hash ya no se filtra en /api/v1/users", y
-   actualiza la fila correspondiente en progreso.md (estado, commit,
-   notas) antes de pasar al siguiente hallazgo.
+5. Haz UN ÚNICO commit por hallazgo que incluya el código, el test Y
+   la fila actualizada de progreso.md (estado, commit, notas) — nunca
+   un commit de docs aparte. Asunto con el ID en el asunto, p. ej.
+   "fix: [01.01] password_hash ya no se filtra en /api/v1/users".
+   Para el hash en la fila `Commit`: commitea, copia el hash corto
+   (`git log -1 --format=%h`), rellénalo en progreso.md, y un único
+   `git commit --amend --no-edit`. No repitas el amend intentando que
+   coincida exacto (un commit no puede contener su propio hash final);
+   un hash "una versión por detrás" es suficiente, la referencia
+   exacta siempre está en `git log --oneline --grep`.
 
 Si P4 (04.1) te parece que necesita un rediseño no trivial (no un
 simple parche), párate y proponme el enfoque en modo plan antes de
@@ -60,10 +66,14 @@ los hallazgos MAYOR pendientes de docs/12-technical-debt/20260811/
 nada, relee cada fichero:línea citado para confirmar que sigue
 vigente. Aplica arreglos mínimos y acotados, añade o ajusta el test
 que debería haberlo cazado, y verifica con la suite de tests del
-subsistema (o /run si es un hallazgo de frontend). Commit por
-hallazgo o por grupo pequeño y relacionado, con el ID en el asunto
-(p. ej. "fix: [0N.M] ..."), y actualiza su fila en progreso.md
-(estado, commit, notas) según avances.
+subsistema (o /run si es un hallazgo de frontend). Un único commit
+por hallazgo (o por grupo pequeño y relacionado) que incluya código,
+test y la fila actualizada de progreso.md a la vez (estado, commit,
+notas) — nunca un commit de docs aparte. Asunto con el ID en el
+asunto con padding a dos dígitos (p. ej. "fix: [0N.MM] ..."); usa un
+único `git commit --amend --no-edit` justo después para rellenar el
+hash en progreso.md (no lo repitas persiguiendo el hash exacto: un
+commit no puede contener su propio hash final).
 ```
 
 Orden sugerido y tamaño de cada sesión (MAYOR restante tras la Fase 1):
