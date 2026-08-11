@@ -1187,3 +1187,19 @@ Retomemos la story 9.8: falta cerrar el pulido de UX transversal, accesibilidad 
 **Iteraciones:** 3
 **Lección:** La UX transversal debe resolverse desde una capa compartida; si se deja en cada página, el comportamiento se fragmenta y el foco/accesibilidad se rompe.
 **Estado final:** STORY 9.8 implementada y validada con tests de UI; se dejó preparada la transición a STORY 9.9.
+
+### STORY 9.9 — Documentacion de arquitectura frontend y testing UI automatizado
+**Prompt:**
+```
+Empecemos un plan para las implementaciones de la story 9.9
+```
+**Resultado:** Plan inicial en `frontend/e2e/` corregido por el usuario antes de ejecutar: los 19 tests HTML existentes son de componente/integración (DOM real, `fetch` mockeado, sin backend real), no E2E; se acordó moverlos a `frontend/tests/integration/` y poner Playwright en `frontend/tests/e2e/`, todo bajo una única jerarquía `frontend/tests/`.
+
+**Prompt de corrección de ubicación:**
+```
+Ok, si esos son test de componentes/integracion, ¿no es buena idea que los movamos a subcarpetas y el e2e lo implementamos en \frontend\test\e2e, asi tendriamos todos los tests en una sola jerarquia?
+```
+**Resultado:** Plan reescrito y re-aprobado con la nueva jerarquía. Al mover y verificar los 19 runners contra el runtime Apache real (en vez de mocks), aparecieron fallos que no tenían nada que ver con el movimiento de ficheros: `LoginTest.html` esperaba un texto de error que ya no existía, `StateTest.html` usaba un `themeColor` inválido, `ThemeSettingsPanelTest.html` comparaba texto sin tildes, `PluginManagerTest.html` esperaba notificación global donde el diseño real usa notificación de página, `EntityListTest.html` buscaba un `data-role` de estado vacío ya renombrado — y dos bugs reales de producción: `UserConfig.js` sin importar `AppState`, y `EntityList.js` borrando su propio estado vacío por orden de ejecución en `finally`.
+**Iteraciones:** 4 rondas de "encuentro un fallo → explico causa raíz → pregunto si lo corrijo → aplico solo con confirmación", una por cada hallazgo que tocaba comportamiento real en vez de solo mover archivos.
+**Lección:** Ejecutar tests contra el runtime real (no mocks) durante una simple reubicación de ficheros destapa deriva acumulada entre tests y código real que la verificación manual en navegador no siempre atrapa; parar y pedir confirmación antes de tocar `frontend/src/` evita que una story de documentación/testing se convierta silenciosamente en una story de fixes de producción sin que el usuario lo decida.
+**Estado final:** STORY 9.9 implementada: `frontend/tests/integration/` (19/19 en verde) + `frontend/tests/e2e/` (7/7 specs Playwright: login, shell-navigation, entity-crud, plugin-manager, theme-wysiwyg) contra `http://127.0.0.1/xestify/` real; `arquitectura.md`, `guia-extension.md` y `testing-ui.md` documentados; EPIC 9 cerrado.

@@ -1125,6 +1125,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Verificación:** 13/13 assertions en UiResilienceTest y 7/7 assertions en UserManagementTest; validación en navegador integrado con foco, modal de confirmación y notificaciones globales/página verificados
 
 ### STORY 9.9: Documentacion de arquitectura frontend y testing UI automatizado
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** SHOULD
 - **Type:** Frontend
@@ -1138,6 +1139,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Documentacion tecnica frontend + bootstrap de Playwright + casos smoke/E2E de UI
 - **Dependencias:** STORY 9.3, STORY 9.4, STORY 9.5, STORY 9.7
 - **Blockers:** Ninguno
+- **Verificación:** `frontend/tests/integration/` (19/19 runners HTML re-verificados en verde tras reubicarlos, con 2 aserciones obsoletas y 1 mensaje de error corregidos) + `frontend/tests/e2e/` (7/7 specs Playwright en verde: login, shell-navigation, entity-crud, plugin-manager, theme-wysiwyg) contra el runtime real Apache+PHP; 2 bugs reales de producción detectados y corregidos durante la verificación (`UserConfig.js` sin importar `AppState`, `EntityList.js` borraba su propio estado vacío)
 
 ---
 

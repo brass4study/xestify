@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-10
-> **Estado del proyecto:** **STORY 9.8 incluida** — EPIC 8 cerrada, EPIC 9 en progreso y siguiente foco `STORY 9.9`
+> **Última actualización:** 2026-08-11
+> **Estado del proyecto:** **STORY 9.9 incluida** — EPIC 8 y EPIC 9 cerradas, siguiente foco `STORY 10.1`
 
 ---
 
@@ -33,9 +33,12 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.4` completada
 - `STORY 9.5` completada
 - `STORY 9.6` completada
+- `STORY 9.7` completada
+- `STORY 9.8` completada
+- `STORY 9.9` completada
 - `EPIC 8` cerrada
-- `EPIC 9` en progreso
-- siguiente foco funcional: `STORY 9.9` (documentación de arquitectura frontend y testing UI automatizado)
+- `EPIC 9` cerrada
+- siguiente foco funcional: `STORY 10.1` (mejoras en la sección de login)
 
 ### Funcionalidades nucleares (Core)
 
@@ -139,7 +142,7 @@ La estrategia vigente de implementación es:
 | 6 | Plugins tipo extension | ✅ Completada | Tabs, acciones y `PluginManager` básico |
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
-| 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.7 cerradas; siguiente foco 9.8 |
+| 9 | Sistema UI, shell frontend y arquitectura SPA | ✅ Completada | STORY 9.1 a 9.9 cerradas |
 | 10 | Login, Persons y Plugins de Demostración | ⏭ Pendiente | Login pulido, rename persons, plugin_name/slug, plugins demo |
 | 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
@@ -291,7 +294,10 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - ✅ Story 9.4 implementada: frontend reorganizado bajo MVC estricto con `controllers`, `models` y `views` como únicas capas principales, entrypoint en `app.js` en la raíz de `frontend/src/js` y routing centralizado en controladores
 - ✅ Story 9.5 implementada: shell persistente, plantillas `login`, `list`, `detail` y `plugin-management`, layouts reutilizables y zonas explícitas para extensiones
 - ✅ Story 9.6 implementada: mapa hash bidireccional completo, navegación programática, entrada directa, refresh y back/forward con contexto persistente
-- ⏭ Siguiente punto: Story 9.8 para consolidar UX transversal, accesibilidad y microinteracciones frontend
+- ✅ Story 9.7 implementada: infraestructura transversal de frontend (estado global, resiliencia, i18n base, theming) y persistencia de configuración visual por cliente
+- ✅ Story 9.8 implementada: UX transversal, accesibilidad y microinteracciones (estados unificados, confirmaciones, foco, prevención de doble submit)
+- ✅ Story 9.9 implementada: documentación de arquitectura frontend (`arquitectura.md`, `guia-extension.md`, `testing-ui.md`) y suite E2E Playwright (`frontend/tests/e2e/`) cubriendo login, navegación de shell, CRUD de entidad, PluginManager y flujo WYSIWYG de tema
+- EPIC 9 cerrada; siguiente punto: Story 10.1 (mejoras en la sección de login)
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas

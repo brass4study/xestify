@@ -1138,3 +1138,19 @@
   - Añadió y validó pruebas de regresión en navegador integrado para la resiliencia y la gestión de usuarios.
 - **Iteraciones:** 3 (ajustes de modal, validación de tests y alineación documental)
 - **Decisión manual:** Mantener la capa de UX en un servicio compartido y no repartirse la lógica por páginas; la validación de accesibilidad debe hacerse en navegador real.
+
+## STORY 9.9 Documentacion de arquitectura frontend y testing UI automatizado
+
+- **Fecha:** 2026-08-11
+- **Estimado sin IA:** 8h
+- **Tiempo real con IA:** ~3h
+- **Aceleración:** ~63% ⚡
+- **Qué hizo IA:**
+  - Reorganizó `frontend/tests/` en `integration/` (los 19 runners HTML existentes, reubicados y con sus rutas relativas corregidas) y `e2e/` (proyecto Playwright nuevo), acordando la jerarquía con el usuario antes de mover nada.
+  - Instaló y configuró Playwright (`package.json`, `playwright.config.js` con `baseURL` configurable, `.htaccess` de exclusión) contra el runtime real Apache+PHP.
+  - Al verificar los 19 runners movidos contra el runtime real (en vez del mecanismo de verificación previo), encontró y corrigió 2 bugs reales de producción (`UserConfig.js` sin importar `AppState`; `EntityList.js` borraba su propio estado vacío por orden de ejecución) y 5 aserciones de test obsoletas frente al comportamiento real vigente.
+  - Escribió 5 specs E2E (`login`, `shell-navigation`, `entity-crud`, `plugin-manager`, `theme-wysiwyg`) cubriendo los flujos mínimos exigidos por la story, incluyendo el flujo WYSIWYG completo (cambio de tema, aplicación inmediata, persistencia tras recargar).
+  - Depuró condiciones de carrera propias de los tests (navegación antes de que el listado inicial asentara, paginación sobre un dataset local de 200+ registros) sin tocar código de producción salvo cuando el hallazgo era un bug real confirmado.
+  - Redactó `arquitectura.md`, `guia-extension.md` y `testing-ui.md`, enlazándolos desde `README.md` y actualizando la ruta de tests en `AGENTS.md`.
+- **Iteraciones:** 7 (reorganización de tests, scaffold Playwright, diagnóstico y fix de bugs de producción, corrección de aserciones obsoletas, 5 specs E2E, estabilización de condiciones de carrera, documentación)
+- **Decisión manual:** Ante cada hallazgo que tocaba código de producción (`frontend/src/`) o cambiaba el comportamiento esperado de un test existente, la IA paró y pidió confirmación explícita antes de aplicar el fix, en vez de asumir alcance ampliado por su cuenta.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>FrontendArchitectureTest - Xestify Frontend</title>
-  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
   <h2>FrontendArchitectureTest</h2>
@@ -16,8 +16,8 @@
       assertEquals,
       assertTrue,
       finishTestRunner,
-    } from './js/helpers.js';
-    import { RouteController } from '../src/js/controllers/RouteController.js';
+    } from '../js/helpers.js';
+    import { RouteController } from '../../js/controllers/RouteController.js';
     import {
       entityCreatePage,
       entityPage,
@@ -27,14 +27,14 @@
       hashFromPage,
       pluginConfigPage,
       userDetailPage,
-    } from '../src/js/controllers/RouteMapController.js';
-    import { PluginRouteController } from '../src/js/controllers/PluginRouteController.js';
-    import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
-    import { PageLayout } from '../src/js/views/layout/PageLayout.js';
-    import { ListLayout } from '../src/js/views/layout/ListLayout.js';
-    import { FormLayout } from '../src/js/views/layout/FormLayout.js';
-    import { Navbar } from '../src/js/views/modules/Navbar.js';
-    import { component } from '../src/js/views/modules/ComponentFactory.js';
+    } from '../../js/controllers/RouteMapController.js';
+    import { PluginRouteController } from '../../js/controllers/PluginRouteController.js';
+    import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+    import { PageLayout } from '../../js/views/layout/PageLayout.js';
+    import { ListLayout } from '../../js/views/layout/ListLayout.js';
+    import { FormLayout } from '../../js/views/layout/FormLayout.js';
+    import { Navbar } from '../../js/views/modules/Navbar.js';
+    import { component } from '../../js/views/modules/ComponentFactory.js';
 
     initTestRunner('output');
 

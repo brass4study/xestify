@@ -1,0 +1,14 @@
+{
+  "name": "xestify-frontend-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Suite de tests E2E de UI (Playwright) para Xestify, sobre el runtime real Apache+PHP.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

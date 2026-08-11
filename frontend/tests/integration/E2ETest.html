@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>E2ETest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>E2ETest</h2>
@@ -11,11 +11,11 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { EntityList } from '../src/js/views/pages/EntityList.js';
-  import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
-  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
-  import { AppState } from '../src/js/models/StateModel.js';
-  import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from './js/helpers.js';
+  import { EntityList } from '../../js/views/pages/EntityList.js';
+  import { EntityEdit } from '../../js/views/pages/EntityEdit.js';
+  import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+  import { AppState } from '../../js/models/StateModel.js';
+  import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from '../js/helpers.js';
 
   initTestRunner('output');
   let passed = 0;

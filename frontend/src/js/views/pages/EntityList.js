@@ -73,6 +73,7 @@ export class EntityList {
 			const { data } = await this.#api.get('/entities');
 			const entities = Array.isArray(data) ? data : [];
 			AppState.setEntities(entities);
+			this.#setLoading(false);
 
 			if (entities.length === 0) {
 				UiResilienceService.setViewState(this.#layout.getContentTarget(), {
@@ -84,9 +85,8 @@ export class EntityList {
 				UiResilienceService.clearViewState(this.#layout.getContentTarget());
 			}
 		} catch (err) {
-			this.#handleError(err);
-		} finally {
 			this.#setLoading(false);
+			this.#handleError(err);
 		}
 	}
 

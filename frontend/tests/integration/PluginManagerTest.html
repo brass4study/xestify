@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>PluginManagerTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>PluginManagerTest</h2>
@@ -11,10 +11,10 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { PluginManager } from '../src/js/views/pages/PluginManager.js';
-  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
-  import { DynamicTable } from '../src/js/views/modules/DynamicTable.js';
-  import { AppController } from '../src/js/controllers/AppController.js';
+  import { PluginManager } from '../../js/views/pages/PluginManager.js';
+  import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+  import { DynamicTable } from '../../js/views/modules/DynamicTable.js';
+  import { AppController } from '../../js/controllers/AppController.js';
 
   const out = document.getElementById('output');
   let passed = 0;
@@ -227,7 +227,7 @@
     assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should be called');
   });
 
-  await test('renders a global notification after plugin activation inside the shell', async () => {
+  await test('renders a page notification after plugin activation inside the shell', async () => {
     const host = makeSandbox();
     const shell = ShellLayout.create(host).build();
     const content = shell.getTarget('shell-main-content');
@@ -256,9 +256,8 @@
     btn.click();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const notification = host.querySelector('[data-role="global-notification"]');
-    assertTrue(notification instanceof HTMLElement, 'Debe renderizar la notificación global al activar el plugin');
-    assertTrue(notification.textContent.includes('Plugin'), 'La notificación debe mostrar el texto del cambio del plugin');
+    const notification = shell.getTarget('shell-main-notifications');
+    assertTrue(notification instanceof HTMLElement && notification.textContent.includes('Plugin'), 'Debe renderizar la notificación de página al activar el plugin');
   });
 
   await test('re-renders after activation', async () => {

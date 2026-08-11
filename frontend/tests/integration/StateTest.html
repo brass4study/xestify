@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>StateTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>StateTest</h2>
 <pre id="output"></pre>
 
 <script type="module">
-  import { AppState } from '../src/js/models/StateModel.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from './js/helpers.js';
+  import { AppState } from '../../js/models/StateModel.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
 
@@ -80,14 +80,14 @@
     AppState.resetUiPreferences();
     AppState.updateUiPreferences({
       contentWidth: 'fluid',
-      themeColor: 'cyan',
+      themeColor: 'teal',
       regions: { footer: false },
       tokens: { radiusPreset: 'expressive' },
     });
 
     const ui = AppState.getUiPreferences();
     assertEquals(ui.contentWidth, 'fluid');
-    assertEquals(ui.themeColor, 'cyan');
+    assertEquals(ui.themeColor, 'teal');
     assertEquals(ui.regions.footer, false);
     assertEquals(ui.regions.header, true);
     assertEquals(ui.tokens.radiusPreset, 'expressive');

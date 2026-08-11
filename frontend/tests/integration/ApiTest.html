@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>ApiTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>ApiTest</h2>
 <pre id="output"></pre>
 
 <script type="module">
-  import { Api, ApiError } from '../src/js/models/ApiClientModel.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, mockFetch, mockFetchNetworkError, finishTestRunner } from './js/helpers.js';
+  import { Api, ApiError } from '../../js/models/ApiClientModel.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, mockFetch, mockFetchNetworkError, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
 

@@ -111,20 +111,30 @@ form.render();
 
 ## Pruebas y calidad
 
-- El frontend incluye pruebas E2E en `frontend/tests/` para flujos principales (login, listado, edición, plugins).
-- Bajo Apache en desarrollo, las pruebas HTML se exponen en `/tests/*`. Los
-  módulos de la aplicación que consumen se cargan mediante `/js/*`, igual que
-  en el runtime normal. Esa exposición no forma parte del runtime de producción.
+- `frontend/tests/integration/`: 19 runners HTML de componente/integración
+  (DOM real, `fetch` mockeado, sin backend real) para flujos principales
+  (login, listado, edición, plugins).
+- `frontend/tests/e2e/`: suite Playwright con navegador real contra el
+  runtime Apache+PHP real, backend y base de datos reales.
+- Bajo Apache en desarrollo, los runners de `frontend/tests/integration/` se
+  exponen en `/tests/integration/*`. Los módulos de la aplicación que
+  consumen se cargan mediante `/js/*`, igual que en el runtime normal. Esa
+  exposición no forma parte del runtime de producción.
 - Esa exposicion se activa con `SetEnvIf ... ENABLE_TEST=1` y tambien funciona
   cuando la app cuelga de un alias/subruta, por ejemplo `/xestify/tests/*`.
 - Los tests ya no dependen de una ruta separada `/src/*`; consumen el mismo
   árbol `/js/*` que usa la aplicacion real.
 - Se recomienda mantener la cobertura de pruebas al añadir nuevos componentes o plugins.
+- Detalle completo de ambos niveles, prerrequisitos y comandos de ejecución
+  en [testing-ui.md](testing-ui.md).
 
 ---
 
 ## Referencias
 
+- [arquitectura.md](arquitectura.md): Estructura de carpetas, convenciones de componentes, flujo SPA y decisiones de routing
+- [guia-extension.md](guia-extension.md): Cómo añadir páginas nuevas y puntos de integración de plugins en UI
+- [testing-ui.md](testing-ui.md): Jerarquía de tests de frontend y ejecución de la suite E2E
 - [renderizado-dinamico.md](renderizado-dinamico.md): Guía detallada de renderizado y mapeo de tipos
 - [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño de STORY 9.1 inspirados en Ant Design
 - [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy de STORY 9.2

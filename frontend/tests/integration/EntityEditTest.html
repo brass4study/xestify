@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>EntityEditTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>EntityEditTest</h2>
@@ -11,8 +11,8 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { EntityEdit } from '../src/js/views/pages/EntityEdit.js';
-  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
+  import { EntityEdit } from '../../js/views/pages/EntityEdit.js';
+  import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
   import {
     initTestRunner,
     separator,
@@ -21,7 +21,7 @@
     assertTrue,
     makeSandbox,
     finishTestRunner
-  } from './js/helpers.js';
+  } from '../js/helpers.js';
 
   initTestRunner('output');
 

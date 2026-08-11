@@ -388,7 +388,7 @@ Story completada. Archivos creados/modificados:
 - `frontend/src/js/pages/UserManagement.js` sustituye la vista demo por gestión real de usuarios con tabla, acciones y modales.
 - `frontend/src/js/main.js` incorpora routing hash para `#/usuarios` y `#/usuarios/:id`, y navegación bidireccional con selección de usuario.
 
-### 🔄 EPIC 9 — Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)
+### ✅ EPIC 9 — Sistema UI, shell frontend y arquitectura SPA (COMPLETADO)
 
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
@@ -398,6 +398,9 @@ Story completada. Archivos creados/modificados:
 | 9.4 ✅ | Arquitectura frontend y modularizacion | `pendiente (este commit)` | 17/17 runners HTML, 146/146 assertions; sintaxis, consola y diagnósticos en verde ✅ |
 | 9.5 ✅ | Shell SPA y plantillas de navegacion | `pendiente (este commit)` | 17/17 runners HTML, 166/166 assertions; entrypoint Login y diagnósticos en verde ✅ |
 | 9.6 ✅ | Implementacion del routing SPA | `pendiente (este commit)` | 17/17 runners HTML, 169/169 assertions; mapa completo, refresh, back/forward y tabs ✅ |
+| 9.7 ✅ | Infraestructura transversal de frontend y resiliencia | `pendiente (este commit)` | 17/17 runners HTML, 169/169 assertions; `ThemeSettingsPanelTest`/`UiResilienceTest` en verde ✅ |
+| 9.8 ✅ | UX transversal, accesibilidad y microinteracciones | `pendiente (este commit)` | `UiResilienceTest` 13/13, `UserManagementTest` 7/7 ✅ |
+| 9.9 ✅ | Documentacion de arquitectura frontend y testing UI automatizado | `pendiente (este commit)` | 19/19 runners `frontend/tests/integration/` + 7/7 specs Playwright `frontend/tests/e2e/` en verde contra runtime real ✅ |
 
 **Detalle de la story 9.1:**
 - Se consolidó una base visual enterprise inspirada en Ant Design sobre Tailwind, con tipografía IBM Plex, tokens `brand/slateui`, sombras y criterios de densidad comunes.
@@ -410,9 +413,9 @@ Story completada. Archivos creados/modificados:
 
 ## Última actualización
 
-**Fecha:** 2026-08-10
-**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (EN PROGRESO)  
-**Próxima story:** STORY 9.8 - UX transversal, accesibilidad y microinteracciones
+**Fecha:** 2026-08-11
+**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (COMPLETADO)
+**Próxima story:** STORY 10.1 - Mejoras en la sección de login (EPIC 10)
 
 ---
 
@@ -955,5 +958,43 @@ Story cerrada con validación en navegador integrado.
 ---
 
 **Próxima story:** STORY 9.9 - Documentación de arquitectura frontend y testing UI automatizado
+
+---
+
+## Sesion 2026-08-11 - STORY 9.9 Documentación de arquitectura frontend y testing UI automatizado
+
+Story implementada y verificada. Cierra EPIC 9.
+
+**Reorganización de `frontend/tests/` (decisión tomada con el usuario antes de implementar):**
+- Los 19 runners HTML existentes (componente/integración, `fetch` mockeado, sin backend real) se movieron de `frontend/tests/*.html` a `frontend/tests/integration/*.html`, ajustando sus rutas relativas un nivel (`../src/js/...` se corrigió además a `../../js/...` para usar la misma convención `/js/*` que ya documentaba `README.md`, en vez de una ruta `/src/*` que el `.htaccess` raíz nunca expuso).
+- `frontend/tests/css/` y `frontend/tests/js/helpers.js` se mantienen compartidos en la raíz de `frontend/tests/`.
+- Nuevo `frontend/tests/e2e/`: proyecto Playwright con `package.json`, `playwright.config.js` (baseURL configurable por `XESTIFY_E2E_BASE_URL`, default `http://127.0.0.1/xestify/`) y `.htaccess` con `Require all denied` (Playwright no necesita que Apache sirva `node_modules/` ni sus reportes).
+
+**Bugs reales de producción encontrados y corregidos durante la verificación** (no estaban en el alcance original de la story, pero los expuso la primera ejecución real contra el runtime Apache+PHP en vez de mocks):
+- `frontend/src/js/views/pages/UserConfig.js`: `#resolveUser()` usaba `AppState.getUser()` sin importar `AppState`, rompiendo la página de perfil real en modo `profile`. Fix: import añadido.
+- `frontend/src/js/views/pages/EntityList.js`: el estado vacío (`type: 'empty'`) se pintaba y se borraba en el mismo ciclo porque `#setLoading(false)` se ejecutaba en el `finally` después de `setViewState('empty')`. Fix: `#setLoading(false)` se invoca explícitamente antes de decidir el estado vacío/con datos, tanto en éxito como en el `catch`.
+- Además, varias aserciones obsoletas en tests de integración (no bugs de producción) quedaron corregidas: `LoginTest.html` esperaba el texto de fallback equivocado (`t('ui.error.generic', ...)` ya no cae en el fallback si la clave existe), `StateTest.html` usaba `'cyan'` como `themeColor` (solo válido como `accentColor`), `ThemeSettingsPanelTest.html` comparaba títulos sin tildes, `PluginManagerTest.html` esperaba notificación global cuando el diseño de STORY 9.8 la enruta como notificación de página para eventos de éxito, y `EntityListTest.html` buscaba un `data-role` de estado vacío que ya no existe (ahora es el `view-state` compartido de `UiResilienceService`).
+
+**Documentación nueva:**
+- `docs/05-frontend/arquitectura.md`: estructura de `frontend/src/js`, convenciones de `ComponentFactory`, flujo de arranque de la SPA y decisiones de routing.
+- `docs/05-frontend/guia-extension.md`: cómo añadir una página nueva del core y cómo registrar UI de un plugin de extensión (contrato `{ element, flush }`, `PluginPanelRegistry`), con checklist.
+- `docs/05-frontend/testing-ui.md`: jerarquía `integration/` + `e2e/`, prerrequisitos y comandos de ejecución de Playwright.
+- `docs/05-frontend/README.md` y `AGENTS.md` actualizados con la nueva ruta de tests y enlaces a los documentos nuevos.
+
+**Suite E2E (`frontend/tests/e2e/tests/`):**
+- `login.spec.js`: login válido/inválido.
+- `shell-navigation.spec.js`: navegación entre entidades con shell persistente, back/forward.
+- `entity-crud.spec.js`: alta y edición de un registro real de `clients` vía su URL de edición directa.
+- `plugin-manager.spec.js`: activar/desactivar un plugin (`test_entity_ctrl`, fixture inactivo de tests de backend) desde `PluginManager`.
+- `theme-wysiwyg.spec.js`: cambio de tema con aplicación inmediata al documento y persistencia tras recargar.
+
+**Tests finales:**
+- `frontend/tests/integration/`: 19/19 runners en verde contra `http://127.0.0.1/xestify/` real.
+- `frontend/tests/e2e/`: 7/7 specs Playwright en verde (`npx playwright test`).
+
+**Cierre verificado (2026-08-11):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: la suite E2E corre contra backend y base de datos reales, no mocks; detectó y permitió corregir 2 bugs reales de producción antes del cierre.
+- Backlog alineado: EPIC 9 queda cerrada; el siguiente punto es STORY 10.1.
 
 ---

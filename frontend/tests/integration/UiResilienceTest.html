@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>UiResilienceTest - Xestify Frontend</title>
-  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>UiResilienceTest</h2>
 <pre id="output"></pre>
 
 <script type="module">
-  import { AppState } from '../src/js/models/StateModel.js';
-  import { UiResilienceService } from '../src/js/services/UiResilienceService.js';
-  import { setLocale, t } from '../src/js/models/I18nModel.js';
-  import { AppController } from '../src/js/controllers/AppController.js';
-  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from './js/helpers.js';
+  import { AppState } from '../../js/models/StateModel.js';
+  import { UiResilienceService } from '../../js/services/UiResilienceService.js';
+  import { setLocale, t } from '../../js/models/I18nModel.js';
+  import { AppController } from '../../js/controllers/AppController.js';
+  import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
 

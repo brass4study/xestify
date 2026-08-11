@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>ThemeSettingsPanelTest - Xestify Frontend</title>
-  <link rel="stylesheet" href="../src/css/tailwind.generated.css">
-  <link rel="stylesheet" href="../src/css/theme.runtime.css">
+  <link rel="stylesheet" href="../../css/tailwind.generated.css">
+  <link rel="stylesheet" href="../../css/theme.runtime.css">
 </head>
 <body>
   <h2>ThemeSettingsPanelTest</h2>
@@ -20,10 +20,10 @@
       assertTrue,
       finishTestRunner,
       makeSandbox,
-    } from './js/helpers.js';
-    import { AppState } from '../src/js/models/StateModel.js';
-    import { applyUiPreferencesToDocument, createDefaultUiPreferences } from '../src/js/models/ThemeModel.js';
-    import { ThemeSettingsPanel } from '../src/js/views/modules/ThemeSettingsPanel.js';
+    } from '../js/helpers.js';
+    import { AppState } from '../../js/models/StateModel.js';
+    import { applyUiPreferencesToDocument, createDefaultUiPreferences } from '../../js/models/ThemeModel.js';
+    import { ThemeSettingsPanel } from '../../js/views/modules/ThemeSettingsPanel.js';
 
     initTestRunner('output');
 
@@ -88,7 +88,7 @@
         const activePageStyleCheck = activePageStyle?.querySelector('.fa-check');
 
         assertEquals(sections.length, 3, 'El panel debe exponer 3 secciones');
-        assertEquals(headings, ['Estilo de pagina', 'Color del tema', 'Modo de navegacion'], 'Los titulos del panel no coinciden');
+        assertEquals(headings, ['Estilo de página', 'Color del tema', 'Modo de navegación'], 'Los titulos del panel no coinciden');
         assertEquals(host.querySelectorAll('[data-role="theme-page-style-option"]').length, 2, 'Debe renderizar 2 opciones de page style');
         assertEquals(host.querySelectorAll('[data-role="theme-navigation-mode-option"]').length, 3, 'Debe renderizar 3 modos de navegacion');
         assertEquals(host.querySelectorAll('[data-role="theme-color-option"]').length, 9, 'Debe renderizar 9 colores de tema');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>EntityListTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>EntityListTest</h2>
@@ -11,11 +11,11 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { EntityList } from '../src/js/views/pages/EntityList.js';
-  import { ShellLayout } from '../src/js/views/layout/ShellLayout.js';
-  import { AppState } from '../src/js/models/StateModel.js';
-  import { DynamicTable } from '../src/js/views/modules/DynamicTable.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, mockFetchWithMap, finishTestRunner } from './js/helpers.js';
+  import { EntityList } from '../../js/views/pages/EntityList.js';
+  import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+  import { AppState } from '../../js/models/StateModel.js';
+  import { DynamicTable } from '../../js/views/modules/DynamicTable.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, mockFetchWithMap, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
 
@@ -77,8 +77,8 @@
     const page = new EntityList(container);
     await page.init();
 
-    const empty = container.querySelector('[data-role="entity-empty"]');
-    assertTrue(empty !== null, 'Should render empty paragraph');
+    const empty = container.querySelector('[data-role="view-state"][data-state="empty"]');
+    assertTrue(empty !== null, 'Should render shared empty view state');
   });
 
   await test('loadEntity renders records section with table', async () => {

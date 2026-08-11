@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>LoginTest - Xestify Frontend</title>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="../css/main.css">
 </head>
 <body>
 <h2>LoginTest</h2>
@@ -11,8 +11,8 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Login } from '../src/js/views/pages/Login.js';
-  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from './js/helpers.js';
+  import { Login } from '../../js/views/pages/Login.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
 
@@ -86,7 +86,7 @@
 
     const banner = container.querySelector('[data-role="login-error"]');
     assertTrue(banner !== null && !banner.hidden, 'Global error should be visible');
-    assertTrue(banner.textContent.includes('Error desconocido'), 'Should show fallback error text');
+    assertTrue(banner.textContent.includes('Ha ocurrido un error inesperado.'), 'Should show fallback error text');
   });
 
   finishTestRunner('output');
