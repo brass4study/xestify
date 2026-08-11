@@ -79,9 +79,9 @@ Accede a partes internas de `PageHeaderComponent` vía `querySelector('[data-rol
 
 ## Hallazgos — NIT
 
-- **`setHtml()`/`options.html`** (`BaseComponent.js:20-26` y `196-198`): API pública nunca usada en toda la aplicación (verificado por grep). Código muerto y, si algún día se usa con contenido no confiable, vector de XSS vía `insertAdjacentHTML`/`innerHTML` sin sanitizar.
-- **`Button.js:22-24` y `34-36`**: con `disabled:true` se fija a la vez `aria-disabled="true"` y el atributo nativo `disabled`; con `disabled` nativo el elemento ya no es focuseable, así que `aria-disabled` es redundante y puede confundir sobre cuál es la fuente de verdad.
-- **`Breadcrumb.js:182-184`**: el dropdown de breadcrumb solo se cierra con `mouseleave`; no hay cierre por click-fuera ni por `Escape`, lo que en pantallas táctiles obliga a repulsar el trigger.
+- **10.** **`setHtml()`/`options.html`** (`BaseComponent.js:20-26` y `196-198`): API pública nunca usada en toda la aplicación (verificado por grep). Código muerto y, si algún día se usa con contenido no confiable, vector de XSS vía `insertAdjacentHTML`/`innerHTML` sin sanitizar.
+- **11.** **`Button.js:22-24` y `34-36`**: con `disabled:true` se fija a la vez `aria-disabled="true"` y el atributo nativo `disabled`; con `disabled` nativo el elemento ya no es focuseable, así que `aria-disabled` es redundante y puede confundir sobre cuál es la fuente de verdad.
+- **12.** **`Breadcrumb.js:182-184`**: el dropdown de breadcrumb solo se cierra con `mouseleave`; no hay cierre por click-fuera ni por `Escape`, lo que en pantallas táctiles obliga a repulsar el trigger.
 
 ---
 

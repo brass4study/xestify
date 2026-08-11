@@ -72,9 +72,9 @@ Las entradas `userDetail`, `pluginConfig`, `entityList`, `entityCreate`, `entity
 
 ## Nits
 
-- `ThemeModel.js:293` usa el string mágico `'light'` como fallback de `pageStyle` en lugar de `defaults.pageStyle` (que sí se usa consistentemente en el resto de campos del mismo objeto, líneas 294-315).
-- `AppController.js:1006-1017`: el host flotante de respaldo fija clases Tailwind (`fixed inset-0 z-[9999] flex items-start...`) y **además** fija exactamente las mismas propiedades vía `style.*` inline justo debajo — redundante, probablemente residuo de depuración de z-index.
-- `docs/05-frontend/renderizado-dinamico.md` sigue mencionando componentes (`DynamicTabs`, `EntityDetail`) que no coinciden con los nombres reales usados hoy (`EntityEdit`, tabs vía `onTabChange`), señal de doc no actualizada tras EPIC 9 (fuera del núcleo de shell, pero relevante si se cita en la defensa).
+- **14.** `ThemeModel.js:293` usa el string mágico `'light'` como fallback de `pageStyle` en lugar de `defaults.pageStyle` (que sí se usa consistentemente en el resto de campos del mismo objeto, líneas 294-315).
+- **15.** `AppController.js:1006-1017`: el host flotante de respaldo fija clases Tailwind (`fixed inset-0 z-[9999] flex items-start...`) y **además** fija exactamente las mismas propiedades vía `style.*` inline justo debajo — redundante, probablemente residuo de depuración de z-index.
+- **16.** `docs/05-frontend/renderizado-dinamico.md` sigue mencionando componentes (`DynamicTabs`, `EntityDetail`) que no coinciden con los nombres reales usados hoy (`EntityEdit`, tabs vía `onTabChange`), señal de doc no actualizada tras EPIC 9 (fuera del núcleo de shell, pero relevante si se cita en la defensa).
 
 ---
 

@@ -14,6 +14,8 @@ Siete agentes de investigación en paralelo, cada uno acotado a un subsistema, c
 
 Existe también una versión navegable (HTML, con hallazgos priorizados y patrones transversales resaltados) publicada como artifact: ver [00-informe-consolidado.md](00-informe-consolidado.md) para el enlace y el resumen ejecutivo completo.
 
+Para abordar la corrección de estos hallazgos en sesiones nuevas y acotadas (con prompts listos para reutilizar), ver [plan-correccion.md](plan-correccion.md). El estado de cada hallazgo (qué está resuelto, en progreso o pendiente) se rastrea en [progreso.md](progreso.md) — ese fichero, a diferencia de este informe, se actualiza con el tiempo.
+
 ## Contenido
 
 - [00-informe-consolidado.md](00-informe-consolidado.md) — Resumen ejecutivo, prioridades antes de la defensa, patrones transversales y estadísticas globales (85 hallazgos: 4 crítico / 30 mayor / 40 menor / 11 nit)
