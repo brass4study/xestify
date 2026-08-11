@@ -9,8 +9,9 @@ plugins, gestión de usuarios, actualizaciones con rollback y frontend MVC con
 shell SPA persistente, layouts reutilizables y routing hash completo.
 
 **Siguiente foco:** STORY 9.7, infraestructura transversal y resiliencia del
-frontend. Después quedan UX y testing UI de EPIC 9, operación,
-marketplace, QA, auditoría y permisos finos.
+frontend. Después quedan UX y testing UI de EPIC 9, que cierra el MVP.
+Operación, marketplace, QA, auditoría y permisos finos (`A2`-`A6`)
+quedan como adiciones post-MVP.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
 
@@ -88,20 +89,16 @@ Demostrar que:
 - ✅ STORY 9.1-9.6: diseño, navegación, componentes, MVC, shell y routing completo
 - ⏭ STORY 9.7-9.9: resiliencia, UX y testing UI
 
-**EPIC 10 - Operación Técnica y Observabilidad**
-- ⏭ Health operativo, backup, despliegue y hardening
-
-**EPIC 11 - Marketplace de Plugins** (⏭ pendiente)
-**EPIC 12 - QA y Calidad** (⏭ pendiente)
-
-**A1 - Auditoría funcional** (⏭ pendiente)
-**A2 - Matriz de permisos fina** (⏭ pendiente)
-
 ### ❌ OUT OF SCOPE (thesis posterior)
 
-- A3: Hardening de sesiones (expiración, refresh tokens)
-- A4: Panel de health técnico visual
-- A5: Exportación/importación de configuración entre entornos
+- A2: Operación técnica y observabilidad (health operativo, backup, despliegue y hardening)
+- A3: Marketplace de plugins
+- A4: QA y calidad
+- A5: Auditoría funcional
+- A6: Matriz de permisos fina
+- A7: Hardening de sesiones (expiración, refresh tokens)
+- A8: Panel de health técnico visual
+- A9: Exportación/importación de configuración entre entornos
 
 ---
 
@@ -144,9 +141,9 @@ Demostrar que:
 **Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
 shell SPA persistente, plantillas de página reutilizables y routing hash completo.
 
-### ⏭ Próximas fases: STORY 9.7-9.9 + EPIC 10-12 + A1 + A2
-**Objetivo:** completar resiliencia y UX frontend, operación, permisos,
-auditoría, marketplace y QA.
+### ⏭ Próximas fases: STORY 9.7-9.9 (cierre del MVP) + A2-A6 (post-MVP)
+**Objetivo:** completar resiliencia y UX frontend para cerrar el MVP; operación,
+permisos, auditoría, marketplace y QA quedan como adiciones post-MVP.
 
 ---
 
@@ -242,7 +239,7 @@ sin completar retrospectivamente valores desconocidos.
 ## Próximo Paso
 
 1. Implementar STORY 9.7 y consolidar estado transversal, resiliencia, i18n y theming.
-2. Continuar con STORY 9.8-9.9 sin adelantar EPIC 10.
+2. Continuar con STORY 9.8-9.9 sin adelantar EPIC A2.
 3. Mantener [sesion.md](../10-productivity/sesion.md),
    [productividad.md](../10-productivity/productividad.md) y
    [prompts.md](../10-productivity/prompts.md) al cerrar cada story.

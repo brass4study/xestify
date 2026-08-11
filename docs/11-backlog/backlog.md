@@ -36,20 +36,25 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - EPIC 7: Actualizaciones de plugins y rollback
 - EPIC 8: Gestión de usuarios
 - EPIC 9: Sistema UI, shell frontend y arquitectura SPA
-- EPIC 10: Operación técnica y observabilidad
-- EPIC 11: Marketplace de plugins
-- EPIC 12: QA y calidad
-- Adición MVP A1: Auditoría funcional (cambios en configuración, usuarios y plugins)
-- Adición MVP A2: Matriz de permisos fina (más granular que admin/no-admin)
 
 ### ❌ OUT OF SCOPE (para futuro/thesis)
+- Adición post-MVP A2: Operación técnica y observabilidad (health, backup, despliegue, hardening)
+- Adición post-MVP A3: Marketplace de plugins
+- Adición post-MVP A4: QA y calidad
+- Adición post-MVP A5: Auditoría funcional (cambios en configuración, usuarios y plugins)
+- Adición post-MVP A6: Matriz de permisos fina (más granular que admin/no-admin)
 - Adición post-MVP A7: Hardening de sesiones (expiración, revocación, refresh)
 - Adición post-MVP A8: Panel de health técnico (DB, hooks, plugins activos)
 - Adición post-MVP A9: Exportación/importación de configuración entre entornos
 
 ### 📌 Decisiones de Alcance (2026-05-02)
-- **IN SCOPE MVP:** EPIC 0-12 + A1 (Auditoría funcional) + A2 (Matriz de permisos fina)
+- **IN SCOPE MVP:** EPIC 0-9
 - **POSTERIOR A MVP:** A7 (Hardening de sesiones) + A8 (Panel health técnico) + A9 (Export/import configuración)
+
+### 📌 Actualización de Alcance (2026-08-11)
+- Las adiciones `A2` (Operación técnica), `A3` (Marketplace de plugins), `A4` (QA y calidad), `A5` (Auditoría funcional) y `A6` (Matriz de permisos fina) pasan de MVP a post-MVP.
+- **IN SCOPE MVP (vigente):** EPIC 0-9
+- **POSTERIOR A MVP (vigente):** A2 + A3 + A4 + A5 + A6 + A7 + A8 + A9
 
 ---
 
@@ -1141,11 +1146,11 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 
 ---
 
-## EPIC 10: Operación Técnica y Observabilidad (Fase 10)
+## EPIC A2: Operación Técnica y Observabilidad (Adición post-MVP)
 
 Objetivo: Sistema observable con health checks, preparado para deployment en RPi5 con backup automatizado y hardening básico de seguridad.
 
-### STORY 10.1: Endpoint de health técnico del sistema
+### STORY A2.1: Endpoint de health técnico del sistema
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Backend
@@ -1158,7 +1163,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5, STORY 4.1
 - **Blockers:** Ninguno
 
-### STORY 10.2: Backup automático de base de datos
+### STORY A2.2: Backup automático de base de datos
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Infrastructure
@@ -1171,7 +1176,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5, STORY 1.4
 - **Blockers:** `pg_dump` disponible en entorno
 
-### STORY 10.3: Docker Compose para deployment en RPi5
+### STORY A2.3: Docker Compose para deployment en RPi5
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Infrastructure
@@ -1184,7 +1189,7 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 - **Dependencias:** STORY 0.5b
 - **Blockers:** Acceso a RPi5 para validación (puede validarse en local x86)
 
-### STORY 10.4: Hardening básico de seguridad (headers + rate limiting)
+### STORY A2.4: Hardening básico de seguridad (headers + rate limiting)
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Backend
@@ -1198,11 +1203,11 @@ Objetivo: Sistema observable con health checks, preparado para deployment en RPi
 
 ---
 
-## EPIC 11: Marketplace de Plugins (Fase 11)
+## EPIC A3: Marketplace de Plugins (Adición post-MVP)
 
 Objetivo: Repositorio central de plugins publicados, browseable e instalable desde la UI de Xestify.
 
-### STORY 11.1: Schema y modelo de datos del marketplace
+### STORY A3.1: Schema y modelo de datos del marketplace
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Database
@@ -1214,7 +1219,7 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
 - **Dependencias:** STORY 2.4
 - **Blockers:** Definir si marketplace es local (mismo repo) o remoto (URL externa)
 
-### STORY 11.2: API de marketplace (browse, search, detalle)
+### STORY A3.2: API de marketplace (browse, search, detalle)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
@@ -1225,10 +1230,10 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Validación de compatibilidad de versión antes de instalar
   - ✅ Tests: listado, filtros, instalación, incompatibilidad rechazada
 - **IA Usage:** Controlador + lógica de descarga + tests
-- **Dependencias:** STORY 11.1, STORY 4.1, STORY 4.5
+- **Dependencias:** STORY A3.1, STORY 4.1, STORY 4.5
 - **Blockers:** Ninguno
 
-### STORY 11.3: Frontend - UI de marketplace en PluginManager
+### STORY A3.3: Frontend - UI de marketplace en PluginManager
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Frontend
@@ -1239,10 +1244,10 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Feedback visual durante instalación (loading, éxito, error)
   - ✅ Plugin instalado muestra estado "Instalado" en lugar de botón
 - **IA Usage:** UI cards + buscador + feedback de estado
-- **Dependencias:** STORY 11.2, STORY 6.4
+- **Dependencias:** STORY A3.2, STORY 6.4
 - **Blockers:** Ninguno
 
-### STORY 11.4: Publicación de plugin al marketplace
+### STORY A3.4: Publicación de plugin al marketplace
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Backend
@@ -1252,16 +1257,16 @@ Objetivo: Repositorio central de plugins publicados, browseable e instalable des
   - ✅ Calcula checksum del paquete para verificación de integridad
   - ✅ Tests: publicación válida, inválida por manifest incorrecto
 - **IA Usage:** Lógica de validación + checksum + tests
-- **Dependencias:** STORY 11.1, STORY 4.6
+- **Dependencias:** STORY A3.1, STORY 4.6
 - **Blockers:** Ninguno
 
 ---
 
-## EPIC 12: QA y Calidad (Fase 12)
+## EPIC A4: QA y Calidad (Adición post-MVP)
 
 Objetivo: Suite de tests completa, automatización CI y coverage mínimo establecido para el proyecto.
 
-### STORY 12.1: Suite de tests de integración E2E backend
+### STORY A4.1: Suite de tests de integración E2E backend
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Testing
@@ -1274,7 +1279,7 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
 - **Dependencias:** STORY 1.x, STORY 3.x, STORY 4.x
 - **Blockers:** Base de datos de test configurada
 
-### STORY 12.2: Coverage mínimo 80% en servicios core
+### STORY A4.2: Coverage mínimo 80% en servicios core
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Testing
@@ -1284,10 +1289,10 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
   - ✅ Cada servicio tiene al menos: happy path, edge case, error case
   - ✅ Tabla de coverage documentada en `docs/10-productivity/sesion.md`
 - **IA Usage:** Generación de casos de test por método
-- **Dependencias:** STORY 3.1, STORY 3.2, STORY 4.2, STORY A1.2
+- **Dependencias:** STORY 3.1, STORY 3.2, STORY 4.2, STORY A5.2
 - **Blockers:** Ninguno
 
-### STORY 12.3: GitHub Actions CI pipeline
+### STORY A4.3: GitHub Actions CI pipeline
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** DevOps
@@ -1297,10 +1302,10 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
   - ✅ Falla el pipeline si algún test falla
   - ✅ Badge de CI en README
 - **IA Usage:** Workflow YAML completo + setup actions
-- **Dependencias:** STORY 12.1
+- **Dependencias:** STORY A4.1
 - **Blockers:** Acceso a secrets de PostgreSQL en GitHub Actions
 
-### STORY 12.4: Tests de rendimiento básicos (API response times)
+### STORY A4.4: Tests de rendimiento básicos (API response times)
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Testing
@@ -1315,11 +1320,11 @@ Objetivo: Suite de tests completa, automatización CI y coverage mínimo estable
 
 ---
 
-## EPIC A1: Auditoría Funcional (Adición MVP)
+## EPIC A5: Auditoría Funcional (Adición post-MVP)
 
 Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y plugins.
 
-### STORY A1.1: Crear tabla `audit_logs` y migración
+### STORY A5.1: Crear tabla `audit_logs` y migración
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Database
@@ -1331,7 +1336,7 @@ Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y pl
 - **Dependencias:** STORY 0.1, STORY 0.5
 - **Blockers:** Ninguno
 
-### STORY A1.2: Crear AuditService y helper de registro
+### STORY A5.2: Crear AuditService y helper de registro
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Backend
@@ -1340,10 +1345,10 @@ Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y pl
   - ✅ Registro de payload seguro (sin secretos/sin password_hash)
   - ✅ Tipado estricto y tests unitarios de inserción
 - **IA Usage:** Boilerplate de servicio + tests + sanitización base de payload
-- **Dependencias:** STORY A1.1, STORY 0.2
+- **Dependencias:** STORY A5.1, STORY 0.2
 - **Blockers:** Definir lista de campos sensibles a excluir
 
-### STORY A1.3: Auditar acciones de usuarios y configuración
+### STORY A5.3: Auditar acciones de usuarios y configuración
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
@@ -1353,10 +1358,10 @@ Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y pl
   - ✅ Se audita activar/desactivar plugin
   - ✅ Cada registro incluye `who`, `what`, `when`, `where`
 - **IA Usage:** Inyección de hooks de auditoría en controladores/servicios
-- **Dependencias:** STORY A1.2, STORY 7.1, STORY 6.2, STORY 10.2 (o equivalentes)
+- **Dependencias:** STORY A5.2, STORY 7.1, STORY 6.2, STORY A2.2 (o equivalentes)
 - **Blockers:** Disponibilidad de endpoints de gestión
 
-### STORY A1.4: Endpoint y vista básica de auditoría (solo admin)
+### STORY A5.4: Endpoint y vista básica de auditoría (solo admin)
 - **Points:** 5
 - **Priority:** SHOULD
 - **Type:** Fullstack
@@ -1365,16 +1370,16 @@ Objetivo: Trazabilidad de acciones críticas sobre configuración, usuarios y pl
   - ✅ Tabla frontend de auditoría con paginación
   - ✅ Solo visible para rol admin
 - **IA Usage:** Query con filtros + página frontend de lectura
-- **Dependencias:** STORY A1.3, STORY 5.3
+- **Dependencias:** STORY A5.3, STORY 5.3
 - **Blockers:** Ninguno
 
 ---
 
-## EPIC A2: Matriz de Permisos Fina (Adición MVP)
+## EPIC A6: Matriz de Permisos Fina (Adición post-MVP)
 
 Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
-### STORY A2.1: Modelo de permisos granular en base de datos
+### STORY A6.1: Modelo de permisos granular en base de datos
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Database
@@ -1386,7 +1391,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 - **Dependencias:** STORY 1.x (auth base)
 - **Blockers:** Catálogo inicial de permisos
 
-### STORY A2.2: AuthorizationService con permisos por acción
+### STORY A6.2: AuthorizationService con permisos por acción
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
@@ -1395,22 +1400,22 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
   - ✅ Cache opcional en request para reducir queries repetidas
   - ✅ Tests allow/deny por rol
 - **IA Usage:** Implementación del servicio + tests de matriz
-- **Dependencias:** STORY A2.1, STORY 1.4
+- **Dependencias:** STORY A6.1, STORY 1.4
 - **Blockers:** Ninguno
 
-### STORY A2.3: Enforcement en endpoints críticos
+### STORY A6.3: Enforcement en endpoints críticos
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
 - **Criteria:**
   - ✅ Endpoints de usuarios/config/plugins validan permisos finos
   - ✅ Respuesta `403` consistente en denegación
-  - ✅ Logs de denegación integrados con auditoría (A1)
+  - ✅ Logs de denegación integrados con auditoría (A5)
 - **IA Usage:** Inserción de guardas de autorización + tests de integración
-- **Dependencias:** STORY A2.2, STORY A1.2
+- **Dependencias:** STORY A6.2, STORY A5.2
 - **Blockers:** Mapa endpoint → permiso
 
-### STORY A2.4: UI condicional por permisos
+### STORY A6.4: UI condicional por permisos
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Frontend
@@ -1419,12 +1424,12 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
   - ✅ Mostrar mensaje informativo cuando falte permiso
   - ✅ Sin romper navegación existente
 - **IA Usage:** Guards en renderizado frontend
-- **Dependencias:** STORY A2.3, STORY 5.x
+- **Dependencias:** STORY A6.3, STORY 5.x
 - **Blockers:** Endpoint/mechanismo para exponer permisos efectivos al frontend
 
 ---
 
-## 📊 Resumen del Backlog Académico (EPIC 0-12 + A1/A2)
+## 📊 Resumen del Backlog Académico (MVP: EPIC 0-9 · post-MVP: A2-A6)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 
@@ -1505,7 +1510,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 - **Puntos son relativos:** Si una historia toma más de lo previsto, ajusta estimación en tiempo real.
 - **IA va a acelerar:** Usa CodeVibe para generar boilerplate, tests, documentación.
 - **Foco en flujo E2E:** Semana 4 debe tener el flujo completo: login → crear entidad → guardar funcionando end-to-end.
-- **OUT OF SCOPE para Master:** A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
+- **OUT OF SCOPE para Master:** A2 (Operación técnica), A3 (Marketplace), A4 (QA y calidad), A5 (Auditoría funcional), A6 (Matriz de permisos), A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
 
 ---
 

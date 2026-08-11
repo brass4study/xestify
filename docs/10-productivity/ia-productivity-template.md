@@ -201,37 +201,58 @@ Generate a comprehensive .gitignore that includes:
 - [ ] STORY 7.4: Rollback manual a versión anterior
 - [ ] STORY 7.5: Frontend - UI de actualización y rollback
 
-### EPIC 8: Operación Técnica y Observabilidad
+### EPIC 8: Gestión de Usuarios
 
-- [ ] STORY 8.1: Endpoint health técnico del sistema
-- [ ] STORY 8.2: Backup automático de base de datos
-- [ ] STORY 8.3: Docker Compose para deployment en RPi5
-- [ ] STORY 8.4: Hardening básico de seguridad (headers + rate limiting)
+- [ ] STORY 8.1: Backend - Perfil de usuario, avatar binario y soft delete
+- [ ] STORY 8.2: Backend - UserController y rutas REST
+- [ ] STORY 8.3: Frontend - UserMenu dropdown en Navbar
+- [ ] STORY 8.4: Frontend - Página Mi Perfil (`#/profile`)
+- [ ] STORY 8.5: Frontend - Página gestión de usuarios (`#/usuarios`)
 
-### EPIC 9: Marketplace de Plugins
+### EPIC 9: Sistema UI, Shell Frontend y Arquitectura SPA
 
-- [ ] STORY 9.1: Schema y modelo de datos del marketplace
-- [ ] STORY 9.2: API de marketplace (browse, search, install)
-- [ ] STORY 9.3: Frontend - UI de marketplace en PluginManager
-- [ ] STORY 9.4: Publicación de plugin al marketplace
+- [ ] STORY 9.1: Fundamentos de diseño
+- [ ] STORY 9.2: Fundamentos de navegación y anatomía de páginas
+- [ ] STORY 9.3: Librería de componentes UI base
+- [ ] STORY 9.4: Arquitectura frontend y modularización
+- [ ] STORY 9.5: Shell SPA y plantillas de navegación
+- [ ] STORY 9.6: Implementación del routing SPA
+- [ ] STORY 9.7: Infraestructura transversal de frontend y resiliencia
+- [ ] STORY 9.8: UX transversal, accesibilidad y microinteracciones
+- [ ] STORY 9.9: Documentación de arquitectura frontend y testing UI automatizado
+- [ ] STORY 9.10: Documentación funcional WYSIWYG y cobertura real de ThemeModel
 
-### EPIC 10: QA y Calidad
+### Adición post-MVP: A3 (Marketplace de Plugins)
 
-- [ ] STORY 10.1: Suite de tests de integración E2E backend
-- [ ] STORY 10.2: Coverage mínimo 80% en servicios core
-- [ ] STORY 10.3: GitHub Actions CI pipeline
-- [ ] STORY 10.4: Tests de rendimiento básicos (API response times)
+- [ ] STORY A3.1: Schema y modelo de datos del marketplace
+- [ ] STORY A3.2: API de marketplace (browse, search, detalle)
+- [ ] STORY A3.3: Frontend - UI de marketplace en PluginManager
+- [ ] STORY A3.4: Publicación de plugin al marketplace
 
-### Adiciones MVP: A1 + A2
+### Adición post-MVP: A4 (QA y Calidad)
 
-- [ ] STORY A1.1: Crear tabla `audit_logs` y migración
-- [ ] STORY A1.2: Crear AuditService y helper de registro
-- [ ] STORY A1.3: Auditar acciones de usuarios y configuración
-- [ ] STORY A1.4: Endpoint y vista básica de auditoría (solo admin)
-- [ ] STORY A2.1: Modelo de permisos granular en base de datos
-- [ ] STORY A2.2: AuthorizationService con permisos por acción
-- [ ] STORY A2.3: Enforcement en endpoints críticos
-- [ ] STORY A2.4: UI condicional por permisos
+- [ ] STORY A4.1: Suite de tests de integración E2E backend
+- [ ] STORY A4.2: Coverage mínimo 80% en servicios core
+- [ ] STORY A4.3: GitHub Actions CI pipeline
+- [ ] STORY A4.4: Tests de rendimiento básicos (API response times)
+
+### Adición post-MVP: A2 (Operación Técnica y Observabilidad)
+
+- [ ] STORY A2.1: Endpoint de health técnico del sistema
+- [ ] STORY A2.2: Backup automático de base de datos
+- [ ] STORY A2.3: Docker Compose para deployment en RPi5
+- [ ] STORY A2.4: Hardening básico de seguridad (headers + rate limiting)
+
+### Adiciones post-MVP: A5 + A6
+
+- [ ] STORY A5.1: Crear tabla `audit_logs` y migración
+- [ ] STORY A5.2: Crear AuditService y helper de registro
+- [ ] STORY A5.3: Auditar acciones de usuarios y configuración
+- [ ] STORY A5.4: Endpoint y vista básica de auditoría (solo admin)
+- [ ] STORY A6.1: Modelo de permisos granular en base de datos
+- [ ] STORY A6.2: AuthorizationService con permisos por acción
+- [ ] STORY A6.3: Enforcement en endpoints críticos
+- [ ] STORY A6.4: UI condicional por permisos
 
 ---
 
@@ -290,7 +311,7 @@ Generate a comprehensive .gitignore that includes:
 
 1. **Semana 1:** Completa primeras 10 tareas, calcula aceleración por semana.
 2. **Semana 2-3:** Actualiza conforme terminas historias de EPIC 2-5.
-3. **EPIC 6-10 y A1-A2:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
+3. **EPIC 6-9 y A2-A6:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
 4. **Fase final:** Completa sección "Resumen Final" para defensa.
 5. **Presentation:** Usa datos reales (no especules) para defenderse académicamente.
 

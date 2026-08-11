@@ -690,13 +690,13 @@ Continuemos con la siguiente story y ajustemos UX del frontend:
 
 ## Sesión Planning — Backlog y Roadmap (2026-05-02)
 
-### Planning A1/A2 — Desglose en EPIC/STORY
+### Planning A5/A6 — Desglose en EPIC/STORY
 
 **Prompt:**
 ```
-Ok, desglosa A1 y A2 en EPIC/STORY
+Ok, desglosa A5 y A6 en EPIC/STORY
 ```
-**Resultado:** EPIC A1 con 4 stories (tabla audit_logs, AuditService, hooks en acciones críticas, endpoint+vista admin) y EPIC A2 con 4 stories (modelo roles/permissions, AuthorizationService, enforcement en endpoints, UI condicional). Cada story con Points, Priority, Type, Criteria, IA Usage y Dependencias.
+**Resultado:** EPIC A5 con 4 stories (tabla audit_logs, AuditService, hooks en acciones críticas, endpoint+vista admin) y EPIC A6 con 4 stories (modelo roles/permissions, AuthorizationService, enforcement en endpoints, UI condicional). Cada story con Points, Priority, Type, Criteria, IA Usage y Dependencias.
 **Iteraciones:** 1
 **Lección:** Dar contexto previo de backlog al agente produce stories alineadas con el estilo existente sin fricción.
 
@@ -709,7 +709,7 @@ Ok, desglosa A1 y A2 en EPIC/STORY
 El EPIC 6 no son "extensiones complejas" son plugins del tipo extension, tal y como habíamos documentado.
 Y veo que has añadido EPIC 6, 7 y 8 como OUT OF SCOPE deben estar IN SCOPE y antes de los adicionales
 ```
-**Resultado:** EPIC 6-10 movidos a IN SCOPE, EPIC 6 renombrado a "Plugins tipo extension", 5 EPICs documentados con 4 stories cada uno antes de A1/A2. STORY 7.5 añadida por petición explícita para configuración de plugins.
+**Resultado:** EPIC 6-10 movidos a IN SCOPE, EPIC 6 renombrado a "Plugins tipo extension", 5 EPICs documentados con 4 stories cada uno antes de A5/A6. STORY 7.5 añadida por petición explícita para configuración de plugins.
 **Iteraciones:** 3 (ajuste scope 9-10, STORY 7.5, renombrado)
 **Lección:** Las correcciones conceptuales de nomenclatura hay que hacerlas desde el primer momento; "extensiones complejas" vs "plugins tipo extension" cambia el entendimiento del sistema.
 
@@ -721,7 +721,7 @@ Y veo que has añadido EPIC 6, 7 y 8 como OUT OF SCOPE deben estar IN SCOPE y an
 ```
 Actualiza el roadmap
 ```
-**Resultado:** `docs/roadmap.md` reescrito con: decisiones técnicas resueltas en tabla, estado real de 10 fases + A1/A2, tabla de corte MVP, hitos actualizados A-G, métricas de seguimiento y DoD por fase. Eliminado contenido obsoleto (decisiones pendientes, comparativa frameworks).
+**Resultado:** `docs/roadmap.md` reescrito con: decisiones técnicas resueltas en tabla, estado real de 10 fases + A5/A6, tabla de corte MVP, hitos actualizados A-G, métricas de seguimiento y DoD por fase. Eliminado contenido obsoleto (decisiones pendientes, comparativa frameworks).
 **Iteraciones:** 1
 **Lección:** Un roadmap desactualizado es más confuso que no tenerlo. Reescribir desde cero con estado real es más rápido que parchear.
 

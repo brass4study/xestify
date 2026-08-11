@@ -120,7 +120,7 @@ La estrategia vigente de implementación es:
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
 - el siguiente bloque transversal prioritario ya abierto es `EPIC 9` (SPA y sistema UI)
-- después debe abordarse operación, auditoría y permisos antes de marketplace y QA final
+- el MVP académico cierra con `EPIC 9`; operación técnica, marketplace, QA, auditoría y permisos (`A2`-`A6`) quedan como adiciones post-MVP
 
 ---
 
@@ -140,11 +140,11 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.7 cerradas; siguiente foco 9.8 |
-| 10 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
-| 11 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
-| 12 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
-| A1 | Auditoría funcional | ⏭ Pendiente | Trazabilidad de acciones críticas |
-| A2 | Matriz de permisos fina | ⏭ Pendiente | Autorización granular |
+| A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
+| A3 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
+| A4 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
+| A5 | Auditoría funcional | ⏭ Pendiente | Trazabilidad de acciones críticas |
+| A6 | Matriz de permisos fina | ⏭ Pendiente | Autorización granular |
 
 ### Fase 0 - Preparacion tecnica
 
@@ -311,7 +311,7 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - cierre operativo de Fase 7
 - base frontend ya consolidada en Fases 3, 5 y 6
 
-### Fase 10 - Operacion tecnica y observabilidad
+### Fase A2 - Operacion tecnica y observabilidad
 
 **Objetivo**
 Preparar operación real del sistema en entornos locales/productivos ligeros.
@@ -328,7 +328,7 @@ Preparar operación real del sistema en entornos locales/productivos ligeros.
 **Dependencias**
 - Fases 1 a 8
 
-### Fase 11 - Marketplace de plugins
+### Fase A3 - Marketplace de plugins
 
 **Objetivo**
 Permitir descubrir, publicar e instalar plugins desde una experiencia integrada.
@@ -343,7 +343,7 @@ Permitir descubrir, publicar e instalar plugins desde una experiencia integrada.
 - Fase 7
 - Fase 9
 
-### Fase 12 - QA y calidad
+### Fase A4 - QA y calidad
 
 **Objetivo**
 Completar la base de calidad del proyecto antes de una beta más formal.
@@ -355,11 +355,12 @@ Completar la base de calidad del proyecto antes de una beta más formal.
 - benchmarks y umbrales de rendimiento
 
 **Dependencias**
-- Fases 1 a 10
-- A1
+- Fases 1 a 9
 - A2
+- A5
+- A6
 
-### Fase A1 - Auditoria funcional
+### Fase A5 - Auditoria funcional
 
 **Objetivo**
 Trazabilidad de cambios críticos sobre usuarios, configuración y plugins.
@@ -369,14 +370,14 @@ Trazabilidad de cambios críticos sobre usuarios, configuración y plugins.
 - Fase 7
 - Fase 9
 
-### Fase A2 - Matriz de permisos fina
+### Fase A6 - Matriz de permisos fina
 
 **Objetivo**
 Permisos granulares por recurso y acción más allá de `admin/no-admin`.
 
 **Dependencias**
 - Fase 1
-- Fase A1
+- Fase A5
 
 ---
 
@@ -386,15 +387,18 @@ Permisos granulares por recurso y acción más allá de `admin/no-admin`.
 
 El backlog vigente considera **in scope del MVP académico**:
 
-- `EPIC 0` a `EPIC 12`
-- `EPIC A1`
-- `EPIC A2`
+- `EPIC 0` a `EPIC 9`
 
-Y deja fuera, por ahora:
+Y deja fuera, por ahora (post-MVP):
 
-- hardening avanzado de sesiones
-- panel health avanzado post-MVP
-- export/import de configuración entre entornos
+- `EPIC A2` (Operación técnica y observabilidad)
+- `EPIC A3` (Marketplace de plugins)
+- `EPIC A4` (QA y calidad)
+- `EPIC A5` (Auditoría funcional)
+- `EPIC A6` (Matriz de permisos fina)
+- `A7` — hardening avanzado de sesiones
+- `A8` — panel health avanzado post-MVP
+- `A9` — export/import de configuración entre entornos
 
 ### Corte MVP por fases
 
@@ -410,10 +414,11 @@ Y deja fuera, por ahora:
 | 7 | ✅ Completada | MUST |
 | 8 | ✅ Completada | MUST |
 | 9 | 🔄 En progreso | SHOULD |
-| 10 | ⏭ Pendiente | SHOULD |
-| 11 | ⏭ Pendiente | SHOULD |
-| A1 | ⏭ Pendiente | MUST |
-| A2 | ⏭ Pendiente | MUST |
+| A2 | ⏭ Pendiente | POST-MVP |
+| A3 | ⏭ Pendiente | POST-MVP |
+| A4 | ⏭ Pendiente | POST-MVP |
+| A5 | ⏭ Pendiente | POST-MVP |
+| A6 | ⏭ Pendiente | POST-MVP |
 
 ### Estimacion por fases, semanas y tiempo
 
@@ -432,11 +437,11 @@ Y deja fuera, por ahora:
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Gestión de Usuarios | ✅ | Fase 8 | 19 pts | MUST |
 | 9 | Sistema UI, Shell Frontend y Arquitectura SPA | 🔄 | Fase 9 | 38 pts | MUST |
-| 10 | Operación Técnica y Observabilidad | ⏭ | Fase 10 | 12 pts | SHOULD |
-| 11 | Marketplace de Plugins | ⏭ | Fase 11 | 16 pts | MUST |
-| 12 | QA y Calidad | ⏭ | Fase 12 | 16 pts | MUST |
-| A1 | Auditoría Funcional | ⏭ | Adición MVP | 16 pts | MUST |
-| A2 | Matriz de Permisos Fina | ⏭ | Adición MVP | 18 pts | MUST |
+| A2 | Operación Técnica y Observabilidad | ⏭ | Fase A2 | 12 pts | POST-MVP |
+| A3 | Marketplace de Plugins | ⏭ | Fase A3 | 16 pts | POST-MVP |
+| A4 | QA y Calidad | ⏭ | Fase A4 | 16 pts | POST-MVP |
+| A5 | Auditoría Funcional | ⏭ | Adición post-MVP | 16 pts | POST-MVP |
+| A6 | Matriz de Permisos Fina | ⏭ | Adición post-MVP | 18 pts | POST-MVP |
 
 ---
 
@@ -496,9 +501,9 @@ Una fase se considera completada cuando:
 | C | 14 | Extensions + `PluginManager` básico | ✅ |
 | D | 16 | Sync, update, configuración y rollback de plugins | 🔄 |
 | E | 18 | Sistema UI, shell SPA y arquitectura frontend consolidada | ⏭ |
-| F | 20 | Operación técnica, auditoría y permisos finos | ⏭ |
-| G | 22 | Marketplace instalable desde UI | ⏭ |
-| H | 24 | CI verde, coverage suficiente y beta técnica estable | ⏭ |
+| F | 20 | Operación técnica, auditoría y permisos finos (post-MVP: `A2`, `A5`, `A6`) | ⏭ |
+| G | 22 | Marketplace instalable desde UI (post-MVP: `A3`) | ⏭ |
+| H | 24 | CI verde, coverage suficiente y beta técnica estable (post-MVP: `A4`) | ⏭ |
 
 ---
 
@@ -513,8 +518,6 @@ La secuencia recomendada, por fases, es:
    - resiliencia frontend
    - UX y testing UI
 
-3. **Después pasar al bloque operativo y de gobierno**
-   - Fase 9
-   - A1
-   - A2
-   - y solo después marketplace y QA global
+3. **Cerrar el MVP con la Fase 9 y luego abordar las adiciones post-MVP**
+   - Fase 9 (dentro del MVP)
+   - A2-A6 (post-MVP: operación técnica, marketplace, QA, auditoría y permisos)

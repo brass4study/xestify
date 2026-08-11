@@ -478,8 +478,8 @@ sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
 ### Alcance del cambio
 
 - `frontend/src/css/main.css` se elimina o se reduce a overrides absolutamente minimos (animaciones custom, scrollbars, etc.).
-- Todos los componentes nuevos del EPIC 8 se construyen directamente con clases Tailwind.
-- La migracion de componentes existentes (DynamicForm, DynamicTable, Modal, PluginManager) se realiza en STORY 8.3.
+- Todos los componentes nuevos del EPIC 9 se construyen directamente con clases Tailwind.
+- La migracion de componentes existentes (DynamicForm, DynamicTable, Modal, PluginManager) se realiza en STORY 9.3.
 
 ### Riesgos mitigados
 
@@ -488,7 +488,7 @@ sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
 
 ### Cambio futuro
 
-Si se adopta un bundler en fases posteriores (EPIC 10+), la configuracion de Tailwind migra de CDN a plugin PostCSS sin cambios en markup.
+Si se adopta un bundler en fases posteriores (EPIC A2+), la configuracion de Tailwind migra de CDN a plugin PostCSS sin cambios en markup.
 
 ---
 
