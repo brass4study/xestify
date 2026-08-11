@@ -145,82 +145,91 @@ Generate a comprehensive .gitignore that includes:
 
 ### Semana 1: EPIC 0-1
 
-- [ ] STORY 0.1: Setup repositorio
-- [ ] STORY 0.2: Container DI casero
-- [ ] STORY 0.3: Router HTTP
-- [ ] STORY 0.4: Request/Response helpers
-- [ ] STORY 0.5: Docker Compose
-- [ ] STORY 0.6: Frontend skeleton
-- [ ] STORY 1.1: Tabla users
-- [ ] STORY 1.2: JWT implementation
-- [ ] STORY 1.3: AuthController
-- [ ] STORY 1.4: AuthMiddleware
+- [X] STORY 0.1: Setup repositorio
+- [X] STORY 0.2: Container DI casero
+- [X] STORY 0.3: Router HTTP
+- [X] STORY 0.4: Request/Response helpers
+- [X] STORY 0.5: Docker Compose
+- [X] STORY 0.6: Frontend skeleton
+- [X] STORY 1.1: Tabla users
+- [X] STORY 1.2: JWT implementation
+- [X] STORY 1.3: AuthController
+- [X] STORY 1.4: AuthMiddleware
 
 ### Semana 2: EPIC 2-3 parte 1
 
-- [ ] STORY 2.1: catalogo de entidades en plugins
-- [ ] STORY 2.2: entity_metadata table
-- [ ] STORY 2.3: entity_data table
-- [ ] STORY 3.1: ValidationService
-- [ ] STORY 3.2: EntityService
-- [ ] STORY 3.3: EntityController
-- [ ] STORY 3.4: Respuesta envelopada
+- [X] STORY 2.1: catalogo de entidades en plugins
+- [X] STORY 2.2: entity_metadata table
+- [X] STORY 2.3: entity_data table
+- [X] STORY 3.1: ValidationService
+- [X] STORY 3.2: EntityService
+- [X] STORY 3.3: EntityController
+- [X] STORY 3.4: Respuesta envelopada
 
 ### Semana 3: EPIC 3 parte 2 + EPIC 4-5
 
-- [ ] STORY 3.6: Frontend Api.js
-- [ ] STORY 3.7: Frontend State.js
-- [ ] STORY 3.8: DynamicForm
-- [ ] STORY 3.9: DynamicTable
-- [ ] STORY 4.1: PluginLoader
-- [ ] STORY 4.2: HookDispatcher
-- [ ] STORY 4.4: Plugin clients
-- [ ] STORY 5.1: Frontend Login
+- [X] STORY 3.6: Frontend Api.js
+- [X] STORY 3.7: Frontend State.js
+- [X] STORY 3.8: DynamicForm
+- [X] STORY 3.9: DynamicTable
+- [X] STORY 4.1: PluginLoader
+- [X] STORY 4.2: HookDispatcher
+- [X] STORY 4.4: Plugin clients
+- [X] STORY 5.1: Frontend Login
 
 ### Semana 4: EPIC 5 + Polish + Docs
 
-- [ ] STORY 5.2: Navbar
-- [ ] STORY 5.3: E2E integration
-- [ ] STORY 5.4: Modal/Dialog reutilizable
-- [ ] STORY 5.5: Estilos CSS mobile/desktop
-- [ ] CSS/UX improvements (si aplica)
-- [ ] Documentación final
+- [X] STORY 5.2: Navbar
+- [X] STORY 5.3: E2E integration
+- [X] STORY 5.4: Modal/Dialog reutilizable
+- [X] STORY 5.5: Estilos CSS mobile/desktop
+- [X] CSS/UX improvements (si aplica)
+- [X] Documentación final
 
 ### EPIC 6: Plugins tipo Extension
 
-- [ ] STORY 6.1: Frontend - DynamicTabs.js
-- [ ] STORY 6.2: Backend - hooks registerTabs y registerActions
-- [ ] STORY 6.3: Plugin de ejemplo tipo extension (comments)
-- [ ] STORY 6.4: Frontend - Página PluginManager
+- [X] STORY 6.1: Frontend - DynamicTabs.js
+- [X] STORY 6.2: Backend - hooks registerTabs y registerActions
+- [X] STORY 6.3: Plugin de ejemplo tipo extension (comments)
+- [X] STORY 6.4: Frontend - Página PluginManager
 
 ### EPIC 7: Actualizaciones de Plugins y Rollback
 
-- [ ] STORY 7.1: Detección de actualizaciones disponibles
-- [ ] STORY 7.2: Proceso de actualización con migración de schema
-- [ ] STORY 7.3: Frontend - Página de configuración de plugin activado
-- [ ] STORY 7.4: Rollback manual a versión anterior
-- [ ] STORY 7.5: Frontend - UI de actualización y rollback
+- [X] STORY 7.1: Detección de actualizaciones disponibles
+- [X] STORY 7.2: Proceso de actualización con migración de schema
+- [X] STORY 7.3: Frontend - Página de configuración de plugin activado
+- [X] STORY 7.4: Rollback manual a versión anterior
+- [X] STORY 7.5: Frontend - UI de actualización y rollback
 
 ### EPIC 8: Gestión de Usuarios
 
-- [ ] STORY 8.1: Backend - Perfil de usuario, avatar binario y soft delete
-- [ ] STORY 8.2: Backend - UserController y rutas REST
-- [ ] STORY 8.3: Frontend - UserMenu dropdown en Navbar
-- [ ] STORY 8.4: Frontend - Página Mi Perfil (`#/profile`)
-- [ ] STORY 8.5: Frontend - Página gestión de usuarios (`#/usuarios`)
+- [X] STORY 8.1: Backend - Perfil de usuario, avatar binario y soft delete
+- [X] STORY 8.2: Backend - UserController y rutas REST
+- [X] STORY 8.3: Frontend - UserMenu dropdown en Navbar
+- [X] STORY 8.4: Frontend - Página Mi Perfil (`#/profile`)
+- [X] STORY 8.5: Frontend - Página gestión de usuarios (`#/usuarios`)
 
 ### EPIC 9: Sistema UI, Shell Frontend y Arquitectura SPA
 
-- [ ] STORY 9.1: Fundamentos de diseño
-- [ ] STORY 9.2: Fundamentos de navegación y anatomía de páginas
-- [ ] STORY 9.3: Librería de componentes UI base
-- [ ] STORY 9.4: Arquitectura frontend y modularización
-- [ ] STORY 9.5: Shell SPA y plantillas de navegación
-- [ ] STORY 9.6: Implementación del routing SPA
-- [ ] STORY 9.7: Infraestructura transversal de frontend y resiliencia
-- [ ] STORY 9.8: UX transversal, accesibilidad y microinteracciones
+- [X] STORY 9.1: Fundamentos de diseño
+- [X] STORY 9.2: Fundamentos de navegación y anatomía de páginas
+- [X] STORY 9.3: Librería de componentes UI base
+- [X] STORY 9.4: Arquitectura frontend y modularización
+- [X] STORY 9.5: Shell SPA y plantillas de navegación
+- [X] STORY 9.6: Implementación del routing SPA
+- [X] STORY 9.7: Infraestructura transversal de frontend y resiliencia
+- [X] STORY 9.8: UX transversal, accesibilidad y microinteracciones
 - [ ] STORY 9.9: Documentación de arquitectura frontend y testing UI automatizado
-- [ ] STORY 9.10: Documentación funcional WYSIWYG y cobertura real de ThemeModel
+
+### Adición post-MVP: A1 (Ajustes Finos de UI/UX)
+
+- [ ] STORY A1.1: Internacionalización real con selector de idioma
+- [ ] STORY A1.2: Búsqueda server-side en tablas de entity
+- [ ] STORY A1.3: Documentación funcional WYSIWYG y cobertura real de ThemeModel
+- [ ] STORY A1.4: Optimización de tiempos de respuesta y construcción del front-end
+- [ ] STORY A1.5: Revisión y consistencia de animaciones/transiciones CSS
+- [ ] STORY A1.6: Accesibilidad WCAG y Auditoría de Testing UI
+- [ ] STORY A1.7: Funcionalidad Avanzada de Tablas y CRUD Completo
 
 ### Adición post-MVP: A3 (Marketplace de Plugins)
 
@@ -311,7 +320,7 @@ Generate a comprehensive .gitignore that includes:
 
 1. **Semana 1:** Completa primeras 10 tareas, calcula aceleración por semana.
 2. **Semana 2-3:** Actualiza conforme terminas historias de EPIC 2-5.
-3. **EPIC 6-9 y A2-A6:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
+3. **EPIC 6-9 y A1-A6:** Documenta cada story a medida que se implementa, siguiendo el mismo formato.
 4. **Fase final:** Completa sección "Resumen Final" para defensa.
 5. **Presentation:** Usa datos reales (no especules) para defenderse académicamente.
 

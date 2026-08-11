@@ -120,7 +120,7 @@ La estrategia vigente de implementación es:
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
 - el siguiente bloque transversal prioritario ya abierto es `EPIC 9` (SPA y sistema UI)
-- el MVP académico cierra con `EPIC 9`; operación técnica, marketplace, QA, auditoría y permisos (`A2`-`A6`) quedan como adiciones post-MVP
+- el MVP académico cierra con `EPIC 9`; ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
 
 ---
 
@@ -140,6 +140,7 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | 🔄 En progreso | STORY 9.1 a 9.7 cerradas; siguiente foco 9.8 |
+| A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | A3 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
 | A4 | QA y calidad | ⏭ Pendiente | CI, coverage, E2E y benchmarks |
@@ -311,6 +312,24 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - cierre operativo de Fase 7
 - base frontend ya consolidada en Fases 3, 5 y 6
 
+### Fase A1 - Ajustes finos de UI/UX
+
+**Objetivo**
+Cerrar brechas de experiencia de usuario y calidad frontend detectadas tras EPIC 9.
+
+**Alcance**
+- internacionalización real con selector de idioma (es/en/gl/pt)
+- búsqueda server-side en tablas de entity
+- documentación funcional WYSIWYG y cobertura real de `ThemeModel` (`A1.3`, movida desde `STORY 9.10`)
+- optimización de tiempos de respuesta y construcción del frontend (skeleton loaders, bootstrap)
+- consistencia de animaciones/transiciones CSS
+- accesibilidad WCAG y auditoría de testing UI (ARIA, axe-core/pa11y)
+- funcionalidad avanzada de tablas y CRUD completo (bulk actions, export CSV, eliminar registro/usuario, desinstalar plugin)
+
+**Dependencias**
+- cierre operativo de Fase 7
+- base frontend ya consolidada en Fases 3, 6 y 9
+
 ### Fase A2 - Operacion tecnica y observabilidad
 
 **Objetivo**
@@ -391,6 +410,7 @@ El backlog vigente considera **in scope del MVP académico**:
 
 Y deja fuera, por ahora (post-MVP):
 
+- `EPIC A1` (Ajustes finos de UI/UX)
 - `EPIC A2` (Operación técnica y observabilidad)
 - `EPIC A3` (Marketplace de plugins)
 - `EPIC A4` (QA y calidad)
@@ -414,6 +434,7 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | ✅ Completada | MUST |
 | 8 | ✅ Completada | MUST |
 | 9 | 🔄 En progreso | SHOULD |
+| A1 | ⏭ Pendiente | POST-MVP |
 | A2 | ⏭ Pendiente | POST-MVP |
 | A3 | ⏭ Pendiente | POST-MVP |
 | A4 | ⏭ Pendiente | POST-MVP |
@@ -437,6 +458,7 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Gestión de Usuarios | ✅ | Fase 8 | 19 pts | MUST |
 | 9 | Sistema UI, Shell Frontend y Arquitectura SPA | 🔄 | Fase 9 | 38 pts | MUST |
+| A1 | Ajustes Finos de UI/UX | ⏭ | Adición post-MVP | 37 pts | POST-MVP |
 | A2 | Operación Técnica y Observabilidad | ⏭ | Fase A2 | 12 pts | POST-MVP |
 | A3 | Marketplace de Plugins | ⏭ | Fase A3 | 16 pts | POST-MVP |
 | A4 | QA y Calidad | ⏭ | Fase A4 | 16 pts | POST-MVP |
@@ -520,4 +542,4 @@ La secuencia recomendada, por fases, es:
 
 3. **Cerrar el MVP con la Fase 9 y luego abordar las adiciones post-MVP**
    - Fase 9 (dentro del MVP)
-   - A2-A6 (post-MVP: operación técnica, marketplace, QA, auditoría y permisos)
+   - A1-A6 (post-MVP: ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos)

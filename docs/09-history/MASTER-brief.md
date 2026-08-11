@@ -10,7 +10,7 @@ shell SPA persistente, layouts reutilizables y routing hash completo.
 
 **Siguiente foco:** STORY 9.7, infraestructura transversal y resiliencia del
 frontend. Después quedan UX y testing UI de EPIC 9, que cierra el MVP.
-Operación, marketplace, QA, auditoría y permisos finos (`A2`-`A6`)
+Ajustes finos de UI/UX, operación, marketplace, QA, auditoría y permisos finos (`A1`-`A6`)
 quedan como adiciones post-MVP.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
@@ -91,6 +91,7 @@ Demostrar que:
 
 ### ❌ OUT OF SCOPE (thesis posterior)
 
+- A1: Ajustes finos de UI/UX (i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado)
 - A2: Operación técnica y observabilidad (health operativo, backup, despliegue y hardening)
 - A3: Marketplace de plugins
 - A4: QA y calidad
@@ -141,7 +142,7 @@ Demostrar que:
 **Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
 shell SPA persistente, plantillas de página reutilizables y routing hash completo.
 
-### ⏭ Próximas fases: STORY 9.7-9.9 (cierre del MVP) + A2-A6 (post-MVP)
+### ⏭ Próximas fases: STORY 9.7-9.9 (cierre del MVP) + A1-A6 (post-MVP)
 **Objetivo:** completar resiliencia y UX frontend para cerrar el MVP; operación,
 permisos, auditoría, marketplace y QA quedan como adiciones post-MVP.
 

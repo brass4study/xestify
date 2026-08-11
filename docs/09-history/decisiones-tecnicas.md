@@ -488,7 +488,7 @@ sobre `plugins` proporciona exactamente el mismo catalogo sin redundancia.
 
 ### Cambio futuro
 
-Si se adopta un bundler en fases posteriores (EPIC A2+), la configuracion de Tailwind migra de CDN a plugin PostCSS sin cambios en markup.
+Si se adopta un bundler en fases posteriores (EPIC A1+), la configuracion de Tailwind migra de CDN a plugin PostCSS sin cambios en markup.
 
 ---
 

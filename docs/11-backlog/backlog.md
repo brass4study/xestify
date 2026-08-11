@@ -38,6 +38,7 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - EPIC 9: Sistema UI, shell frontend y arquitectura SPA
 
 ### ❌ OUT OF SCOPE (para futuro/thesis)
+- Adición post-MVP A1: Ajustes finos de UI/UX (i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado)
 - Adición post-MVP A2: Operación técnica y observabilidad (health, backup, despliegue, hardening)
 - Adición post-MVP A3: Marketplace de plugins
 - Adición post-MVP A4: QA y calidad
@@ -55,6 +56,10 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - Las adiciones `A2` (Operación técnica), `A3` (Marketplace de plugins), `A4` (QA y calidad), `A5` (Auditoría funcional) y `A6` (Matriz de permisos fina) pasan de MVP a post-MVP.
 - **IN SCOPE MVP (vigente):** EPIC 0-9
 - **POSTERIOR A MVP (vigente):** A2 + A3 + A4 + A5 + A6 + A7 + A8 + A9
+
+### 📌 Nueva Adición post-MVP (2026-08-11)
+- Se define `A1` (Ajustes Finos de UI/UX, 7 stories, 37 pts): internacionalización real, búsqueda server-side en tablas, documentación WYSIWYG (movida desde STORY 9.10), rendimiento/skeleton loaders, animaciones/transiciones, accesibilidad WCAG + testing UI, y funcionalidad avanzada de tablas/CRUD.
+- **POSTERIOR A MVP (vigente):** A1 + A2 + A3 + A4 + A5 + A6 + A7 + A8 + A9
 
 ---
 
@@ -1128,7 +1133,46 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **Dependencias:** STORY 9.3, STORY 9.4, STORY 9.5, STORY 9.7
 - **Blockers:** Ninguno
 
-### STORY 9.10: Documentacion funcional WYSIWYG y cobertura real de ThemeModel
+---
+
+## EPIC A1: Ajustes Finos de UI/UX (Adición post-MVP)
+
+Objetivo: Cerrar brechas de experiencia de usuario y calidad frontend detectadas tras EPIC 9: internacionalización real, búsqueda en tablas, rendimiento percibido, consistencia visual, accesibilidad y operaciones avanzadas de tabla/CRUD.
+
+### STORY A1.1: Internacionalización real con selector de idioma
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Selector de idioma visible en la zona `shell-menu-config` del shell, como sub-zona hermana de los controles de tema (`shell-menu-config-theme`) y usuario (`shell-menu-config-user`)
+  - ✅ Idiomas soportados: español, inglés, gallego y portugués
+  - ✅ `I18nModel.js` ampliado con las claves necesarias para cubrir las pantallas principales (Login, EntityList, EntityEdit, PluginManager, perfil, gestión de usuarios, configuración visual), no solo el subconjunto parcial actual
+  - ✅ Preferencia de idioma persistida en una cookie (no localStorage, no columna en `users`)
+  - ✅ Si no existe la cookie, el idioma inicial se determina a partir de `navigator.language`, mapeando al idioma soportado más cercano
+  - ✅ Si `navigator.language` no coincide con ningún idioma soportado, se aplica español por defecto
+  - ✅ Cambiar el idioma aplica la traducción en caliente en toda la interfaz visible, sin recargar la página
+  - ✅ Cambiar el idioma actualiza la cookie para que la preferencia persista en la siguiente visita
+- **IA Usage:** Traducción asistida es→en/gl/pt de claves existentes y nuevas + wiring del selector, lectura de `navigator.language` y persistencia en cookie
+- **Dependencias:** STORY 9.5, STORY 9.7
+- **Blockers:** Ninguno
+
+### STORY A1.2: Búsqueda server-side en tablas de entity
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Cabecera de filtro sobre el grid de `DynamicTable`/`EntityList` con: combobox que lista los campos de la entidad activa, input de texto para el valor y botón con icono de lupa para ejecutar
+  - ✅ Al pulsar el botón de lupa (o Enter en el input), se solicita el listado incluyendo `?field=<campo>&filter=<valor>`
+  - ✅ El endpoint de listado paginado (`EntityController`/`EntityService`/`GenericRepository::paginate`) acepta esos parámetros y aplica coincidencia "contiene" case-insensitive (`ILIKE '%valor%'`) sobre el campo elegido
+  - ✅ El nombre de campo recibido se valida contra el schema de la entidad antes de construir la consulta SQL, con el mismo criterio de seguridad ya aplicado al parámetro `sort`
+  - ✅ El filtro aplicado (campo + valor) se refleja en el hash de la URL, compartible y recargable, consistente con el mapa hash de STORY 9.6
+  - ✅ Al aplicar un nuevo filtro, la paginación vuelve a la página 1
+  - ✅ Limpiar el input (o un botón de limpiar) retorna el listado sin filtro
+- **IA Usage:** Diseño de la cabecera de filtro + extensión de `GenericRepository::paginate`/`EntityController` con validación de campo + wiring del estado del filtro al hash de la URL
+- **Dependencias:** STORY 3.9, STORY 9.6
+- **Blockers:** Ninguno
+
+### STORY A1.3: Documentación funcional WYSIWYG y cobertura real de ThemeModel
 - **Points:** 3
 - **Priority:** SHOULD
 - **Type:** Frontend / Documentacion
@@ -1143,6 +1187,70 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 - **IA Usage:** Auditoria cruzada de ThemeModel/UI/runtime + generacion de matriz de cobertura funcional
 - **Dependencias:** STORY 9.1, STORY 9.7, STORY 9.9
 - **Blockers:** Ninguno
+
+### STORY A1.4: Optimización de tiempos de respuesta y construcción del front-end
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Medición de la línea base actual del tiempo de arranque de la SPA (desde carga de `index.html` hasta interfaz interactiva), usando Performance API del navegador o Lighthouse, documentada
+  - ✅ Medición de la línea base actual del tiempo de carga de listados/tablas grandes (`EntityList`/`DynamicTable`) con datos reales
+  - ✅ El componente `Skeleton.js` (ya definido en `ComponentFactory` desde STORY 9.3 pero sin uso en ningún flujo) se cablea en la construcción inicial de página, mostrándose mientras se resuelve el primer render
+  - ✅ El componente `Skeleton.js` se cablea también en la carga de datos de `DynamicTable`/`EntityList`, sustituyendo el "Cargando…" genérico mientras llega la respuesta del backend
+  - ✅ Revisión del orden de carga de scripts/módulos del bootstrap (`AppController.js`, `ShellLayout.js`, `RouteMapController.js`) para identificar y eliminar bloqueos innecesarios antes del primer render
+  - ✅ Comparativa antes/después de las métricas base, documentada
+- **IA Usage:** Análisis de performance con Performance API/Lighthouse + wiring de `Skeleton.js` en flujos de carga + propuestas de reordenación del bootstrap
+- **Dependencias:** STORY 9.3, STORY 9.4, STORY 9.7
+- **Blockers:** Ninguno
+
+### STORY A1.5: Revisión y consistencia de animaciones/transiciones CSS
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Frontend
+- **Criteria:**
+  - ✅ Auditoría de elementos interactivos (botones, links, inputs, filas de tabla, tabs, dropdowns) sin ninguna transición en hover/focus/aparición
+  - ✅ Auditoría de elementos que ya tienen transición pero con duración/easing inconsistente respecto al resto de la interfaz
+  - ✅ Definición de tokens comunes de duración y easing, alineados con la configuración de Tailwind del proyecto
+  - ✅ Aplicación de los tokens comunes a botones, modales, tabs, dropdowns y notificaciones globales
+  - ✅ Verificación manual en navegador de que las transiciones aplicadas son suaves (sin saltos ni parpadeos) en las páginas ya cubiertas por STORY 9.8: Login, EntityList, EntityEdit, PluginManager, UserConfig
+- **IA Usage:** Auditoría de clases `transition`/`duration`/`ease` existentes + propuesta de tokens comunes + aplicación donde falte
+- **Dependencias:** STORY 9.7, STORY 9.8
+- **Blockers:** Ninguno
+
+### STORY A1.6: Accesibilidad WCAG y Auditoría de Testing UI
+- **Points:** 8
+- **Priority:** SHOULD
+- **Type:** Frontend / QA
+- **Criteria:**
+  - ✅ Notificaciones y banners de `UiResilienceService` usan `role="status"` o `role="alert"` según severidad, con `aria-live="polite"` o `"assertive"` correspondiente
+  - ✅ Landmarks semánticos añadidos al shell (`role="main"`, `role="navigation"`, `role="banner"`) en `ShellLayout.js`
+  - ✅ Componentes interactivos existentes (`Modal`, `Tabs`, dropdown de `UserMenu`) revisados y corregidos para exponer roles/estados ARIA correctos (`aria-expanded`, `aria-haspopup`, `aria-modal`, etc.) de forma consistente
+  - ✅ Integración de una herramienta de auditoría automatizada de accesibilidad (axe-core o pa11y) ejecutable sobre las páginas principales: Login, EntityList, EntityEdit, PluginManager, perfil y gestión de usuarios
+  - ✅ Umbral mínimo definido: cero incidencias de severidad "critical" o "serious" en el reporte de la herramienta
+  - ✅ Ejecución de la auditoría documentada y reproducible sobre el runtime Apache+PHP same-origin del proyecto
+  - ✅ Reporte de hallazgos con su resolución o justificación de excepción documentado
+- **IA Usage:** Auditoría de componentes existentes + inyección de atributos ARIA + bootstrap de axe-core/pa11y + triage y documentación de hallazgos
+- **Dependencias:** STORY 9.7, STORY 9.8
+- **Blockers:** Ninguno
+
+### STORY A1.7: Funcionalidad Avanzada de Tablas y CRUD Completo
+- **Points:** 8
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Checkbox de selección por fila en `DynamicTable`, con opción de "seleccionar todas" las filas de la página actual
+  - ✅ Barra de acciones en lote visible cuando hay una o más filas seleccionadas, con al menos la acción "eliminar en lote"
+  - ✅ Confirmación modal consistente (STORY 9.8) antes de ejecutar cualquier acción en lote destructiva
+  - ✅ Botón "Exportar CSV" en la cabecera de la tabla que descarga las filas actualmente visibles/filtradas
+  - ✅ El CSV exportado usa codificación UTF-8 con BOM (compatibilidad con Excel) y cabeceras de columna traducidas según el idioma activo (STORY A1.1)
+  - ✅ Acción "Eliminar" añadida a `EntityList` (hoy inexistente) con confirmación modal y feedback de éxito/error
+  - ✅ Acción "Eliminar" añadida a `UserManager` (hoy inexistente en UI, aunque el soft delete ya existe en backend desde EPIC 8) con confirmación modal y feedback de éxito/error
+  - ✅ Acción "Desinstalar" añadida a `PluginManager` para plugins inactivos, con confirmación modal
+  - ✅ El backend impide desinstalar un plugin activo, exigiendo desactivarlo primero
+  - ✅ El backend limpia de forma segura los registros asociados (`plugins`, `plugin_hooks`, etc.) al desinstalar
+- **IA Usage:** Diseño de selección múltiple/bulk actions + export CSV + wiring de acciones de eliminación/desinstalación + confirmaciones + validaciones backend
+- **Dependencias:** STORY 3.9, STORY 6.4, STORY 8.2, STORY 9.8, STORY A1.1, STORY A1.2
+- **Blockers:** Confirmar si el backend ya soporta DELETE real de entidad y desinstalación de plugin, o si hay que implementarlo desde cero (revisar `EntityController`/`EntityService` y `PluginRepository`)
 
 ---
 
@@ -1429,7 +1537,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ---
 
-## 📊 Resumen del Backlog Académico (MVP: EPIC 0-9 · post-MVP: A2-A6)
+## 📊 Resumen del Backlog Académico (MVP: EPIC 0-9 · post-MVP: A1-A6)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 
@@ -1510,7 +1618,7 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 - **Puntos son relativos:** Si una historia toma más de lo previsto, ajusta estimación en tiempo real.
 - **IA va a acelerar:** Usa CodeVibe para generar boilerplate, tests, documentación.
 - **Foco en flujo E2E:** Semana 4 debe tener el flujo completo: login → crear entidad → guardar funcionando end-to-end.
-- **OUT OF SCOPE para Master:** A2 (Operación técnica), A3 (Marketplace), A4 (QA y calidad), A5 (Auditoría funcional), A6 (Matriz de permisos), A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
+- **OUT OF SCOPE para Master:** A1 (Ajustes finos de UI/UX), A2 (Operación técnica), A3 (Marketplace), A4 (QA y calidad), A5 (Auditoría funcional), A6 (Matriz de permisos), A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
 
 ---
 
