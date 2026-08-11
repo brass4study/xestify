@@ -1,17 +1,10 @@
 # Progreso de corrección — auditoría 2026-08-11
 
-← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md)
+← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md) · [Convenciones (reglas comunes)](../CONVENCIONES.md)
 
 Este fichero **sí se actualiza** con el tiempo (a diferencia de los informes `00`-`07`, que son la fotografía inmutable de la auditoría). Es el mecanismo para que sesiones nuevas sepan qué está ya resuelto sin releer los informes completos ni repetir trabajo.
 
-## Cómo usarlo
-
-- **Al empezar una sesión de corrección:** lee este fichero primero (o la sección del subsistema que toque) antes de tocar código. Si una fila ya está `✅ Resuelto`, no la repitas — si crees que el arreglo fue incompleto, dilo y ábrelo como nota, no como si no se hubiera tocado.
-- **Al terminar cada hallazgo:** actualiza su fila — `Estado`, `Commit` (hash corto) y `Notas` si hay algo relevante (p. ej. "arreglo parcial, falta X" o por qué se descartó) — **en el mismo commit que el arreglo, nunca en un commit de docs aparte**. Un commit por hallazgo, no dos. Flujo: aplica el fix + test → `git add` del código, el test y `progreso.md` (con la fila en ✅) → commit → copia el hash corto (`git log -1 --format=%h`) → rellénalo en la fila `Commit` → **un único** `git commit --amend --no-edit`. No repitas el amend más veces intentando que el hash escrito coincida con el hash final exacto: un commit no puede contener su propio hash (el hash se calcula a partir del contenido, así que cada amend lo cambia de nuevo) — perseguirlo genera un bucle infinito. Un hash "una versión por detrás" es objetivo suficiente y esperado; para la referencia exacta siempre está `git log --oneline --grep`.
-- **Convención de commit:** incluye el ID entre corchetes en el asunto, p. ej. `fix: [01.01] password_hash ya no se filtra en /api/v1/users`. Así `git log --oneline --grep "\[04"` encuentra todo lo tocado de un fichero de un vistazo, sin depender de este documento si alguna vez se desincroniza.
-- **Si dos sesiones podrían solaparse** (p. ej. vas a tocar `EntityController.php` en dos hallazgos de ficheros distintos): revisa aquí si el otro hallazgo ya tiene commit; si no, indícalo en `Notas` con `⚠️ toca el mismo fichero que 0X.YY` para que la siguiente sesión no pise el diff a medio hacer.
-
-**Leyenda de estado:** ⏳ Pendiente · 🔧 En progreso · ✅ Resuelto · 🚫 Descartado (con motivo en Notas)
+**Antes de tocar código, lee [`../CONVENCIONES.md`](../CONVENCIONES.md)** — ahí están las reglas de cómo usar y actualizar esta tabla (cuándo actualizar una fila, commit único por hallazgo, formato del asunto, leyenda de estado, notación de solape entre hallazgos). Este fichero solo trae el estado real de esta auditoría concreta, no repite esas reglas.
 
 ## Resumen
 
