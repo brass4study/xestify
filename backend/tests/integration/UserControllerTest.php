@@ -118,6 +118,7 @@ TestSuite::run('UserController::me returns the authenticated profile', function 
 
         assertTrue(($response['ok'] ?? false) === true, 'Profile endpoint should succeed');
         assertEquals((string) $user['id'], (string) ($response['data']['id'] ?? ''), 'Returned profile should match the authenticated user');
+        assertFalse(array_key_exists('password_hash', $response['data'] ?? []), 'password_hash must not be exposed in the JSON response');
     } finally {
         cleanupUserRow($pdo, (string) $user['id']);
     }
@@ -187,6 +188,9 @@ TestSuite::run('UserController::listUsers allows admins and returns active users
         assertTrue(($response['ok'] ?? false) === true, 'Admin listing should succeed');
         assertTrue(is_array($response['data'] ?? null), 'The response should include a users list');
         assertTrue(count($response['data']) >= 2, 'Admin listing should include the created users');
+        foreach ($response['data'] as $listedUser) {
+            assertFalse(array_key_exists('password_hash', $listedUser), 'password_hash must not be exposed for any listed user');
+        }
     } finally {
         cleanupUserRow($pdo, (string) $admin['id']);
         cleanupUserRow($pdo, (string) $user['id']);
@@ -208,6 +212,7 @@ TestSuite::run('UserController::update lets admins edit user roles', function ()
         assertTrue(($response['ok'] ?? false) === true, 'Admin update should succeed');
         assertEquals('Gestor', (string) ($response['data']['name'] ?? ''), 'Updated name should be persisted');
         assertEquals(['admin', 'operador'], $response['data']['roles'] ?? [], 'Roles should be updated');
+        assertFalse(array_key_exists('password_hash', $response['data'] ?? []), 'password_hash must not be exposed in the JSON response');
     } finally {
         cleanupUserRow($pdo, (string) $admin['id']);
         cleanupUserRow($pdo, (string) $target['id']);

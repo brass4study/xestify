@@ -44,7 +44,7 @@ class UserController
             return;
         }
 
-        Response::make()->json($profile);
+        Response::make()->json($this->sanitizeUser($profile));
     }
 
     public function updateMe(array $params, ?Request $request = null): void
@@ -72,7 +72,7 @@ class UserController
 
         $updated = $this->repository->update($id, $this->buildProfileUpdateData($payload));
         $this->updatePasswordIfNeeded($payload, $id);
-        Response::make()->json($updated);
+        Response::make()->json($this->sanitizeUser($updated));
     }
 
     public function listUsers(array $params, ?Request $request = null): void
@@ -84,7 +84,7 @@ class UserController
             return;
         }
 
-        Response::make()->json($this->repository->all());
+        Response::make()->json(array_map($this->sanitizeUser(...), $this->repository->all()));
     }
 
     public function show(array $params, ?Request $request = null): void
@@ -108,7 +108,7 @@ class UserController
             return;
         }
 
-        Response::make()->json($user);
+        Response::make()->json($this->sanitizeUser($user));
     }
 
     public function update(array $params, ?Request $request = null): void
@@ -150,7 +150,7 @@ class UserController
         }
 
         $updated = $this->repository->update($id, $data);
-        Response::make()->json($updated);
+        Response::make()->json($this->sanitizeUser($updated));
     }
 
     public function resetPassword(array $params, ?Request $request = null): void
@@ -226,6 +226,16 @@ class UserController
     private function ignoreParams(array $params): void
     {
         unset($params);
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     * @return array<string, mixed>
+     */
+    private function sanitizeUser(array $user): array
+    {
+        unset($user['password_hash']);
+        return $user;
     }
 
     private function validateCurrentSecret(array $payload, string $id, bool $isEmailChange, bool $isPasswordChange): bool

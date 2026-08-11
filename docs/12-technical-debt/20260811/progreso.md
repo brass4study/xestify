@@ -17,14 +17,14 @@ Este fichero **sí se actualiza** con el tiempo (a diferencia de los informes `0
 
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
-| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 0 | 14 | 0 |
+| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 1 | 13 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 0 | 12 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 0 | 13 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 0 | 11 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 0 | 7 | 0 |
-| **Total** | **85** | **0** | **85** | **0** |
+| **Total** | **85** | **1** | **84** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.1`, **P2**=`07.1`, **P3**=`07.2`, **P4**=`04.1`, **P5**=`04.3`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -34,7 +34,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Sev. | Resumen | Estado | Commit | Notas |
 |---|---|---|---|---|---|
-| 01.1 | Crítico | `password_hash` filtrado en respuestas de usuario (= **P1**) | ⏳ | | |
+| 01.1 | Crítico | `password_hash` filtrado en respuestas de usuario (= **P1**) | ✅ | `999e17e` | `UserController` añade `sanitizeUser()` y lo aplica en `me()`, `updateMe()`, `listUsers()`, `show()`, `update()`. El repositorio sigue devolviendo `password_hash` (lo necesita `passwordMatches()` para verificar contraseña actual); el filtrado es solo en el borde de respuesta HTTP. Tests: `UserControllerTest.php` ahora comprueba ausencia de `password_hash` en `me`, `listUsers`, `update`. ⚠️ Detectado fallo preexistente no relacionado en `UserController::update lets admins edit user roles` ("Roles should be updated") — falla igual antes y después de este cambio, no se toca aquí. |
 | 01.2 | Mayor | No hay `AuthorizationService`; check admin duplicado en 3 controladores | ⏳ | | |
 | 01.3 | Mayor | `AuthController` no usa `UserRepository`, SQL a mano | ⏳ | | |
 | 01.4 | Mayor | `UserRepository::update()` no captura `PDOException` | ⏳ | | |
