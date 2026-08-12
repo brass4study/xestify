@@ -1119,7 +1119,6 @@ export class AppController {
 
     const closeButton = component.create('button', {
       label: '×',
-      variant: 'ghost',
       ariaLabel: 'Cerrar notificación',
       dataAction: 'dismiss-global-notification',
     });

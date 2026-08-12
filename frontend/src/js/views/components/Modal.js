@@ -29,7 +29,7 @@ export class ModalComponent extends BaseComponent {
     }).setId(titleId).setParent(header);
 
     if (typeof options.onClose === 'function') {
-      const closeButton = component.create('button', { label: '×', variant: 'ghost', ariaLabel: 'Cerrar diálogo', onClick: options.onClose });
+      const closeButton = component.create('button', { label: '×', ariaLabel: 'Cerrar diálogo', onClick: options.onClose });
       closeButton
         .setClassName('inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-lg text-slate-600 transition hover:bg-slate-100')
         .setParent(header);

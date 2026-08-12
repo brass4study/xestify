@@ -77,7 +77,6 @@ export class TabsComponent extends BaseComponent {
   _appendTabButton(tab) {
     const button = component.create('button', {
       label: tab.label ?? tab.id,
-      variant: 'ghost',
       dataRole: 'tabs-button',
     })
       .setClassName(this._tabButtonClass(false))

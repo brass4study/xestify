@@ -13,9 +13,9 @@
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 12 | 4 | 0 |
-| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 8 | 4 | 0 |
+| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 9 | 3 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **58** | **27** | **0** |
+| **Total** | **85** | **59** | **26** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -120,7 +120,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 06.02 | ✅ | Mayor | `label`/`for` roto en `Login.js` | `ca300cb` | |
 | 06.03 | ✅ | Mayor | Clase Tailwind base duplicada en 9 ficheros `Input*.js` | `be6da3d` | |
 | 06.04 | ✅ | Mayor | `setError()` no quita clase base — borde de error gris en reposo | `fcd891c` | |
-| 06.05 | ⏳ | Menor | `variant: 'ghost'` de `Button` inerte | | |
+| 06.05 | ✅ | Menor | `variant: 'ghost'` de `Button` inerte | `14d7d0d` | |
 | 06.06 | ✅ | Menor | `id` del título del modal fijado dos veces | `f0b2300` | ⚠️ Resuelto como efecto colateral de 06.01 (id ahora generado dinámicamente) |
 | 06.07 | ✅ | Menor | Rama muerta en `Breadcrumb.resolveItems` | `364d7a7` | |
 | 06.08 | ⏳ | Menor | Componentes registrados sin uso real (`inputRadio`, `inputTime`...) | | ⚠️ `inputTime` ya no aplica: conectado en `07.04` (`DynamicForm` ahora lo usa para `type: 'time'`). Queda `inputRadio` y el resto. |
