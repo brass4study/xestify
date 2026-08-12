@@ -218,10 +218,6 @@ export class BreadcrumbComponent extends BaseComponent {
       return options.items;
     }
 
-    if (Array.isArray(options)) {
-      return options;
-    }
-
     return [];
   }
 }
