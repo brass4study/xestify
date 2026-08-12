@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\runtime;
 
 use Xestify\plugins\infrastructure\PluginClassLoader;
+use Xestify\plugins\PluginLifecycleUpdateInterface;
 
 final class PluginLifecycleInvoker
 {
@@ -42,8 +43,8 @@ final class PluginLifecycleInvoker
     public function onUpdate(string $slug, array $context): void
     {
         $lifecycle = $this->classLoader->instantiateLifecycle($slug);
-        if ($lifecycle !== null && method_exists($lifecycle, 'onUpdate')) {
-            $lifecycle->onUpdate($context); // @phpstan-ignore-line optional lifecycle convention
+        if ($lifecycle instanceof PluginLifecycleUpdateInterface) {
+            $lifecycle->onUpdate($context);
         }
     }
 
@@ -53,8 +54,8 @@ final class PluginLifecycleInvoker
     public function onRollback(string $slug, array $context): void
     {
         $lifecycle = $this->classLoader->instantiateLifecycle($slug);
-        if ($lifecycle !== null && method_exists($lifecycle, 'onRollback')) {
-            $lifecycle->onRollback($context); // @phpstan-ignore-line optional lifecycle convention
+        if ($lifecycle instanceof PluginLifecycleUpdateInterface) {
+            $lifecycle->onRollback($context);
         }
     }
 }

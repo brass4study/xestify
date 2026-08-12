@@ -81,12 +81,13 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
-final class Lifecycle implements PluginLifecycleInterface {
+use Xestify\plugins\PluginLifecycleUpdateInterface;
+final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}
     public function onActivate(): void {}
     public function onDeactivate(): void {}
+    public function onUpdate(array \$context): void {}
     public function onRollback(array \$context): void { \$GLOBALS['rollback_to_version'] = \$context['to_version'] ?? null; }
 }
 PHP;

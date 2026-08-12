@@ -503,8 +503,8 @@ declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
 use RuntimeException;
-use Xestify\plugins\PluginLifecycleInterface;
-final class Lifecycle implements PluginLifecycleInterface {
+use Xestify\plugins\PluginLifecycleUpdateInterface;
+final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}
     public function onActivate(): void {}
@@ -512,6 +512,7 @@ final class Lifecycle implements PluginLifecycleInterface {
     public function onUpdate(array \$context): void {
         throw new RuntimeException('update failed on purpose');
     }
+    public function onRollback(array \$context): void {}
 }
 PHP;
     $root = createPluginFixture([

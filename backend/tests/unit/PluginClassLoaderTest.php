@@ -39,7 +39,9 @@ TestSuite::run('instantiateLifecycle() injects PDO when the constructor declares
     );
 
     try {
-        $pdo = new \PDO('sqlite::memory:');
+        // No real driver needed: PluginClassLoader never queries $pdo here, it only
+        // injects it by reference into the plugin constructor (checked via identity below).
+        $pdo = (new \ReflectionClass(\PDO::class))->newInstanceWithoutConstructor(); // NOSONAR - inert placeholder, only its object identity is asserted, no query ever runs against it
         $loader = new PluginClassLoader($root, $pdo);
         $lifecycle = $loader->instantiateLifecycle($slug);
 
@@ -77,7 +79,9 @@ TestSuite::run(
         );
 
         try {
-            $pdo = new \PDO('sqlite::memory:');
+            // No real driver needed: PluginClassLoader never queries $pdo here, it only
+        // injects it by reference into the plugin constructor (checked via identity below).
+        $pdo = (new \ReflectionClass(\PDO::class))->newInstanceWithoutConstructor(); // NOSONAR - inert placeholder, only its object identity is asserted, no query ever runs against it
             $loader = new PluginClassLoader($root, $pdo);
 
             $hooksExceptionClass = null;

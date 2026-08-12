@@ -76,13 +76,14 @@ TestSuite::run('onUpdate() is optional and receives context when implemented', f
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
-final class Lifecycle implements PluginLifecycleInterface {
+use Xestify\plugins\PluginLifecycleUpdateInterface;
+final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}
     public function onActivate(): void {}
     public function onDeactivate(): void {}
     public function onUpdate(array \$context): void { \$GLOBALS['lc_context_slug'] = \$context['slug'] ?? null; }
+    public function onRollback(array \$context): void {}
 }
 PHP;
     $root = createPluginFixture([
@@ -110,12 +111,13 @@ TestSuite::run('onRollback() is optional and receives context when implemented',
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
-final class Lifecycle implements PluginLifecycleInterface {
+use Xestify\plugins\PluginLifecycleUpdateInterface;
+final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}
     public function onActivate(): void {}
     public function onDeactivate(): void {}
+    public function onUpdate(array \$context): void {}
     public function onRollback(array \$context): void { \$GLOBALS['lc_rollback_to'] = \$context['to_version'] ?? null; }
 }
 PHP;

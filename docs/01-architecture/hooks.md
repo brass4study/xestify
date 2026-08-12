@@ -11,7 +11,7 @@ Permitir que plugins amplien comportamiento del Core sin modificar codigo centra
 - onActivate
 - onDeactivate
 
-Nota: `onUpdate` y `onUninstall` no forman parte del contrato actual `PluginLifecycleInterface`.
+Nota: `onUpdate` y `onRollback` son opcionales — un plugin los declara implementando `PluginLifecycleUpdateInterface` (que extiende `PluginLifecycleInterface`); `PluginLifecycleInvoker` comprueba `instanceof` antes de invocarlos. `onUninstall` no forma parte de ningún contrato actual.
 
 2. Hooks de entidad
 - beforeValidate
