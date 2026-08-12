@@ -10,12 +10,12 @@
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 10 | 3 | 1 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
-| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 10 | 3 | 0 |
+| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 11 | 2 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 9 | 2 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **74** | **10** | **1** |
+| **Total** | **85** | **75** | **9** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -66,7 +66,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 03.03 | ✅ | Mayor | `PluginClassLoader` instancia Hooks vs Lifecycle de forma distinta | `1a8f4a7` | ⚠️ Mismo preexistente de `03.01`, no relacionado. |
 | 03.04 | ⏳ | Menor | Duplicación `clients`/`products` (~90 líneas) | | |
 | 03.05 | ✅ | Menor | `EntityController` con `HookDispatcher` por defecto oculto | `eb03e93` | |
-| 03.06 | ⏳ | Menor | `PluginBootTest`/`PluginHookRegistrarTest` casi duplicados | | |
+| 03.06 | ✅ | Menor | `PluginBootTest`/`PluginHookRegistrarTest` casi duplicados | `84ab45d` | |
 | 03.07 | ✅ | Menor | `ClientsPluginTest` usa `assert()` nativo de PHP | `391002d` | |
 | 03.08 | ✅ | Menor | Docblock de `HookDispatcher::register()` engañoso (by reference) | `8e1aaa9` | |
 | 03.09 | ✅ | Menor | `products/Lifecycle.php` import redundante de su propio namespace | `6356ce0` | |

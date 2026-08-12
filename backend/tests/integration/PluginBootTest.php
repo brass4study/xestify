@@ -89,7 +89,7 @@ TestSuite::run('registerActiveHooks() registers comments tab when comments is ac
     assertTrue(in_array('comments', $ids, true), 'comments tab must appear after registerActiveHooks()');
 });
 
-TestSuite::run('registerActiveHooks() preserves current repeated-registration behavior', function () use ($pdo): void {
+TestSuite::run('registerActiveHooks() is idempotent — repeated calls do not duplicate a plugin\'s hooks', function () use ($pdo): void {
     $dispatcher = new HookDispatcher();
     $registrar = new PluginHookRegistrar(
         new PluginRepository($pdo, new PluginSchemaCodec()),
@@ -102,7 +102,7 @@ TestSuite::run('registerActiveHooks() preserves current repeated-registration be
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
     $commentTabs = array_filter($tabs, static fn(array $tab): bool => $tab['id'] === 'comments');
 
-    assertTrue(count($commentTabs) >= 1, 'comments tab must appear at least once');
+    assertTrue(count($commentTabs) === 1, 'comments tab must appear exactly once, not once per registerActiveHooks() call');
 });
 
 TestSuite::run('tab endpoint contains entity placeholder', function () use ($pdo): void {

@@ -64,7 +64,6 @@ $groups = [
         'backend/tests/integration/PluginStatusServiceTest.php',
         'backend/tests/integration/PluginOutdatedServiceTest.php',
         'backend/tests/integration/PluginLifecycleInvokerTest.php',
-        'backend/tests/integration/PluginHookRegistrarTest.php',
         'backend/tests/integration/PluginDependenciesTest.php',
         'backend/tests/integration/PluginLifecycleTest.php',
         'backend/tests/integration/PluginBootTest.php',
