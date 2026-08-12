@@ -6,6 +6,7 @@ define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
+require_once BASE_PATH . '/src/plugins/application/SchemaComparisonUtil.php';
 require_once BASE_PATH . '/src/plugins/application/PluginSchemaMergeService.php';
 
 use Xestify\plugins\application\PluginSchemaMergeService;

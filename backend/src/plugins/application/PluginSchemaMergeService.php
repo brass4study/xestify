@@ -11,6 +11,10 @@ final class PluginSchemaMergeService
 {
     private const SECTIONS = ['identities', 'fields', 'custom_fields', 'relations'];
 
+    public function __construct(private SchemaComparisonUtil $schemaComparison = new SchemaComparisonUtil())
+    {
+    }
+
     /**
      * @param array<string, mixed>|null $currentSchema
      * @param array<string, mixed>|null $targetSchema
@@ -248,25 +252,7 @@ final class PluginSchemaMergeService
 
     private function definitionsEqual(mixed $left, mixed $right): bool
     {
-        return $this->normalizeForComparison($left) === $this->normalizeForComparison($right);
-    }
-
-    private function normalizeForComparison(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        if (array_is_list($value)) {
-            return array_map(fn(mixed $item): mixed => $this->normalizeForComparison($item), $value);
-        }
-
-        ksort($value);
-        foreach ($value as $key => $item) {
-            $value[$key] = $this->normalizeForComparison($item);
-        }
-
-        return $value;
+        return $this->schemaComparison->normalize($left) === $this->schemaComparison->normalize($right);
     }
 
     /**
