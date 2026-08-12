@@ -164,13 +164,11 @@ export class UiResilienceService {
         resolve(result);
       };
 
-      modal.show(document.activeElement instanceof HTMLElement ? document.activeElement : null);
-
       body.querySelector('[data-action="cancel-modal"]')?.addEventListener('click', () => closeWith(false));
       body.querySelector('[data-action="confirm-modal"]')?.addEventListener('click', () => closeWith(true));
 
       modal.setContent(body);
-      modal.show();
+      modal.show(document.activeElement instanceof HTMLElement ? document.activeElement : null);
       const confirmButton = body.querySelector('[data-action="confirm-modal"]');
       if (confirmButton instanceof HTMLButtonElement) {
         confirmButton.focus();

@@ -13,6 +13,7 @@
   import { AppState } from '../../js/models/StateModel.js';
   import { UiResilienceService } from '../../js/services/UiResilienceService.js';
   import { ApiError } from '../../js/models/ApiClientModel.js';
+  import { Modal } from '../../js/views/modules/Modal.js';
   import { setLocale, t } from '../../js/models/I18nModel.js';
   import { AppController } from '../../js/controllers/AppController.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
@@ -57,6 +58,33 @@
     setLocale('es');
     assertEquals(t('ui.loading'), 'Cargando…');
     assertEquals(t('ui.unknown', 'Texto alternativo'), 'Texto alternativo');
+  });
+
+  await test('UiResilienceService confirm() attaches listeners to content set before the single modal.show() call', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const originalShow = Modal.prototype.show;
+    let showCalls = 0;
+    Modal.prototype.show = function patchedShow(...args) {
+      showCalls += 1;
+      return originalShow.apply(this, args);
+    };
+
+    const confirmation = UiResilienceService.confirm({
+      container,
+      title: 'Confirmar acción',
+      message: '¿Desea continuar?',
+    });
+
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    overlay.querySelector('[data-action="cancel-modal"]').click();
+    await confirmation;
+
+    Modal.prototype.show = originalShow;
+    assertEquals(showCalls, 1, 'confirm() no debe recalcular el foco de retorno con una segunda llamada a modal.show()');
+
+    container.remove();
   });
 
   await test('UiResilienceService confirm flow resolves user choice', async () => {
