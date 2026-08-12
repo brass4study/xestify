@@ -52,12 +52,19 @@ TestSuite::run('DateFieldValidator validates YYYY-MM-DD dates', function (): voi
     assertEquals('invalid_type', $validator->validate('birth_date', '11/05/2026', [])[0]->code());
 });
 
-TestSuite::run('TimestampFieldValidator accepts string-compatible timestamps', function (): void {
+TestSuite::run('TimestampFieldValidator accepts real timestamps and the "now" schema default', function (): void {
     $validator = new TimestampFieldValidator();
 
     assertEquals([], $validator->validate('creation_stamp', 'now', []));
     assertEquals([], $validator->validate('creation_stamp', '2026-05-11T12:00:00Z', []));
     assertEquals('invalid_type', $validator->validate('creation_stamp', 123, [])[0]->code());
+});
+
+TestSuite::run('TimestampFieldValidator rejects strings that are not a real timestamp', function (): void {
+    $validator = new TimestampFieldValidator();
+
+    assertEquals('invalid_type', $validator->validate('creation_stamp', 'not-a-real-timestamp', [])[0]->code());
+    assertEquals('invalid_type', $validator->validate('creation_stamp', '', [])[0]->code());
 });
 
 TestSuite::run('EmailFieldValidator validates email format', function (): void {
