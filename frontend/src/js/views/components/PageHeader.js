@@ -30,7 +30,7 @@ export class PageHeaderComponent extends BaseComponent {
       className: 'flex flex-col gap-1',
     });
 
-    component.create('h2', {
+    const title = component.create('h2', {
       className: 'text-lg font-semibold text-slate-900',
       dataset: { role: 'page-title' },
       text: options.title ?? 'Página',
@@ -58,16 +58,36 @@ export class PageHeaderComponent extends BaseComponent {
       actions.setParent(content);
     }
 
+    let toolbar = null;
     const toolbarItems = this.resolveToolbarItems(options.toolbar);
     if (toolbarItems.length > 0 || options.toolbar !== undefined) {
       const roles = this.resolveToolbarRoles(options);
-      const toolbar = this.buildToolbar(toolbarItems, roles);
+      toolbar = this.buildToolbar(toolbarItems, roles);
       toolbar.setParent(content);
     }
 
     content.setParent(this);
 
+    this._targets = new Map([
+      ['content', content],
+      ['title', title],
+      ['copy', titleBlock],
+      ['toolbar', toolbar],
+    ]);
+
     return this;
+  }
+
+  /**
+   * Public accessor for this component's internal layout zones, so
+   * consumers (PageLayout) don't need to querySelector() into markup
+   * PageHeaderComponent owns and may change.
+   *
+   * @param {string} name One of 'content' | 'title' | 'copy' | 'toolbar'.
+   * @returns {HTMLElement|null}
+   */
+  getTarget(name) {
+    return this._targets?.get(name) ?? null;
   }
 
   resolveToolbarItems(toolbarOption) {

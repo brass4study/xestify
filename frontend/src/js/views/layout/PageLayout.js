@@ -258,10 +258,10 @@ export class PageLayout {
       host.replaceChildren(header);
     }
 
-    const content = header.querySelector('[data-role="page-header-content"]');
-    const title = header.querySelector('[data-role="page-title"]');
-    const copy = title?.parentElement;
-    const toolbar = header.querySelector('[data-role="page-header-toolbar"]');
+    const content = header.getTarget?.('content');
+    const title = header.getTarget?.('title');
+    const copy = header.getTarget?.('copy');
+    const toolbar = header.getTarget?.('toolbar');
     if (!(content instanceof HTMLElement)
       || !(title instanceof HTMLElement)
       || !(copy instanceof HTMLElement)
