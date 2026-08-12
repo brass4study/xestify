@@ -9,13 +9,13 @@
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 6 | 8 | 0 |
-| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 1 | 11 | 0 |
+| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 2 | 10 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 0 | 13 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 2 | 9 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **11** | **74** | **0** |
+| **Total** | **85** | **12** | **73** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -45,7 +45,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
 | 02.01 | ✅ | Mayor | `EntityService` sin transacción en create/update | `97d21e2` | `EntityService::createRecord()`/`updateRecord()` envuelven ahora el bloque `dispatchBefore('beforeSave') → repository->create()/update() → dispatchAfter('afterSave')` en `$pdo->beginTransaction()/commit()/rollBack()`, mismo patrón que `PluginRollbackService`/`PluginUpdateService`. La validación de esquema sigue fuera de la transacción (no toca BD). `EntityServiceHooksTest.php::PdoStub` (stub de PDO sin conexión real) gana `beginTransaction()/commit()/rollBack()/inTransaction()` en memoria para no romper con la nueva llamada. Test nuevo en `EntityServiceTest.php` (uno para create, uno para update): un hook `beforeSave` inserta una fila "marcador" propia y luego se fuerza el fallo de `repository->create()/update()` pasando `NAN` en un campo `number` (pasa `NumberFieldValidator` porque es un float, pero `json_encode()` no puede codificar `NAN` → `RepositoryException` en `encodeJson()`). Confirmado por reversión manual (`git stash`): ambos tests fallan sin el fix (la fila del hook queda persistida, 1 y 2 filas respectivamente) y pasan con él (0 filas). Verificado con `unit` + `EntityServiceTest.php`: 0 fallos. |
-| 02.02 | ⏳ | Mayor | `ValidationService` no rechaza campos no declarados | | |
+| 02.02 | ✅ | Mayor | `ValidationService` no rechaza campos no declarados | `e5baf95` | `ValidationService::validate()` compara ahora las claves de `$data` contra el conjunto de campos conocidos (`SchemaFieldExtractor::extract($schema)`) y añade un error `unknown_field` por cada clave no declarada. Importante: las claves de `relations` (DECISION 6 — su existencia/tipo es responsabilidad del hook, no de `ValidationService`) se calculan aparte (`relationKeys()`) y se dejan pasar sin validar tipo, para no romper el contrato de 4 bloques; hoy `clients`/`products` tienen `relations: []` así que no se ejerce en producción, pero el allow-list ya está preparado para el día que una entidad declare una relación real. Tests nuevos en `ValidationServiceTest.php`: clave no declarada → `unknown_field`; clave de `relations` se acepta sin error de tipo. Confirmado por reversión manual (`git stash`): el test de campo no declarado falla sin el fix y pasa con él. Verificado con `unit` + `integration-db` + `integration-plugins` completos (usando `PHPRC=C:\apache2.4.66\config\php.ini` para que los procesos hijo de `run.php` carguen `pdo_pgsql`/`mbstring`): 0 fallos. |
 | 02.03 | ⏳ | Mayor | `TimestampFieldValidator` no valida formato; el test blinda el bug | | |
 | 02.04 | ⏳ | Mayor | `StringFieldValidator`/`TextFieldValidator` duplicados al 100% | | |
 | 02.05 | ⏳ | Menor | Comentarios obsoletos referencian `plugin_entity_metadata` | | |

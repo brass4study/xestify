@@ -218,5 +218,34 @@ TestSuite::run('validate supports custom_fields definitions', function () use ($
     assertEquals('Expected boolean', $error['message'] ?? null);
 });
 
+TestSuite::run('validate rejects keys not declared in the schema', function () use ($service): void {
+    $schema = [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
+    ];
+
+    $result = $service->validate(['name' => 'Ana', 'is_admin' => true], $schema);
+    $error = findValidationError($result->errors(), 'is_admin', 'unknown_field');
+
+    assertFalse($result->isValid(), 'Expected invalid result for an undeclared field');
+    assertEquals('Unknown field: is_admin', $error['message'] ?? null);
+});
+
+TestSuite::run('validate allows relation keys through without type validation', function () use ($service): void {
+    $schema = [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
+        'relations' => [
+            ['key' => 'id_cliente', 'type' => 'belongs_to', 'target_entity' => 'clients', 'required' => false],
+        ],
+    ];
+
+    $result = $service->validate(['name' => 'Pedido', 'id_cliente' => 'not-a-validated-uuid'], $schema);
+
+    assertTrue($result->isValid(), 'Expected relation keys to be accepted without type checks');
+});
+
 TestSuite::summary();
 exit(TestSuite::exitCode());

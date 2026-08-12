@@ -26,14 +26,65 @@ final class ValidationService
     public function validate(array $data, array $schema, bool $requireAll = true): ValidationResult
     {
         $errors = [];
+        $knownFields = $this->fieldExtractor->extract($schema);
 
-        foreach ($this->fieldExtractor->extract($schema) as $fieldName => $fieldRules) {
+        foreach ($knownFields as $fieldName => $fieldRules) {
             $errors = array_merge($errors, $this->validateField($fieldName, $data, $fieldRules, $requireAll));
         }
+
+        $errors = array_merge($errors, $this->validateNoUnknownFields($data, $knownFields, $schema));
 
         return $errors === []
             ? ValidationResult::valid()
             : ValidationResult::fromErrors($errors);
+    }
+
+    /**
+     * Reject any key in $data that the schema does not declare.
+     * `relations` keys are allowed through unchecked (DECISION 6: their
+     * existence/type is a hook concern, not ValidationService's).
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, array<string, mixed>> $knownFields
+     * @param array<string, mixed> $schema
+     * @return list<ValidationError>
+     */
+    private function validateNoUnknownFields(array $data, array $knownFields, array $schema): array
+    {
+        $allowed = [...array_keys($knownFields), ...$this->relationKeys($schema)];
+        $errors = [];
+
+        foreach (array_keys($data) as $fieldName) {
+            if (in_array($fieldName, $allowed, true)) {
+                continue;
+            }
+            $errors[] = new ValidationError((string) $fieldName, 'unknown_field', 'Unknown field: ' . $fieldName);
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return list<string>
+     */
+    private function relationKeys(array $schema): array
+    {
+        $relations = $schema['relations'] ?? [];
+        if (!is_array($relations)) {
+            return [];
+        }
+
+        $keys = [];
+        foreach ($relations as $relationName => $definition) {
+            if (is_string($relationName)) {
+                $keys[] = $relationName;
+            } elseif (is_array($definition) && is_string($definition['key'] ?? null)) {
+                $keys[] = $definition['key'];
+            }
+        }
+
+        return $keys;
     }
 
     /**
