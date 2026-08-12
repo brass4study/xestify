@@ -215,7 +215,10 @@ export class AppController {
     }
 
     this.dashboardApi = createApiWithToken(SessionModel.getToken());
-    await this.hydrateUiPreferences();
+    const hydrated = await this.hydrateUiPreferences();
+    if (hydrated === null) {
+      return;
+    }
     this.syncUiPreferences();
     this.renderGlobalNotifications();
 
@@ -443,7 +446,12 @@ export class AppController {
       if (settings !== null) {
         AppState.setUiPreferences(settings);
       }
-    } catch {
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        this.clearAuth();
+        this.renderLogin();
+        return null;
+      }
       // La UI ya dispone de fallback local/default; no bloquear el arranque.
     } finally {
       this.uiHydrating = false;

@@ -208,6 +208,26 @@
     container.remove();
   });
 
+  await test('hydrateUiPreferences() aplica la misma política de 401 que loadEntitiesForNav/loadCurrentUserProfile', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.dashboardApi = {
+      get: async () => {
+        throw new ApiError(401, 'Unauthorized');
+      },
+    };
+
+    const result = await controller.hydrateUiPreferences();
+
+    assertTrue(result === null, 'Debe señalar al llamador que el 401 forzó logout, como loadEntitiesForNav');
+    assertTrue(host.querySelector('[data-role="login-shell"]') !== null,
+      'Un 401 en hydrateUiPreferences ya no debe engullirse en silencio: debe forzar clearAuth() + renderLogin()');
+
+    host.remove();
+  });
+
   await test('AppController routes page notifications to shell-main-notifications without using the global overlay', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
