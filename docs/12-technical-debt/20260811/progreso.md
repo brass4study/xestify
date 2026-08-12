@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 4 | 8 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 5 | 8 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 8 | 8 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 9 | 7 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 7 | 5 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **40** | **45** | **0** |
+| **Total** | **85** | **41** | **44** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -108,7 +108,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 05.11 | ⏳ | Menor | Token de ruta de plugins rompe convención `namespace:param` | | |
 | 05.12 | ⏳ | Menor | `AppState` "god object" | | |
 | 05.13 | ⏳ | Menor | `RouteController.navigate()` API dual sin uso real | | |
-| 05.14 | ⏳ | Nit | `ThemeModel` fallback `'light'` como string mágico | | |
+| 05.14 | ✅ | Nit | `ThemeModel` fallback `'light'` como string mágico | `956ec24` | |
 | 05.15 | ⏳ | Nit | Host flotante con Tailwind + inline duplicados | | |
 | 05.16 | ⏳ | Nit | Doc `renderizado-dinamico.md` nombra componentes obsoletos | | |
 

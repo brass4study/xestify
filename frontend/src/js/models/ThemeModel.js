@@ -290,7 +290,7 @@ export function normalizeUiPreferences(value) {
   const sourceTokens = source.tokens && typeof source.tokens === 'object' ? source.tokens : {};
 
   return {
-    pageStyle: normalizeOption(source.pageStyle, 'light', UI_THEME_SCHEMA.pageStyle),
+    pageStyle: normalizeOption(source.pageStyle, defaults.pageStyle, UI_THEME_SCHEMA.pageStyle),
     menuStyle: normalizeOption(source.menuStyle, defaults.menuStyle, UI_THEME_SCHEMA.menuStyle),
     themeColor: normalizeOption(source.themeColor, defaults.themeColor, UI_THEME_SCHEMA.themeColor),
     navigationMode: normalizeOption(source.navigationMode, defaults.navigationMode, UI_THEME_SCHEMA.navigationMode),
