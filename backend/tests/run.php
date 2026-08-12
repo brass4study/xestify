@@ -36,6 +36,7 @@ $groups = [
         'backend/tests/unit/PluginManifestReaderTest.php',
         'backend/tests/unit/PluginSchemaReaderTest.php',
         'backend/tests/unit/PluginSchemaMergeServiceTest.php',
+        'backend/tests/unit/TestRunnerExitCodeTest.php',
     ],
     'integration-db' => [
         'backend/tests/integration/DatabaseTest.php',

@@ -294,3 +294,4 @@ TestSuite::run('registerActions hook receives entity slug in args', function ():
 
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();
+exit(TestSuite::exitCode());

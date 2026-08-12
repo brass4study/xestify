@@ -139,3 +139,4 @@ TestSuite::run('execute() and applyFilter() coexist independently on same hook n
 
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();
+exit(TestSuite::exitCode());
