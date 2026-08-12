@@ -6,6 +6,7 @@ namespace Xestify\controllers;
 
 use PDO;
 use Xestify\core\Request;
+use Xestify\plugins\application\PluginSchemaFieldNormalizer;
 
 final class ExtensionPluginContentService
 {
@@ -20,7 +21,7 @@ final class ExtensionPluginContentService
     public function normalizeContentBySchema(string $pluginSlug, array $data, Request $request, bool $isUpdate = false): array
     {
         $schema = $this->loadExtensionSchema($pluginSlug);
-        $fields = $this->normalizeSchemaFields($schema['fields'] ?? null);
+        $fields = PluginSchemaFieldNormalizer::normalize($schema['fields'] ?? null) ?? [];
         if ($fields === []) {
             return $data;
         }
@@ -76,46 +77,6 @@ final class ExtensionPluginContentService
         $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
 
         return is_array($decoded) ? $decoded : [];
-    }
-
-    /**
-     * @param mixed $rawFields
-     * @return array<string, array<string, mixed>>
-     */
-    private function normalizeSchemaFields(mixed $rawFields): array
-    {
-        if (!is_array($rawFields)) {
-            return [];
-        }
-
-        $normalized = [];
-
-        if (array_is_list($rawFields)) {
-            foreach ($rawFields as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-
-                $key = trim((string) ($entry['name'] ?? ($entry['key'] ?? '')));
-                if ($key === '') {
-                    continue;
-                }
-
-                $normalized[$key] = $entry;
-            }
-
-            return $normalized;
-        }
-
-        foreach ($rawFields as $key => $definition) {
-            if (!is_string($key) || !is_array($definition)) {
-                continue;
-            }
-
-            $normalized[$key] = $definition;
-        }
-
-        return $normalized;
     }
 
     /**
