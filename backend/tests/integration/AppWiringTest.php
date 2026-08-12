@@ -40,6 +40,7 @@ use Xestify\core\RequestFactory;
 use Xestify\core\Router;
 use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\DatabaseException;
+use Xestify\exceptions\EnvironmentException;
 use Xestify\exceptions\HookException;
 use Xestify\plugins\application\PluginAdministrationService;
 use Xestify\services\EntityService;
@@ -183,6 +184,24 @@ TestSuite::run('boot wiring resolves PluginAdministrationService and its depende
     $service = $container->get(PluginAdministrationService::class);
 
     assertTrue($service instanceof PluginAdministrationService, 'container must resolve PluginAdministrationService');
+});
+
+TestSuite::run('boot wiring refuses to start without JWT_SECRET configured', function (): void {
+    $originalSecret = $_ENV['JWT_SECRET'] ?? null;
+    unset($_ENV['JWT_SECRET']);
+
+    $threw = false;
+    try {
+        buildAppRouter(new Container());
+    } catch (EnvironmentException $e) {
+        $threw = str_contains($e->getMessage(), 'JWT_SECRET');
+    } finally {
+        if ($originalSecret !== null) {
+            $_ENV['JWT_SECRET'] = $originalSecret;
+        }
+    }
+
+    assertTrue($threw, 'missing JWT_SECRET must raise a RuntimeException instead of falling back to a guessable default');
 });
 
 echo str_repeat('-', 40) . "\n";

@@ -14,6 +14,7 @@ use Xestify\core\Container;
 use Xestify\core\Database;
 use Xestify\core\RequestFactory;
 use Xestify\core\RuntimePathNormalizer;
+use Xestify\exceptions\EnvironmentException;
 use Xestify\middleware\AuthMiddleware;
 use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
@@ -62,8 +63,15 @@ if (!function_exists('xestifyRegisterCoreHttpServices')) {
     {
         $container->singleton(Database::class, fn() => Database::connection());
 
+        $jwtSecret = $_ENV['JWT_SECRET'] ?? '';
+        if ($jwtSecret === '') {
+            throw new EnvironmentException(
+                'JWT_SECRET must be set in .env (see .env.example) — refusing to start with a guessable default.'
+            );
+        }
+
         $container->singleton(JwtService::class, fn() => new JwtService(
-            $_ENV['JWT_SECRET'] ?? 'changeme',
+            $jwtSecret,
             (int) ($_ENV['JWT_EXPIRY'] ?? 3600)
         ));
 

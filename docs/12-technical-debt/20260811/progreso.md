@@ -8,14 +8,14 @@
 
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
-| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 9 | 4 | 1 |
+| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 10 | 3 | 1 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 11 | 1 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 13 | 3 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 9 | 3 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 6 | 1 | 0 |
-| **Total** | **85** | **63** | **21** | **1** |
+| **Total** | **85** | **64** | **20** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -37,7 +37,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 01.10 | ✅ | Menor | Desfases doc/código (login camelCase, refresh_token, endpoint password) | `0be3462` | |
 | 01.11 | ✅ | Menor | No existe `POST /api/v1/users` (probablemente intencional) | `0594723` | |
 | 01.12 | ⏳ | Nit | `RuntimePathNormalizer` más fragmentado de lo necesario | | |
-| 01.13 | ⏳ | Nit | `JWT_SECRET` default `'changeme'` fail-open | | |
+| 01.13 | ✅ | Nit | `JWT_SECRET` default `'changeme'` fail-open | `eb3e246` | |
 | 01.14 | 🚫 | Nit | `NOSONAR` en instanciación dinámica del Router | `1523c57` | Sin cambio de código: `Router.php:181,196,201` ya tiene `// NOSONAR S5992` con justificación explícita (clase/método provienen de rutas registradas por el propio código, no de input de usuario). La propia auditoría concluye que esa supresión justificada ya mitiga la señal de alarma — no queda ninguna acción pendiente. |
 
 ## 02 — Modelo de datos / Validación
