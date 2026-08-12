@@ -4,7 +4,7 @@
  * EntityControllerTest — Integration (E2E) tests for EntityController.
  *
  * Calls controller methods directly (no HTTP server needed).
- * Requires a live PostgreSQL connection with 002_core.sql applied.
+ * Requires a live PostgreSQL connection with 002_plugin_entity_data.sql applied.
  *
  * Run:
  *   php backend/tests/integration/EntityControllerTest.php
@@ -65,7 +65,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all EntityControllerTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run 002_plugin_entity_data.sql.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

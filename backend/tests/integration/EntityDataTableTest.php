@@ -4,7 +4,7 @@
  * EntityDataTableTest — Integration tests.
  *
  * Verifies that the plugin_entity_data table was created correctly by migration
- * 002_core.sql. Requires a live PostgreSQL connection.
+ * 002_plugin_entity_data.sql. Requires a live PostgreSQL connection.
  *
  * Run:
  *   php backend/tests/integration/EntityDataTableTest.php
@@ -47,7 +47,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all EntityDataTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run 002_core.sql.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run 002_plugin_entity_data.sql.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

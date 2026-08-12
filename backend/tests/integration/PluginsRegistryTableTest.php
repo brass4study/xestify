@@ -47,7 +47,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all PluginsRegistryTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001–009).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

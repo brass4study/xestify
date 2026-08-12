@@ -48,7 +48,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all EntityMetadataTableTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001–008).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -58,7 +58,7 @@ try {
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('plugin_entity_metadata table does not exist after refactor migration', function (): void {
+TestSuite::run('plugin_entity_metadata table does not exist (merged into plugins.schema_json)', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT EXISTS (

@@ -3,8 +3,10 @@
 /**
  * SystemEntitiesTableTest — Integration tests.
  *
- * After migration 010_drop_system_entities.sql, the system_entities table must
- * no longer exist. Entity types are registered in the plugins table instead.
+ * The system_entities table (dropped by the pre-squash migrations 009/010, see
+ * docs/09-history/decisiones-tecnicas.md) is not part of the current migration
+ * set (001-006) and must not exist. Entity types are registered in the plugins
+ * table instead.
  *
  * Run:
  *   php backend/tests/integration/SystemEntitiesTableTest.php
