@@ -105,6 +105,33 @@
     assertTrue(banner.textContent.includes('Ha ocurrido un error inesperado.'), 'Should show fallback error text');
   });
 
+  await test('submit ignores re-entrant calls while a login request is in flight', async () => {
+    const container = makeSandbox();
+    let callCount = 0;
+    let resolvePost;
+    const apiStub = {
+      post: async () => {
+        callCount += 1;
+        return new Promise((resolve) => {
+          resolvePost = () => resolve({ data: { access_token: 'jwt-demo-token' } });
+        });
+      },
+    };
+
+    const page = new Login(container, { api: apiStub });
+    container.querySelector('[name="email"]').value = 'admin@xestify.local';
+    container.querySelector('[name="password"]').value = 'secret';
+
+    const first = page.submit();
+    const second = page.submit();
+
+    assertEquals(callCount, 1, 'A second submit() while the first request is in flight must not call the API again');
+
+    resolvePost();
+    await first;
+    await second;
+  });
+
   finishTestRunner('output');
 </script>
 </body>

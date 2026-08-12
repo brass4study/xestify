@@ -11,6 +11,7 @@ export class Login {
 	#api;
 	#container;
 	#onSuccess;
+	#isSubmitting = false;
 
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -23,6 +24,11 @@ export class Login {
 	}
 
 	async submit() {
+		if (this.#isSubmitting) {
+			return;
+		}
+
+		this.#isSubmitting = true;
 		this.clearErrors();
 
 		const emailInput = this.#container.querySelector('[name="email"]');
@@ -41,6 +47,7 @@ export class Login {
 
 		if (Object.keys(validationErrors).length > 0) {
 			this.showFieldErrors(validationErrors);
+			this.#isSubmitting = false;
 			return;
 		}
 
@@ -67,6 +74,7 @@ export class Login {
 				this.showGlobalError(message);
 			}
 		} finally {
+			this.#isSubmitting = false;
 			this.setLoading(false);
 		}
 	}
