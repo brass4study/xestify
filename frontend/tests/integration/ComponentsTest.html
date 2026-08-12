@@ -11,6 +11,7 @@
 
   <script type="module">
     import { component } from '../../js/views/modules/ComponentFactory.js';
+    import { InputComponent } from '../../js/views/components/BaseComponent.js';
 
     const output = document.getElementById('output');
     let passed = 0;
@@ -255,6 +256,32 @@
       assertTrue(password instanceof HTMLInputElement, 'password should be an input element');
       assertEquals(password.value, 'secret', 'password value mismatch');
       assertTrue(password.className.includes('border-red'), 'password should expose error styling');
+    });
+
+    test('los Input* de texto heredan InputComponent.BASE_CLASSNAME en vez de duplicar el literal', () => {
+      const originalBase = InputComponent.BASE_CLASSNAME;
+      InputComponent.BASE_CLASSNAME = 'test-marker-base-class';
+      try {
+        ['inputText', 'inputEmail', 'inputPassword', 'inputDate', 'inputTime', 'inputTextArea', 'inputSelect'].forEach((name) => {
+          const el = component.create(name, { name: 'x' });
+          assertEquals(el.className, 'test-marker-base-class', `${name} debe leer InputComponent.BASE_CLASSNAME en vez de un literal propio`);
+        });
+      } finally {
+        InputComponent.BASE_CLASSNAME = originalBase;
+      }
+    });
+
+    test('inputRadio e inputCheck heredan InputComponent.CHECKABLE_CLASSNAME en vez de duplicar el literal', () => {
+      const originalCheckable = InputComponent.CHECKABLE_CLASSNAME;
+      InputComponent.CHECKABLE_CLASSNAME = 'test-marker-checkable-class';
+      try {
+        ['inputRadio', 'inputCheck'].forEach((name) => {
+          const el = component.create(name, { name: 'x' });
+          assertEquals(el.className, 'test-marker-checkable-class', `${name} debe leer InputComponent.CHECKABLE_CLASSNAME en vez de un literal propio`);
+        });
+      } finally {
+        InputComponent.CHECKABLE_CLASSNAME = originalCheckable;
+      }
     });
 
     log('────────────────────────────────────────────────────────────────────────');

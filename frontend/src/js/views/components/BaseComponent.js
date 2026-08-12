@@ -134,6 +134,9 @@ export class BaseComponent extends HTMLElement {
 }
 
 export class InputComponent extends BaseComponent {
+  static BASE_CLASSNAME = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
+  static CHECKABLE_CLASSNAME = 'h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500';
+
   initialize(options = {}) {
     if (typeof options.name === 'string' && options.name !== '') {
       this.name = options.name;
