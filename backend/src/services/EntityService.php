@@ -15,7 +15,7 @@ use Xestify\repositories\GenericRepository;
 /**
  * EntityService — orchestrates CRUD operations on dynamic entities.
  *
- * Fetches the current schema from plugin_entity_metadata, validates incoming data
+ * Fetches the current schema from plugins.schema_json, validates incoming data
  * with ValidationService, persists records via GenericRepository, and
  * dispatches beforeSave/afterSave hooks via HookDispatcher.
  *

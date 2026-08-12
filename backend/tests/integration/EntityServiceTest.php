@@ -4,7 +4,7 @@
  * EntityServiceTest — Integration tests for EntityService.
  *
  * Exercises create/update/delete/get/list against a live PostgreSQL database.
- * A test schema is seeded into plugin_entity_metadata before each test and cleaned up
+ * A test schema is seeded into plugins.schema_json before each test and cleaned up
  * afterwards. All plugin_entity_data rows for the test slug are also removed.
  *
  * Run:
