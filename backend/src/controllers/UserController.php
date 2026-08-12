@@ -79,7 +79,7 @@ class UserController
     {
         $this->ignoreParams($params);
         $request ??= new Request();
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -91,7 +91,7 @@ class UserController
     {
         $this->ignoreParams($params);
         $request ??= new Request();
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -115,7 +115,7 @@ class UserController
     {
         $this->ignoreParams($params);
         $request ??= new Request();
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -157,7 +157,7 @@ class UserController
     {
         $this->ignoreParams($params);
         $request ??= new Request();
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -192,7 +192,7 @@ class UserController
         $currentUser = $this->authenticatedUser($request);
         $shouldStop = false;
 
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             $shouldStop = true;
         }
@@ -368,21 +368,6 @@ class UserController
         }
 
         return $password;
-    }
-
-    private function isAdmin(?Request $request): bool
-    {
-        if ($request === null) {
-            return false;
-        }
-
-        $user = $request->user();
-        if (!is_array($user)) {
-            return false;
-        }
-
-        $roles = $user['roles'] ?? [];
-        return is_array($roles) && in_array('admin', $roles, true);
     }
 
     private function authenticatedUser(?Request $request): ?array

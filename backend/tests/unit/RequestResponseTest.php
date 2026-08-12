@@ -102,6 +102,29 @@ TestSuite::run('uri() devuelve la URI ya resuelta al construir Request', functio
     assertEquals('/api/v1/auth/login', $req->uri());
 });
 
+TestSuite::run('hasRole() devuelve true si el usuario autenticado tiene el rol', function () {
+    $req = new Request();
+    $req->setUser(['sub' => '1', 'roles' => ['admin', 'operador']]);
+    assertTrue($req->hasRole('admin'));
+});
+
+TestSuite::run('hasRole() devuelve false si el usuario autenticado no tiene el rol', function () {
+    $req = new Request();
+    $req->setUser(['sub' => '1', 'roles' => ['operador']]);
+    assertFalse($req->hasRole('admin'));
+});
+
+TestSuite::run('hasRole() devuelve false si no hay usuario autenticado', function () {
+    $req = new Request();
+    assertFalse($req->hasRole('admin'));
+});
+
+TestSuite::run('hasRole() devuelve false si roles no es un array', function () {
+    $req = new Request();
+    $req->setUser(['sub' => '1', 'roles' => 'admin']);
+    assertFalse($req->hasRole('admin'));
+});
+
 TestSuite::run('RequestFactory recupera Authorization desde REDIRECT_HTTP_AUTHORIZATION', function () {
     $previousRedirectAuth = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
     $previousHttpAuth = $_SERVER['HTTP_AUTHORIZATION'] ?? null;

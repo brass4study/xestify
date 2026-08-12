@@ -53,7 +53,7 @@ class PluginManagerController
     {
         $request ??= $this->requestFactory()->fromGlobals($params);
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -76,7 +76,7 @@ class PluginManagerController
         $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -117,22 +117,11 @@ class PluginManagerController
         return $status;
     }
 
-    private function isAdminRequest(Request $request): bool
-    {
-        $user = $request->user();
-        if (!is_array($user)) {
-            return false;
-        }
-
-        $roles = $user['roles'] ?? [];
-        return is_array($roles) && in_array('admin', $roles, true);
-    }
-
     public function listPluginUpdates(array $params, ?Request $request = null): void
     {
         $request ??= $this->requestFactory()->fromGlobals($params);
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -153,7 +142,7 @@ class PluginManagerController
     {
         $request ??= $this->requestFactory()->fromGlobals($params);
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -175,7 +164,7 @@ class PluginManagerController
         $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -206,7 +195,7 @@ class PluginManagerController
         $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -236,7 +225,7 @@ class PluginManagerController
         $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -266,7 +255,7 @@ class PluginManagerController
         $request ??= $this->requestFactory()->fromGlobals($params);
         $slug = (string) ($params['slug'] ?? '');
 
-        if (!$this->isAdminRequest($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }

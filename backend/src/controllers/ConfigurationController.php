@@ -29,7 +29,7 @@ class ConfigurationController
     public function index(array $params = [], ?Request $request = null): void
     {
         $request ??= $this->requestFactory()->fromGlobals($params);
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -72,7 +72,7 @@ class ConfigurationController
     public function update(array $params, ?Request $request = null): void
     {
         $request ??= $this->requestFactory()->fromGlobals($params);
-        if (!$this->isAdmin($request)) {
+        if (!$request->hasRole('admin')) {
             Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
             return;
         }
@@ -98,17 +98,6 @@ class ConfigurationController
         } catch (Throwable $e) {
             Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
-    }
-
-    private function isAdmin(Request $request): bool
-    {
-        $user = $request->user();
-        if (!is_array($user)) {
-            return false;
-        }
-
-        $roles = $user['roles'] ?? [];
-        return is_array($roles) && in_array('admin', $roles, true);
     }
 
     private function supportsKey(string $key): bool

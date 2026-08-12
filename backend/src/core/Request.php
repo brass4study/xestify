@@ -122,4 +122,14 @@ class Request
     {
         return $this->user;
     }
+
+    /**
+     * True si el usuario autenticado tiene el rol dado (p. ej. 'admin').
+     * Punto único de verdad para el check de autorización binaria admin/no-admin.
+     */
+    public function hasRole(string $role): bool
+    {
+        $roles = $this->user['roles'] ?? [];
+        return is_array($roles) && in_array($role, $roles, true);
+    }
 }
