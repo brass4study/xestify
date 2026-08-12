@@ -86,6 +86,20 @@ const CTRL_SCHEMA_JSON = <<<'JSON'
 }
 JSON;
 
+const CTRL_ENTITY_SLUG_IDENTITY = 'test_entity_ctrl_identity';
+
+const CTRL_SCHEMA_WITH_IDENTITY_JSON = <<<'JSON'
+{
+  "identities": {
+    "id": {"type": "uuid", "auto_generated": true, "editable": false},
+    "tax_id": {"type": "string", "editable": true}
+  },
+  "fields": {
+    "title": {"type": "string", "required": true}
+  }
+}
+JSON;
+
 function buildController(): EntityController
 {
     $pdo = Database::connection();
@@ -116,7 +130,7 @@ function callController(
     return is_array($decoded) ? $decoded : [];
 }
 
-function seedCtrlSchema(): void
+function seedCtrlSchema(string $slug = CTRL_ENTITY_SLUG, string $schemaJson = CTRL_SCHEMA_JSON): void
 {
     Database::connection()->prepare(
         "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
@@ -126,16 +140,16 @@ function seedCtrlSchema(): void
              schema_json = EXCLUDED.schema_json,
              schema_version = EXCLUDED.schema_version,
              updated_at = NOW()"
-    )->execute([':slug' => CTRL_ENTITY_SLUG, ':schema' => CTRL_SCHEMA_JSON]);
+    )->execute([':slug' => $slug, ':schema' => $schemaJson]);
 }
 
-function cleanCtrlData(): void
+function cleanCtrlData(string $slug = CTRL_ENTITY_SLUG): void
 {
     $pdo = Database::connection();
     $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
-        ->execute([':slug' => CTRL_ENTITY_SLUG]);
+        ->execute([':slug' => $slug]);
     $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
-        ->execute([':slug' => CTRL_ENTITY_SLUG]);
+        ->execute([':slug' => $slug]);
 }
 
 function hasControllerValidationError(array $result, string $field, string $code): bool
@@ -281,6 +295,30 @@ TestSuite::run('GET index paginates and sorts records without loading all rows',
     assertTrue(($largePage['meta']['page_size'] ?? 0) === 200, 'must allow 200 records per page');
 
     cleanCtrlData();
+});
+
+TestSuite::run('GET index accepts an editable identity field as sort criterion', function (): void {
+    cleanCtrlData(CTRL_ENTITY_SLUG_IDENTITY);
+    seedCtrlSchema(CTRL_ENTITY_SLUG_IDENTITY, CTRL_SCHEMA_WITH_IDENTITY_JSON);
+    $ctrl = buildController();
+
+    foreach ([['title' => 'B', 'tax_id' => 'B-002'], ['title' => 'A', 'tax_id' => 'A-001']] as $data) {
+        callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG_IDENTITY], $data);
+    }
+
+    $result = callController(
+        $ctrl,
+        'index',
+        ['slug' => CTRL_ENTITY_SLUG_IDENTITY],
+        [],
+        ['sort' => 'tax_id', 'direction' => 'asc']
+    );
+
+    assertTrue($result['meta']['sort'] === 'tax_id', 'tax_id (editable identity) must be accepted as sort field, not silently fall back to created_at');
+    $firstContent = json_decode((string) ($result['data'][0]['content'] ?? ''), true);
+    assertTrue(($firstContent['tax_id'] ?? '') === 'A-001', 'records must come back ordered by the editable identity field');
+
+    cleanCtrlData(CTRL_ENTITY_SLUG_IDENTITY);
 });
 
 TestSuite::run('GET show returns single record by id', function (): void {

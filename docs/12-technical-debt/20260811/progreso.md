@@ -9,13 +9,13 @@
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 10 | 3 | 1 |
-| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 11 | 1 | 0 |
+| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **69** | **15** | **1** |
+| **Total** | **85** | **70** | **14** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -50,7 +50,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 02.04 | ✅ | Mayor | `StringFieldValidator`/`TextFieldValidator` duplicados al 100% | `a1d8b3d` | |
 | 02.05 | ✅ | Menor | Comentarios obsoletos referencian `plugin_entity_metadata` | `e2fda11` | ⚠️ toca el mismo fichero que 02.06 (`EntityService.php`) |
 | 02.06 | ✅ | Menor | `ORDER BY schema_version` sobre columna `UNIQUE(slug)` — código muerto | `10f6c00` | ⚠️ toca el mismo fichero que 02.05 (`EntityService.php`) |
-| 02.07 | ⏳ | Menor | `SchemaFieldExtractor` vs `sortableSchemaFields()` inconsistentes | | |
+| 02.07 | ✅ | Menor | `SchemaFieldExtractor` vs `sortableSchemaFields()` inconsistentes | `4852e97` | |
 | 02.08 | ✅ | Menor | `plugins.schema_json` sin `CHECK` de estructura | `b2203ba` | |
 | 02.09 | ✅ | Menor | `MigrationIdempotenceTest` con ruta Windows hardcodeada, no portable | `53644b9` | |
 | 02.10 | ✅ | Menor | Tests referencian migraciones inexistentes (`002_core.sql`, `010_drop...`) | `1c4dd1d` | |

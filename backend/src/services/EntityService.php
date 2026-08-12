@@ -11,6 +11,7 @@ use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\ValidationException;
 use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
+use Xestify\validation\schema\SchemaFieldExtractor;
 
 /**
  * EntityService — orchestrates CRUD operations on dynamic entities.
@@ -36,7 +37,8 @@ final class EntityService
         private GenericRepository $repository,
         private ValidationService $validator,
         private PDO $pdo,
-        private ?HookDispatcher $hooks = null
+        private ?HookDispatcher $hooks = null,
+        private SchemaFieldExtractor $fieldExtractor = new SchemaFieldExtractor()
     ) {
     }
 
@@ -176,16 +178,9 @@ final class EntityService
     private function sortableSchemaFields(array $schema): array
     {
         $fields = [];
-        foreach (['fields', 'custom_fields'] as $sectionName) {
-            $section = $schema[$sectionName] ?? [];
-            if (!is_array($section)) {
-                continue;
-            }
-            foreach ($section as $key => $field) {
-                $name = is_string($key) ? $key : ($field['name'] ?? $field['key'] ?? null);
-                if (is_string($name) && preg_match('/^[A-Za-z_]\w*$/', $name) === 1) {
-                    $fields[] = $name;
-                }
+        foreach (array_keys($this->fieldExtractor->extract($schema)) as $name) {
+            if (preg_match('/^[A-Za-z_]\w*$/', $name) === 1) {
+                $fields[] = $name;
             }
         }
         return $fields;
