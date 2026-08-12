@@ -29,19 +29,7 @@ final class UserRepository
         $this->execute($stmt, [':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($row === false) {
-            return null;
-        }
-
-        if (array_key_exists('avatar', $row)) {
-            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
-        }
-
-        if (array_key_exists('roles', $row)) {
-            $row['roles'] = $this->normalizeRolesValue($row['roles']);
-        }
-
-        return $row;
+        return $row === false ? null : $this->normalizeRow($row);
     }
 
     /**
@@ -57,19 +45,7 @@ final class UserRepository
         $this->execute($stmt, [':email' => $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($row === false) {
-            return null;
-        }
-
-        if (array_key_exists('avatar', $row)) {
-            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
-        }
-
-        if (array_key_exists('roles', $row)) {
-            $row['roles'] = $this->normalizeRolesValue($row['roles']);
-        }
-
-        return $row;
+        return $row === false ? null : $this->normalizeRow($row);
     }
 
     /**
@@ -88,18 +64,7 @@ final class UserRepository
             return [];
         }
 
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as $index => $row) {
-            if (array_key_exists('avatar', $rows[$index])) {
-                $rows[$index]['avatar'] = $this->normalizeBinaryValue($rows[$index]['avatar']);
-            }
-
-            if (array_key_exists('roles', $rows[$index])) {
-                $rows[$index]['roles'] = $this->normalizeRolesValue($rows[$index]['roles']);
-            }
-        }
-
-        return $rows;
+        return array_map(fn(array $row): array => $this->normalizeRow($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -144,15 +109,7 @@ final class UserRepository
             throw new RepositoryException(self::USER_NOT_FOUND_MESSAGE . $id);
         }
 
-        if (array_key_exists('avatar', $row)) {
-            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
-        }
-
-        if (array_key_exists('roles', $row)) {
-            $row['roles'] = $this->normalizeRolesValue($row['roles']);
-        }
-
-        return $row;
+        return $this->normalizeRow($row);
     }
 
     public function delete(string $id): void
@@ -193,6 +150,23 @@ final class UserRepository
         } catch (PDOException $e) {
             throw new RepositoryException('Query failed: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeRow(array $row): array
+    {
+        if (array_key_exists('avatar', $row)) {
+            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
+        }
+
+        if (array_key_exists('roles', $row)) {
+            $row['roles'] = $this->normalizeRolesValue($row['roles']);
+        }
+
+        return $row;
     }
 
     private function normalizeRolesValue(mixed $value): mixed
