@@ -6,14 +6,23 @@ export class FormFieldComponent extends BaseComponent {
     this.className = 'grid gap-1.5';
     this.dataset.role = 'form-field';
 
+    let inputId = '';
+    if (options.input instanceof HTMLElement) {
+      if (options.input.id === '' && typeof options.input.name === 'string' && options.input.name !== '') {
+        options.input.id = options.input.name;
+      }
+      inputId = options.input.id;
+    }
+
     if (typeof options.label === 'string' && options.label !== '') {
       const label = component.create('label', {
         className: 'text-sm font-medium text-slate-700',
         text: options.label,
       });
       label.setData('role', 'form-field-label');
-      if (typeof options.name === 'string' && options.name !== '') {
-        label.setAttribute('for', options.name);
+      const labelFor = inputId !== '' ? inputId : options.name;
+      if (typeof labelFor === 'string' && labelFor !== '') {
+        label.setAttribute('for', labelFor);
       }
       label.setParent(this);
     }

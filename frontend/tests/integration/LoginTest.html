@@ -38,6 +38,22 @@
     assertTrue(container.querySelector('button[type="submit"]') !== null, 'Submit button missing');
   });
 
+  await test('email and password labels resolve to a real input via for/id', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    const labels = container.querySelectorAll('[data-role="form-field-label"]');
+    assertEquals(labels.length, 2, 'Expected two form field labels (email, password)');
+
+    for (const label of labels) {
+      const forId = label.getAttribute('for');
+      assertTrue(typeof forId === 'string' && forId !== '', 'Label must declare a non-empty for attribute');
+      const target = container.querySelector(`#${CSS.escape(forId)}`);
+      assertTrue(target instanceof HTMLInputElement, `Label "for=${forId}" must resolve to an existing input in the DOM`);
+    }
+  });
+
   await test('submit shows required field errors when empty', async () => {
     const container = makeSandbox();
     const page = new Login(container);

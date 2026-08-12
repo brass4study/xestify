@@ -113,6 +113,8 @@
       assertTrue(tabs.querySelector('[data-role="tabs-bar"]') !== null, 'tabs bar missing');
       assertTrue(input instanceof HTMLInputElement, 'input should be an HTMLInputElement');
       assertTrue(field.querySelector('label') !== null, 'form field label missing');
+      assertTrue(input.id !== '', 'formField debe asignar un id al input cuando falta');
+      assertEquals(field.querySelector('label').getAttribute('for'), input.id, 'label for debe apuntar al id real del input');
       assertTrue(textArea instanceof HTMLTextAreaElement, 'textarea should be a HTMLTextAreaElement');
       assertTrue(select instanceof HTMLSelectElement, 'select should be a HTMLSelectElement');
       assertTrue(email instanceof HTMLInputElement, 'email input should be an HTMLInputElement');
