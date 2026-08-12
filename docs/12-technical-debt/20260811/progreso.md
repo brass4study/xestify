@@ -11,11 +11,11 @@
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 6 | 8 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 6 | 6 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 5 | 8 | 0 |
-| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
+| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 6 | 5 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 9 | 7 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 7 | 5 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **43** | **42** | **0** |
+| **Total** | **85** | **44** | **41** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -89,7 +89,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 04.08 | ⏳ | Menor | Normalización de `fields` reimplementada en 2 capas distintas | | |
 | 04.09 | ⏳ | Menor | `ConfigurationController` no cachea `RequestFactory` | | |
 | 04.10 | ⏳ | Menor | `plugin_update_history` sin política de retención | | |
-| 04.11 | ⏳ | Nit | `demoinventory` doble ping sin propósito | | |
+| 04.11 | ✅ | Nit | `demoinventory` doble ping sin propósito | `fc47b44` | |
 
 ## 05 — Arquitectura SPA
 

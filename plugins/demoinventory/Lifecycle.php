@@ -38,7 +38,6 @@ final class Lifecycle implements PluginLifecycleInterface
     {
         // Demo plugin: update path does not need migrations for additive schema changes.
         $this->pingDatabase();
-        $this->touchUpdateContext($context);
     }
 
     /**
@@ -48,33 +47,10 @@ final class Lifecycle implements PluginLifecycleInterface
     {
         // Demo plugin: rollback path does not need custom restore logic.
         $this->pingDatabase();
-        $this->touchRollbackContext($context);
     }
 
     private function pingDatabase(): void
     {
         $this->pdo->query('SELECT 1');
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function touchUpdateContext(array $context): void
-    {
-        $toVersion = (string) ($context['to_version'] ?? '');
-        if ($toVersion !== '') {
-            $this->pingDatabase();
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function touchRollbackContext(array $context): void
-    {
-        $fromVersion = (string) ($context['from_version'] ?? '');
-        if ($fromVersion !== '') {
-            $this->pingDatabase();
-        }
     }
 }
