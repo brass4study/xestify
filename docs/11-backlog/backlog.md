@@ -851,6 +851,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
   - ✅ Ejecuta `onRollback()` del plugin si existe
   - ✅ Estado plugin vuelve a versión registrada antes del update
   - ✅ Tests: rollback exitoso, error si no hay snapshot previo
+  - ⚠️ Deuda técnica reconocida: `plugin_update_history` no tiene política de retención ni limpieza de snapshots antiguos — crecimiento no acotado. Aceptable para el alcance de TFM/MVP; pendiente de decidir un TTL o límite de filas por plugin si el proyecto avanza más allá de esa escala.
 - **IA Usage:** Lógica de restauración + tests de rollback
 - **Dependencias:** STORY 7.2
 - **Blockers:** Ninguno
