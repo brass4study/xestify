@@ -10,12 +10,12 @@
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 8 | 6 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 8 | 4 | 0 |
-| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 6 | 7 | 0 |
+| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 7 | 4 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 11 | 5 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 8 | 4 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **53** | **32** | **0** |
+| **Total** | **85** | **54** | **31** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -67,7 +67,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 03.04 | ⏳ | Menor | Duplicación `clients`/`products` (~90 líneas) | | |
 | 03.05 | ⏳ | Menor | `EntityController` con `HookDispatcher` por defecto oculto | | |
 | 03.06 | ⏳ | Menor | `PluginBootTest`/`PluginHookRegistrarTest` casi duplicados | | |
-| 03.07 | ⏳ | Menor | `ClientsPluginTest` usa `assert()` nativo de PHP | | |
+| 03.07 | ✅ | Menor | `ClientsPluginTest` usa `assert()` nativo de PHP | `391002d` | |
 | 03.08 | ✅ | Menor | Docblock de `HookDispatcher::register()` engañoso (by reference) | `8e1aaa9` | |
 | 03.09 | ✅ | Menor | `products/Lifecycle.php` import redundante de su propio namespace | `6356ce0` | |
 | 03.10 | ⏳ | Menor | `PluginLifecycleInterface` no refleja `onUpdate`/`onRollback` | | |

@@ -88,50 +88,50 @@ define('PLUGIN_DIR', BASE_PATH . '/plugins/clients');
 
 TestSuite::run('Plugin clients - manifest.json existe', function (): void {
     $path = PLUGIN_DIR . '/manifest.json';
-    assert(file_exists($path), 'manifest.json not found');
+    assertTrue(file_exists($path), 'manifest.json not found');
 });
 
 TestSuite::run('Plugin clients - manifest.json campos requeridos', function (): void {
     $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/manifest.json'), true);
-    assert(is_array($data), 'manifest.json must be a JSON object');
+    assertTrue(is_array($data), 'manifest.json must be a JSON object');
     foreach (['slug', 'name', 'version', 'type', 'core_version'] as $field) {
-        assert(isset($data[$field]) && $data[$field] !== '', "manifest.json missing field: {$field}");
+        assertTrue(isset($data[$field]) && $data[$field] !== '', "manifest.json missing field: {$field}");
     }
-    assert($data['slug'] === 'clients', 'slug must be clients');
-    assert($data['type'] === 'entity', 'type must be entity');
+    assertTrue($data['slug'] === 'clients', 'slug must be clients');
+    assertTrue($data['type'] === 'entity', 'type must be entity');
 });
 
 TestSuite::run('Plugin clients - schema.json existe', function (): void {
     $path = PLUGIN_DIR . '/schema.json';
-    assert(file_exists($path), 'schema.json not found');
+    assertTrue(file_exists($path), 'schema.json not found');
 });
 
 TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/custom_fields/relations', function (): void {
     $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/schema.json'), true);
-    assert(is_array($data), 'schema.json must be a JSON object');
-    assert(isset($data['identities']) && is_array($data['identities']), 'schema.json must have "identities"');
-    assert(isset($data['fields']) && is_array($data['fields']), 'schema.json must have "fields"');
-    assert(isset($data['custom_fields']) && is_array($data['custom_fields']), 'schema.json must have "custom_fields"');
-    assert(isset($data['relations']) && is_array($data['relations']), 'schema.json must have "relations"');
+    assertTrue(is_array($data), 'schema.json must be a JSON object');
+    assertTrue(isset($data['identities']) && is_array($data['identities']), 'schema.json must have "identities"');
+    assertTrue(isset($data['fields']) && is_array($data['fields']), 'schema.json must have "fields"');
+    assertTrue(isset($data['custom_fields']) && is_array($data['custom_fields']), 'schema.json must have "custom_fields"');
+    assertTrue(isset($data['relations']) && is_array($data['relations']), 'schema.json must have "relations"');
 
-    assert(isset($data['identities']['id']), 'schema.json must define identity "id"');
-    assert(($data['identities']['id']['type'] ?? '') === 'uuid', 'identity id must be uuid');
-    assert(($data['identities']['id']['auto_generated'] ?? false) === true, 'identity id must be auto_generated');
-    assert(($data['identities']['id']['editable'] ?? true) === false, 'identity id must be non-editable');
+    assertTrue(isset($data['identities']['id']), 'schema.json must define identity "id"');
+    assertTrue(($data['identities']['id']['type'] ?? '') === 'uuid', 'identity id must be uuid');
+    assertTrue(($data['identities']['id']['auto_generated'] ?? false) === true, 'identity id must be auto_generated');
+    assertTrue(($data['identities']['id']['editable'] ?? true) === false, 'identity id must be non-editable');
 
     $fieldKeys = array_keys($data['fields']);
     foreach (['name', 'email'] as $requiredField) {
-        assert(in_array($requiredField, $fieldKeys, true), "schema.json missing field: {$requiredField}");
-        assert(($data['fields'][$requiredField]['required'] ?? false) === true, "{$requiredField} must be required");
+        assertTrue(in_array($requiredField, $fieldKeys, true), "schema.json missing field: {$requiredField}");
+        assertTrue(($data['fields'][$requiredField]['required'] ?? false) === true, "{$requiredField} must be required");
     }
 
     $customFieldsByKey = [];
     foreach ($data['custom_fields'] as $customField) {
-        assert(is_array($customField), 'each custom_field must be an object');
-        assert(isset($customField['key']) && is_string($customField['key']) && $customField['key'] !== '', 'custom_field.key is required');
-        assert(isset($customField['type']) && is_string($customField['type']) && $customField['type'] !== '', 'custom_field.type is required');
-        assert(isset($customField['required']) && is_bool($customField['required']), 'custom_field.required must be boolean');
-        assert(isset($customField['label']) && is_string($customField['label']) && $customField['label'] !== '', 'custom_field.label is required');
+        assertTrue(is_array($customField), 'each custom_field must be an object');
+        assertTrue(isset($customField['key']) && is_string($customField['key']) && $customField['key'] !== '', 'custom_field.key is required');
+        assertTrue(isset($customField['type']) && is_string($customField['type']) && $customField['type'] !== '', 'custom_field.type is required');
+        assertTrue(isset($customField['required']) && is_bool($customField['required']), 'custom_field.required must be boolean');
+        assertTrue(isset($customField['label']) && is_string($customField['label']) && $customField['label'] !== '', 'custom_field.label is required');
         $customFieldsByKey[$customField['key']] = $customField;
     }
 
@@ -139,23 +139,23 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
     $actualCustomKeys = array_keys($customFieldsByKey);
     sort($expectedCustomKeys);
     sort($actualCustomKeys);
-    assert($actualCustomKeys === $expectedCustomKeys, 'custom_fields keys must match expected set exactly');
+    assertTrue($actualCustomKeys === $expectedCustomKeys, 'custom_fields keys must match expected set exactly');
 
-    assert(($customFieldsByKey['phone']['type'] ?? '') === 'string', 'phone custom_field must be string');
-    assert(($customFieldsByKey['phone']['required'] ?? true) === false, 'phone custom_field must be optional');
+    assertTrue(($customFieldsByKey['phone']['type'] ?? '') === 'string', 'phone custom_field must be string');
+    assertTrue(($customFieldsByKey['phone']['required'] ?? true) === false, 'phone custom_field must be optional');
 
-    assert(($customFieldsByKey['creation_stamp']['type'] ?? '') === 'timestamp', 'creation_stamp must be timestamp');
-    assert(
+    assertTrue(($customFieldsByKey['creation_stamp']['type'] ?? '') === 'timestamp', 'creation_stamp must be timestamp');
+    assertTrue(
         ($customFieldsByKey['creation_stamp']['default'] ?? '') === 'now',
         'creation_stamp default must be "now"'
     );
 
-    assert(($customFieldsByKey['is_active']['type'] ?? '') === 'boolean', 'is_active custom_field must be boolean');
-    assert(($customFieldsByKey['is_active']['default'] ?? null) === true, 'is_active default must be true');
+    assertTrue(($customFieldsByKey['is_active']['type'] ?? '') === 'boolean', 'is_active custom_field must be boolean');
+    assertTrue(($customFieldsByKey['is_active']['default'] ?? null) === true, 'is_active default must be true');
 });
 
 TestSuite::run('Plugin clients - Hooks.php existe', function (): void {
-    assert(file_exists(PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
+    assertTrue(file_exists(PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
 });
 
 TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
@@ -167,8 +167,8 @@ TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
     $hooks->register($dispatcher);
 
     $result = $dispatcher->execute('beforeSave', $ctx);
-    assert($result['slug'] === 'other_entity', 'ctx should pass through unchanged');
-    assert(count($pdo->executedSqls) === 0, 'no SQL should be executed for other entity');
+    assertTrue($result['slug'] === 'other_entity', 'ctx should pass through unchanged');
+    assertTrue(count($pdo->executedSqls) === 0, 'no SQL should be executed for other entity');
 });
 
 TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
@@ -180,8 +180,8 @@ TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
     $hooks->register($dispatcher);
     $result = $dispatcher->execute('beforeSave', $ctx);
 
-    assert($result['data']['email'] === '', 'email should remain empty');
-    assert(count($pdo->executedSqls) === 0, 'no SQL for empty email');
+    assertTrue($result['data']['email'] === '', 'email should remain empty');
+    assertTrue(count($pdo->executedSqls) === 0, 'no SQL for empty email');
 });
 
 TestSuite::run('Hooks - email único permite guardar', function (): void {
@@ -194,8 +194,8 @@ TestSuite::run('Hooks - email único permite guardar', function (): void {
     $hooks->register($dispatcher);
     $result = $dispatcher->execute('beforeSave', $ctx);
 
-    assert($result['data']['email'] === 'nuevo@test.com', 'context preserved');
-    assert(count($pdo->executedSqls) === 1, 'exactly one query executed');
+    assertTrue($result['data']['email'] === 'nuevo@test.com', 'context preserved');
+    assertTrue(count($pdo->executedSqls) === 1, 'exactly one query executed');
 });
 
 TestSuite::run('Hooks - email duplicado lanza HookException', function (): void {
@@ -212,9 +212,9 @@ TestSuite::run('Hooks - email duplicado lanza HookException', function (): void 
         $dispatcher->execute('beforeSave', $ctx);
     } catch (HookException $e) {
         $thrown = true;
-        assert(str_contains($e->getMessage(), 'dup@test.com'), 'message should contain the email');
+        assertTrue(str_contains($e->getMessage(), 'dup@test.com'), 'message should contain the email');
     }
-    assert($thrown, 'HookException must be thrown for duplicate email');
+    assertTrue($thrown, 'HookException must be thrown for duplicate email');
 });
 
 TestSuite::run('Hooks - email único en update excluye el propio registro', function (): void {
@@ -228,14 +228,14 @@ TestSuite::run('Hooks - email único en update excluye el propio registro', func
     $dispatcher->execute('beforeSave', $ctx);
 
     $executedParams = $pdo->executedParams[0] ?? [];
-    assert(isset($executedParams[':id']), 'id param must be bound when id is present');
-    assert($executedParams[':id'] === 'uuid-123', 'id param value is correct');
+    assertTrue(isset($executedParams[':id']), 'id param must be bound when id is present');
+    assertTrue($executedParams[':id'] === 'uuid-123', 'id param value is correct');
 });
 
 TestSuite::run('Installer - instancia sin errores', function (): void {
     $pdo       = new ClientsPdoStub();
     $installer = new Installer($pdo);
-    assert($installer instanceof Installer, 'Installer must instantiate correctly');
+    assertTrue($installer instanceof Installer, 'Installer must instantiate correctly');
 });
 
 TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', function (): void {
@@ -244,9 +244,9 @@ TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', f
     $installer->install();
 
     $sqls = implode(' ', $pdo->executedSqls);
-    assert(!str_contains($sqls, 'system_entities'), 'must not depend on system_entities');
-    assert(str_contains($sqls, 'plugins'), 'must UPDATE plugins');
-    assert(count($pdo->executedSqls) === 2, 'must execute exactly 2 statements');
+    assertTrue(!str_contains($sqls, 'system_entities'), 'must not depend on system_entities');
+    assertTrue(str_contains($sqls, 'plugins'), 'must UPDATE plugins');
+    assertTrue(count($pdo->executedSqls) === 2, 'must execute exactly 2 statements');
 });
 
 TestSuite::run('Installer - install() pasa slug correcto', function (): void {
@@ -255,7 +255,7 @@ TestSuite::run('Installer - install() pasa slug correcto', function (): void {
     $installer->install();
 
     $params = $pdo->executedParams[0] ?? [];
-    assert(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
+    assertTrue(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
 });
 
 TestSuite::run('Installer - schema sembrado en plugins conserva contrato completo', function (): void {
@@ -265,14 +265,14 @@ TestSuite::run('Installer - schema sembrado en plugins conserva contrato complet
 
     $params = $pdo->executedParams[1] ?? [];
     $schemaJson = $params[':schema'] ?? null;
-    assert(is_string($schemaJson) && $schemaJson !== '', 'installer must bind :schema as non-empty JSON string');
+    assertTrue(is_string($schemaJson) && $schemaJson !== '', 'installer must bind :schema as non-empty JSON string');
 
     $decoded = json_decode($schemaJson, true);
-    assert(is_array($decoded), 'seeded schema must be valid JSON object');
-    assert(isset($decoded['fields']) && is_array($decoded['fields']), 'seeded schema must include fields');
-    assert(isset($decoded['identities']) && is_array($decoded['identities']), 'seeded schema must include identities');
-    assert(isset($decoded['custom_fields']) && is_array($decoded['custom_fields']), 'seeded schema must include custom_fields');
-    assert(isset($decoded['relations']) && is_array($decoded['relations']), 'seeded schema must include relations');
+    assertTrue(is_array($decoded), 'seeded schema must be valid JSON object');
+    assertTrue(isset($decoded['fields']) && is_array($decoded['fields']), 'seeded schema must include fields');
+    assertTrue(isset($decoded['identities']) && is_array($decoded['identities']), 'seeded schema must include identities');
+    assertTrue(isset($decoded['custom_fields']) && is_array($decoded['custom_fields']), 'seeded schema must include custom_fields');
+    assertTrue(isset($decoded['relations']) && is_array($decoded['relations']), 'seeded schema must include relations');
 });
 
 // ---------------------------------------------------------------------------
