@@ -42,7 +42,7 @@ final class PluginSchemaReader
             throw new PluginException("Invalid schema.json for plugin '{$slug}': missing fields");
         }
 
-        if (array_is_list($decoded['fields'])) {
+        if ($decoded['fields'] !== [] && array_is_list($decoded['fields'])) {
             throw new PluginException("Invalid schema.json for plugin '{$slug}': fields must be an object");
         }
 

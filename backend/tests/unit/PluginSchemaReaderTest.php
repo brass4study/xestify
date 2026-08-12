@@ -125,6 +125,36 @@ TestSuite::run('read() throws PluginException when schema lacks fields', functio
     }
 });
 
+TestSuite::run('read() accepts an entity schema with an empty fields object', function (): void {
+    $slug = 'entity_empty_fields';
+    $root = createPluginFixture([
+        'slug' => $slug,
+        'name' => 'Empty Fields',
+        'version' => TEST_SCHEMA_VERSION,
+        'type' => 'entity',
+        'core_version' => TEST_SCHEMA_VERSION,
+    ]);
+
+    file_put_contents(
+        $root . '/' . $slug . '/schema.json',
+        (string) json_encode([
+            'entity' => $slug,
+            'version' => TEST_SCHEMA_VERSION,
+            'fields' => new stdClass(),
+        ], JSON_PRETTY_PRINT)
+    );
+
+    try {
+        $reader = new PluginSchemaReader($root);
+        $schema = $reader->read(['slug' => $slug, 'type' => 'entity']);
+
+        assertTrue(is_array($schema), 'Entity schema with no declared fields beyond identities/custom_fields must be accepted');
+        assertEquals([], $schema['fields'], 'Decoded fields must stay an empty array, not be rejected as a list');
+    } finally {
+        removePluginFixture($root);
+    }
+});
+
 TestSuite::run('read() returns decoded schema for entity plugins', function (): void {
     $slug = 'entity_valid_schema';
     $root = createPluginFixture([
