@@ -24,6 +24,7 @@
       entityRecordPage,
       entityTabPage,
       getPageFromHash,
+      HASH_ROUTE_MAP,
       hashFromPage,
       parseEntityRecordPage,
       pluginConfigPage,
@@ -158,6 +159,27 @@
         'entity-tab:clients:record-9:comments', 'La query no debe destruir el contexto de tab');
       assertEquals(getPageFromHash('#/entity/clients/record-9/comments/extra', 'home'),
         'home', 'Las rutas fuera del mapa deben usar fallback');
+    });
+
+    await test('HASH_ROUTE_MAP es la única fuente de las plantillas de hash, sin entradas decorativas', async () => {
+      assertEquals(Object.keys(HASH_ROUTE_MAP).sort(), [
+        'entityCreate', 'entityDetail', 'entityList', 'entityTab',
+        'login', 'home', 'plugins', 'pluginConfig', 'profile', 'userDetail', 'users',
+      ].sort(), 'El mapa no debe acumular plantillas de resultado nunca implementadas (resultEmpty/resultError/resultForbidden)');
+
+      assertEquals(hashFromPage(userDetailPage('u-9')), fillTemplate(HASH_ROUTE_MAP.userDetail, 'u-9'),
+        'El hash de detalle de usuario debe derivar del propio HASH_ROUTE_MAP.userDetail');
+      assertEquals(hashFromPage(pluginConfigPage('comments')), fillTemplate(HASH_ROUTE_MAP.pluginConfig, 'comments'),
+        'El hash de configuración de plugin debe derivar del propio HASH_ROUTE_MAP.pluginConfig');
+      assertEquals(hashFromPage(entityRecordPage('clients', 'record-9')), fillTemplate(HASH_ROUTE_MAP.entityDetail, 'clients', 'record-9'),
+        'El hash de detalle de entidad debe derivar del propio HASH_ROUTE_MAP.entityDetail');
+      assertEquals(hashFromPage(entityTabPage('clients', 'record-9', 'comments')), fillTemplate(HASH_ROUTE_MAP.entityTab, 'clients', 'record-9', 'comments'),
+        'El hash de tab de entidad debe derivar del propio HASH_ROUTE_MAP.entityTab');
+
+      function fillTemplate(template, ...params) {
+        let index = 0;
+        return template.replace(/:[a-zA-Z]+/g, () => encodeURIComponent(params[index++] ?? ''));
+      }
     });
 
     await test('parseEntityRecordPage es la única implementación del parser entity-record:', async () => {

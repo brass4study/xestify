@@ -10,10 +10,12 @@ export const HASH_ROUTE_MAP = Object.freeze({
   entityCreate: '#/entity/:slug/new',
   entityDetail: '#/entity/:slug/:id',
   entityTab: '#/entity/:slug/:id/:tab',
-  resultEmpty: '#/result/empty',
-  resultError: '#/result/error',
-  resultForbidden: '#/result/403',
 });
+
+function fillRouteTemplate(template, ...params) {
+  let index = 0;
+  return template.replace(/:[a-zA-Z]+/g, () => encodeURIComponent(params[index++] ?? ''));
+}
 
 export function entityPage(slug) {
   const normalizedSlug = normalizeSegment(slug);
@@ -173,12 +175,12 @@ function resolveUsersHash(page) {
   }
 
   const userId = page.slice('users:'.length);
-  return userId === '' ? HASH_ROUTE_MAP.users : `#/users/${encodeURIComponent(userId)}`;
+  return userId === '' ? HASH_ROUTE_MAP.users : fillRouteTemplate(HASH_ROUTE_MAP.userDetail, userId);
 }
 
 function resolvePluginsHash(page) {
   const parsed = parsePluginConfigPage(page);
-  return parsed === null ? null : `#/plugins/${encodeURIComponent(parsed.slug)}`;
+  return parsed === null ? null : fillRouteTemplate(HASH_ROUTE_MAP.pluginConfig, parsed.slug);
 }
 
 function resolveEntityHash(page) {
@@ -192,12 +194,12 @@ function resolveEntityHash(page) {
       return HASH_ROUTE_MAP.home;
     }
 
-    return `#/entity/${encodeURIComponent(parsed.slug)}/${encodeURIComponent(parsed.recordId)}/${encodeURIComponent(parsed.tabId)}`;
+    return fillRouteTemplate(HASH_ROUTE_MAP.entityTab, parsed.slug, parsed.recordId, parsed.tabId);
   }
 
   if (page.startsWith('entity-create:')) {
     const slug = page.slice('entity-create:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.home : `#/entity/${encodeURIComponent(slug)}/new`;
+    return slug === '' ? HASH_ROUTE_MAP.home : fillRouteTemplate(HASH_ROUTE_MAP.entityCreate, slug);
   }
 
   if (page.startsWith('entity-record:')) {
@@ -206,12 +208,12 @@ function resolveEntityHash(page) {
       return HASH_ROUTE_MAP.home;
     }
 
-    return `#/entity/${encodeURIComponent(parsed.slug)}/${encodeURIComponent(parsed.recordId)}`;
+    return fillRouteTemplate(HASH_ROUTE_MAP.entityDetail, parsed.slug, parsed.recordId);
   }
 
   if (page.startsWith('entity:')) {
     const slug = page.slice('entity:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.home : `#/entity/${encodeURIComponent(slug)}`;
+    return slug === '' ? HASH_ROUTE_MAP.home : fillRouteTemplate(HASH_ROUTE_MAP.entityList, slug);
   }
 
   return null;
