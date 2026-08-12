@@ -253,6 +253,25 @@
     host.remove();
   });
 
+  await test('renderLogin() resincroniza el hash cuando la sesión expira en una ruta protegida', async () => {
+    const originalHash = window.location.hash;
+    window.history.replaceState(null, '', '#/entity/clients/42');
+
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    try {
+      const controller = new AppController(host);
+      controller.renderLogin();
+
+      assertTrue(host.querySelector('[data-role="login-shell"]') !== null, 'renderLogin() debe renderizar el login');
+      assertEquals(window.location.hash, '#/login', 'El hash debe resincronizarse a #/login aunque el usuario estuviera en una ruta protegida');
+    } finally {
+      host.remove();
+      window.history.replaceState(null, '', originalHash);
+    }
+  });
+
   await test('AppController routes page notifications to shell-main-notifications without using the global overlay', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

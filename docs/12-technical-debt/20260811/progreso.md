@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 11 | 1 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 14 | 2 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 6 | 1 | 0 |
-| **Total** | **85** | **67** | **17** | **1** |
+| **Total** | **85** | **68** | **16** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -102,7 +102,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 05.05 | ✅ | Mayor | `confirm()` llama `modal.show()` dos veces, frágil | `8be4e64` | ⚠️ toca el mismo fichero que 05.01/05.02 |
 | 05.06 | ✅ | Mayor | `HASH_ROUTE_MAP` mayoritariamente decorativo | `902f9b3` | ⚠️ toca el mismo fichero que 05.03 |
 | 05.07 | ✅ | Mayor | Manejo de 401 inconsistente entre llamadas hermanas | `79b6822` | ⚠️ toca el mismo fichero que 05.02/05.03 (`AppController.js`) |
-| 05.08 | ⏳ | Menor | `renderLogin()` no resincroniza hash tras expirar sesión | | |
+| 05.08 | ✅ | Menor | `renderLogin()` no resincroniza hash tras expirar sesión | `dc0b03a` | |
 | 05.09 | ✅ | Menor | `RouteController.resolveFromHash()` código muerto | `a11d6e4` | |
 | 05.10 | ✅ | Menor | Ruta `'ui'` reconocida pero sin handler | `00f6bc3` | |
 | 05.11 | ⏳ | Menor | Token de ruta de plugins rompe convención `namespace:param` | | |

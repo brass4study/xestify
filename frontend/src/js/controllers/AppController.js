@@ -150,7 +150,7 @@ export class AppController {
     this.contentContainer = null;
     this.renderGlobalNotifications();
 
-    if (window.location.hash === '' || window.location.hash === '#') {
+    if (window.location.hash !== '#/login') {
       window.history.replaceState(null, '', '#/login');
     }
 
