@@ -10,8 +10,10 @@ use Xestify\repositories\PluginRepository;
 
 final class ExtensionPluginConfigService
 {
-    public function __construct(private PluginRepository $pluginRepository)
-    {
+    public function __construct(
+        private PluginRepository $pluginRepository,
+        private PluginConfigFieldNormalizer $fieldNormalizer
+    ) {
     }
 
     /**
@@ -19,13 +21,13 @@ final class ExtensionPluginConfigService
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function saveConfig(string $slug, array $schema, array $payload, callable $normalizePayloadRows): array
+    public function saveConfig(string $slug, array $schema, array $payload): array
     {
         if (!isset($payload['fields']) || !is_array($payload['fields'])) {
             throw new InvalidArgumentException('fields must be an array.');
         }
 
-        $rows = $normalizePayloadRows($payload['fields']);
+        $rows = $this->fieldNormalizer->normalizePayloadRows($payload['fields']);
         $nextSchema = $schema;
         $nextSchema['fields'] = $this->buildNextFields($schema, $rows);
         $nextSchema['ui_field_order'] = array_keys($nextSchema['fields']);
@@ -43,7 +45,7 @@ final class ExtensionPluginConfigService
      * @param array<string, mixed> $schema
     * @return array{target_entity: string, fields: array<int, array<string, mixed>>}
      */
-    public function buildConfigPayload(array $schema, callable $normalizeFieldDefinition, callable $orderedRows): array
+    public function buildConfigPayload(array $schema): array
     {
         $rowsByKey = [];
         $fieldDefinitions = isset($schema['fields']) && is_array($schema['fields'])
@@ -55,7 +57,7 @@ final class ExtensionPluginConfigService
                 continue;
             }
 
-            $normalized = $normalizeFieldDefinition([
+            $normalized = $this->fieldNormalizer->normalizeFieldDefinition([
                 'key' => $key,
                 'type' => $definition['type'] ?? 'string',
                 'required' => $definition['required'] ?? false,
@@ -85,7 +87,7 @@ final class ExtensionPluginConfigService
 
         return [
             'target_entity' => $targetEntity,
-            'fields' => $orderedRows($rowsByKey, $schema),
+            'fields' => $this->fieldNormalizer->orderedRows($rowsByKey, $schema),
         ];
     }
 

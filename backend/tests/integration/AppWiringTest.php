@@ -41,6 +41,7 @@ use Xestify\core\Router;
 use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\HookException;
+use Xestify\plugins\application\PluginAdministrationService;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 
@@ -173,6 +174,15 @@ TestSuite::run('boot wiring injects active hooks into EntityService', function (
     }
 
     assertTrue($threw, 'duplicate email must be blocked by the clients beforeSave hook');
+});
+
+TestSuite::run('boot wiring resolves PluginAdministrationService and its dependencies', function (): void {
+    $container = new Container();
+    buildAppRouter($container);
+
+    $service = $container->get(PluginAdministrationService::class);
+
+    assertTrue($service instanceof PluginAdministrationService, 'container must resolve PluginAdministrationService');
 });
 
 echo str_repeat('-', 40) . "\n";

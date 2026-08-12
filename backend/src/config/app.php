@@ -24,6 +24,7 @@ use Xestify\repositories\UserRepository;
 use Xestify\plugins\application\InstalledPluginSchemaValidator;
 use Xestify\plugins\application\ExtensionPluginConfigService;
 use Xestify\plugins\application\PluginAdministrationService;
+use Xestify\plugins\application\PluginConfigFieldNormalizer;
 use Xestify\plugins\application\PluginOutdatedService;
 use Xestify\plugins\application\PluginRollbackService;
 use Xestify\plugins\application\PluginSchemaMergeService;
@@ -187,8 +188,10 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class)
         ));
+        $container->singleton(PluginConfigFieldNormalizer::class, fn() => new PluginConfigFieldNormalizer());
         $container->singleton(ExtensionPluginConfigService::class, fn() => new ExtensionPluginConfigService(
-            $container->get(PluginRepository::class)
+            $container->get(PluginRepository::class),
+            $container->get(PluginConfigFieldNormalizer::class)
         ));
         $container->singleton(PluginAdministrationService::class, fn() => new PluginAdministrationService(
             $container->get(PluginRepository::class),
@@ -197,7 +200,8 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginUpdateService::class),
             $container->get(PluginRollbackService::class),
             $container->get(PluginStatusService::class),
-            $container->get(ExtensionPluginConfigService::class)
+            $container->get(ExtensionPluginConfigService::class),
+            $container->get(PluginConfigFieldNormalizer::class)
         ));
     }
 }

@@ -18,7 +18,8 @@ class PluginAdministrationService
         private PluginUpdateService $pluginUpdateService,
         private PluginRollbackService $pluginRollbackService,
         private PluginStatusService $pluginStatusService,
-        private ExtensionPluginConfigService $extensionPluginConfigService
+        private ExtensionPluginConfigService $extensionPluginConfigService,
+        private PluginConfigFieldNormalizer $fieldNormalizer
     ) {
     }
 
@@ -123,12 +124,7 @@ class PluginAdministrationService
 
         $currentSchema = $this->decodePluginSchema($plugin);
         if (($plugin['plugin_type'] ?? '') === 'extension') {
-            $updated = $this->extensionPluginConfigService->saveConfig(
-                $slug,
-                $currentSchema,
-                $payload,
-                fn(array $rows): array => $this->normalizePayloadRows($rows)
-            );
+            $updated = $this->extensionPluginConfigService->saveConfig($slug, $currentSchema, $payload);
 
             return $this->buildConfigResponse($updated);
         }
@@ -149,7 +145,7 @@ class PluginAdministrationService
             $catalogByKey[$field['key']] = $field;
         }
 
-        $fields = $this->normalizePayloadRows($payload['fields']);
+        $fields = $this->fieldNormalizer->normalizePayloadRows($payload['fields']);
         $compiled = $this->compileEntityConfigRows($fields, $baseByKey, $catalogByKey);
 
         foreach ($baseFields as $base) {
@@ -302,11 +298,7 @@ class PluginAdministrationService
         $pluginType = (string) ($plugin['plugin_type'] ?? '');
 
         if ($pluginType === 'extension') {
-            $configPayload = $this->extensionPluginConfigService->buildConfigPayload(
-                $schema,
-                fn(array $entry): array => $this->normalizeFieldDefinition($entry),
-                fn(array $rowsByKey, array $schemaValue): array => $this->orderedRows($rowsByKey, $schemaValue)
-            );
+            $configPayload = $this->extensionPluginConfigService->buildConfigPayload($schema);
         } else {
             $configPayload = $this->buildEntityConfigPayload($schema);
         }
@@ -339,7 +331,7 @@ class PluginAdministrationService
                     continue;
                 }
 
-                $normalized = $this->normalizeFieldDefinition($entry);
+                $normalized = $this->fieldNormalizer->normalizeFieldDefinition($entry);
                 $normalized['origin'] = (string) ($entry['origin'] ?? 'suggested');
                 $activeCustom[] = $normalized;
             }
@@ -397,7 +389,7 @@ class PluginAdministrationService
             ];
         }
 
-        return ['fields' => $this->orderedRows($rowsByKey, $schema)];
+        return ['fields' => $this->fieldNormalizer->orderedRows($rowsByKey, $schema)];
     }
 
     /**
@@ -412,7 +404,7 @@ class PluginAdministrationService
                 continue;
             }
 
-            $base[] = $this->normalizeFieldDefinition([
+            $base[] = $this->fieldNormalizer->normalizeFieldDefinition([
                 'key' => $key,
                 'type' => $definition['type'] ?? 'string',
                 'required' => $definition['required'] ?? false,
@@ -448,99 +440,10 @@ class PluginAdministrationService
                 continue;
             }
 
-            $field = $this->normalizeFieldDefinition($entry);
+            $field = $this->fieldNormalizer->normalizeFieldDefinition($entry);
             $catalog[$field['key']] = $field;
         }
 
         return array_values($catalog);
-    }
-
-    /**
-     * @param array<string, array<string, mixed>> $rowsByKey
-     * @param array<string, mixed> $schema
-     * @return array<int, array<string, mixed>>
-     */
-    private function orderedRows(array $rowsByKey, array $schema): array
-    {
-        $ordered = [];
-        $order = isset($schema['ui_field_order']) && is_array($schema['ui_field_order'])
-            ? $schema['ui_field_order']
-            : [];
-
-        foreach ($order as $candidate) {
-            if (!is_string($candidate) || !isset($rowsByKey[$candidate])) {
-                continue;
-            }
-
-            $ordered[] = $rowsByKey[$candidate];
-            unset($rowsByKey[$candidate]);
-        }
-
-        foreach ($rowsByKey as $row) {
-            $ordered[] = $row;
-        }
-
-        return $ordered;
-    }
-
-    /**
-     * @param array<int, mixed> $rows
-    * @return array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool}>
-     */
-    private function normalizePayloadRows(array $rows): array
-    {
-        $normalized = [];
-        foreach ($rows as $entry) {
-            if (!is_array($entry)) {
-                throw new InvalidArgumentException('Each field row must be an object.');
-            }
-
-            $field = $this->normalizeFieldDefinition($entry);
-            $normalized[] = [
-                'active' => (bool) ($entry['active'] ?? false),
-                'key' => $field['key'],
-                'type' => $field['type'],
-                'label' => $field['label'],
-                'required' => $field['required'],
-                'summaryView' => (bool) ($entry['summaryView'] ?? true),
-            ];
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-    * @return array{key: string, type: string, required: bool, label: string, summaryView: bool}
-     */
-    private function normalizeFieldDefinition(array $entry): array
-    {
-        $key = trim((string) ($entry['key'] ?? ''));
-        if ($key === '') {
-            throw new InvalidArgumentException('Field key is required.');
-        }
-
-        $type = trim((string) ($entry['type'] ?? 'string'));
-        if ($type === '') {
-            $type = 'string';
-        }
-
-        $allowedTypes = ['string', 'text', 'number', 'boolean', 'date', 'timestamp', 'email', 'select', 'uuid'];
-        if (!in_array($type, $allowedTypes, true)) {
-            throw new InvalidArgumentException("Unsupported field type '{$type}'.");
-        }
-
-        $label = trim((string) ($entry['label'] ?? ''));
-        if ($label === '') {
-            throw new InvalidArgumentException("Field '{$key}' label is required.");
-        }
-
-        return [
-            'key' => $key,
-            'type' => $type,
-            'required' => (bool) ($entry['required'] ?? false),
-            'label' => $label,
-            'summaryView' => (bool) ($entry['summaryView'] ?? true),
-        ];
     }
 }
