@@ -623,7 +623,7 @@ Objetivo: Extensibilidad sin modificar Core.
   - ✅ Caso de pedido anónimo soportado: relación a cliente opcional sin romper validación
   - ✅ `ValidationService` valida siempre contra el schema vivo (el que el admin ha configurado)
   - ✅ Si una relación opcional no se informa en runtime, el registro sigue siendo válido
-  - ✅ `entity_metadata.schema_json` CHECK constraint sigue validando solo `fields` (retrocompatible)
+  - ⚠️ `plugins.schema_json` (tabla consolidada; `entity_metadata` nunca llegó a existir en las migraciones actuales) no tiene ningún `CHECK` de estructura — decisión consciente, no olvido: la validación de forma del schema vive en la capa de aplicación (`SchemaFieldExtractor`/`ValidationService`), igual que `plugin_entity_data.content` ("*content is an untyped JSONB bag; schema validated at application layer*", `002_plugin_entity_data.sql:3`)
   - ✅ Actualizar schema de `clients` según contrato nuevo (`identities` + `fields` + `custom_fields` + `relations`)
   - ✅ Tests: instalador usa plantilla base; ValidationService valida schema vivo; relación opcional no rompe
 - **Dependencias:** STORY 4.4, STORY 3.1
