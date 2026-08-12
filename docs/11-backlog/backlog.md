@@ -1147,7 +1147,7 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
   - ✅ Logo tipo wordmark ("Xestify" estilizado) visible en la pantalla de login
   - ✅ Nombre de la aplicación y una descripción breve visibles junto al logo
   - ✅ `APP_DEBUG` se expone al frontend (vía `/health` o endpoint equivalente) para poder condicionar UI de desarrollo
-  - ✅ Si `APP_DEBUG=true`, aparecen dos botones de acceso rápido: "Entrar como admin" y "Entrar como usuario", que inician sesión con credenciales fijas de los usuarios seed sin que el usuario las escriba
+  - ✅ Solo si `APP_DEBUG=true`, aparecen dos botones de acceso rápido: "Entrar como admin" y "Entrar como usuario", que inician sesión con credenciales fijas de los usuarios seed sin que el usuario las escriba
   - ✅ Nuevo `UserSeeder` para un usuario "normal" (rol no-admin) fijo, análogo al seed de `admin@xestify.local` ya existente
   - ✅ Ambos usuarios seed (admin y normal) quedan protegidos: no editables ni eliminables desde Gestión de Usuarios, para no romper el login automático
   - ✅ Los botones de acceso rápido no aparecen si `APP_DEBUG=false`

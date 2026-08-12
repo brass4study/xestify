@@ -14,8 +14,8 @@
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
-| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 6 | 1 | 0 |
-| **Total** | **85** | **68** | **16** | **1** |
+| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
+| **Total** | **85** | **69** | **15** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -139,4 +139,4 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 07.04 | ✅ | Mayor | `DynamicForm` sin rama `number`/`time`; `inputTime` sin conectar | `4b689aa` | ⚠️ Como efecto colateral, `inputTime` deja de estar sin uso (ver nota en 06.08) |
 | 07.05 | ✅ | Mayor | Dos patrones distintos para página CRUD con formulario | `3052724` | |
 | 07.06 | ✅ | Menor | `Login.js` sin guarda de re-entrada | `74278fc` | |
-| 07.07 | ⏳ | Menor | `UserConfig.js` (908 líneas), demasiada responsabilidad | | |
+| 07.07 | ✅ | Menor | `UserConfig.js` (908 líneas), demasiada responsabilidad | `b4d6ddc` | ⚠️ Solo se corrige la mezcla de tabs/espacios (línea con `value: temporaryPassword,`). Dividir el fichero en colaboradores más pequeños (avatar/`FileReader`, flujo de contraseña temporal) queda fuera de alcance: refactor mayor, no ajuste MENOR trivial. |
