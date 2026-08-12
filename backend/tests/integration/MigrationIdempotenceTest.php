@@ -52,6 +52,43 @@ try {
 }
 
 // ---------------------------------------------------------------------------
+// psql helper — resolves the executable via PSQL_PATH (fallback: 'psql' on
+// PATH) and reuses the same DB_* vars as Database::connection(), instead of
+// a hardcoded Windows path/user/database tied to one developer's machine.
+// ---------------------------------------------------------------------------
+
+/**
+ * @return array{0: array<int, string>, 1: int} [$output, $exitCode]
+ */
+function runPsqlMigration(string $migrationFile): array
+{
+    $psql = $_ENV['PSQL_PATH'] ?? 'psql';
+    $host = $_ENV['DB_HOST'] ?? 'localhost';
+    $port = $_ENV['DB_PORT'] ?? '5432';
+    $name = $_ENV['DB_NAME'] ?? 'xestify_dev';
+    $user = $_ENV['DB_USER'] ?? 'postgres';
+    $pass = $_ENV['DB_PASSWORD'] ?? '';
+
+    if ($pass !== '') {
+        putenv('PGPASSWORD=' . $pass);
+    }
+
+    $cmd = escapeshellarg($psql)
+        . ' -h ' . escapeshellarg($host)
+        . ' -p ' . escapeshellarg($port)
+        . ' -U ' . escapeshellarg($user)
+        . ' -d ' . escapeshellarg($name)
+        . ' -v client_min_messages=warning -f ' . escapeshellarg($migrationFile)
+        . ' 2>&1';
+
+    $output = [];
+    $exitCode = 0;
+    exec($cmd, $output, $exitCode);
+
+    return [$output, $exitCode];
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -64,6 +101,7 @@ TestSuite::run('all migration tables exist after running 001-006', function (): 
         'plugins',
         'plugin_extension_data',
         'plugin_update_history',
+        'configuration',
     ];
     foreach ($tables as $table) {
         $stmt = $pdo->query(
@@ -78,19 +116,18 @@ TestSuite::run('all migration tables exist after running 001-006', function (): 
 });
 
 TestSuite::run('re-running all migrations does not cause errors', function (): void {
-    $psqlPath = 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
     $migrations = [
         '001_users.sql',
         '002_plugin_entity_data.sql',
         '003_plugins.sql',
         '004_plugin_extension_data.sql',
         '005_plugin_update_history.sql',
+        '006_configuration.sql',
     ];
 
     foreach ($migrations as $file) {
         $migrationFile = BASE_PATH . '/database/migrations/' . $file;
-        $cmd = "\"$psqlPath\" -v client_min_messages=warning -U postgres -d xestify_dev -f \"$migrationFile\" 2>&1";
-        exec($cmd, $output, $exitCode);
+        [$output, $exitCode] = runPsqlMigration($migrationFile);
         assertTrue(
             $exitCode === 0,
             "$file should be idempotent; psql exited with code: $exitCode\nOutput: " . implode("\n", $output)
@@ -121,11 +158,9 @@ TestSuite::run('idempotent re-run preserves existing data', function (): void {
     $countBefore = (int) ($rowBefore['cnt'] ?? 0);
     assertTrue($countBefore === 1, 'Test row must be inserted');
 
-    // Re-run 005_plugins.sql (idempotent, CREATE TABLE IF NOT EXISTS).
-    $psqlPath = 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe';
+    // Re-run 003_plugins.sql (idempotent, CREATE TABLE IF NOT EXISTS).
     $migrationFile = BASE_PATH . '/database/migrations/003_plugins.sql';
-    $cmd = "\"$psqlPath\" -v client_min_messages=warning -U postgres -d xestify_dev -f \"$migrationFile\" 2>&1";
-    exec($cmd, $output, $exitCode);
+    [, $exitCode] = runPsqlMigration($migrationFile);
     assertTrue($exitCode === 0, 'Migration re-run must succeed');
 
     // Verify row count after migration.
