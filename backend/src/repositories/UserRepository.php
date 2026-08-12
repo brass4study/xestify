@@ -45,6 +45,34 @@ final class UserRepository
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findByEmail(string $email): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, email, password_hash, roles, name, avatar, created_at
+             FROM users
+             WHERE email = :email AND deleted_at IS NULL'
+        );
+        $this->execute($stmt, [':email' => $email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        if (array_key_exists('avatar', $row)) {
+            $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
+        }
+
+        if (array_key_exists('roles', $row)) {
+            $row['roles'] = $this->normalizeRolesValue($row['roles']);
+        }
+
+        return $row;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function all(): array

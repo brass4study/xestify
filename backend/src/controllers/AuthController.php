@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Xestify\controllers;
 
-use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\core\RequestFactory;
 use Xestify\core\Response;
 use Xestify\core\RuntimePathNormalizer;
+use Xestify\repositories\UserRepository;
 use Xestify\services\JwtService;
 
 class AuthController
 {
-    public function __construct(private JwtService $jwt, private ?RequestFactory $requestFactory = null)
-    {
+    public function __construct(
+        private JwtService $jwt,
+        private UserRepository $users,
+        private ?RequestFactory $requestFactory = null
+    ) {
     }
 
     /**
@@ -39,17 +42,14 @@ class AuthController
             return;
         }
 
-        $pdo  = Database::connection();
-        $stmt = $pdo->prepare('SELECT id, email, password_hash, roles FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1');
-        $stmt->execute([':email' => $email]);
-        $user = $stmt->fetch();
+        $user = $this->users->findByEmail($email);
 
-        if ($user === false || !password_verify($password, (string) $user['password_hash'])) {
+        if ($user === null || !password_verify($password, (string) $user['password_hash'])) {
             Response::make()->unauthorized('Invalid credentials.');
             return;
         }
 
-        $roles = json_decode((string) $user['roles'], true);
+        $roles = $user['roles'];
 
         $token = $this->jwt->encode([
             'sub'   => (string) $user['id'],

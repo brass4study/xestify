@@ -211,6 +211,7 @@ if (!function_exists('xestifyRegisterControllers')) {
     {
         $container->singleton(AuthController::class, fn() => new AuthController(
             $container->get(JwtService::class),
+            $container->get(UserRepository::class),
             $container->get(RequestFactory::class)
         ));
 

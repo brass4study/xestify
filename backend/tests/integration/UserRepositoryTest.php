@@ -120,6 +120,40 @@ TestSuite::run('UserRepository::find and ::all return persisted profile data', f
     }
 });
 
+TestSuite::run('UserRepository::findByEmail returns the matching user with decoded roles', function (): void {
+    $pdo = Database::connection();
+    $email = 'repo-find-email-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $created = insertTestUser($pdo, $email);
+
+    try {
+        $repo = new UserRepository($pdo);
+        $found = $repo->findByEmail($email);
+
+        assertTrue($found !== null, 'findByEmail() should return a user row');
+        assertEquals((string) $created['id'], (string) $found['id'], 'findByEmail() should return the matching user');
+        assertTrue(is_array($found['roles']), 'findByEmail() must decode roles into a PHP array, not a raw JSON string');
+        assertEquals(['operador'], $found['roles'], 'findByEmail() should decode the persisted roles JSON');
+    } finally {
+        cleanupTestUser($pdo, (string) $created['id']);
+    }
+});
+
+TestSuite::run('UserRepository::findByEmail returns null for unknown or soft-deleted email', function (): void {
+    $pdo = Database::connection();
+    $email = 'repo-find-email-deleted-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $created = insertTestUser($pdo, $email);
+
+    try {
+        $repo = new UserRepository($pdo);
+        assertNull($repo->findByEmail('nobody-' . uniqid('', true) . TEST_EMAIL_DOMAIN), 'Unknown email should return null');
+
+        $pdo->prepare('UPDATE users SET deleted_at = NOW() WHERE id = :id')->execute([':id' => $created['id']]);
+        assertNull($repo->findByEmail($email), 'Soft-deleted user email should return null');
+    } finally {
+        cleanupTestUser($pdo, (string) $created['id']);
+    }
+});
+
 TestSuite::run('UserRepository::update persists profile fields', function (): void {
     $pdo = Database::connection();
     $email = 'repo-update-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
