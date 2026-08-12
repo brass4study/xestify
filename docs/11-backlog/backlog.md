@@ -907,6 +907,7 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
   - ✅ `PUT  /api/v1/users/{id}/password` — reset de contraseña (solo admin, genera password aleatoria visible una sola vez)
   - ✅ `DELETE /api/v1/users/{id}` — borrar usuario (solo admin; no puede borrarse a si mismo)
   - ✅ Tests: autorizacion, happy path y casos de error para cada endpoint
+  - ✅ Sin `POST /api/v1/users` (decision de alcance, no olvido): el unico usuario que existe al arrancar es el admin sembrado por `UserSeeder`; la gestion de usuarios permite editar, resetear contraseña y borrar, pero no dar de alta nuevos usuarios
 - **IA Usage:** Controlador + logica de autorizacion + tests de integracion
 - **Dependencias:** STORY 8.1, STORY 1.4
 - **Blockers:** Ninguno
