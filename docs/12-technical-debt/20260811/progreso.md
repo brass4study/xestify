@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 4 | 8 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 3 | 10 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 1 | 15 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **20** | **65** | **0** |
+| **Total** | **85** | **21** | **64** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -95,7 +95,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 05.01 | ⏳ | Mayor | `handleError()` nunca detecta errores de red reales | | |
+| 05.01 | ✅ | Mayor | `handleError()` nunca detecta errores de red reales | `c93c1c4` | ⚠️ toca el mismo fichero que 05.02 y 05.05 |
 | 05.02 | ⏳ | Mayor | Triple canal redundante para notificaciones | | |
 | 05.03 | ⏳ | Mayor | Parser `entity-record:` duplicado en 2 ficheros | | |
 | 05.04 | ⏳ | Mayor | Persistencia de usuario duplicada `StateModel`/`SessionModel` | | |

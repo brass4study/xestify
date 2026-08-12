@@ -2,6 +2,7 @@ import { AppState } from '../models/StateModel.js';
 import { t } from '../models/I18nModel.js';
 import { Modal } from '../views/modules/Modal.js';
 import { component } from '../views/modules/ComponentFactory.js';
+import { ApiError } from '../models/ApiClientModel.js';
 
 export class UiResilienceService {
   static showNotification(payload = {}) {
@@ -162,17 +163,11 @@ export class UiResilienceService {
   }
 
   static handleError(error, fallbackMessage = 'Ha ocurrido un error inesperado.') {
-    if (error && typeof error === 'object') {
-      if (error.type === 'network' || error.code === 'NETWORK_ERROR') {
-        return t('ui.error.network', 'No se pudo completar la solicitud. Revise la conexión e intente nuevamente.');
-      }
-
-      if (typeof error.message === 'string' && error.message.trim() !== '') {
-        return t('ui.error.generic', fallbackMessage);
-      }
+    if (error instanceof ApiError && error.code === 0) {
+      return t('ui.error.network', 'No se pudo completar la solicitud. Revise la conexión e intente nuevamente.');
     }
 
-    return t('ui.error.generic', fallbackMessage);
+    return fallbackMessage;
   }
 
   static confirm(options = {}) {

@@ -12,6 +12,7 @@
 <script type="module">
   import { AppState } from '../../js/models/StateModel.js';
   import { UiResilienceService } from '../../js/services/UiResilienceService.js';
+  import { ApiError } from '../../js/models/ApiClientModel.js';
   import { setLocale, t } from '../../js/models/I18nModel.js';
   import { AppController } from '../../js/controllers/AppController.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
@@ -42,10 +43,14 @@
 
   await test('UiResilienceService normalizes errors into friendly messages', async () => {
     const message = UiResilienceService.handleError(new Error('boom'), 'Fallback local');
-    assertEquals(message, 'Ha ocurrido un error inesperado.');
+    assertEquals(message, 'Fallback local', 'Debe usar el fallbackMessage recibido, no una clave fija del diccionario');
 
-    const networkMessage = UiResilienceService.handleError({ type: 'network' }, 'Fallback local');
+    const networkError = new ApiError(0, 'Network error — server unreachable');
+    const networkMessage = UiResilienceService.handleError(networkError, 'Fallback local');
     assertEquals(networkMessage, 'No se pudo completar la solicitud. Revise la conexión e intente nuevamente.');
+
+    const nonNetworkApiError = UiResilienceService.handleError(new ApiError(500, 'Server error'), 'Fallback local');
+    assertEquals(nonNetworkApiError, 'Fallback local', 'Un ApiError sin code 0 no debe tratarse como error de red');
   });
 
   await test('i18n helper resolves translations and locale fallbacks', async () => {
