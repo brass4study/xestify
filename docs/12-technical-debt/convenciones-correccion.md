@@ -18,7 +18,8 @@ Reglas comunes a cualquier sesión que corrija hallazgos ya auditados. Los promp
    ```
    p. ej. `fix: auditoria [20260811][01.01] password_hash ya no se filtra en /api/v1/users`. La fecha identifica de qué auditoría viene el hallazgo sin abrir el commit — imprescindible en cuanto haya más de una auditoría en el histórico y los IDs se reutilicen entre fechas. Así `git log --oneline --grep "\[20260811\]\[04"` encuentra todo lo tocado de un fichero de esa auditoría de un vistazo, sin depender de que `progreso.md` esté sincronizado.
 8. **Hash del propio commit en la fila `Commit`:** commitea, copia el hash corto (`git log -1 --format=%h`), rellénalo en la fila, y haz **un único** `git commit --amend --no-edit`. No repitas el amend intentando que el hash escrito coincida exacto con el hash final: un commit no puede contener su propio hash (el hash se calcula a partir del contenido, así que cada amend lo cambia de nuevo) — perseguirlo entra en bucle infinito. Un hash "una versión por detrás" es el resultado esperado y suficiente; la referencia exacta siempre está en `git log --oneline --grep`.
-9. **La re-auditoría incremental de cierre es la verificación independiente**: no se limita a confiar en lo que `progreso.md` dice resuelto, relee el código y lo confirma — trátalas como una comprobación doble, no como pasos redundantes.
+9. **Push justo después de completar el paso 8 (commit con el hash ya relleno en `progreso.md`), no al final de la sesión** — un hallazgo no está cerrado hasta que ese push se hace (pide confirmación al usuario en ese momento si tu entorno lo requiere, no la difieras). No dejes commits sin subir acumularse a lo largo de una sesión larga.
+10. **La re-auditoría incremental de cierre es la verificación independiente**: no se limita a confiar en lo que `progreso.md` dice resuelto, relee el código y lo confirma — trátalas como una comprobación doble, no como pasos redundantes.
 
 ## Orden de ataque recomendado
 
