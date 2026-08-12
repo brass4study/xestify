@@ -215,6 +215,22 @@ TestSuite::run('POST create returns 422 for invalid data', function (): void {
     cleanCtrlData();
 });
 
+TestSuite::run('POST create returns a controlled error instead of an uncaught RepositoryException', function (): void {
+    cleanCtrlData();
+    seedCtrlSchema();
+    $ctrl = buildController();
+
+    // Invalid UTF-8 passes StringFieldValidator (only checks is_string) but makes
+    // json_encode() fail inside GenericRepository::encodeJson(), which throws
+    // RepositoryException — previously uncaught by EntityController::create().
+    $result = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => "Bad\xB1\x31"]);
+
+    assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
+    assertTrue(is_int($result['error']['code'] ?? null), 'response must be a controlled JSON error, not an uncaught exception');
+
+    cleanCtrlData();
+});
+
 TestSuite::run('GET index returns list of active records', function (): void {
     cleanCtrlData();
     seedCtrlSchema();

@@ -197,7 +197,7 @@ class EntityController
 
         try {
             $record = $this->service->createRecord($slug, $data, $ownerId);
-        } catch (ValidationException | HookException | EntityServiceException $e) {
+        } catch (ValidationException | HookException | EntityServiceException | RepositoryException $e) {
             $this->respondEntityWriteFailure($e);
             $hasError = true;
         }
