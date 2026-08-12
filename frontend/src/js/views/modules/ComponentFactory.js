@@ -116,7 +116,6 @@ const componentDefinitions = [
 		['th', 'th'], ['td', 'td'], ['main', 'main'], ['aside', 'aside'], ['img', 'img'],
 		['footer', 'footer'], ['i', 'i'],
 	].map(([name, tagName]) => ({ name, ComponentClass: BaseComponent, tagName })),
-	{ name: 'inputCheckbox', ComponentClass: InputCheckComponent, tagName: 'input' },
 ];
 
 const componentFactories = Object.fromEntries(

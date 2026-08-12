@@ -13,9 +13,9 @@
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 13 | 3 | 0 |
-| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 10 | 2 | 0 |
+| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 6 | 1 | 0 |
-| **Total** | **85** | **65** | **19** | **1** |
+| **Total** | **85** | **66** | **18** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -123,7 +123,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 06.05 | ✅ | Menor | `variant: 'ghost'` de `Button` inerte | `14d7d0d` | |
 | 06.06 | ✅ | Menor | `id` del título del modal fijado dos veces | `f0b2300` | ⚠️ Resuelto como efecto colateral de 06.01 (id ahora generado dinámicamente) |
 | 06.07 | ✅ | Menor | Rama muerta en `Breadcrumb.resolveItems` | `364d7a7` | |
-| 06.08 | ⏳ | Menor | Componentes registrados sin uso real (`inputRadio`, `inputTime`...) | | ⚠️ `inputTime` ya no aplica: conectado en `07.04` (`DynamicForm` ahora lo usa para `type: 'time'`). Queda `inputRadio` y el resto. |
+| 06.08 | ✅ | Menor | Componentes registrados sin uso real (`inputRadio`, `inputTime`...) | `96f6eca` | ⚠️ `inputTime` ya no aplica (ver `07.04`). Se elimina `inputCheckbox` (`ComponentFactory.js`): alias duplicado de `inputCheck` sin `category`/`description` y sin ninguna referencia ni siquiera en tests — código muerto real. `inputRadio`/`spinner`/`skeleton` NO se tocan: siguen sin consumidor en `views/pages`/`views/modules`, pero tienen metadatos de catálogo completos y cobertura de smoke-test (`ComponentsTest.html`) — son infraestructura de toolkit deliberada, no descuido, tal como concluye la propia auditoría. |
 | 06.09 | ⏳ | Menor | `PageLayout` acoplado al DOM interno de `PageHeaderComponent` | | |
 | 06.10 | ✅ | Nit | `setHtml()`/`options.html` sin uso, vector XSS latente | `36d45f1` | |
 | 06.11 | ✅ | Nit | `aria-disabled` redundante con `disabled` nativo | `21b48e3` | |
