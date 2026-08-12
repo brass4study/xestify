@@ -24,7 +24,8 @@ final class PluginUpdateService
         private PluginSchemaCodec $schemaCodec,
         private PluginSchemaMergeService $schemaMergeService,
         private PluginLifecycleInvoker $lifecycleInvoker,
-        private InstalledPluginSchemaValidator $installedSchemaValidator
+        private InstalledPluginSchemaValidator $installedSchemaValidator,
+        private PluginTypeGuard $typeGuard = new PluginTypeGuard()
     ) {
     }
 
@@ -50,7 +51,7 @@ final class PluginUpdateService
             }
 
             $manifest = $this->pluginSource->readValidatedManifest($slug);
-            $this->ensureInstalledTypeMatchesManifest($current, $manifest);
+            $this->typeGuard->assertTypeUnchanged($current, $manifest);
 
             $fromVersion = (string) $current['version'];
             $toVersion = (string) $manifest['version'];
@@ -110,20 +111,6 @@ final class PluginUpdateService
             }
 
             throw $e;
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $current
-     * @param array<string, mixed> $manifest
-     */
-    private function ensureInstalledTypeMatchesManifest(array $current, array $manifest): void
-    {
-        if ((string) $current['plugin_type'] !== (string) $manifest['type']) {
-            throw new DomainException(
-                "Plugin '{$manifest['slug']}' cannot change type from '{$current['plugin_type']}'"
-                . " to '{$manifest['type']}'."
-            );
         }
     }
 }

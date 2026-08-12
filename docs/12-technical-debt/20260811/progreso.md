@@ -11,11 +11,11 @@
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 10 | 3 | 1 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 9 | 4 | 0 |
-| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
+| [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 9 | 2 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 11 | 1 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **72** | **12** | **1** |
+| **Total** | **85** | **73** | **11** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -84,7 +84,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 04.03 | ✅ | Mayor | Comments: sin control de propiedad en `PUT` (= **P5**) | `2250b73` | |
 | 04.04 | ✅ | Mayor | Atomicidad inconsistente: `syncAll`/`activate`/`deactivate` sin transacción | `307e7be` | |
 | 04.05 | ✅ | Mayor | `PluginAdministrationService` no es fachada limpia (closures) | `d3f6e38` | |
-| 04.06 | ⏳ | Menor | `ensureInstalledTypeMatchesManifest()` duplicado en 2 servicios | | |
+| 04.06 | ✅ | Menor | `ensureInstalledTypeMatchesManifest()` duplicado en 2 servicios | `bc7f745` | |
 | 04.07 | ⏳ | Menor | `normalizeForComparison` duplicado entre 2 clases hermanas | | |
 | 04.08 | ⏳ | Menor | Normalización de `fields` reimplementada en 2 capas distintas | | |
 | 04.09 | ✅ | Menor | `ConfigurationController` no cachea `RequestFactory` | `e904afd` | |

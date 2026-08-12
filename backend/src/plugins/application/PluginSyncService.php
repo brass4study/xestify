@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\application;
 
-use DomainException;
 use PDO;
 use Throwable;
 use Xestify\plugins\infrastructure\PluginSchemaCodec;
@@ -25,7 +24,8 @@ final class PluginSyncService
         private PluginRepository $pluginRepository,
         private PluginLifecycleInvoker $lifecycleInvoker,
         private PluginSchemaCodec $schemaCodec,
-        private InstalledPluginSchemaValidator $installedSchemaValidator
+        private InstalledPluginSchemaValidator $installedSchemaValidator,
+        private PluginTypeGuard $typeGuard = new PluginTypeGuard()
     ) {
     }
 
@@ -103,7 +103,7 @@ final class PluginSyncService
             ];
         }
 
-        $this->ensureInstalledTypeMatchesManifest($existing, $manifest);
+        $this->typeGuard->assertTypeUnchanged($existing, $manifest);
 
         $installedVersion = (string) $existing['version'];
         $availableVersion = (string) $manifest['version'];
@@ -132,20 +132,6 @@ final class PluginSyncService
                 ? "Plugin '{$slug}' has an update available."
                 : "Plugin '{$slug}' is already synchronized.",
         ];
-    }
-
-    /**
-     * @param array<string, mixed> $existing
-     * @param array<string, mixed> $manifest
-     */
-    private function ensureInstalledTypeMatchesManifest(array $existing, array $manifest): void
-    {
-        if ((string) $existing['plugin_type'] !== (string) $manifest['type']) {
-            throw new DomainException(
-                "Plugin '{$manifest['slug']}' cannot change type from '{$existing['plugin_type']}'"
-                . " to '{$manifest['type']}'."
-            );
-        }
     }
 
     /**
