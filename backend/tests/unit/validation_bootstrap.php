@@ -9,7 +9,6 @@ require_once BASE_PATH . '/src/validation/FieldValidatorRegistry.php';
 require_once BASE_PATH . '/src/validation/schema/SchemaFieldExtractor.php';
 require_once BASE_PATH . '/src/validation/support/ValidationRules.php';
 require_once BASE_PATH . '/src/validation/validators/StringFieldValidator.php';
-require_once BASE_PATH . '/src/validation/validators/TextFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/NumberFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/BooleanFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/DateFieldValidator.php';

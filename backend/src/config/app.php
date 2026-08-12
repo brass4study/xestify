@@ -53,7 +53,6 @@ use Xestify\validation\validators\EmailFieldValidator;
 use Xestify\validation\validators\NumberFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
-use Xestify\validation\validators\TextFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
 
 if (!function_exists('xestifyRegisterCoreHttpServices')) {
@@ -85,7 +84,7 @@ if (!function_exists('xestifyRegisterEntityServices')) {
         $container->singleton(ValidationRules::class, fn() => new ValidationRules());
         $container->singleton(FieldValidatorRegistry::class, fn() => new FieldValidatorRegistry([
             'string' => new StringFieldValidator(),
-            'text' => new TextFieldValidator(),
+            'text' => new StringFieldValidator('text'),
             'number' => new NumberFieldValidator(),
             'boolean' => new BooleanFieldValidator(),
             'date' => new DateFieldValidator(),
