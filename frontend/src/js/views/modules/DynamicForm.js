@@ -241,6 +241,28 @@ export class DynamicForm {
 			return input.setId(this.fieldId(field.name));
 		}
 
+		if (type === 'time') {
+			const input = component.create('inputTime', {
+				name: field.name,
+				value: field.default ?? '',
+			});
+			return input.setId(this.fieldId(field.name));
+		}
+
+		if (type === 'number') {
+			const input = component.create('inputNumber', {
+				name: field.name,
+				value: field.default ?? '',
+			});
+			if (typeof field.min === 'number') {
+				input.setAttributes({ min: field.min });
+			}
+			if (typeof field.max === 'number') {
+				input.setAttributes({ max: field.max });
+			}
+			return input.setId(this.fieldId(field.name));
+		}
+
 		const input = component.create('inputText', {
 			name: field.name,
 			value: field.default ?? '',

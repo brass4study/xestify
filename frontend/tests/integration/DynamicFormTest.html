@@ -46,6 +46,7 @@
         { name: 'amount', label: 'Amount', type: 'number', min: 1, max: 100 },
         { name: 'email', label: 'Email', type: 'email', required: true },
         { name: 'due_date', label: 'Due Date', type: 'date', required: true },
+        { name: 'start_time', label: 'Start time', type: 'time' },
         { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'is_active', label: 'Active', type: 'boolean' }
       ]
@@ -88,9 +89,13 @@
 
     assertTrue(sandbox.querySelector('input[name="title"][type="text"]') !== null, 'string input missing');
     assertTrue(sandbox.querySelector('textarea[name="description"]') !== null, 'text textarea missing');
-    assertTrue(sandbox.querySelector('input[name="amount"]') !== null, 'number input missing');
+    const amountInput = sandbox.querySelector('input[name="amount"][type="number"]');
+    assertTrue(amountInput !== null, 'number input missing native type="number"');
+    assertEquals(amountInput.getAttribute('min'), '1', 'number input should carry min from schema');
+    assertEquals(amountInput.getAttribute('max'), '100', 'number input should carry max from schema');
     assertTrue(sandbox.querySelector('input[name="email"][type="email"]') !== null, 'email input missing');
     assertTrue(sandbox.querySelector('input[name="due_date"][type="date"]') !== null, 'date input missing');
+    assertTrue(sandbox.querySelector('input[name="start_time"][type="time"]') !== null, 'time input missing native type="time"');
     assertTrue(sandbox.querySelector('select[name="status"]') !== null, 'select input missing');
     const booleanSwitch = sandbox.querySelector('[data-role="input-switch"] input[name="is_active"]');
     assertTrue(booleanSwitch !== null, 'boolean switch missing');
@@ -106,6 +111,7 @@
     setInputValue('input[name="amount"]', '25');
     setInputValue('input[name="email"]', 'admin@xestify.local');
     setInputValue('input[name="due_date"]', '2026-05-01');
+    setInputValue('input[name="start_time"]', '09:30');
     setInputValue('select[name="status"]', 'published');
     setCheckbox('input[name="is_active"]', true);
 
@@ -115,6 +121,7 @@
     assertEquals(data.amount, 25);
     assertEquals(data.email, 'admin@xestify.local');
     assertEquals(data.due_date, '2026-05-01');
+    assertEquals(data.start_time, '09:30');
     assertEquals(data.status, 'published');
     assertEquals(data.is_active, true);
   });

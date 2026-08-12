@@ -10,6 +10,7 @@ import { InputDateComponent } from '../components/InputDate.js';
 import { InputEmailComponent } from '../components/InputEmail.js';
 import { InputFileComponent } from '../components/InputFile.js';
 import { InputHiddenComponent } from '../components/InputHidden.js';
+import { InputNumberComponent } from '../components/InputNumber.js';
 import { InputPasswordComponent } from '../components/InputPassword.js';
 import { InputRadioComponent } from '../components/InputRadio.js';
 import { InputSelectComponent } from '../components/InputSelect.js';
@@ -72,6 +73,8 @@ const componentDefinitions = [
 		'Campo de fecha'),
 	defineComponent('inputTime', InputTimeComponent, 'input', 'dataEntry',
 		'Campo de hora'),
+	defineComponent('inputNumber', InputNumberComponent, 'input', 'dataEntry',
+		'Campo numérico'),
 	defineComponent('inputEmail', InputEmailComponent, 'input', 'dataEntry',
 		'Campo de email'),
 	defineComponent('inputFile', InputFileComponent, 'input', 'dataEntry',

@@ -25,10 +25,14 @@ Construir UI de entidades sin hardcodear formularios por negocio.
 - number -> input number
 - boolean -> switch box
 - date -> date picker
+- time -> time picker
 - select -> select
+- timestamp -> date time picker
+
+Roadmap, no implementado en `DynamicForm`/`DynamicTable` (sin fecha ni issue asociado):
+
 - object -> subform
 - array -> repeater
-- timestamp -> date time picker
 
 ## Estructura de schema (ejemplo)
 
