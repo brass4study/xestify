@@ -51,14 +51,14 @@
       await router.start('entity:clients');
 
       const navigationCount = visited.length;
-      await router.navigate('#/profile', { notify: false });
+      await router.navigate(getPageFromHash('#/profile', router.fallbackPage), { updateHash: true, notify: false });
       assertEquals(window.location.hash, '#/profile', 'Debe actualizar el hash sin despachar la página');
       assertEquals(visited.length, navigationCount, 'notify false no debe invocar onNavigate');
 
-      await router.navigate('#/entity/clients/record-9/comments');
+      await router.navigate(getPageFromHash('#/entity/clients/record-9/comments', router.fallbackPage), { updateHash: true });
 
       assertEquals(visited[0], 'users:user-7', 'Debe resolver la entrada directa por hash');
-      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe aceptar hashes públicos en navigate');
+      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe navegar a un token de página resuelto a partir de un hash público');
       assertEquals(window.location.hash, '#/entity/clients/record-9/comments', 'Debe sincronizar el hash programático');
 
       router.stop();
@@ -81,8 +81,8 @@
 
       window.history.replaceState(null, '', '#/entity/clients/record-9');
       await router.start('home');
-      await router.navigate('#/entity/clients/record-9/comments');
-      await router.navigate('#/profile');
+      await router.navigate(getPageFromHash('#/entity/clients/record-9/comments', router.fallbackPage), { updateHash: true });
+      await router.navigate(getPageFromHash('#/profile', router.fallbackPage), { updateHash: true });
 
       const backNavigation = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }));
       window.history.back();

@@ -34,16 +34,12 @@ export class RouteController {
 	}
 
 	async navigate(page, options = {}) {
-		const isHashTarget = typeof page === 'string' && page.startsWith('#');
-		const resolvedPage = isHashTarget ? this.resolvePage(page, this.fallbackPage) : page;
-		const shouldUpdateHash = options.updateHash === true || (isHashTarget && options.updateHash !== false);
-
-		if (shouldUpdateHash) {
-			this.updateHash(resolvedPage, options.replaceHash === true);
+		if (options.updateHash === true) {
+			this.updateHash(page, options.replaceHash === true);
 		}
 
 		if (options.notify !== false) {
-			await this.onNavigate(resolvedPage, { updateHash: false });
+			await this.onNavigate(page, { updateHash: false });
 		}
 	}
 
