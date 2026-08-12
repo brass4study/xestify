@@ -13,9 +13,9 @@
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 5 | 8 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 6 | 5 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 10 | 6 | 0 |
-| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 7 | 5 | 0 |
+| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 8 | 4 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **47** | **38** | **0** |
+| **Total** | **85** | **48** | **37** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -125,7 +125,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 06.07 | ✅ | Menor | Rama muerta en `Breadcrumb.resolveItems` | `364d7a7` | |
 | 06.08 | ⏳ | Menor | Componentes registrados sin uso real (`inputRadio`, `inputTime`...) | | ⚠️ `inputTime` ya no aplica: conectado en `07.04` (`DynamicForm` ahora lo usa para `type: 'time'`). Queda `inputRadio` y el resto. |
 | 06.09 | ⏳ | Menor | `PageLayout` acoplado al DOM interno de `PageHeaderComponent` | | |
-| 06.10 | ⏳ | Nit | `setHtml()`/`options.html` sin uso, vector XSS latente | | |
+| 06.10 | ✅ | Nit | `setHtml()`/`options.html` sin uso, vector XSS latente | `36d45f1` | |
 | 06.11 | ✅ | Nit | `aria-disabled` redundante con `disabled` nativo | `21b48e3` | |
 | 06.12 | ⏳ | Nit | Breadcrumb dropdown solo cierra con `mouseleave` | | |
 

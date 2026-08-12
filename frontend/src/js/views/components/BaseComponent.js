@@ -17,14 +17,6 @@ export class BaseComponent extends HTMLElement {
     return this;
   }
 
-  setHtml(html) {
-    this.textContent = '';
-    if (typeof html === 'string' && html !== '') {
-      this.insertAdjacentHTML('beforeend', html);
-    }
-    return this;
-  }
-
   setClassName(className) {
     this.className = String(className ?? '');
     return this;
@@ -196,10 +188,6 @@ export function createElement(tagName, options = {}) {
 
   if (typeof options.text === 'string') {
     element.textContent = options.text;
-  }
-
-  if (typeof options.html === 'string') {
-    element.innerHTML = options.html;
   }
 
   if (options.hidden === true) {
