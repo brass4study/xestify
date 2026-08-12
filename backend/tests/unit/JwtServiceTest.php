@@ -48,6 +48,21 @@ TestSuite::run('token is 3-segment string', function (): void {
 });
 
 // -----------------------------------------------------------------------
+// base64UrlDecode padding (hallazgo 01.06)
+// -----------------------------------------------------------------------
+
+TestSuite::run('base64UrlDecode pads correctly for every base64 remainder length', function (): void {
+    $jwt = new JwtService(JWT_TEST_SECRET, JWT_TEST_TTL);
+    $method = new ReflectionMethod(JwtService::class, 'base64UrlDecode');
+
+    foreach (['f', 'fo', 'foo', 'foob', 'fooba', 'foobar', str_repeat('x', 83)] as $original) {
+        $encoded = rtrim(strtr(base64_encode($original), '+/', '-_'), '=');
+        $decoded = $method->invoke($jwt, $encoded);
+        assertEquals($original, $decoded, "base64UrlDecode should recover the original value for input of length " . strlen($encoded));
+    }
+});
+
+// -----------------------------------------------------------------------
 // Invalid signature
 // -----------------------------------------------------------------------
 

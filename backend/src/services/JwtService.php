@@ -91,7 +91,11 @@ class JwtService
 
     private function base64UrlDecode(string $data): string
     {
-        $padded = str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT);
-        return (string) base64_decode($padded);
+        $remainder = strlen($data) % 4;
+        if ($remainder > 0) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+
+        return (string) base64_decode(strtr($data, '-_', '+/'));
     }
 }
