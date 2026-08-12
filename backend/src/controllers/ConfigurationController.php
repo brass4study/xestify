@@ -107,11 +107,11 @@ class ConfigurationController
 
     private function requestFactory(): RequestFactory
     {
-        if ($this->requestFactory instanceof RequestFactory) {
-            return $this->requestFactory;
+        if (!$this->requestFactory instanceof RequestFactory) {
+            $this->requestFactory = new RequestFactory(new RuntimePathNormalizer());
         }
 
-        return new RequestFactory(new RuntimePathNormalizer());
+        return $this->requestFactory;
     }
 }
 

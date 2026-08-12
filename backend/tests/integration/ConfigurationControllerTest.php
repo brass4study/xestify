@@ -8,6 +8,8 @@ require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/ConfigurationController.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
+require_once BASE_PATH . '/src/core/RequestFactory.php';
+require_once BASE_PATH . '/src/core/RuntimePathNormalizer.php';
 require_once BASE_PATH . '/src/repositories/ConfigurationRepository.php';
 
 use Xestify\controllers\ConfigurationController;
@@ -140,6 +142,16 @@ TestSuite::run('update persists ui-preferences for admins', function (): void {
 
     assertTrue($result['ok'] ?? false, ASSERT_RESPONSE_OK);
     assertEquals('side', $result['data']['value']['navigationMode'] ?? null, 'Navigation mode mismatch');
+});
+
+TestSuite::run('requestFactory() caches the instance across calls like its sibling controllers', function (): void {
+    $controller = new ConfigurationController(new TestConfigurationRepository());
+    $method = new ReflectionMethod(ConfigurationController::class, 'requestFactory');
+
+    $first = $method->invoke($controller);
+    $second = $method->invoke($controller);
+
+    assertTrue($first === $second, 'requestFactory() must return the same cached RequestFactory instance on repeated calls');
 });
 
 TestSuite::summary();
