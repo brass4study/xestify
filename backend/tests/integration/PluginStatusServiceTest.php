@@ -122,6 +122,63 @@ PHP;
     }
 });
 
+TestSuite::run('activate() rolls back status when onActivate fails', function () use ($pdo): void {
+    $slug = 'status' . bin2hex(random_bytes(3));
+    $lifecycle = <<<PHP
+<?php
+declare(strict_types=1);
+namespace Xestify\plugins\\{$slug};
+use PDO;
+use RuntimeException;
+use Xestify\plugins\PluginLifecycleInterface;
+final class Lifecycle implements PluginLifecycleInterface {
+    public function __construct(private PDO \$pdo) {}
+    public function onInstall(): void {}
+    public function onActivate(): void { throw new RuntimeException('activate failed on purpose'); }
+    public function onDeactivate(): void {}
+}
+PHP;
+    $root = createPluginFixture([
+        'slug' => $slug,
+        'name' => 'Status Plugin',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+    ], false, false, null, $lifecycle);
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
+    ]);
+
+    try {
+        $service = buildPluginStatusService($root, $pdo);
+        $threw = false;
+        try {
+            $service->activate($slug);
+        } catch (RuntimeException $e) {
+            $threw = str_contains($e->getMessage(), 'on purpose');
+        }
+
+        assertTrue($threw, 'activate() should bubble lifecycle failure');
+
+        $stmt = $pdo->prepare(STATUS_QUERY);
+        $stmt->execute([':slug' => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertEquals(
+            'inactive',
+            $row['status'] ?? null,
+            'status must roll back to inactive when onActivate fails (04.04)'
+        );
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();
 exit(TestSuite::exitCode());

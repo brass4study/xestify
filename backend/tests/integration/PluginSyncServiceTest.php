@@ -64,6 +64,52 @@ TestSuite::run('syncAll() registers new plugin and returns summary', function ()
     }
 });
 
+TestSuite::run('syncAll() rolls back plugin registration when onInstall fails', function () use ($pdo): void {
+    $slug = 'test_sync_install_fail_' . bin2hex(random_bytes(3));
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Install Fails',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $lifecycle = <<<PHP
+<?php
+declare(strict_types=1);
+namespace Xestify\plugins\\{$slug};
+use PDO;
+use RuntimeException;
+use Xestify\plugins\PluginLifecycleInterface;
+final class Lifecycle implements PluginLifecycleInterface {
+    public function __construct(private PDO \$pdo) {}
+    public function onInstall(): void { throw new RuntimeException('install failed on purpose'); }
+    public function onActivate(): void {}
+    public function onDeactivate(): void {}
+}
+PHP;
+    $root = createPluginFixture($manifest, false, false, null, $lifecycle);
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        assertEquals(1, $result['summary']['errors'], 'onInstall failure should be reported as sync error');
+        assertEquals('error', $result['plugins'][$slug]['result'], 'Plugin result should be error');
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug');
+        $stmt->execute([SYNC_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        assertEquals(
+            '0',
+            (string) ($row['cnt'] ?? '1'),
+            'Plugin row must not persist when onInstall fails, or it is stuck uninitialized forever (04.04)'
+        );
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
 TestSuite::run('syncAll() preserves installed runtime for existing outdated plugin', function () use ($pdo): void {
     $slug = 'test_sync_old_' . bin2hex(random_bytes(3));
     $pdo->prepare(

@@ -22,6 +22,7 @@ $pluginsDir = dirname(__DIR__, 2) . '/plugins';
 $pdo = Database::connection();
 $pluginRepository = new PluginRepository($pdo, new PluginSchemaCodec());
 $pluginSyncService = new PluginSyncService(
+    $pdo,
     new PluginSourceService(
         new PluginDiscoveryService($pluginsDir),
         new PluginManifestReader($pluginsDir),

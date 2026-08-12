@@ -155,6 +155,7 @@ if (!function_exists('xestifyRegisterPluginServices')) {
         $container->singleton(PluginSchemaMergeService::class, fn() => new PluginSchemaMergeService());
         $container->singleton(InstalledPluginSchemaValidator::class, fn() => new InstalledPluginSchemaValidator());
         $container->singleton(PluginSyncService::class, fn() => new PluginSyncService(
+            $container->get(Database::class),
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class),
             $container->get(PluginLifecycleInvoker::class),
@@ -178,6 +179,7 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginLifecycleInvoker::class)
         ));
         $container->singleton(PluginStatusService::class, fn() => new PluginStatusService(
+            $container->get(Database::class),
             $container->get(PluginRepository::class),
             $container->get(PluginLifecycleInvoker::class)
         ));

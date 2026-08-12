@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\application;
 
 use DomainException;
+use PDO;
 use Throwable;
 use Xestify\plugins\infrastructure\PluginSchemaCodec;
 use Xestify\plugins\infrastructure\PluginSourceService;
@@ -19,6 +20,7 @@ final class PluginSyncService
     private const RESULT_ERROR = 'error';
 
     public function __construct(
+        private PDO $pdo,
         private PluginSourceService $pluginSource,
         private PluginRepository $pluginRepository,
         private PluginLifecycleInvoker $lifecycleInvoker,
@@ -75,8 +77,20 @@ final class PluginSyncService
         $existing = $this->pluginRepository->findBySlug($slug);
 
         if ($existing === null) {
-            $this->pluginRepository->insert($manifest, $schema);
-            $this->lifecycleInvoker->onInstall($slug);
+            $this->pdo->beginTransaction();
+
+            try {
+                $this->pluginRepository->insert($manifest, $schema);
+                $this->lifecycleInvoker->onInstall($slug);
+
+                $this->pdo->commit();
+            } catch (Throwable $e) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+
+                throw $e;
+            }
 
             return [
                 'slug' => $slug,

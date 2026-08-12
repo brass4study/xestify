@@ -51,6 +51,7 @@ function buildBootSyncService(\PDO $pdo): PluginSyncService
     );
 
     return new PluginSyncService(
+        $pdo,
         $source,
         $repository,
         new PluginLifecycleInvoker(new PluginClassLoader(PLUGINS_PATH, $pdo)),
@@ -62,6 +63,7 @@ function buildBootSyncService(\PDO $pdo): PluginSyncService
 function buildBootStatusService(\PDO $pdo): PluginStatusService
 {
     return new PluginStatusService(
+        $pdo,
         new PluginRepository($pdo, new PluginSchemaCodec()),
         new PluginLifecycleInvoker(new PluginClassLoader(PLUGINS_PATH, $pdo))
     );

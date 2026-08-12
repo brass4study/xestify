@@ -47,6 +47,7 @@ function buildPluginLifecycleInvoker(string $root, \PDO $pdo): PluginLifecycleIn
 function buildPluginSyncService(string $root, \PDO $pdo): PluginSyncService
 {
     return new PluginSyncService(
+        $pdo,
         buildPluginSourceService($root, $pdo),
         buildPluginRepository($pdo),
         buildPluginLifecycleInvoker($root, $pdo),
@@ -90,6 +91,7 @@ function buildPluginOutdatedService(string $root, \PDO $pdo): PluginOutdatedServ
 function buildPluginStatusService(string $root, \PDO $pdo): PluginStatusService
 {
     return new PluginStatusService(
+        $pdo,
         buildPluginRepository($pdo),
         buildPluginLifecycleInvoker($root, $pdo)
     );
