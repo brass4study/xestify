@@ -25,7 +25,8 @@ class HookDispatcher
      * Register a callback for a given hook name.
      *
      * @param string   $hook     Hook name, e.g. 'beforeSave', 'afterSave'.
-     * @param callable $callback Callback receiving a context array (passed by reference).
+     * @param callable $callback Callback receiving a context array; any changes must be
+     *                           returned (not mutated in place) to be propagated.
      * @param int      $priority Lower value = executed first. Default 10.
      */
     public function register(string $hook, callable $callback, int $priority = 10): void
