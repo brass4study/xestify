@@ -71,17 +71,6 @@ Registros de negocio.
 - updated_at (timestamp)
 - deleted_at (timestamp null)
 
-## plugin_hooks
-
-Registro de hooks activos por plugin.
-
-- id (uuid)
-- slug (text)
-- target_entity_slug (text)
-- hook_name (text)
-- priority (integer)
-- enabled (boolean)
-
 ## plugin_extension_data
 
 Tabla generica para datos de plugins tipo extension.

@@ -49,7 +49,7 @@ Demostrar que:
 - ✅ AuthMiddleware
 
 **EPIC 2 - Datos**
-- ✅ Tablas core: users, plugin_entity_data, plugins, plugin_hooks, plugin_extension_data
+- ✅ Tablas core: users, plugin_entity_data, plugins, plugin_extension_data
 - ✅ GenericRepository JSONB
 
 **EPIC 3 - CRUD Dinámico**

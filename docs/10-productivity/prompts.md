@@ -182,22 +182,7 @@ STORY 2.4 — Crear tabla plugins_registry con:
 
 ---
 
-### STORY 2.5 — Tabla plugin_hook_registry
-**Prompt:**
-```
-STORY 2.5 — Crear tabla plugin_hook_registry con:
-- id UUID PK, plugin_slug VARCHAR(100), target_entity_slug VARCHAR(100), hook_name VARCHAR(50), priority INT DEFAULT 10, enabled BOOL DEFAULT true
-- Índice compuesto (target_entity_slug, hook_name)
-- Sin FK a plugins_registry (desacoplamiento intencional)
-- 5 tests: table exists, 6 columns, priority default 10, enabled default true, composite index
-```
-**Resultado:** SQL + test 5/5 en la primera iteración
-**Iteraciones:** 1
-**Lección:** Omitir FK a plugins_registry es una decisión deliberada — permite registrar hooks de plugins que aún no están instalados, lo que facilita el bootstrap del sistema.
-
----
-
-### STORY 2.6 — GenericRepository (CRUD JSONB)
+### STORY 2.5 — GenericRepository (CRUD JSONB)
 **Prompt:**
 ```
 STORY 2.6 — Crear Xestify\Repositories\GenericRepository con:
@@ -215,11 +200,11 @@ STORY 2.6 — Crear Xestify\Repositories\GenericRepository con:
 
 ---
 
-### STORY 2.7 — Verificar idempotencia migración 002_core.sql
+### STORY 2.6 — Verificar idempotencia migración 002_core.sql
 **Prompt:**
 ```
 STORY 2.7 — Crear test de idempotencia de migración 002_core.sql:
-- Test 1: Verifica todas las tablas existen (system_entities, entity_metadata, entity_data, plugins_registry, plugin_hook_registry)
+- Test 1: Verifica todas las tablas existen (system_entities, entity_metadata, entity_data, plugins_registry)
 - Test 2: Ejecuta 002_core.sql por segunda vez, verifica que psql sale con exit code 0
 - Test 3: Inserta datos de prueba, re-ejecuta migración, verifica que datos persisten y sin duplicación
 - 3 tests, sin simulación — usa psql real + PostgreSQL para garantizar idempotencia
@@ -767,7 +752,7 @@ Sigamos
 ```
 Sigamos con STORY 6.3
 ```
-**Resultado:** Plugin `comments` completo: `manifest.json` (type=extension, target_entity=*), `schema.json` (campos body/author_id), `Hooks.php` (registra `registerTabs`), `Lifecycle.php` (onInstall inserta en `plugin_hook_registry`, sin tabla propia). `CommentsController.php` usa tabla genérica `plugin_extension_data` con content JSONB. Migración `003_plugin_extension_data.sql` como tabla compartida por todos los plugins extension. 9 tests de integración pasando.
+**Resultado:** Plugin `comments` completo: `manifest.json` (type=extension, target_entity=*), `schema.json` (campos body/author_id), `Hooks.php` (registra `registerTabs`), `Lifecycle.php`. `CommentsController.php` usa tabla genérica `plugin_extension_data` con content JSONB. Migración `003_plugin_extension_data.sql` como tabla compartida por todos los plugins extension. 9 tests de integración pasando.
 **Iteraciones:** 3 (primera con tabla `plugin_comments` propia — incorrecto; segunda corrigiendo a tabla genérica y añadiendo schema.json; tercera corrigiendo duplicación de código en CommentsController)
 **Lección:** Los plugins de tipo `extension` NO crean tablas propias — usan `plugin_extension_data` igual que los de tipo `entity` usan `entity_data`. Verificar siempre que el patrón genérico se mantiene consistente antes de implementar.
 

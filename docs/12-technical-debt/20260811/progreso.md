@@ -10,12 +10,12 @@
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 6 | 8 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 4 | 8 | 0 |
-| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 0 | 13 | 0 |
+| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 1 | 12 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 2 | 9 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **14** | **71** | **0** |
+| **Total** | **85** | **15** | **70** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -61,7 +61,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 03.01 | ⏳ | Mayor | Tabla `plugin_hooks` desconectada del runtime real | | |
+| 03.01 | ✅ | Mayor | Tabla `plugin_hooks` desconectada del runtime real | `df3b3f4` | Eliminada por completo en vez de dejarla como infraestructura muerta documentada: migración `004_plugin_hooks.sql` borrada, tabla `DROP`eada en la BD de desarrollo, `plugins/comments/Lifecycle.php` ya no escribe en ella (`onInstall`/`onActivate`/`onDeactivate` quedan como no-ops — el wiring real de hooks sigue siendo `PluginHookRegistrar` vía `plugins.status`, sin cambio de comportamiento). `backend/tests/integration/PluginHookRegistryTableTest.php` eliminado (solo comprobaba el esquema de la tabla muerta). Migraciones posteriores renumeradas para no dejar hueco: `005→004_plugin_extension_data.sql`, `006→005_plugin_update_history.sql`, `007→006_configuration.sql`, con todas las referencias actualizadas (`MigrationIdempotenceTest.php`, `ConfigurationRepositoryTest.php`, `PluginUpdateHistoryTableTest.php`, `run.php`). `docs/01-architecture/hooks.md` y `docs/02-entities/postgresql-jsonb.md` corregidos para describir el mecanismo real (activación por `plugins.status`, sin registro por-hook) sin referenciar esta auditoría. Referencias a la tabla/`plugin_hook_registry` en `sesion.md`, `backlog.md`, `productividad.md` y `prompts.md` eliminadas igual que si nunca hubiese existido (incluye renumerar STORY 2.5→eliminada, 2.6→2.5, 2.7→2.6 en los cuatro ficheros); `docs/00-meta/plan-fundacional-gemini.md` (transcripción de la conversación fundacional) se dejó intacto a petición explícita. De paso, resuelto un hallazgo de SonarQube (`php:S1192`) en `CommentsPluginTest.php`: literal `"Created comment must have an id"` duplicado 3 veces, extraído a la constante `MSG_CREATED_COMMENT_MUST_HAVE_ID`. ⚠️ Detectado durante la verificación un fallo preexistente no relacionado: `CommentsPluginTest.php::Comentarios tab does not appear for non-target entities` falla porque el plugin `comments` está configurado en la BD de desarrollo con `target_entity: '*'` (deriva de estado de BD, no un bug de código); confirmado que ya fallaba igual en el `HEAD` previo a esta sesión. No se toca aquí — fuera de alcance de este hallazgo. Verificado con `unit` + `integration-db` + `integration-plugins` completos (`PHPRC` apuntando al `php.ini` de Apache): 0 fallos salvo ese preexistente. |
 | 03.02 | ⏳ | Mayor | 3 tests sin `exit()` — falso verde en runner agrupado | | |
 | 03.03 | ⏳ | Mayor | `PluginClassLoader` instancia Hooks vs Lifecycle de forma distinta | | |
 | 03.04 | ⏳ | Menor | Duplicación `clients`/`products` (~90 líneas) | | |

@@ -62,7 +62,6 @@ TestSuite::run('all migration tables exist after running 001-006', function (): 
         'users',
         'plugin_entity_data',
         'plugins',
-        'plugin_hooks',
         'plugin_extension_data',
         'plugin_update_history',
     ];
@@ -84,9 +83,8 @@ TestSuite::run('re-running all migrations does not cause errors', function (): v
         '001_users.sql',
         '002_plugin_entity_data.sql',
         '003_plugins.sql',
-        '004_plugin_hooks.sql',
-        '005_plugin_extension_data.sql',
-        '006_plugin_update_history.sql',
+        '004_plugin_extension_data.sql',
+        '005_plugin_update_history.sql',
     ];
 
     foreach ($migrations as $file) {

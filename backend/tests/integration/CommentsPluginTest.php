@@ -89,6 +89,7 @@ const TEST_COMMENT_BODY = 'Primer comentario de prueba';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
 const MSG_BODY_MUST_MATCH = 'body must match';
 const MSG_POST_OK_MUST_BE_TRUE = 'POST ok must be true';
+const MSG_CREATED_COMMENT_MUST_HAVE_ID = 'Created comment must have an id';
 
 function callComments(PluginExtensionController $ctrl, string $method, array $params, array $body = []): array
 {
@@ -277,18 +278,6 @@ TestSuite::run('GET returns 404 when parent record does not exist', function ():
 
     assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
     assertEquals(404, $result['error']['code'] ?? 0, 'missing parent record must return 404');
-});
-
-TestSuite::run('plugin installation registers registerTabs hook in plugin_hooks', function (): void {
-    $stmt = Database::connection()->prepare(
-        "SELECT hook_name FROM plugin_hooks
-          WHERE slug = 'comments' AND target_entity_slug = '*'"
-    );
-    $stmt->execute();
-    $row = $stmt->fetch();
-
-    assertTrue($row !== false, 'comments hook must be in plugin_hooks');
-    assertEquals('registerTabs', $row['hook_name'] ?? null, 'hook_name must be registerTabs');
 });
 
 TestSuite::run('Hooks::register() injects Comentarios tab via registerTabs hook', function (): void {
@@ -521,7 +510,7 @@ TestSuite::run('PUT keeps the original author_id even when a different one is se
         $author
     );
     $itemId = (string) ($created['data']['id'] ?? '');
-    assertTrue($itemId !== '', 'Created comment must have an id');
+    assertTrue($itemId !== '', MSG_CREATED_COMMENT_MUST_HAVE_ID);
 
     $updated = callCommentsAsUser(
         $ctrl,
@@ -553,7 +542,7 @@ TestSuite::run('PUT by a user other than the author is forbidden and leaves cont
         $author
     );
     $itemId = (string) ($created['data']['id'] ?? '');
-    assertTrue($itemId !== '', 'Created comment must have an id');
+    assertTrue($itemId !== '', MSG_CREATED_COMMENT_MUST_HAVE_ID);
 
     $updated = callCommentsAsUser(
         $ctrl,
@@ -593,7 +582,7 @@ TestSuite::run('DELETE by a user other than the author is forbidden', function (
         $author
     );
     $itemId = (string) ($created['data']['id'] ?? '');
-    assertTrue($itemId !== '', 'Created comment must have an id');
+    assertTrue($itemId !== '', MSG_CREATED_COMMENT_MUST_HAVE_ID);
 
     $deleted = callCommentsAsUser(
         $ctrl,

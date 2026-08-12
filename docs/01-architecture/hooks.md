@@ -55,16 +55,14 @@ Contexto minimo recomendado:
 - Hook fallido en after* se registra como warning
 - Toda excepcion debe incluir plugin_slug y hook_name
 
-## Registro en base de datos
+## Registro de hooks en tiempo de ejecución
 
-Tabla `plugin_hooks`:
-
-- id
-- slug
-- target_entity_slug
-- hook_name
-- priority
-- enabled
+En cada request, `PluginHookRegistrar::registerActiveHooks()` recorre los plugins con
+`plugins.status = 'active'` (`PluginRepository::listActiveSlugs()`) y llama
+`Hooks::register($dispatcher)` de cada uno, sin condiciones adicionales — es el propio
+plugin quien decide qué hooks registra y con qué prioridad. Activar/desactivar el plugin
+completo (`plugins.status`) es la única palanca real; no existe activación/desactivación
+de un hook individual.
 
 ## Buenas practicas
 

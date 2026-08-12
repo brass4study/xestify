@@ -1,4 +1,4 @@
--- Migration: 007_configuration.sql
+-- Migration: 006_configuration.sql
 -- Global application configuration storage.
 -- Reusable key/value JSON store for UI preferences and future global settings.
 -- Idempotent: safe to run multiple times.

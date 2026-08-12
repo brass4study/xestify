@@ -180,21 +180,7 @@
 
 ---
 
-### STORY 2.5: Crear tabla plugin_hook_registry (hooks registrados)
-- **Fecha:** 2026-05-01
-- **Estimado sin IA:** 45 min
-- **Tiempo real con IA:** ~10 min
-- **Aceleración:** ~78% ⚡
-- **Qué hizo IA:**
-  - Añadió `plugin_hook_registry` a `002_core.sql` con 6 campos y defaults
-  - Creó índice compuesto `(target_entity_slug, hook_name)`
-  - Creó `PluginHookRegistryTableTest.php` con 5 tests (table, columns, priority default 10, enabled default true, composite index)
-- **Iteraciones:** 1
-- **Decisión manual:** Sin FK a `plugins_registry` — desacoplamiento intencional para permitir registrar hooks antes de instalar el plugin
-
----
-
-### STORY 2.6: Crear repositorio GenericRepository (CRUD JSONB)
+### STORY 2.5: Crear repositorio GenericRepository (CRUD JSONB)
 - **Fecha:** 2026-05-01
 - **Estimado sin IA:** 3h
 - **Tiempo real con IA:** ~20 min
@@ -209,7 +195,7 @@
 
 ---
 
-### STORY 2.7: Verificar idempotencia migración 002_core.sql
+### STORY 2.6: Verificar idempotencia migración 002_core.sql
 - **Fecha:** 2026-05-01
 - **Estimado sin IA:** 30 min
 - **Tiempo real con IA:** ~5 min
@@ -741,7 +727,7 @@
   - Creó `backend/plugins/comments/manifest.json` (tipo `extension`, `target_entity: *`)
   - Creó `backend/plugins/comments/schema.json` (campos `body` y `author_id`)
   - Creó `backend/plugins/comments/Hooks.php` — registra hook `registerTabs` que añade tab "Comentarios"
-  - Creó `backend/plugins/comments/Lifecycle.php` — `onInstall()` inserta en `plugin_hook_registry` (sin crear tabla propia)
+  - Creó `backend/plugins/comments/Lifecycle.php`
   - Creó `backend/src/controllers/CommentsController.php` — usa tabla genérica `plugin_extension_data` con content JSONB
   - Creó `backend/database/migrations/003_plugin_extension_data.sql` — tabla genérica compartida por todos los plugins extension
   - Añadió rutas GET/POST `/api/v1/plugins/comments/{entity}/{id}` en `routes.php` y singleton en `app.php`
@@ -885,7 +871,7 @@
 - **Aceleración:** ~71%
 - **Qué hizo IA:**
   - Reinterpretó la story contra el modelo real del repo, usando `plugins.schema_json` como schema vivo en lugar de `entity_metadata`.
-  - Añadió la migración `006_plugin_update_history.sql` y la tabla `plugin_update_history` para snapshots previos al update.
+  - Añadió la migración `005_plugin_update_history.sql` y la tabla `plugin_update_history` para snapshots previos al update.
   - Refactorizó `PluginLoader` para separar `syncAll()` y `update()`, preservando el runtime de plugins ya instalados durante la sincronización desde disco.
   - Implementó el flujo transaccional de update con diff de schema solo aditivo, snapshot previo, `onUpdate(array $context)` opcional y rollback automático ante error.
   - Expuso `POST /api/v1/plugins/sync` y `POST /api/v1/plugins/{slug}/update` en `PluginManagerController` y `routes.php`.

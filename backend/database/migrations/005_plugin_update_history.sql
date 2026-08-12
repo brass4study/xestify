@@ -1,4 +1,4 @@
--- Migration: 006_plugin_update_history.sql
+-- Migration: 005_plugin_update_history.sql
 -- Snapshots of plugin state before explicit updates.
 -- Used to support transactional updates now and manual rollback in STORY 7.4.
 -- Idempotent: safe to run multiple times.

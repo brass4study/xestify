@@ -13,11 +13,12 @@ backend/
 ├── public/index.php              ← Entry point
 ├── database/
 │   └── migrations/
-│       ├── 001_users.sql                  ✅ Tabla users
-│       ├── 002_plugin_entity_data.sql     ✅ Tabla plugin_entity_data
-│       ├── 003_plugins.sql                ✅ Tabla plugins (name, slug, type, status, schema)
-│       ├── 004_plugin_hooks.sql           ✅ Tabla plugin_hooks
-│       └── 005_plugin_extension_data.sql  ✅ Tabla plugin_extension_data
+│       ├── 001_users.sql                    ✅ Tabla users
+│       ├── 002_plugin_entity_data.sql       ✅ Tabla plugin_entity_data
+│       ├── 003_plugins.sql                  ✅ Tabla plugins (name, slug, type, status, schema)
+│       ├── 004_plugin_extension_data.sql    ✅ Tabla plugin_extension_data
+│       ├── 005_plugin_update_history.sql    ✅ Tabla plugin_update_history
+│       └── 006_configuration.sql            ✅ Tabla configuration
 ├── src/
 │   ├── bootstrap.php             ← Autoloader + env loader
 │   ├── app.php                   ← Wiring Container + Router + Seeders
@@ -72,9 +73,8 @@ backend/
         ├── EntityMetadataTableTest.php    ✅ 4 tests (STORY 2.2)
         ├── EntityDataTableTest.php        ✅ 5 tests (STORY 2.3)
         ├── PluginsRegistryTableTest.php   ✅ 5 tests (STORY 2.4)
-        ├── PluginHookRegistryTableTest.php✅ 5 tests (STORY 2.5)
-        ├── GenericRepositoryTest.php      ✅ 7 tests (STORY 2.6)
-        ├── MigrationIdempotenceTest.php   ✅ 3 tests (STORY 2.7)
+        ├── GenericRepositoryTest.php      ✅ 7 tests (STORY 2.5)
+        ├── MigrationIdempotenceTest.php   ✅ 3 tests (STORY 2.6)
         ├── EntityServiceTest.php          ✅ 6 tests (STORY 3.2)
         ├── EntityControllerTest.php       ✅ 9 tests (STORY 3.3)
         ├── SystemEntityTest.php           ✅ 7 tests (STORY 3.5)
@@ -256,21 +256,18 @@ Story completada. Archivos creados/modificados:
 | 2.2 ✅ | Tabla `entity_metadata` (schema versionado) | `0445672` | 4/4 ✅ |
 | 2.3 ✅ | Tabla `entity_data` (registros de negocio) | `195db58` | 5/5 ✅ |
 | 2.4 ✅ | Tabla `plugins` (antes `plugins_registry`) | `17fa5df` | 5/5 ✅ |
-| 2.5 ✅ | Tabla `plugin_hooks` (antes `plugin_hook_registry`) | `3352b4a` | 5/5 ✅ |
-| 2.6 ✅ | GenericRepository (CRUD JSONB) | `58a2670` | 7/7 ✅ |
-| 2.7 ✅ | Verificar idempotencia migraciones 001-005 | `906b595` | 3/3 ✅ |
+| 2.5 ✅ | GenericRepository (CRUD JSONB) | `58a2670` | 7/7 ✅ |
+| 2.6 ✅ | Verificar idempotencia migraciones 001-005 | `906b595` | 3/3 ✅ |
 
 **Archivos creados (EPIC 2 hasta ahora):**
 - `backend/database/migrations/001_users.sql` — tabla users
 - `backend/database/migrations/002_plugin_entity_data.sql` — tabla plugin_entity_data (antes 004)
 - `backend/database/migrations/003_plugins.sql` — tabla plugins con name, schema (antes 005)
-- `backend/database/migrations/004_plugin_hooks.sql` — tabla plugin_hooks (antes 006)
-- `backend/database/migrations/005_plugin_extension_data.sql` — tabla plugin_extension_data (antes 007)
+- `backend/database/migrations/004_plugin_extension_data.sql` — tabla plugin_extension_data (antes 007)
 - `backend/tests/integration/SystemEntitiesTableTest.php` — 3 tests
 - `backend/tests/integration/EntityMetadataTableTest.php` — 4 tests
 - `backend/tests/integration/EntityDataTableTest.php` — 5 tests
 - `backend/tests/integration/PluginsRegistryTableTest.php` — 5 tests
-- `backend/tests/integration/PluginHookRegistryTableTest.php` — 5 tests
 - `backend/src/Exceptions/RepositoryException.php`
 - `backend/src/Repositories/GenericRepository.php` — find, all, create, update, delete (soft), restore
 - `backend/tests/integration/GenericRepositoryTest.php` — 7 tests
@@ -590,7 +587,7 @@ Estado resultante:
 Story completada. Archivos creados/modificados:
 
 **Creados (backend):**
-- `backend/database/migrations/006_plugin_update_history.sql` — tabla `plugin_update_history` para snapshots previos a update
+- `backend/database/migrations/005_plugin_update_history.sql` — tabla `plugin_update_history` para snapshots previos a update
 - `backend/tests/integration/PluginUpdateHistoryTableTest.php` — verificacion de tabla, columnas e indice
 
 **Modificados (backend):**
@@ -600,7 +597,7 @@ Story completada. Archivos creados/modificados:
 - `tools/setup/sync-plugins.php` — usa `syncAll()` y deja de consumir actualizaciones durante la sincronizacion desde disco
 - `backend/tests/integration/PluginLoaderTest.php` — cobertura de sync best-effort, update exitoso, diff aditivo, conflictos y rollback atomico
 - `backend/tests/integration/PluginManagerApiTest.php` — cobertura API para sync/update, 403, 404 y 409
-- `backend/tests/integration/MigrationIdempotenceTest.php` — incluye la migracion `006_plugin_update_history.sql`
+- `backend/tests/integration/MigrationIdempotenceTest.php` — incluye la migracion `005_plugin_update_history.sql`
 - `backend/tests/run.php` — agrega `PluginUpdateHistoryTableTest.php` al grupo `integration-db`
 
 **Modificados (docs):**

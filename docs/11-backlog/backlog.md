@@ -339,18 +339,7 @@ Objetivo: Tablas PostgreSQL estables con JSONB.
 - **Dependencias:** STORY 0.1
 - **Blockers:** Ninguno
 
-### STORY 2.5: Crear tabla `plugin_hook_registry` (hooks registrados)
-- **Points:** 2
-- **Priority:** MUST
-- **Type:** Database
-- **Criteria:**
-  - ✅ Campos: id (UUID), plugin_slug, target_entity_slug, hook_name, priority, enabled
-  - ✅ hook_name = 'beforeSave' | 'afterSave' | 'registerTabs' etc.
-  - ✅ Índice en (target_entity_slug, hook_name)
-- **Dependencias:** STORY 2.4
-- **Blockers:** Ninguno
-
-### STORY 2.6: Crear repositorio GenericRepository (CRUD JSONB)
+### STORY 2.5: Crear repositorio GenericRepository (CRUD JSONB)
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Feature
@@ -362,7 +351,7 @@ Objetivo: Tablas PostgreSQL estables con JSONB.
 - **Dependencies:** STORY 2.3
 - **Blockers:** Ninguno
 
-### STORY 2.7: Crear migraciones para tablas core
+### STORY 2.6: Crear migraciones para tablas core
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Database
@@ -371,7 +360,7 @@ Objetivo: Tablas PostgreSQL estables con JSONB.
   - ✅ Migraciones en `backend/database/migrations/001_init.sql`
   - ✅ Se ejecutan una sola vez
   - ✅ Idempotentes
-- **Dependencias:** STORY 2.1, 2.2, 2.3, 2.4, 2.5
+- **Dependencias:** STORY 2.1, 2.2, 2.3, 2.4
 - **Blockers:** Ninguno
 
 ---
@@ -404,7 +393,7 @@ Objetivo: CRUD genérico con validación por schema.
   - ✅ Persiste en entity_data
   - ✅ Dispara hooks (implementado vacío por ahora)
   - ✅ Tests: create/update/delete básicos
-- **Dependencias:** STORY 3.1, STORY 2.6
+- **Dependencias:** STORY 3.1, STORY 2.5
 - **Blockers:** Ninguno
 
 ### STORY 3.3: Crear EntityController (endpoints REST)
@@ -547,7 +536,7 @@ Objetivo: Extensibilidad sin modificar Core.
   - ✅ Si hook before* falla, bloquea operación
   - ✅ Si hook after* falla, log warning
   - ✅ Tests: múltiples hooks, orden, excepciones
-- **Dependencias:** STORY 2.5, STORY 0.2
+- **Dependencias:** STORY 0.2
 - **Blockers:** Ninguno
 
 ### STORY 4.3: Implementar hooks beforeSave/afterSave en EntityService
@@ -1404,7 +1393,7 @@ Objetivo: Cerrar brechas de experiencia de usuario y calidad frontend detectadas
   - ✅ Acción "Eliminar" añadida a `UserManager` (hoy inexistente en UI, aunque el soft delete ya existe en backend desde EPIC 8) con confirmación modal y feedback de éxito/error
   - ✅ Acción "Desinstalar" añadida a `PluginManager` para plugins inactivos, con confirmación modal
   - ✅ El backend impide desinstalar un plugin activo, exigiendo desactivarlo primero
-  - ✅ El backend limpia de forma segura los registros asociados (`plugins`, `plugin_hooks`, etc.) al desinstalar
+  - ✅ El backend limpia de forma segura los registros asociados (`plugins`, etc.) al desinstalar
 - **IA Usage:** Diseño de selección múltiple/bulk actions + export CSV + wiring de acciones de eliminación/desinstalación + confirmaciones + validaciones backend
 - **Dependencias:** STORY 3.9, STORY 6.4, STORY 8.2, STORY 9.8, STORY A1.1, STORY A1.2
 - **Blockers:** Confirmar si el backend ya soporta DELETE real de entidad y desinstalación de plugin, o si hay que implementarlo desde cero (revisar `EntityController`/`EntityService` y `PluginRepository`)

@@ -4,7 +4,7 @@
  * PluginUpdateHistoryTableTest — Integration tests.
  *
  * Verifies that the plugin_update_history table was created correctly by
- * migration 006_plugin_update_history.sql. Requires a live PostgreSQL connection.
+ * migration 005_plugin_update_history.sql. Requires a live PostgreSQL connection.
  *
  * Run:
  *   php backend/tests/integration/PluginUpdateHistoryTableTest.php
