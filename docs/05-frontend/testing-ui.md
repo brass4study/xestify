@@ -31,6 +31,17 @@ runner en el navegador integrado de VS Code, servido por Apache
 (`ENABLE_TEST=1`) o un servidor HTTP local equivalente. Esa vía sigue siendo
 la prioritaria para validar visualmente un runner HTML.
 
+**URL exacta:** `http://<host>/tests/integration/<Runner>.html` (p. ej.
+`http://127.0.0.1/xestify/tests/integration/UserManagementTest.html` con el
+alias `/xestify/` de `docs/08-operations/apache-vhost-examples.md`).
+**No** `http://<host>/frontend/tests/...`: el `.htaccess` raíz bloquea el
+acceso directo a `frontend/` (y a `backend/docs/skills/tools/var`) con
+`RewriteRule ^(?:backend|docs|frontend|...)(?:/|$) - [F,END]` y solo expone
+el contenido a través de las rutas reescritas `/tests/`, `/js/` y `/css/`
+(ver `.htaccess` raíz). Pedir la ruta con el prefijo `frontend/` devuelve
+403 aunque Apache y `ENABLE_TEST` estén bien configurados — no es un
+problema de permisos ni motivo para montar un servidor alternativo.
+
 ## Ejecutar la suite E2E (Playwright)
 
 ### Prerrequisitos
