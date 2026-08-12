@@ -993,15 +993,7 @@ export class AppController {
 
     const fallbackHost = component.create('div');
     fallbackHost.setData('role', 'shell-floating-ui');
-    fallbackHost.setClassName('pointer-events-none fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-4');
-    fallbackHost.style.position = 'fixed';
-    fallbackHost.style.inset = '0';
-    fallbackHost.style.zIndex = '9999';
-    fallbackHost.style.isolation = 'isolate';
-    fallbackHost.style.pointerEvents = 'none';
-    fallbackHost.style.display = 'flex';
-    fallbackHost.style.alignItems = 'flex-start';
-    fallbackHost.style.justifyContent = 'center';
+    fallbackHost.setClassName('pointer-events-none fixed inset-0 isolate z-[9999] flex items-start justify-center px-4 pt-4');
 
     const appRoot = this.container instanceof HTMLElement ? this.container : document.body;
     if (appRoot instanceof HTMLElement) {

@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 9 | 3 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 11 | 5 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 12 | 4 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 8 | 4 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **57** | **28** | **0** |
+| **Total** | **85** | **58** | **27** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -109,7 +109,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 05.12 | ⏳ | Menor | `AppState` "god object" | | |
 | 05.13 | ⏳ | Menor | `RouteController.navigate()` API dual sin uso real | | |
 | 05.14 | ✅ | Nit | `ThemeModel` fallback `'light'` como string mágico | `956ec24` | |
-| 05.15 | ⏳ | Nit | Host flotante con Tailwind + inline duplicados | | |
+| 05.15 | ✅ | Nit | Host flotante con Tailwind + inline duplicados | `c53f6cd` | |
 | 05.16 | ✅ | Nit | Doc `renderizado-dinamico.md` nombra componentes obsoletos | `ef27e99` | |
 
 ## 06 — Toolkit UI
