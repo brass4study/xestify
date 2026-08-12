@@ -20,51 +20,11 @@ export class UiResilienceService {
 
     AppState.setNotification(notification);
 
-    const emitNotificationEvent = () => {
-      const event = new CustomEvent('xestify:notification-changed', {
-        detail: notification,
-      });
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(event);
-      }
-
-      if (typeof document !== 'undefined') {
-        document.dispatchEvent(event);
-      }
-    };
-
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(emitNotificationEvent);
-    } else {
-      emitNotificationEvent();
-    }
-
     return notification;
   }
 
   static clearNotification() {
     AppState.clearNotification();
-
-    const emitNotificationEvent = () => {
-      const event = new CustomEvent('xestify:notification-changed', {
-        detail: null,
-      });
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(event);
-      }
-
-      if (typeof document !== 'undefined') {
-        document.dispatchEvent(event);
-      }
-    };
-
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(emitNotificationEvent);
-    } else {
-      emitNotificationEvent();
-    }
   }
 
   static setViewState(container, config = {}) {

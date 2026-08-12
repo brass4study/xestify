@@ -204,7 +204,41 @@
     host.remove();
   });
 
-  await test('AppController renders a global notification when the event is emitted through window', async () => {
+  await test('AppController renders a global notification through the single AppState.subscribeNotification channel', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    controller.shellLayout = ShellLayout.create(host);
+    controller.shellLayout.build();
+
+    let renderCalls = 0;
+    const originalRender = controller.renderGlobalNotifications.bind(controller);
+    controller.renderGlobalNotifications = () => {
+      renderCalls += 1;
+      return originalRender();
+    };
+
+    UiResilienceService.showNotification({
+      type: 'warning',
+      title: 'Activación',
+      message: 'El plugin se ha activado',
+      global: true,
+    });
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    assertEquals(renderCalls, 1, 'Una sola notificación debe disparar un único render: ya no existen el CustomEvent duplicado en window/document ni su listener redundante en AppController');
+
+    const notification = host.querySelector('[data-role="global-notification"]');
+    assertTrue(notification instanceof HTMLElement, 'Debe pintar la notificación global');
+    assertTrue(notification.textContent.includes('Activación'));
+
+    host.remove();
+  });
+
+  await test('xestify:notification-changed ya no es un canal soportado (vestigio eliminado)', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
 
@@ -215,17 +249,16 @@
     window.dispatchEvent(new CustomEvent('xestify:notification-changed', {
       detail: {
         type: 'warning',
-        title: 'Activación',
-        message: 'El plugin se ha activado',
+        title: 'Evento externo',
+        message: 'No debería pintarse',
         global: true,
       },
     }));
 
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
 
-    const notification = host.querySelector('[data-role="global-notification"]');
-    assertTrue(notification instanceof HTMLElement, 'Debe pintar la notificación global al recibir el evento desde window');
-    assertTrue(notification.textContent.includes('Activación'));
+    assertTrue(host.querySelector('[data-role="global-notification"]') === null,
+      'AppController ya no debe escuchar xestify:notification-changed en window/document');
 
     host.remove();
   });

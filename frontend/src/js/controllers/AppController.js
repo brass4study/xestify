@@ -68,29 +68,8 @@ export class AppController {
       });
       this.scheduleGlobalNotificationsRender(true);
     };
-    this.notificationEventHandler = (event) => {
-      const detail = event?.detail ?? null;
-      if (detail && typeof detail === 'object') {
-        const type = typeof detail.type === 'string' && detail.type !== '' ? detail.type : 'info';
-        const normalized = {
-          ...detail,
-          id: detail.id ?? (globalThis.crypto?.randomUUID?.() ?? `notify-${Date.now()}-${Date.now().toString(16)}-${performance.now().toString(16)}`),
-          type,
-          title: typeof detail.title === 'string' ? detail.title : '',
-          message: typeof detail.message === 'string' ? detail.message : '',
-          persistent: Boolean(detail.persistent),
-          global: detail.global === true || type === 'error' || type === 'warning',
-        };
-        AppState.setNotification(normalized);
-      } else {
-        AppState.clearNotification();
-      }
-      this.scheduleGlobalNotificationsRender(true);
-    };
     window.addEventListener('error', this.globalErrorHandler);
     window.addEventListener('unhandledrejection', this.globalErrorHandler);
-    window.addEventListener('xestify:notification-changed', this.notificationEventHandler);
-    document.addEventListener('xestify:notification-changed', this.notificationEventHandler);
     this.notificationSubscription = AppState.subscribeNotification(() => {
       this.scheduleGlobalNotificationsRender();
     });
