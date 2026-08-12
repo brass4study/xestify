@@ -13,9 +13,9 @@
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 3 | 10 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 7 | 9 | 0 |
-| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
+| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 2 | 10 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **27** | **58** | **0** |
+| **Total** | **85** | **29** | **56** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -116,12 +116,12 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 06.01 | ⏳ | Mayor | Fuga de DOM + `id` duplicados en cada modal de confirmación | | |
+| 06.01 | ✅ | Mayor | Fuga de DOM + `id` duplicados en cada modal de confirmación | `f0b2300` | |
 | 06.02 | ⏳ | Mayor | `label`/`for` roto en `Login.js` | | |
 | 06.03 | ⏳ | Mayor | Clase Tailwind base duplicada en 9 ficheros `Input*.js` | | |
 | 06.04 | ⏳ | Mayor | `setError()` no quita clase base — borde de error gris en reposo | | |
 | 06.05 | ⏳ | Menor | `variant: 'ghost'` de `Button` inerte | | |
-| 06.06 | ⏳ | Menor | `id` del título del modal fijado dos veces | | |
+| 06.06 | ✅ | Menor | `id` del título del modal fijado dos veces | `f0b2300` | ⚠️ Resuelto como efecto colateral de 06.01 (id ahora generado dinámicamente) |
 | 06.07 | ⏳ | Menor | Rama muerta en `Breadcrumb.resolveItems` | | |
 | 06.08 | ⏳ | Menor | Componentes registrados sin uso real (`inputRadio`, `inputTime`...) | | |
 | 06.09 | ⏳ | Menor | `PageLayout` acoplado al DOM interno de `PageHeaderComponent` | | |

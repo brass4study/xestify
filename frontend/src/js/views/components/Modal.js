@@ -1,11 +1,15 @@
 import { BaseComponent } from './BaseComponent.js';
 import { component } from '../modules/ComponentFactory.js';
 
+let nextModalTitleId = 0;
+
 export class ModalComponent extends BaseComponent {
   initialize(options = {}) {
+    const titleId = `ui-modal-title-${++nextModalTitleId}`;
+
     this.className = 'fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/50 p-4';
     this.dataset.role = 'ui-modal-overlay';
-    this.setAttribute('aria-labelledby', 'ui-modal-title');
+    this.setAttribute('aria-labelledby', titleId);
 
     const dialog = component.create('sectionTag', {
       className: 'w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-float',
@@ -22,12 +26,7 @@ export class ModalComponent extends BaseComponent {
       className: 'text-base font-semibold text-slate-900',
       dataset: { role: 'ui-modal-title' },
       text: options.title ?? 'Mensaje',
-    }).setId('ui-modal-title').setParent(header);
-
-    const titleElement = header.querySelector('[data-role="ui-modal-title"]');
-    if (titleElement instanceof HTMLElement) {
-      titleElement.id = 'ui-modal-title';
-    }
+    }).setId(titleId).setParent(header);
 
     if (typeof options.onClose === 'function') {
       const closeButton = component.create('button', { label: '×', variant: 'ghost', ariaLabel: 'Cerrar diálogo', onClick: options.onClose });

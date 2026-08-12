@@ -117,6 +117,26 @@
     assertTrue(!modal.isOpen(), 'Modal state should be closed');
   });
 
+  it('destroy() removes the overlay from the DOM instead of only hiding it', (container) => {
+    const modal = new Modal(container, { title: 'Confirmar' });
+    modal.show();
+    modal.destroy();
+
+    const overlay = container.querySelector('[data-role="modal-overlay"]');
+    assertTrue(overlay === null, 'Expected the overlay to be removed from the DOM after destroy()');
+    assertTrue(!modal.isOpen(), 'Modal state should be closed after destroy()');
+  });
+
+  it('each Modal instance gets a unique title id', (container) => {
+    const first = new Modal(container, { title: 'Uno' });
+    const second = new Modal(container, { title: 'Dos' });
+    first.show();
+    second.show();
+
+    const titleIds = Array.from(container.querySelectorAll('[data-role="modal-title"]')).map((el) => el.id);
+    assertEquals(new Set(titleIds).size, titleIds.length, 'Title ids must not collide between Modal instances');
+  });
+
   separator();
   finishTestRunner();
 </script>

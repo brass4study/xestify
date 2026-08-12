@@ -110,6 +110,31 @@
     container.remove();
   });
 
+  await test('UiResilienceService.confirm() destruye el modal al resolver, evitando ids duplicados entre confirmaciones sucesivas', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const first = UiResilienceService.confirm({ container, title: 'Primero', message: '¿Continuar?' });
+    container.querySelector('[data-action="cancel-modal"]').click();
+    await first;
+
+    assertTrue(container.querySelector('[data-role="modal-overlay"]') === null,
+      'El modal de la primera confirmación debe eliminarse del DOM tras cerrarse, no solo ocultarse');
+
+    const second = UiResilienceService.confirm({ container, title: 'Segundo', message: '¿Continuar?' });
+
+    const overlays = container.querySelectorAll('[data-role="modal-overlay"]');
+    assertEquals(overlays.length, 1, 'Solo debe quedar un overlay de modal en el DOM a la vez');
+
+    const titleIds = Array.from(document.querySelectorAll('[data-role="modal-title"]')).map((el) => el.id);
+    assertEquals(new Set(titleIds).size, titleIds.length, 'Cada modal debe generar un id de título único, sin duplicados en el documento');
+
+    container.querySelector('[data-action="cancel-modal"]').click();
+    await second;
+
+    container.remove();
+  });
+
   await test('UiResilienceService renders a shared view state and pending button state', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

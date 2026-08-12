@@ -160,7 +160,7 @@ export class UiResilienceService {
       }).setParent(actions);
 
       const closeWith = (result) => {
-        modal.close();
+        modal.destroy();
         resolve(result);
       };
 

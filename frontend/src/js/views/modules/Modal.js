@@ -111,6 +111,11 @@ export class Modal {
 		this.#returnFocusElement = null;
 	}
 
+	destroy() {
+		this.close();
+		this.#overlay.remove();
+	}
+
 	#handleTabKey(event) {
 		const focusable = this.#getFocusableElements();
 		if (focusable.length === 0) {
