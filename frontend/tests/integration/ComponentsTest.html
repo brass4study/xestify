@@ -256,6 +256,13 @@
       assertTrue(password instanceof HTMLInputElement, 'password should be an input element');
       assertEquals(password.value, 'secret', 'password value mismatch');
       assertTrue(password.className.includes('border-red'), 'password should expose error styling');
+      assertTrue(!password.classList.contains('border-slate-300'), 'setError no debe dejar border-slate-300 enmascarando el borde rojo en reposo');
+      assertTrue(!password.classList.contains('focus:border-brand-500'), 'setError no debe dejar focus:border-brand-500 compitiendo con focus:border-red-500');
+
+      password.setError('');
+      assertTrue(!password.className.includes('border-red'), 'limpiar el error debe quitar las clases rojas');
+      assertTrue(password.classList.contains('border-slate-300'), 'limpiar el error debe restaurar border-slate-300');
+      assertTrue(password.classList.contains('focus:border-brand-500'), 'limpiar el error debe restaurar focus:border-brand-500');
     });
 
     test('los Input* de texto heredan InputComponent.BASE_CLASSNAME en vez de duplicar el literal', () => {

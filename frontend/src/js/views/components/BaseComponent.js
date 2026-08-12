@@ -173,11 +173,13 @@ export class InputComponent extends BaseComponent {
 
   setError(message) {
     if (typeof message === 'string' && message !== '') {
+      this.removeClass('border-slate-300', 'focus:border-brand-500');
       this.addClass('border-red-300', 'focus:border-red-500');
       this.setAttribute('aria-invalid', 'true');
       this.dataset.error = message;
     } else {
       this.removeClass('border-red-300', 'focus:border-red-500');
+      this.addClass('border-slate-300', 'focus:border-brand-500');
       this.removeAttribute('aria-invalid');
       delete this.dataset.error;
     }
