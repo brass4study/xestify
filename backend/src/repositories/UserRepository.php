@@ -37,6 +37,10 @@ final class UserRepository
             $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
         }
 
+        if (array_key_exists('roles', $row)) {
+            $row['roles'] = $this->normalizeRolesValue($row['roles']);
+        }
+
         return $row;
     }
 
@@ -60,6 +64,10 @@ final class UserRepository
         foreach ($rows as $index => $row) {
             if (array_key_exists('avatar', $rows[$index])) {
                 $rows[$index]['avatar'] = $this->normalizeBinaryValue($rows[$index]['avatar']);
+            }
+
+            if (array_key_exists('roles', $rows[$index])) {
+                $rows[$index]['roles'] = $this->normalizeRolesValue($rows[$index]['roles']);
             }
         }
 
@@ -112,6 +120,10 @@ final class UserRepository
             $row['avatar'] = $this->normalizeBinaryValue($row['avatar']);
         }
 
+        if (array_key_exists('roles', $row)) {
+            $row['roles'] = $this->normalizeRolesValue($row['roles']);
+        }
+
         return $row;
     }
 
@@ -149,6 +161,16 @@ final class UserRepository
         } catch (PDOException $e) {
             throw new RepositoryException('Query failed: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    private function normalizeRolesValue(mixed $value): mixed
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : $value;
     }
 
     private function normalizeBinaryValue(mixed $value): mixed

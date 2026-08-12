@@ -10,6 +10,7 @@ final class InstalledPluginSchemaValidator
 {
     private const ASSOCIATIVE_SECTIONS = ['identities', 'fields'];
     private const LIST_SECTIONS = ['custom_fields', 'relations'];
+    private const CUSTOM_FIELDS_SECTION = 'custom_fields';
 
     /**
      * @param array<string, mixed>|null $installedSchema
@@ -99,7 +100,10 @@ final class InstalledPluginSchemaValidator
     private function assertListSectionsContainCanonical(string $slug, array $installed, array $canonical): void
     {
         foreach (self::LIST_SECTIONS as $section) {
-            $installedByKey = $this->indexListSection($this->requireArraySection($slug, $installed, $section));
+            $installedSection = $section === self::CUSTOM_FIELDS_SECTION
+                ? $this->installedCustomFieldsCatalog($installed)
+                : $this->requireArraySection($slug, $installed, $section);
+            $installedByKey = $this->indexListSection($installedSection);
             $canonicalByKey = $this->indexListSection($this->arraySection($canonical, $section));
 
             foreach ($canonicalByKey as $key => $definition) {
@@ -152,7 +156,10 @@ final class InstalledPluginSchemaValidator
     private function assertOverlappingListDefinitionsMatch(string $slug, array $installed, array $target): void
     {
         foreach (self::LIST_SECTIONS as $section) {
-            $installedByKey = $this->indexListSection($this->arraySection($installed, $section));
+            $installedSection = $section === self::CUSTOM_FIELDS_SECTION
+                ? $this->installedCustomFieldsCatalog($installed)
+                : $this->arraySection($installed, $section);
+            $installedByKey = $this->indexListSection($installedSection);
             $targetByKey = $this->indexListSection($this->arraySection($target, $section));
 
             foreach ($installedByKey as $key => $definition) {
@@ -183,6 +190,27 @@ final class InstalledPluginSchemaValidator
     private function arraySection(array $schema, string $section): array
     {
         return isset($schema[$section]) && is_array($schema[$section]) ? $schema[$section] : [];
+    }
+
+    /**
+     * `custom_fields` means the design catalog before a plugin is ever
+     * configured via PluginAdministrationService::saveConfig(), and the
+     * admin-curated list of *active* fields afterwards — at that point the
+     * catalog moves to `plugin_suggested_custom_fields`. Canonical/target
+     * containment checks must always compare against the catalog, never
+     * against the active list, or an inactive suggested field (or one whose
+     * label the admin customized after activating it) looks like corruption.
+     *
+     * @param array<string, mixed> $installed
+     * @return array<string, mixed>
+     */
+    private function installedCustomFieldsCatalog(array $installed): array
+    {
+        if (isset($installed['plugin_suggested_custom_fields']) && is_array($installed['plugin_suggested_custom_fields'])) {
+            return $installed['plugin_suggested_custom_fields'];
+        }
+
+        return $this->arraySection($installed, self::CUSTOM_FIELDS_SECTION);
     }
 
     /**

@@ -119,10 +119,11 @@ function callController(
 function seedCtrlSchema(): void
 {
     Database::connection()->prepare(
-        "INSERT INTO plugins (slug, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'entity', '1.0.0', 'inactive', 1, :schema)
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Test Entity Ctrl', 'entity', '1.0.0', 'inactive', 1, :schema)
          ON CONFLICT (slug) DO UPDATE
-         SET schema_json = EXCLUDED.schema_json,
+         SET name = EXCLUDED.name,
+             schema_json = EXCLUDED.schema_json,
              schema_version = EXCLUDED.schema_version,
              updated_at = NOW()"
     )->execute([':slug' => CTRL_ENTITY_SLUG, ':schema' => CTRL_SCHEMA_JSON]);

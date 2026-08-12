@@ -61,13 +61,7 @@ final class PluginSchemaMergeService
             $diff
         );
 
-        $merged['custom_fields'] = $this->mergeListSectionByKey(
-            $slug,
-            'custom_fields',
-            $merged['custom_fields'] ?? [],
-            $targetSchema['custom_fields'] ?? [],
-            $diff
-        );
+        $merged = $this->mergeCustomFieldsSection($slug, $merged, $targetSchema, $diff);
 
         $merged['relations'] = $this->mergeListSectionByKey(
             $slug,
@@ -132,6 +126,49 @@ final class PluginSchemaMergeService
         }
 
         return $currentMap;
+    }
+
+    /**
+     * `custom_fields` means two different things depending on whether the plugin
+     * has ever been configured via PluginAdministrationService::saveConfig():
+     * before that, it IS the design catalog (mirrors schema.json); after it, the
+     * catalog moves to `plugin_suggested_custom_fields` and `custom_fields`
+     * becomes the admin-curated list of *active* fields consumed by EntityService
+     * for record validation. Merging the on-disk catalog additively must always
+     * target the catalog, never the active list — otherwise editing an already
+     * active suggested field falsely looks like a breaking change, and a brand
+     * new suggested field would silently become active without admin consent.
+     *
+     * @param array<string, mixed> $merged
+     * @param array<string, mixed> $targetSchema
+     * @param array<string, array{added: string[]}> $diff
+     * @return array<string, mixed>
+     */
+    private function mergeCustomFieldsSection(string $slug, array $merged, array $targetSchema, array &$diff): array
+    {
+        $targetCatalog = $targetSchema['custom_fields'] ?? [];
+
+        if (array_key_exists('plugin_suggested_custom_fields', $merged)) {
+            $merged['plugin_suggested_custom_fields'] = $this->mergeListSectionByKey(
+                $slug,
+                'custom_fields',
+                $merged['plugin_suggested_custom_fields'] ?? [],
+                $targetCatalog,
+                $diff
+            );
+
+            return $merged;
+        }
+
+        $merged['custom_fields'] = $this->mergeListSectionByKey(
+            $slug,
+            'custom_fields',
+            $merged['custom_fields'] ?? [],
+            $targetCatalog,
+            $diff
+        );
+
+        return $merged;
     }
 
     /**

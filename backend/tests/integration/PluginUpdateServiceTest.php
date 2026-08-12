@@ -164,6 +164,96 @@ TestSuite::run('update() merges additive schema changes and increments schema ve
     }
 });
 
+TestSuite::run('update() applies an update after the plugin was configured, without losing edits or auto-activating new fields', function () use ($pdo): void {
+    // Simulates the state PluginAdministrationService::saveConfig() leaves
+    // behind: custom_fields holds the admin-curated *active* fields (here,
+    // "phone" activated with an edited label), and the real design catalog
+    // moved to plugin_suggested_custom_fields.
+    $slug = 'test_update_configured_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Configured Plugin', 'entity', '1.0.0', 'inactive', 2, CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'entity' => $slug,
+            'version' => UPDATE_VERSION_1_0,
+            'identities' => [
+                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+            ],
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [
+                ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Mobile phone'],
+            ],
+            'plugin_suggested_custom_fields' => [
+                ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+            ],
+            'relations' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Configured Plugin',
+        'version' => UPDATE_VERSION_1_1,
+        'type' => 'entity',
+        'core_version' => UPDATE_VERSION_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => UPDATE_VERSION_1_1,
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+            ['key' => 'stock', 'type' => 'number', 'required' => false, 'label' => 'Stock'],
+        ],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $service = buildPluginUpdateService($root, $pdo);
+        $result = $service->update($slug);
+
+        assertTrue($result['update']['schema_changed'] === true, 'A new suggested field should still bump schema_version');
+        assertTrue(
+            in_array('stock', $result['update']['diff']['custom_fields']['added'], true),
+            'diff should report stock as added to the catalog'
+        );
+
+        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+
+        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), 'Version should be updated');
+        assertEquals(1, count($decoded['custom_fields'] ?? []), 'Active custom_fields must not gain the new suggestion');
+        assertEquals(
+            'Mobile phone',
+            $decoded['custom_fields'][0]['label'] ?? null,
+            'The admin edit to an already active suggested field must survive the update'
+        );
+        assertTrue(
+            in_array(
+                'stock',
+                array_column($decoded['plugin_suggested_custom_fields'] ?? [], 'key'),
+                true
+            ),
+            'The new suggested field must be added to the catalog'
+        );
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
 TestSuite::run('update() fails when disk version is not greater', function () use ($pdo): void {
     $slug = 'test_update_same_' . bin2hex(random_bytes(3));
     $pdo->prepare(

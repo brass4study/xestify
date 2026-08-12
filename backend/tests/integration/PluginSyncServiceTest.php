@@ -183,6 +183,73 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged entity 
     }
 });
 
+TestSuite::run('syncAll() does not report corruption for a configured plugin with an inactive suggested field', function () use ($pdo): void {
+    // Once PluginAdministrationService::saveConfig() runs, custom_fields means
+    // "active fields" (the admin left "phone" inactive here) and the real
+    // catalog moves to plugin_suggested_custom_fields. A routine unchanged-
+    // version sync must compare canonical custom_fields against that catalog,
+    // not against the active list, or a perfectly valid inactive suggestion
+    // gets reported as schema corruption.
+    $slug = 'test_sync_configured_' . bin2hex(random_bytes(3));
+    $installedSchema = [
+        'entity' => $slug,
+        'version' => SYNC_SEMVER_1_0,
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'plugin_suggested_custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+        ],
+        'relations' => [],
+    ];
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Configured Plugin', 'entity', :version, 'active', 2, CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $slug,
+        ':version' => SYNC_SEMVER_1_0,
+        ':schema' => json_encode($installedSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Configured Plugin',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $schema = [
+        'entity' => $slug,
+        'version' => SYNC_SEMVER_1_0,
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+        ],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        assertEquals(0, $result['summary']['errors'], 'A configured plugin with an inactive suggested field must not be reported as corrupt');
+        assertEquals('unchanged', $result['plugins'][$slug]['result'], 'Plugin should sync as unchanged, not error');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
 TestSuite::run('syncAll() reports invalid manifest without aborting batch', function () use ($pdo): void {
     $goodSlug = 'test_sync_good_' . bin2hex(random_bytes(3));
     $badSlug = 'test_sync_bad_' . bin2hex(random_bytes(3));

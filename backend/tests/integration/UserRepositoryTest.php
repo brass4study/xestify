@@ -109,7 +109,12 @@ TestSuite::run('UserRepository::find and ::all return persisted profile data', f
         assertTrue($found !== null, 'find() should return a user row');
         assertEquals($email, $found['email'], 'Email should match inserted value');
         assertEquals('Test User', $found['name'], 'Name should be persisted');
+        assertTrue(is_array($found['roles']), 'find() must decode roles into a PHP array, not a raw JSON string');
+        assertEquals(['operador'], $found['roles'], 'find() should decode the persisted roles JSON');
         assertTrue(count($all) >= 1, 'all() should return at least one user');
+        $matching = array_values(array_filter($all, static fn(array $row): bool => $row['id'] === $found['id']));
+        assertTrue($matching !== [], 'all() should include the inserted user');
+        assertTrue(is_array($matching[0]['roles']), 'all() must decode roles into a PHP array, not a raw JSON string');
     } finally {
         cleanupTestUser($pdo, (string) $created['id']);
     }
@@ -126,9 +131,12 @@ TestSuite::run('UserRepository::update persists profile fields', function (): vo
         $updated = $repo->update((string) $created['id'], [
             'name' => 'Updated Name',
             'avatar' => $avatar,
+            'roles' => ['admin', 'operador'],
         ]);
 
         assertEquals('Updated Name', $updated['name'], 'Name should be updated');
+        assertTrue(is_array($updated['roles']), 'update() must return roles as a PHP array, not a raw JSON string');
+        assertEquals(['admin', 'operador'], $updated['roles'], 'update() should return the newly persisted roles decoded');
         if (is_string($updated['avatar'])) {
             assertEquals($avatar, $updated['avatar'], 'Avatar binary data should be updated');
         } else {
