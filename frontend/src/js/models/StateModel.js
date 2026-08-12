@@ -1,7 +1,3 @@
-const STORAGE_USER_EMAIL_KEY = 'xestify_user_email';
-const STORAGE_USER_NAME_KEY = 'xestify_user_name';
-const STORAGE_USER_AVATAR_KEY = 'xestify_user_avatar';
-
 import {
 	createDefaultUiPreferences,
 	mergeUiPreferences,
@@ -39,37 +35,6 @@ function normalizeUser(user) {
 	const normalized = { ...user };
 	normalized.roles = normalizeRoles(normalized.roles);
 	return normalized;
-}
-
-function persistUserIdentity(user) {
-	if (typeof window === 'undefined' || !window.localStorage) {
-		return;
-	}
-
-	if (user === null || typeof user !== 'object') {
-		window.localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
-		window.localStorage.removeItem(STORAGE_USER_NAME_KEY);
-		window.localStorage.removeItem(STORAGE_USER_AVATAR_KEY);
-		return;
-	}
-
-	if (typeof user.email === 'string' && user.email !== '') {
-		window.localStorage.setItem(STORAGE_USER_EMAIL_KEY, user.email);
-	} else {
-		window.localStorage.removeItem(STORAGE_USER_EMAIL_KEY);
-	}
-
-	if (typeof user.name === 'string' && user.name !== '') {
-		window.localStorage.setItem(STORAGE_USER_NAME_KEY, user.name);
-	} else {
-		window.localStorage.removeItem(STORAGE_USER_NAME_KEY);
-	}
-
-	if (typeof user.avatar === 'string' && user.avatar !== '') {
-		window.localStorage.setItem(STORAGE_USER_AVATAR_KEY, user.avatar);
-	} else {
-		window.localStorage.removeItem(STORAGE_USER_AVATAR_KEY);
-	}
 }
 
 export const AppState = {
@@ -142,7 +107,6 @@ export const AppState = {
 
 	setUser(user) {
 		this.user = normalizeUser(user ?? null);
-		persistUserIdentity(this.user);
 		this.notify();
 	},
 

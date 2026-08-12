@@ -208,6 +208,35 @@
     assertEquals(putCall.body.avatar, '', 'Debe enviar avatar vacío al quitarlo');
   });
 
+  await test('guardar el perfil propio persiste el snapshot de usuario, no solo el estado en memoria', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+    api.user.avatar = 'data:image/png;base64,abc';
+    window.localStorage.setItem('xestify_user_avatar', api.user.avatar);
+    window.localStorage.setItem('xestify_user_name', 'Nombre desactualizado');
+
+    AppState.setUser({ ...api.user });
+    const page = new UserProfile(container, { ...api.user }, api);
+    assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
+
+    const removeAvatarButton = container.querySelector('[data-userconfig-remove-avatar]');
+    removeAvatarButton.click();
+
+    const form = container.querySelector('form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assertEquals(AppState.getUser().avatar, '', 'El estado en memoria debe reflejar el guardado');
+    assertTrue(window.localStorage.getItem('xestify_user_avatar') === null,
+      'El snapshot persistido debe limpiarse tras guardar, aunque StateModel ya no toque localStorage');
+    assertEquals(window.localStorage.getItem('xestify_user_name'), api.user.name,
+      'El snapshot persistido debe sincronizarse con el nombre guardado');
+
+    window.localStorage.removeItem('xestify_user_email');
+    window.localStorage.removeItem('xestify_user_name');
+    window.localStorage.removeItem('xestify_user_avatar');
+  });
+
   await test('rechaza cambio de contraseña si falta la contraseña actual', async () => {
     const container = makeSandbox();
     const api = new MockApi();

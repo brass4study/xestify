@@ -1,5 +1,6 @@
 import { Api } from '../../models/ApiClientModel.js';
 import { AppState } from '../../models/StateModel.js';
+import { SessionModel } from '../../models/SessionModel.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { component } from '../modules/ComponentFactory.js';
@@ -548,6 +549,7 @@ export class UserConfig {
 					...updated,
 				};
 				AppState.setUser(merged);
+				SessionModel.persistUserSnapshot(merged);
 			}
 
 			if (this.#onSaved !== null) {

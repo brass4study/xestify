@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 4 | 8 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 3 | 10 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 3 | 13 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 4 | 12 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **23** | **62** | **0** |
+| **Total** | **85** | **24** | **61** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -98,7 +98,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 05.01 | ✅ | Mayor | `handleError()` nunca detecta errores de red reales | `c93c1c4` | ⚠️ toca el mismo fichero que 05.02 y 05.05 |
 | 05.02 | ✅ | Mayor | Triple canal redundante para notificaciones | `bbba45a` | ⚠️ toca el mismo fichero que 05.01/05.05 (`UiResilienceService.js`) y 05.03/05.07 (`AppController.js`) |
 | 05.03 | ✅ | Mayor | Parser `entity-record:` duplicado en 2 ficheros | `bd3f32d` | ⚠️ toca el mismo fichero que 05.02/05.07 (`AppController.js`) y 05.06 (`RouteMapController.js`) |
-| 05.04 | ⏳ | Mayor | Persistencia de usuario duplicada `StateModel`/`SessionModel` | | |
+| 05.04 | ✅ | Mayor | Persistencia de usuario duplicada `StateModel`/`SessionModel` | `b16b534` | |
 | 05.05 | ⏳ | Mayor | `confirm()` llama `modal.show()` dos veces, frágil | | |
 | 05.06 | ⏳ | Mayor | `HASH_ROUTE_MAP` mayoritariamente decorativo | | |
 | 05.07 | ⏳ | Mayor | Manejo de 401 inconsistente entre llamadas hermanas | | |
