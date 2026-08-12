@@ -22,6 +22,7 @@ class UserController
     private const MSG_SECRET_MISMATCH = 'La contraseña actual es incorrecta.';
     private const MSG_SELF_DELETE_FORBIDDEN = 'No puedes eliminar tu propia cuenta.';
     private const MSG_SELF_DELETE_DETAIL = 'No está permitido eliminarse a sí mismo.';
+    private const MSG_EMAIL_ALREADY_IN_USE = 'El email ya está en uso.';
 
     public function __construct(private UserRepository $repository)
     {
@@ -70,7 +71,11 @@ class UserController
             return;
         }
 
-        $updated = $this->repository->update($id, $this->buildProfileUpdateData($payload));
+        $updated = $this->applyUpdate($id, $this->buildProfileUpdateData($payload));
+        if ($updated === null) {
+            return;
+        }
+
         $this->updatePasswordIfNeeded($payload, $id);
         Response::make()->json($this->sanitizeUser($updated));
     }
@@ -149,7 +154,11 @@ class UserController
             $data['roles'] = $roles;
         }
 
-        $updated = $this->repository->update($id, $data);
+        $updated = $this->applyUpdate($id, $data);
+        if ($updated === null) {
+            return;
+        }
+
         Response::make()->json($this->sanitizeUser($updated));
     }
 
@@ -221,6 +230,37 @@ class UserController
         }
 
         Response::make()->json(['deleted' => true, 'id' => $targetId]);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>|null Null after already sending an error response.
+     */
+    private function applyUpdate(string $id, array $data): ?array
+    {
+        try {
+            return $this->repository->update($id, $data);
+        } catch (RepositoryException $e) {
+            if ($this->isUniqueViolation($e)) {
+                Response::make()->error(409, self::MSG_EMAIL_ALREADY_IN_USE, [
+                    'email' => [self::MSG_EMAIL_ALREADY_IN_USE],
+                ]);
+                return null;
+            }
+
+            Response::make()->notFound($e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Postgres SQLSTATE 23505 (unique_violation) — checked via error code, not the
+     * (locale-dependent) exception message.
+     */
+    private function isUniqueViolation(RepositoryException $e): bool
+    {
+        $previous = $e->getPrevious();
+        return $previous instanceof \PDOException && $previous->getCode() === '23505';
     }
 
     private function ignoreParams(array $params): void

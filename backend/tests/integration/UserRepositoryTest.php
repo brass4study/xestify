@@ -21,6 +21,7 @@ require_once BASE_PATH . '/src/repositories/UserRepository.php';
 
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
+use Xestify\exceptions\RepositoryException;
 use Xestify\repositories\UserRepository;
 
 $envFile = BASE_PATH . '/.env';
@@ -178,6 +179,28 @@ TestSuite::run('UserRepository::update persists profile fields', function (): vo
         }
     } finally {
         cleanupTestUser($pdo, (string) $created['id']);
+    }
+});
+
+TestSuite::run('UserRepository::update throws RepositoryException on duplicate email instead of an uncaught PDOException', function (): void {
+    $pdo = Database::connection();
+    $emailA = 'repo-dup-a-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $emailB = 'repo-dup-b-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $userA = insertTestUser($pdo, $emailA);
+    $userB = insertTestUser($pdo, $emailB);
+
+    try {
+        $repo = new UserRepository($pdo);
+        $threw = false;
+        try {
+            $repo->update((string) $userB['id'], ['email' => $emailA]);
+        } catch (RepositoryException) {
+            $threw = true;
+        }
+        assertTrue($threw, 'Updating to an email already in use should raise RepositoryException, not an uncaught PDOException');
+    } finally {
+        cleanupTestUser($pdo, (string) $userA['id']);
+        cleanupTestUser($pdo, (string) $userB['id']);
     }
 });
 

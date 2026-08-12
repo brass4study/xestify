@@ -219,6 +219,28 @@ TestSuite::run('UserController::update lets admins edit user roles', function ()
     }
 });
 
+TestSuite::run('UserController::update returns 409 when email is already in use by another user', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'dup-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $existing = insertUserRow($pdo, 'dup-existing-' . uniqid('', true) . TEST_EMAIL_DOMAIN);
+    $target = insertUserRow($pdo, 'dup-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN);
+
+    try {
+        $request = new Request([], ['email' => $existing['email']], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(function () use ($controller, $target, $request): void {
+            $controller->update(['id' => (string) $target['id']], $request);
+        });
+
+        assertFalse(($response['ok'] ?? true) === true, 'Duplicate email update should fail');
+        assertEquals(409, (int) ($response['error']['code'] ?? 0), 'Duplicate email update should return 409, not an uncaught error');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $existing['id']);
+        cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
 TestSuite::run('UserController::resetPassword allows admins and stores new hash', function () use ($pdo, $controller): void {
     $admin = insertUserRow($pdo, 'reset-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
     $target = insertUserRow($pdo, 'reset-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'initial-secret');

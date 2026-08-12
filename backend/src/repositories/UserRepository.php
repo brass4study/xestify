@@ -137,7 +137,7 @@ final class UserRepository
             $stmt->bindValue($placeholder, $value, $type);
         }
 
-        $stmt->execute();
+        $this->execute($stmt);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row === false) {
@@ -180,12 +180,16 @@ final class UserRepository
     }
 
     /**
-     * @param array<string, mixed> $params
+     * @param array<string, mixed>|null $params Omit when the statement's values were already bound via bindValue().
      */
-    private function execute(\PDOStatement $stmt, array $params): void
+    private function execute(\PDOStatement $stmt, ?array $params = null): void
     {
         try {
-            $stmt->execute($params);
+            if ($params === null) {
+                $stmt->execute();
+            } else {
+                $stmt->execute($params);
+            }
         } catch (PDOException $e) {
             throw new RepositoryException('Query failed: ' . $e->getMessage(), 0, $e);
         }
