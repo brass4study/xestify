@@ -30,9 +30,7 @@ final class EntityService
 {
     private const SCHEMA_QUERY =
         'SELECT schema_json FROM plugins
-         WHERE slug = :slug
-         ORDER BY schema_version DESC
-         LIMIT 1';
+         WHERE slug = :slug';
 
     public function __construct(
         private GenericRepository $repository,

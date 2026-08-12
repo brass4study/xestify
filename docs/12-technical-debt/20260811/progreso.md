@@ -9,13 +9,13 @@
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 6 | 8 | 0 |
-| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 5 | 7 | 0 |
+| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 6 | 6 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 5 | 8 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 9 | 7 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 7 | 5 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **42** | **43** | **0** |
+| **Total** | **85** | **43** | **42** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -49,7 +49,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 02.03 | ✅ | Mayor | `TimestampFieldValidator` no valida formato; el test blinda el bug | `6f59d18` | |
 | 02.04 | ✅ | Mayor | `StringFieldValidator`/`TextFieldValidator` duplicados al 100% | `a1d8b3d` | |
 | 02.05 | ✅ | Menor | Comentarios obsoletos referencian `plugin_entity_metadata` | `e2fda11` | ⚠️ toca el mismo fichero que 02.06 (`EntityService.php`) |
-| 02.06 | ⏳ | Menor | `ORDER BY schema_version` sobre columna `UNIQUE(slug)` — código muerto | | |
+| 02.06 | ✅ | Menor | `ORDER BY schema_version` sobre columna `UNIQUE(slug)` — código muerto | `10f6c00` | ⚠️ toca el mismo fichero que 02.05 (`EntityService.php`) |
 | 02.07 | ⏳ | Menor | `SchemaFieldExtractor` vs `sortableSchemaFields()` inconsistentes | | |
 | 02.08 | ⏳ | Menor | `plugins.schema_json` sin `CHECK` de estructura | | |
 | 02.09 | ⏳ | Menor | `MigrationIdempotenceTest` con ruta Windows hardcodeada, no portable | | |
