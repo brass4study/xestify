@@ -20,6 +20,7 @@ require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/repositories/UserRepository.php';
+require_once BASE_PATH . '/src/services/ProfileSecretVerifier.php';
 require_once BASE_PATH . '/src/controllers/UserController.php';
 
 use Xestify\core\Database;

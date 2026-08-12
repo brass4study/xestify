@@ -8,6 +8,7 @@ use Xestify\core\Request;
 use Xestify\core\Response;
 use Xestify\exceptions\RepositoryException;
 use Xestify\repositories\UserRepository;
+use Xestify\services\ProfileSecretVerifier;
 
 class UserController
 {
@@ -24,8 +25,10 @@ class UserController
     private const MSG_SELF_DELETE_DETAIL = 'No está permitido eliminarse a sí mismo.';
     private const MSG_EMAIL_ALREADY_IN_USE = 'El email ya está en uso.';
 
-    public function __construct(private UserRepository $repository)
-    {
+    public function __construct(
+        private UserRepository $repository,
+        private ?ProfileSecretVerifier $secretVerifier = null
+    ) {
     }
 
     public function me(array $params, ?Request $request = null): void
@@ -53,20 +56,15 @@ class UserController
         $this->ignoreParams($params);
         $request ??= new Request();
         $user = $this->authenticatedUser($request);
-        if ($user === null) {
-            Response::make()->unauthorized(self::MSG_AUTH_REQUIRED);
-            return;
-        }
-
-        $payload = $request->allBody();
-        $id = (string) ($user['sub'] ?? '');
+        $id = $user !== null ? (string) ($user['sub'] ?? '') : '';
         if ($id === '') {
             Response::make()->unauthorized(self::MSG_AUTH_REQUIRED);
             return;
         }
 
-        $isEmailChange = $this->isEmailChange($payload);
-        $isPasswordChange = $this->isPasswordChange($payload);
+        $payload = $request->allBody();
+        $isEmailChange = $this->secretVerifier()->isEmailChange($payload);
+        $isPasswordChange = $this->secretVerifier()->isPasswordChange($payload);
         if (!$this->validateCurrentSecret($payload, $id, $isEmailChange, $isPasswordChange)) {
             return;
         }
@@ -131,7 +129,14 @@ class UserController
             return;
         }
 
-        $payload = $request->allBody();
+        $this->applyAdminUpdate($id, $request->allBody());
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function applyAdminUpdate(string $id, array $payload): void
+    {
         $data = [];
         if (array_key_exists('name', $payload)) {
             $data['name'] = $payload['name'];
@@ -290,7 +295,7 @@ class UserController
             return false;
         }
 
-        $requiresVerification = $this->requiresCurrentSecretVerification($payload, $profile, $isEmailChange, $isPasswordChange);
+        $requiresVerification = $this->secretVerifier()->requiresVerification($payload, $profile, $isEmailChange, $isPasswordChange);
         $currentPassword = (string) ($payload['current_password'] ?? '');
         $isValid = true;
 
@@ -300,7 +305,7 @@ class UserController
                 'current_password' => ['Requerido.'],
             ]);
             $isValid = false;
-        } elseif ($requiresVerification && !$this->passwordMatches($currentPassword, $profile)) {
+        } elseif ($requiresVerification && !$this->secretVerifier()->matches($currentPassword, $profile)) {
             Response::make()->unprocessable(self::MSG_SECRET_MISMATCH, [
                 'current_password' => ['Incorrecto.'],
             ]);
@@ -310,29 +315,13 @@ class UserController
         return $isValid;
     }
 
-    private function requiresCurrentSecretVerification(array $payload, array $profile, bool $isEmailChange, bool $isPasswordChange): bool
+    private function secretVerifier(): ProfileSecretVerifier
     {
-        if ($isPasswordChange) {
-            return true;
+        if ($this->secretVerifier === null) {
+            $this->secretVerifier = new ProfileSecretVerifier();
         }
 
-        return $isEmailChange && (string) ($payload['email'] ?? '') !== (string) ($profile['email'] ?? '');
-    }
-
-    private function isEmailChange(array $payload): bool
-    {
-        return isset($payload['email']) && (string) $payload['email'] !== '';
-    }
-
-    private function isPasswordChange(array $payload): bool
-    {
-        return isset($payload['password']) && (string) $payload['password'] !== '';
-    }
-
-    private function passwordMatches(string $currentPassword, array $profile): bool
-    {
-        $storedHash = (string) ($profile['password_hash'] ?? '');
-        return $storedHash !== '' && password_verify($currentPassword, $storedHash);
+        return $this->secretVerifier;
     }
 
     private function updatePasswordIfNeeded(array $payload, string $id): void
