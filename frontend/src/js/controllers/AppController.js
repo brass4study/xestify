@@ -8,6 +8,7 @@ import {
   entityTabPage,
   getPageFromHash,
   hashFromPage,
+  parseEntityRecordPage,
   parseEntityTabPage,
   userDetailPage,
 } from './RouteMapController.js';
@@ -517,7 +518,7 @@ export class AppController {
     }
 
     const tabRoute = parseEntityTabPage(page);
-    const recordRoute = tabRoute === null ? parseEntityRecordPageToken(page) : null;
+    const recordRoute = tabRoute === null ? parseEntityRecordPage(page) : null;
     const route = tabRoute ?? (recordRoute === null ? null : { ...recordRoute, tabId: 'data' });
     if (route === null
       || route.slug !== this.currentEntityRoute.slug
@@ -612,7 +613,7 @@ export class AppController {
   }
 
   async showEntityRecordPage(page) {
-    const parsed = parseEntityRecordPageToken(page);
+    const parsed = parseEntityRecordPage(page);
     if (parsed === null) {
       this.showPlaceholder('No se pudo abrir la ficha del registro.');
       return;
@@ -1300,7 +1301,7 @@ export class AppController {
 
     const entityData = isTabPage
       ? parseEntityTabPage(page)
-      : parseEntityRecordPageToken(page);
+      : parseEntityRecordPage(page);
     if (entityData === null) {
       return null;
     }
@@ -1390,7 +1391,7 @@ export class AppController {
     }
 
     if (page.startsWith('entity-record:')) {
-      const parsed = parseEntityRecordPageToken(page);
+      const parsed = parseEntityRecordPage(page);
       return parsed === null ? '' : parsed.slug;
     }
 
@@ -1460,26 +1461,6 @@ export class AppController {
       return fallbackProfile;
     }
   }
-}
-
-function parseEntityRecordPageToken(page) {
-  if (typeof page !== 'string' || !page.startsWith('entity-record:')) {
-    return null;
-  }
-
-  const raw = page.slice('entity-record:'.length);
-  const separatorIndex = raw.indexOf(':');
-  if (separatorIndex <= 0 || separatorIndex >= raw.length - 1) {
-    return null;
-  }
-
-  const slug = raw.slice(0, separatorIndex);
-  const recordId = raw.slice(separatorIndex + 1);
-  if (slug === '' || recordId === '') {
-    return null;
-  }
-
-  return { slug, recordId };
 }
 
 function normalizeRecordContent(row) {

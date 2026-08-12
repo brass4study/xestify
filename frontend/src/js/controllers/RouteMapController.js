@@ -296,7 +296,7 @@ export function parseEntityTabPage(page) {
   return { slug: parts[0], recordId: parts[1], tabId: parts[2] };
 }
 
-function parseEntityRecordPage(page) {
+export function parseEntityRecordPage(page) {
   const prefix = 'entity-record:';
   if (typeof page !== 'string' || !page.startsWith(prefix)) {
     return null;

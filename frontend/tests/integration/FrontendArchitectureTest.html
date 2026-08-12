@@ -25,6 +25,7 @@
       entityTabPage,
       getPageFromHash,
       hashFromPage,
+      parseEntityRecordPage,
       pluginConfigPage,
       userDetailPage,
     } from '../../js/controllers/RouteMapController.js';
@@ -157,6 +158,18 @@
         'entity-tab:clients:record-9:comments', 'La query no debe destruir el contexto de tab');
       assertEquals(getPageFromHash('#/entity/clients/record-9/comments/extra', 'home'),
         'home', 'Las rutas fuera del mapa deben usar fallback');
+    });
+
+    await test('parseEntityRecordPage es la única implementación del parser entity-record:', async () => {
+      assertEquals(parseEntityRecordPage('entity-record:clients:record-9'), { slug: 'clients', recordId: 'record-9' },
+        'Debe extraer slug y recordId del token');
+      assertTrue(parseEntityRecordPage('entity-record:clients') === null, 'Debe rechazar tokens sin recordId');
+      assertTrue(parseEntityRecordPage('entity-record::record-9') === null, 'Debe rechazar slug vacío');
+      assertTrue(parseEntityRecordPage('entity-record:clients:') === null, 'Debe rechazar recordId vacío');
+      assertTrue(parseEntityRecordPage('entity:clients') === null, 'Debe rechazar tokens de otro tipo de página');
+      assertEquals(parseEntityRecordPage('entity-record:clients:record-9:extra'),
+        { slug: 'clients', recordId: 'record-9:extra' },
+        'El recordId conserva cualquier resto tras el segundo separador');
     });
 
     await test('ShellLayout construye el árbol exacto y expone sus targets', async () => {
