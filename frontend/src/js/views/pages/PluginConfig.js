@@ -143,7 +143,6 @@ export class PluginConfig {
 		panel.append(addFieldButton);
 
 		this.renderFieldsTable(tableHost);
-		this.bindTableEvents(panel);
 		this.bindPageActions(panel, { addFieldButton, backButton, saveButton });
 	}
 
@@ -331,52 +330,31 @@ export class PluginConfig {
 		const rowIndex = Number(field.__rowIndex ?? 0);
 		const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
 
-		this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0).setParent(actions);
-		this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex).setParent(actions);
+		this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0, () => this.moveRow(rowIndex, -1)).setParent(actions);
+		this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex, () => this.moveRow(rowIndex, 1)).setParent(actions);
 
 		if (!immutableField) {
-			const removeButton = this.buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false);
+			const removeButton = this.buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false, () => {
+				this.#state.config.fields.splice(rowIndex, 1);
+				this.clearNotice();
+				this.render();
+			});
 			removeButton.addClass('ml-2').setParent(actions);
 		}
 
 		return actions;
 	}
 
-	buildRowActionButton(label, icon, tone, action, rowIndex, disabled) {
+	buildRowActionButton(label, icon, tone, action, rowIndex, disabled, onClick) {
 		const button = DynamicTable.buildActionButton({
 			label,
 			icon,
 			tone,
 			dataAction: action,
 			disabled,
-			onClick: () => {},
+			onClick,
 		});
 		return button.setData('rowIndex', rowIndex);
-	}
-
-	bindTableEvents(wrapper) {
-		wrapper.querySelectorAll('[data-action="move-up"]').forEach((button) => {
-			button.addEventListener('click', () => {
-				const index = Number(button.dataset.rowIndex);
-				this.moveRow(index, -1);
-			});
-		});
-
-		wrapper.querySelectorAll('[data-action="move-down"]').forEach((button) => {
-			button.addEventListener('click', () => {
-				const index = Number(button.dataset.rowIndex);
-				this.moveRow(index, 1);
-			});
-		});
-
-		wrapper.querySelectorAll('[data-action="remove-row"]').forEach((button) => {
-			button.addEventListener('click', () => {
-				const index = Number(button.dataset.rowIndex);
-				this.#state.config.fields.splice(index, 1);
-				this.clearNotice();
-				this.render();
-			});
-		});
 	}
 
 	moveRow(index, delta) {

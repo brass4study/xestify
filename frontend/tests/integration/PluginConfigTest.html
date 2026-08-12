@@ -290,6 +290,31 @@
     assertEquals(api.savedPayload.fields[1].key, 'name', 'El segundo campo debe reflejar reordenacion');
   });
 
+  await test('los botones de fila siguen funcionando tras un re-render interno de la tabla (densidad)', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'clients', api });
+    await page.init();
+
+    // Simula un cambio de densidad desde la barra de herramientas propia de la
+    // tabla — DynamicTable reconstruye su DOM internamente para esto, sin que
+    // PluginConfig vuelva a renderizar toda la pagina.
+    const densityOption = container.querySelector('[data-role="table-density-option"][data-density="compact"]');
+    assertTrue(densityOption !== null, 'La opcion de densidad debe existir');
+    densityOption.click();
+
+    const moveDownFirst = container.querySelector('[data-action="move-down"][data-row-index="0"]');
+    assertTrue(moveDownFirst !== null, 'El boton de bajar fila debe seguir existiendo tras el cambio de densidad');
+    moveDownFirst.click();
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assertEquals(api.savedPayload.fields[0].key, 'phone', 'El reordenado debe seguir funcionando tras el cambio de densidad');
+  });
+
   await test('plugin extension muestra combo de target_entity y lo envia al guardar', async () => {
     const container = makeSandbox();
     const api = new MockApi();

@@ -196,37 +196,6 @@ export class PluginManager {
 		if (renderedTable instanceof HTMLTableElement) {
 			renderedTable.dataset.role = 'plugin-table';
 		}
-
-		const actionButtons = tableHost.querySelectorAll('[data-role="plugin-action"]');
-		actionButtons.forEach((button) => this.#bindActionButton(button));
-
-	}
-
-	#bindActionButton(button) {
-		button.addEventListener('click', () => {
-			const slug = button.dataset.slug ?? '';
-			const plugin = this.#plugins.find((item) => String(item.slug) === slug);
-			if (!plugin) {
-				return;
-			}
-
-			if (button.dataset.action === 'configure') {
-				this.#onConfigure(plugin);
-				return;
-			}
-
-			if (button.dataset.action === 'update') {
-				this.#handleUpdate(plugin, button);
-				return;
-			}
-
-			if (button.dataset.action === 'rollback') {
-				this.#handleRollback(plugin, button);
-				return;
-			}
-
-			this.#handleActionClick(plugin, button);
-		});
 	}
 
 	#renderTypeBadge(plugin) {
@@ -298,12 +267,31 @@ export class PluginManager {
 			tone,
 			dataRole: 'plugin-action',
 			dataAction: action,
-			onClick: () => {},
+			onClick: () => this.#handlePluginAction(action, plugin, button),
 			disabled: false,
 		});
 
 		button.dataset.slug = String(plugin.slug ?? '');
 		return button;
+	}
+
+	#handlePluginAction(action, plugin, button) {
+		if (action === 'configure') {
+			this.#onConfigure(plugin);
+			return;
+		}
+
+		if (action === 'update') {
+			this.#handleUpdate(plugin, button);
+			return;
+		}
+
+		if (action === 'rollback') {
+			this.#handleRollback(plugin, button);
+			return;
+		}
+
+		this.#handleActionClick(plugin, button);
 	}
 
 	#canRollback(plugin) {

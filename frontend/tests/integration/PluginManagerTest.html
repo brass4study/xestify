@@ -227,6 +227,43 @@
     assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should be called');
   });
 
+  await test('action buttons keep working after a DynamicTable internal re-render (density change)', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments/status': {
+        ok: true,
+        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    // Simulate a density change from the table's own toolbar — DynamicTable
+    // rebuilds its DOM internally for this, without PluginManager re-rendering
+    // the whole page, so any button bound only right after the first render
+    // would go stale here.
+    const densityOption = container.querySelector('[data-role="table-density-option"][data-density="compact"]');
+    assertTrue(densityOption !== null, 'Density option should exist');
+    densityOption.click();
+
+    const btn = container.querySelector('[data-role="plugin-action"]');
+    assertTrue(btn !== null, 'Action button should still exist after the density change');
+    btn.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should still be called after an internal table re-render');
+  });
+
   await test('renders a page notification after plugin activation inside the shell', async () => {
     const host = makeSandbox();
     const shell = ShellLayout.create(host).build();
