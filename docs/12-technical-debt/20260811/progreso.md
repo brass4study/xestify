@@ -13,9 +13,9 @@
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 7 | 6 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 8 | 3 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 13 | 3 | 0 |
-| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 9 | 3 | 0 |
+| [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 10 | 2 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 6 | 1 | 0 |
-| **Total** | **85** | **64** | **20** | **1** |
+| **Total** | **85** | **65** | **19** | **1** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -127,7 +127,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 06.09 | ⏳ | Menor | `PageLayout` acoplado al DOM interno de `PageHeaderComponent` | | |
 | 06.10 | ✅ | Nit | `setHtml()`/`options.html` sin uso, vector XSS latente | `36d45f1` | |
 | 06.11 | ✅ | Nit | `aria-disabled` redundante con `disabled` nativo | `21b48e3` | |
-| 06.12 | ⏳ | Nit | Breadcrumb dropdown solo cierra con `mouseleave` | | |
+| 06.12 | ✅ | Nit | Breadcrumb dropdown solo cierra con `mouseleave` | `1dd4b19` | |
 
 ## 07 — Páginas / módulos de negocio
 

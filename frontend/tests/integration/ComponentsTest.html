@@ -161,6 +161,40 @@
       assertTrue(dropdownMenu.classList.contains('hidden') === false, 'dropdown menu should open on click');
     });
 
+    test('breadcrumb dropdown closes on outside click and on Escape, not just mouseleave', () => {
+      const breadcrumb = component.create('breadcrumb', {
+        items: [
+          { label: 'Inicio', href: '#/' },
+          {
+            label: 'Componentes',
+            href: '#/components',
+            menu: [{ label: 'Navigation', href: '#/components/navigation' }],
+          },
+          { label: 'Breadcrumb', active: true },
+        ],
+      });
+      document.body.appendChild(breadcrumb);
+
+      try {
+        const trigger = breadcrumb.querySelector('[data-role="breadcrumb-dropdown-trigger"]');
+        const menu = breadcrumb.querySelector('[data-role="breadcrumb-dropdown-menu"]');
+
+        trigger.click();
+        assertTrue(menu.classList.contains('hidden') === false, 'menu should open on trigger click');
+
+        document.body.click();
+        assertTrue(menu.classList.contains('hidden') === true, 'menu should close on a click outside the dropdown');
+
+        trigger.click();
+        assertTrue(menu.classList.contains('hidden') === false, 'menu should reopen on trigger click');
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        assertTrue(menu.classList.contains('hidden') === true, 'menu should close on Escape');
+      } finally {
+        breadcrumb.remove();
+      }
+    });
+
     test('inputSwitch exposes state, loading, focus and change behavior', () => {
       let changedTo = null;
       const inputSwitch = component.create('inputSwitch', {

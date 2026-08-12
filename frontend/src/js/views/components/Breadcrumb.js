@@ -160,6 +160,21 @@ export class BreadcrumbComponent extends BaseComponent {
       panel.classList.add('hidden');
       downIcon.classList.remove('rotate-180');
       trigger.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', onDocumentClick);
+      document.removeEventListener('keydown', onDocumentKeyDown);
+    };
+
+    const onDocumentClick = (event) => {
+      if (event.target instanceof Node && !wrapper.contains(event.target)) {
+        close();
+      }
+    };
+
+    const onDocumentKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        close();
+        trigger.focus();
+      }
     };
 
     const toggle = () => {
@@ -172,6 +187,8 @@ export class BreadcrumbComponent extends BaseComponent {
       panel.classList.remove('hidden');
       downIcon.classList.add('rotate-180');
       trigger.setAttribute('aria-expanded', 'true');
+      document.addEventListener('click', onDocumentClick);
+      document.addEventListener('keydown', onDocumentKeyDown);
     };
 
     trigger.addEventListener('click', (event) => {
