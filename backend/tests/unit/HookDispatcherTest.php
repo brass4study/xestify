@@ -191,6 +191,26 @@ TestSuite::run('register() same hook name with different hooks keeps them separa
     assertTrue(!$afterCalled, 'afterSave callback must NOT be called when executing beforeSave');
 });
 
+TestSuite::run('execute() rejects a hook name that does not start with before/after', function (): void {
+    $d = new HookDispatcher();
+    $d->register('onSave', static function (array $ctx): array { // NOSONAR - $ctx required by callable signature
+        throw new HookException('should never run');
+    });
+
+    $threw = false;
+    try {
+        $d->execute('onSave', []);
+    } catch (\InvalidArgumentException $e) {
+        $threw = true;
+        assertTrue(
+            str_contains($e->getMessage(), "'onSave'") && str_contains($e->getMessage(), "before' or 'after"),
+            'Message should name the offending hook and the required convention: ' . $e->getMessage()
+        );
+    }
+
+    assertTrue($threw, 'A hook name without a before/after prefix must fail loudly instead of silently degrading to non-blocking semantics');
+});
+
 // ---------------------------------------------------------------------------
 
 TestSuite::summary();

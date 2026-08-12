@@ -37,21 +37,30 @@ class HookDispatcher
     /**
      * Execute all callbacks registered for a hook in priority order.
      *
-     * @param string $hook    Hook name.
+     * @param string $hook    Hook name; must start with 'before' or 'after' —
+     *                        that prefix is the only signal deciding whether a
+     *                        callback exception blocks the operation.
      * @param array  $context Mutable context array passed to each callback.
      * @return array          The final context after all callbacks have run.
+     * @throws \InvalidArgumentException When $hook does not follow the before.../after... convention.
      * @throws HookException  If a beforeXxx callback throws (operation must be blocked).
      */
     public function execute(string $hook, array $context = []): array
     {
+        $isBefore = str_starts_with($hook, 'before');
+        if (!$isBefore && !str_starts_with($hook, 'after')) {
+            throw new \InvalidArgumentException(
+                "Hook '{$hook}' must start with 'before' or 'after' — execute() cannot decide"
+                . ' whether a callback failure should block the operation.'
+            );
+        }
+
         if (!isset($this->hooks[$hook])) {
             return $context;
         }
 
         $sorted = $this->hooks[$hook];
         usort($sorted, static fn(array $a, array $b): int => $a['priority'] <=> $b['priority']);
-
-        $isBefore = str_starts_with($hook, 'before');
 
         foreach ($sorted as $entry) {
             $context = $this->invokeCallback($entry['callback'], $context, $hook, $isBefore);
