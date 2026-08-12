@@ -297,26 +297,28 @@ TestSuite::run('createRecord() rolls back beforeSave hook writes when persist fa
     $caught = false;
 
     try {
-        // NAN passes NumberFieldValidator (it is a float) but json_encode() cannot
-        // encode it, so GenericRepository::create() throws RepositoryException
-        // *after* the beforeSave hook has already written its own row.
-        $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Broken', 'age' => NAN]);
-    } catch (\Throwable) {
-        $caught = true;
+        try {
+            // NAN passes NumberFieldValidator (it is a float) but json_encode() cannot
+            // encode it, so GenericRepository::create() throws RepositoryException
+            // *after* the beforeSave hook has already written its own row.
+            $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Broken', 'age' => NAN]);
+        } catch (\Throwable) {
+            $caught = true;
+        }
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
+        $stmt->execute([':slug' => $markerSlug]);
+        $markerCount = (int) $stmt->fetchColumn();
+
+        assertTrue($caught, 'createRecord() must fail because NAN cannot be encoded as JSON');
+        assertTrue(
+            $markerCount === 0,
+            'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
+        );
+    } finally {
+        cleanTestData();
+        $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
     }
-
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
-    $stmt->execute([':slug' => $markerSlug]);
-    $markerCount = (int) $stmt->fetchColumn();
-
-    assertTrue($caught, 'createRecord() must fail because NAN cannot be encoded as JSON');
-    assertTrue(
-        $markerCount === 0,
-        'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
-    );
-
-    cleanTestData();
-    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
 });
 
 TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fails', function (): void {
@@ -341,23 +343,25 @@ TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fa
     $caught = false;
 
     try {
-        $svc->updateRecord((string) $created['id'], TEST_ENTITY_SLUG, ['age' => NAN]);
-    } catch (\Throwable) {
-        $caught = true;
+        try {
+            $svc->updateRecord((string) $created['id'], TEST_ENTITY_SLUG, ['age' => NAN]);
+        } catch (\Throwable) {
+            $caught = true;
+        }
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
+        $stmt->execute([':slug' => $markerSlug]);
+        $markerCount = (int) $stmt->fetchColumn();
+
+        assertTrue($caught, 'updateRecord() must fail because NAN cannot be encoded as JSON');
+        assertTrue(
+            $markerCount === 0,
+            'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
+        );
+    } finally {
+        cleanTestData();
+        $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
     }
-
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
-    $stmt->execute([':slug' => $markerSlug]);
-    $markerCount = (int) $stmt->fetchColumn();
-
-    assertTrue($caught, 'updateRecord() must fail because NAN cannot be encoded as JSON');
-    assertTrue(
-        $markerCount === 0,
-        'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
-    );
-
-    cleanTestData();
-    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
 });
 
 // ---------------------------------------------------------------------------
