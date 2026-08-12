@@ -234,7 +234,7 @@ Objetivo: Acceso seguro por JWT, roles base, permisos.
 - **Criteria:**
   - ✅ POST `/api/auth/login` con email, password
   - ✅ Validar credenciales contra tabla users
-  - ✅ Responder con access_token + refresh_token
+  - ✅ Responder con access_token (sin refresh_token: la sesión expira a los `JWT_EXPIRY` segundos, sin renovación)
   - ✅ Rechazar credenciales incorrectas (401)
   - ✅ Tests de login exitoso y fallido
 - **Dependencias:** STORY 1.1, STORY 1.2, STORY 0.3, STORY 0.4
@@ -900,7 +900,7 @@ Objetivo: Incorporar gestion de perfil propio para todos los usuarios y panel de
 - **Criteria:**
   - ✅ `GET  /api/v1/users/me` — perfil propio (cualquier usuario autenticado)
   - ✅ `PUT  /api/v1/users/me` — actualizar nombre, email y avatar propio (requiere `current_password` si cambia email)
-  - ✅ `PUT  /api/v1/users/me/password` — cambiar contraseña propia (requiere `current_password`)
+  - ✅ Cambio de contraseña propia embebido en `PUT /api/v1/users/me` (campo `password`, requiere `current_password`; no hay ruta `/users/me/password` separada)
   - ✅ `GET  /api/v1/users` — listar usuarios (solo admin)
   - ✅ `GET  /api/v1/users/{id}` — ver usuario (solo admin)
   - ✅ `PUT  /api/v1/users/{id}` — editar usuario, nombre, email y roles (solo admin)

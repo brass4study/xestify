@@ -198,6 +198,8 @@ Si en producción se requiere pipeline optimizado (purge/minificado), se podrá 
 - Tokens refresh: access_token (1-2h) + refresh_token (7d).
 - Cliente debe manejar renovación automática.
 
+> Nota (implementación real): no se construyó blacklist ni refresh_token. `JwtService` emite un único `access_token` con expiración fija vía `JWT_EXPIRY` (por defecto 1h); al expirar, el cliente debe volver a hacer login. Alcance reducido razonable para el MVP/TFM, documentado aquí para no inducir a error al contrastar esta decisión con el código.
+
 ### Riesgos mitigados
 - XSS puede leer localStorage (mitigar con CSP headers).
 

@@ -8,14 +8,14 @@
 
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
-| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 7 | 7 | 0 |
+| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 8 | 6 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 8 | 4 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 6 | 7 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 7 | 4 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 11 | 5 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 8 | 4 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 5 | 2 | 0 |
-| **Total** | **85** | **52** | **33** | **0** |
+| **Total** | **85** | **53** | **32** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -34,7 +34,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 01.07 | ⏳ | Menor | Prefijos protegidos en lista paralela a `routes.php` | | |
 | 01.08 | ⏳ | Menor | `UserController::destroy()` usa bandera en vez de returns | | ⚠️ Quitar la bandera con returns tempranos en el propio método dispara S1142 (>3 returns); moverlos a un helper privado (patrón `applyAdminUpdate`) dispara S1448 (>20 métodos en la clase). Requiere decidir antes: aceptar el NOSONAR de uno de los dos, o extraer una clase (relacionado con `01.02`, ausencia de `AuthorizationService`). |
 | 01.09 | ✅ | Menor | Normalización de avatar duplicada 3 veces | `3b6e846` | |
-| 01.10 | ⏳ | Menor | Desfases doc/código (login camelCase, refresh_token, endpoint password) | | |
+| 01.10 | ✅ | Menor | Desfases doc/código (login camelCase, refresh_token, endpoint password) | `0be3462` | |
 | 01.11 | ⏳ | Menor | No existe `POST /api/v1/users` (probablemente intencional) | | |
 | 01.12 | ⏳ | Nit | `RuntimePathNormalizer` más fragmentado de lo necesario | | |
 | 01.13 | ⏳ | Nit | `JWT_SECRET` default `'changeme'` fail-open | | |
