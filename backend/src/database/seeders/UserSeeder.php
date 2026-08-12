@@ -8,8 +8,9 @@ use PDO;
 use Xestify\core\Database;
 
 /**
- * Seeds the users table with a default admin account.
- * Auto-runs on server boot only when the table is empty.
+ * Seeds the users table with a default admin account, only when the table is empty.
+ * Not invoked automatically on server boot — run manually via
+ * `php tools/setup/seed-admin-user.php`.
  */
 class UserSeeder
 {
