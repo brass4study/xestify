@@ -70,6 +70,7 @@ try {
 // ---------------------------------------------------------------------------
 
 const TEST_ENTITY_SLUG = 'test_entity_service';
+const DELETE_BY_SLUG_SQL = 'DELETE FROM plugin_entity_data WHERE entity_slug = :slug';
 
 define('TEST_SCHEMA_JSON', <<<'JSON'
 {
@@ -111,8 +112,7 @@ function seedSchema(): void
 function cleanTestData(): void
 {
     $pdo = Database::connection();
-    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
-        ->execute([':slug' => TEST_ENTITY_SLUG]);
+    $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => TEST_ENTITY_SLUG]);
     $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
         ->execute([':slug' => TEST_ENTITY_SLUG]);
 }
@@ -317,7 +317,7 @@ TestSuite::run('createRecord() rolls back beforeSave hook writes when persist fa
         );
     } finally {
         cleanTestData();
-        $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
+        $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => $markerSlug]);
     }
 });
 
@@ -360,7 +360,7 @@ TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fa
         );
     } finally {
         cleanTestData();
-        $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
+        $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => $markerSlug]);
     }
 });
 
