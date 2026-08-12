@@ -10,12 +10,12 @@
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 10 | 2 | 2 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
-| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 11 | 2 | 0 |
+| [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 12 | 1 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 11 | 0 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 12 | 0 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **78** | **5** | **2** |
+| **Total** | **85** | **79** | **4** | **2** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -64,7 +64,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 03.01 | ✅ | Mayor | Tabla `plugin_hooks` desconectada del runtime real | `36e96a7` | ⚠️ Fallo preexistente no relacionado: `CommentsPluginTest.php::Comentarios tab does not appear for non-target entities` falla por estado de la BD de desarrollo (`comments` con `target_entity: '*'`), no por código; ya fallaba antes de esta sesión, fuera de alcance. |
 | 03.02 | ✅ | Mayor | 3 tests sin `exit()` — falso verde en runner agrupado | `156636c` | ⚠️ Mismo preexistente de `03.01`, no relacionado. |
 | 03.03 | ✅ | Mayor | `PluginClassLoader` instancia Hooks vs Lifecycle de forma distinta | `1a8f4a7` | ⚠️ Mismo preexistente de `03.01`, no relacionado. |
-| 03.04 | ⏳ | Menor | Duplicación `clients`/`products` (~90 líneas) | | |
+| 03.04 | ✅ | Menor | Duplicación `clients`/`products` (~90 líneas) | `2bf306f` | |
 | 03.05 | ✅ | Menor | `EntityController` con `HookDispatcher` por defecto oculto | `eb03e93` | |
 | 03.06 | ✅ | Menor | `PluginBootTest`/`PluginHookRegistrarTest` casi duplicados | `84ab45d` | |
 | 03.07 | ✅ | Menor | `ClientsPluginTest` usa `assert()` nativo de PHP | `391002d` | |

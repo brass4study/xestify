@@ -32,6 +32,7 @@ $groups = [
         'backend/tests/unit/RequestResponseTest.php',
         'backend/tests/unit/ContainerTest.php',
         'backend/tests/unit/ClientsPluginTest.php',
+        'backend/tests/unit/ProductsPluginTest.php',
         'backend/tests/unit/PluginDiscoveryServiceTest.php',
         'backend/tests/unit/PluginManifestReaderTest.php',
         'backend/tests/unit/PluginSchemaReaderTest.php',

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\clients;
 
-use PDO;
-use Xestify\exceptions\HookException;
-use Xestify\plugins\HookDispatcher;
+use Xestify\plugins\AbstractUniqueFieldHook;
 
 /**
  * Hooks for the clients plugin.
@@ -14,68 +12,20 @@ use Xestify\plugins\HookDispatcher;
  * Registers a beforeSave hook that enforces email uniqueness
  * across all records of the clients entity.
  */
-final class Hooks
+final class Hooks extends AbstractUniqueFieldHook
 {
-    private const ENTITY_SLUG = 'clients';
-
-    public function __construct(private PDO $pdo)
+    protected function entitySlug(): string
     {
+        return 'clients';
     }
 
-    /**
-     * Register all hooks for this plugin on the given dispatcher.
-     */
-    public function register(HookDispatcher $dispatcher): void
+    protected function fieldName(): string
     {
-        $dispatcher->register(
-            'beforeSave',
-            fn(array $ctx): array => $this->enforceEmailUniqueness($ctx),
-            priority: 5
-        );
+        return 'email';
     }
 
-    /**
-    * Enforce that no other active record in the clients entity has the same email.
-     *
-     * @param  array<string, mixed> $ctx
-     * @return array<string, mixed>
-     * @throws HookException when a duplicate email is found
-     */
-    private function enforceEmailUniqueness(array $ctx): array
+    protected function duplicateMessage(string $value): string
     {
-        if (($ctx['slug'] ?? '') !== self::ENTITY_SLUG) {
-            return $ctx;
-        }
-
-        $email = (string) ($ctx['data']['email'] ?? '');
-
-        if ($email === '') {
-            return $ctx;
-        }
-
-        $recordId = (string) ($ctx['id'] ?? ($ctx['data']['id'] ?? ''));
-
-        $sql = 'SELECT COUNT(*) FROM plugin_entity_data
-                WHERE entity_slug = :slug
-                  AND content->>\'email\' = :email
-                  AND deleted_at IS NULL'
-             . ($recordId !== '' ? ' AND id <> :id' : '');
-
-        $stmt = $this->pdo->prepare($sql);
-        $params = [':slug' => self::ENTITY_SLUG, ':email' => $email];
-
-        if ($recordId !== '') {
-            $params[':id'] = $recordId;
-        }
-
-        $stmt->execute($params);
-        $count = (int) $stmt->fetchColumn();
-
-        if ($count > 0) {
-            throw new HookException("El email '{$email}' ya está registrado en otro cliente.");
-        }
-
-        return $ctx;
+        return "El email '{$value}' ya está registrado en otro cliente.";
     }
 }
-

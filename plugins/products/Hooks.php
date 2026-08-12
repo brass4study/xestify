@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\products;
 
-use PDO;
-use Xestify\exceptions\HookException;
-use Xestify\plugins\HookDispatcher;
+use Xestify\plugins\AbstractUniqueFieldHook;
 
 /**
  * Hooks for the products plugin.
@@ -14,62 +12,20 @@ use Xestify\plugins\HookDispatcher;
  * Registers a beforeSave hook that enforces SKU uniqueness
  * across all records of the products entity.
  */
-final class Hooks
+final class Hooks extends AbstractUniqueFieldHook
 {
-    private const ENTITY_SLUG = 'products';
-
-    public function __construct(private PDO $pdo)
+    protected function entitySlug(): string
     {
+        return 'products';
     }
 
-    public function register(HookDispatcher $dispatcher): void
+    protected function fieldName(): string
     {
-        $dispatcher->register(
-            'beforeSave',
-            fn(array $ctx): array => $this->enforceSkuUniqueness($ctx),
-            priority: 5
-        );
+        return 'sku';
     }
 
-    /**
-     * @param  array<string, mixed> $ctx
-     * @return array<string, mixed>
-     * @throws HookException when a duplicate SKU is found
-     */
-    private function enforceSkuUniqueness(array $ctx): array
+    protected function duplicateMessage(string $value): string
     {
-        if (($ctx['slug'] ?? '') !== self::ENTITY_SLUG) {
-            return $ctx;
-        }
-
-        $sku = (string) ($ctx['data']['sku'] ?? '');
-        if ($sku === '') {
-            return $ctx;
-        }
-
-        $recordId = (string) ($ctx['id'] ?? ($ctx['data']['id'] ?? ''));
-
-        $sql = 'SELECT COUNT(*) FROM plugin_entity_data
-                WHERE entity_slug = :slug
-                  AND content->>\'sku\' = :sku
-                  AND deleted_at IS NULL'
-             . ($recordId !== '' ? ' AND id <> :id' : '');
-
-        $stmt = $this->pdo->prepare($sql);
-        $params = [':slug' => self::ENTITY_SLUG, ':sku' => $sku];
-
-        if ($recordId !== '') {
-            $params[':id'] = $recordId;
-        }
-
-        $stmt->execute($params);
-        $count = (int) $stmt->fetchColumn();
-
-        if ($count > 0) {
-            throw new HookException("El SKU '{$sku}' ya esta registrado en otro producto.");
-        }
-
-        return $ctx;
+        return "El SKU '{$value}' ya esta registrado en otro producto.";
     }
 }
-

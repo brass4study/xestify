@@ -15,13 +15,13 @@ require_once BACKEND_PATH . '/src/plugins/AbstractEntityInstaller.php';
 require_once BACKEND_PATH . '/src/plugins/AbstractUniqueFieldHook.php';
 
 // Explicitly require plugin files (not in autoload path)
-require_once BASE_PATH . '/plugins/clients/Hooks.php';
-require_once BASE_PATH . '/plugins/clients/Installer.php';
+require_once BASE_PATH . '/plugins/products/Hooks.php';
+require_once BASE_PATH . '/plugins/products/Installer.php';
 
 require_once __DIR__ . '/helpers.php';
 
-use Xestify\plugins\clients\Hooks;
-use Xestify\plugins\clients\Installer;
+use Xestify\plugins\products\Hooks;
+use Xestify\plugins\products\Installer;
 use Xestify\plugins\HookDispatcher;
 use Xestify\exceptions\HookException;
 use Xestify\exceptions\PluginException;
@@ -34,7 +34,7 @@ use Xestify\exceptions\PluginException;
  * PDO stub that records prepared statements and simulates fetchColumn().
  * Avoid calling parent::__construct (requires a real DSN).
  */
-class ClientsPdoStub extends PDO
+class ProductsPdoStub extends PDO
 {
     public array $executedSqls    = [];
     public array $executedParams  = [];
@@ -52,16 +52,16 @@ class ClientsPdoStub extends PDO
 
     public function prepare(string $query, array $options = []): \PDOStatement|false
     {
-        return new ClientsStmtStub($this, $query);
+        return new ProductsStmtStub($this, $query);
     }
 }
 
-class ClientsStmtStub extends \PDOStatement
+class ProductsStmtStub extends \PDOStatement
 {
-    private ClientsPdoStub $pdoStub;
+    private ProductsPdoStub $pdoStub;
     private string $sql;
 
-    public function __construct(ClientsPdoStub $pdoStub, string $sql)
+    public function __construct(ProductsPdoStub $pdoStub, string $sql)
     {
         $this->pdoStub = $pdoStub;
         $this->sql     = $sql;
@@ -83,34 +83,34 @@ class ClientsStmtStub extends \PDOStatement
 // ---------------------------------------------------------------------------
 // PLUGIN_DIR constant for structure tests
 // ---------------------------------------------------------------------------
-define('PLUGIN_DIR', BASE_PATH . '/plugins/clients');
+define('PRODUCTS_PLUGIN_DIR', BASE_PATH . '/plugins/products');
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('Plugin clients - manifest.json existe', function (): void {
-    $path = PLUGIN_DIR . '/manifest.json';
+TestSuite::run('Plugin products - manifest.json existe', function (): void {
+    $path = PRODUCTS_PLUGIN_DIR . '/manifest.json';
     assertTrue(file_exists($path), 'manifest.json not found');
 });
 
-TestSuite::run('Plugin clients - manifest.json campos requeridos', function (): void {
-    $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/manifest.json'), true);
+TestSuite::run('Plugin products - manifest.json campos requeridos', function (): void {
+    $data = json_decode((string) file_get_contents(PRODUCTS_PLUGIN_DIR . '/manifest.json'), true);
     assertTrue(is_array($data), 'manifest.json must be a JSON object');
     foreach (['slug', 'name', 'version', 'type', 'core_version'] as $field) {
         assertTrue(isset($data[$field]) && $data[$field] !== '', "manifest.json missing field: {$field}");
     }
-    assertTrue($data['slug'] === 'clients', 'slug must be clients');
+    assertTrue($data['slug'] === 'products', 'slug must be products');
     assertTrue($data['type'] === 'entity', 'type must be entity');
 });
 
-TestSuite::run('Plugin clients - schema.json existe', function (): void {
-    $path = PLUGIN_DIR . '/schema.json';
+TestSuite::run('Plugin products - schema.json existe', function (): void {
+    $path = PRODUCTS_PLUGIN_DIR . '/schema.json';
     assertTrue(file_exists($path), 'schema.json not found');
 });
 
-TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/custom_fields/relations', function (): void {
-    $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/schema.json'), true);
+TestSuite::run('Plugin products - schema.json respeta contrato identities/fields/custom_fields/relations', function (): void {
+    $data = json_decode((string) file_get_contents(PRODUCTS_PLUGIN_DIR . '/schema.json'), true);
     assertTrue(is_array($data), 'schema.json must be a JSON object');
     assertTrue(isset($data['identities']) && is_array($data['identities']), 'schema.json must have "identities"');
     assertTrue(isset($data['fields']) && is_array($data['fields']), 'schema.json must have "fields"');
@@ -123,10 +123,8 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
     assertTrue(($data['identities']['id']['editable'] ?? true) === false, 'identity id must be non-editable');
 
     $fieldKeys = array_keys($data['fields']);
-    foreach (['name', 'email'] as $requiredField) {
-        assertTrue(in_array($requiredField, $fieldKeys, true), "schema.json missing field: {$requiredField}");
-        assertTrue(($data['fields'][$requiredField]['required'] ?? false) === true, "{$requiredField} must be required");
-    }
+    assertTrue(in_array('name', $fieldKeys, true), 'schema.json missing field: name');
+    assertTrue(($data['fields']['name']['required'] ?? false) === true, 'name must be required');
 
     $customFieldsByKey = [];
     foreach ($data['custom_fields'] as $customField) {
@@ -138,33 +136,30 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
         $customFieldsByKey[$customField['key']] = $customField;
     }
 
-    $expectedCustomKeys = ['phone', 'creation_stamp', 'is_active'];
+    $expectedCustomKeys = ['sku', 'description', 'price'];
     $actualCustomKeys = array_keys($customFieldsByKey);
     sort($expectedCustomKeys);
     sort($actualCustomKeys);
     assertTrue($actualCustomKeys === $expectedCustomKeys, 'custom_fields keys must match expected set exactly');
 
-    assertTrue(($customFieldsByKey['phone']['type'] ?? '') === 'string', 'phone custom_field must be string');
-    assertTrue(($customFieldsByKey['phone']['required'] ?? true) === false, 'phone custom_field must be optional');
+    assertTrue(($customFieldsByKey['sku']['type'] ?? '') === 'string', 'sku custom_field must be string');
+    assertTrue(($customFieldsByKey['sku']['required'] ?? false) === true, 'sku custom_field must be required');
 
-    assertTrue(($customFieldsByKey['creation_stamp']['type'] ?? '') === 'timestamp', 'creation_stamp must be timestamp');
-    assertTrue(
-        ($customFieldsByKey['creation_stamp']['default'] ?? '') === 'now',
-        'creation_stamp default must be "now"'
-    );
+    assertTrue(($customFieldsByKey['description']['type'] ?? '') === 'text', 'description custom_field must be text');
+    assertTrue(($customFieldsByKey['description']['required'] ?? false) === true, 'description custom_field must be required');
 
-    assertTrue(($customFieldsByKey['is_active']['type'] ?? '') === 'boolean', 'is_active custom_field must be boolean');
-    assertTrue(($customFieldsByKey['is_active']['default'] ?? null) === true, 'is_active default must be true');
+    assertTrue(($customFieldsByKey['price']['type'] ?? '') === 'number', 'price custom_field must be number');
+    assertTrue(($customFieldsByKey['price']['required'] ?? true) === false, 'price custom_field must be optional');
 });
 
-TestSuite::run('Plugin clients - Hooks.php existe', function (): void {
-    assertTrue(file_exists(PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
+TestSuite::run('Plugin products - Hooks.php existe', function (): void {
+    assertTrue(file_exists(PRODUCTS_PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
 });
 
 TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
-    $pdo   = new ClientsPdoStub();
+    $pdo   = new ProductsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'other_entity', 'data' => ['email' => 'x@test.com']];
+    $ctx   = ['slug' => 'other_entity', 'data' => ['sku' => 'SKU-1']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -174,38 +169,38 @@ TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
     assertTrue(count($pdo->executedSqls) === 0, 'no SQL should be executed for other entity');
 });
 
-TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
-    $pdo   = new ClientsPdoStub();
+TestSuite::run('Hooks - sku vacío no ejecuta consulta', function (): void {
+    $pdo   = new ProductsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => '']];
+    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => '']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
     $result = $dispatcher->execute('beforeSave', $ctx);
 
-    assertTrue($result['data']['email'] === '', 'email should remain empty');
-    assertTrue(count($pdo->executedSqls) === 0, 'no SQL for empty email');
+    assertTrue($result['data']['sku'] === '', 'sku should remain empty');
+    assertTrue(count($pdo->executedSqls) === 0, 'no SQL for empty sku');
 });
 
-TestSuite::run('Hooks - email único permite guardar', function (): void {
-    $pdo = new ClientsPdoStub();
+TestSuite::run('Hooks - sku único permite guardar', function (): void {
+    $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(0); // no duplicates
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'nuevo@test.com']];
+    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-NEW']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
     $result = $dispatcher->execute('beforeSave', $ctx);
 
-    assertTrue($result['data']['email'] === 'nuevo@test.com', 'context preserved');
+    assertTrue($result['data']['sku'] === 'SKU-NEW', 'context preserved');
     assertTrue(count($pdo->executedSqls) === 1, 'exactly one query executed');
 });
 
-TestSuite::run('Hooks - email duplicado lanza HookException', function (): void {
-    $pdo = new ClientsPdoStub();
+TestSuite::run('Hooks - sku duplicado lanza HookException', function (): void {
+    $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(1); // duplicate found
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'dup@test.com']];
+    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-DUP']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -215,16 +210,16 @@ TestSuite::run('Hooks - email duplicado lanza HookException', function (): void 
         $dispatcher->execute('beforeSave', $ctx);
     } catch (HookException $e) {
         $thrown = true;
-        assertTrue(str_contains($e->getMessage(), 'dup@test.com'), 'message should contain the email');
+        assertTrue(str_contains($e->getMessage(), 'SKU-DUP'), 'message should contain the sku');
     }
-    assertTrue($thrown, 'HookException must be thrown for duplicate email');
+    assertTrue($thrown, 'HookException must be thrown for duplicate sku');
 });
 
-TestSuite::run('Hooks - email único en update excluye el propio registro', function (): void {
-    $pdo = new ClientsPdoStub();
+TestSuite::run('Hooks - sku único en update excluye el propio registro', function (): void {
+    $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(0);
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['id' => 'uuid-123', 'email' => 'same@test.com']];
+    $ctx   = ['slug' => 'products', 'data' => ['id' => 'uuid-456', 'sku' => 'SKU-SAME']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -232,17 +227,17 @@ TestSuite::run('Hooks - email único en update excluye el propio registro', func
 
     $executedParams = $pdo->executedParams[0] ?? [];
     assertTrue(isset($executedParams[':id']), 'id param must be bound when id is present');
-    assertTrue($executedParams[':id'] === 'uuid-123', 'id param value is correct');
+    assertTrue($executedParams[':id'] === 'uuid-456', 'id param value is correct');
 });
 
 TestSuite::run('Installer - instancia sin errores', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new ProductsPdoStub();
     $installer = new Installer($pdo);
     assertTrue($installer instanceof Installer, 'Installer must instantiate correctly');
 });
 
 TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new ProductsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
@@ -253,16 +248,16 @@ TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', f
 });
 
 TestSuite::run('Installer - install() pasa slug correcto', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new ProductsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
     $params = $pdo->executedParams[0] ?? [];
-    assertTrue(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
+    assertTrue(($params[':slug'] ?? '') === 'products', 'slug bound to "products"');
 });
 
 TestSuite::run('Installer - schema sembrado en plugins conserva contrato completo', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new ProductsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
