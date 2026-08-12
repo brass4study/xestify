@@ -453,7 +453,8 @@ Objetivo: CRUD genérico con validación por schema.
 - **Criteria:**
   - ✅ Objeto AppState con setUser(), getUser(), setCurrentEntity(), etc.
   - ✅ Métodos setter/getter simples
-  - ✅ Sin listeners, sin Proxy (Vanilla puro)
+  - ✅ Sin Proxy (Vanilla puro) — restricción vigente
+  - ⚠️ "Sin listeners" fue una restricción inicial abandonada deliberadamente en STORY 9.7 (que exige expresamente "gestión de estado ampliada... notificaciones... theming en tiempo real"): `AppState` implementa hoy tres mecanismos `subscribe/unsubscribe/notify` (usuario/sesión, UI, notificaciones), evolución coherente pero no reflejada aquí hasta ahora
 - **Dependencias:** STORY 0.6
 - **Blockers:** Ninguno
 
