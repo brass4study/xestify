@@ -6,6 +6,7 @@ namespace Xestify\services;
 
 use PDO;
 use PDOException;
+use Throwable;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\ValidationException;
 use Xestify\plugins\HookDispatcher;
@@ -59,9 +60,21 @@ final class EntityService
             throw new ValidationException($result->errors());
         }
 
-        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
-        $record  = $this->repository->create($entitySlug, $context['data'], $ownerId);
-        $this->dispatchAfter('afterSave', $entitySlug, $record);
+        $this->pdo->beginTransaction();
+
+        try {
+            $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
+            $record  = $this->repository->create($entitySlug, $context['data'], $ownerId);
+            $this->dispatchAfter('afterSave', $entitySlug, $record);
+
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
 
         return $record;
     }
@@ -85,9 +98,21 @@ final class EntityService
             throw new ValidationException($result->errors());
         }
 
-        $context = $this->dispatchBefore('beforeSave', $entitySlug, $data, $id);
-        $record  = $this->repository->update($id, $context['data']);
-        $this->dispatchAfter('afterSave', $entitySlug, $record);
+        $this->pdo->beginTransaction();
+
+        try {
+            $context = $this->dispatchBefore('beforeSave', $entitySlug, $data, $id);
+            $record  = $this->repository->update($id, $context['data']);
+            $this->dispatchAfter('afterSave', $entitySlug, $record);
+
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
 
         return $record;
     }

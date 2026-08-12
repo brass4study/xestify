@@ -9,13 +9,13 @@
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
 | [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 6 | 8 | 0 |
-| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 0 | 12 | 0 |
+| [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 1 | 11 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 0 | 13 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 2 | 9 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 0 | 16 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 0 | 12 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **10** | **75** | **0** |
+| **Total** | **85** | **11** | **74** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -44,7 +44,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 02.01 | ⏳ | Mayor | `EntityService` sin transacción en create/update | | |
+| 02.01 | ✅ | Mayor | `EntityService` sin transacción en create/update | `97d21e2` | `EntityService::createRecord()`/`updateRecord()` envuelven ahora el bloque `dispatchBefore('beforeSave') → repository->create()/update() → dispatchAfter('afterSave')` en `$pdo->beginTransaction()/commit()/rollBack()`, mismo patrón que `PluginRollbackService`/`PluginUpdateService`. La validación de esquema sigue fuera de la transacción (no toca BD). `EntityServiceHooksTest.php::PdoStub` (stub de PDO sin conexión real) gana `beginTransaction()/commit()/rollBack()/inTransaction()` en memoria para no romper con la nueva llamada. Test nuevo en `EntityServiceTest.php` (uno para create, uno para update): un hook `beforeSave` inserta una fila "marcador" propia y luego se fuerza el fallo de `repository->create()/update()` pasando `NAN` en un campo `number` (pasa `NumberFieldValidator` porque es un float, pero `json_encode()` no puede codificar `NAN` → `RepositoryException` en `encodeJson()`). Confirmado por reversión manual (`git stash`): ambos tests fallan sin el fix (la fila del hook queda persistida, 1 y 2 filas respectivamente) y pasan con él (0 filas). Verificado con `unit` + `EntityServiceTest.php`: 0 fallos. |
 | 02.02 | ⏳ | Mayor | `ValidationService` no rechaza campos no declarados | | |
 | 02.03 | ⏳ | Mayor | `TimestampFieldValidator` no valida formato; el test blinda el bug | | |
 | 02.04 | ⏳ | Mayor | `StringFieldValidator`/`TextFieldValidator` duplicados al 100% | | |

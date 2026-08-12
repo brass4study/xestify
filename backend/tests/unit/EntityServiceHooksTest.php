@@ -41,6 +41,8 @@ use Xestify\services\ValidationService;
  */
 final class PdoStub extends PDO
 {
+    private bool $inTransaction = false;
+
     public function __construct()
     {
         // Intentionally skip parent::__construct to avoid real DB connection.
@@ -49,6 +51,33 @@ final class PdoStub extends PDO
     public function prepare(string $query, array $options = []): \PDOStatement|false // NOSONAR
     {
         return new PdoStatementStub();
+    }
+
+    public function beginTransaction(): bool
+    {
+        $this->inTransaction = true;
+        return true;
+    }
+
+    public function commit(): bool
+    {
+        return $this->endTransaction();
+    }
+
+    public function rollBack(): bool
+    {
+        return $this->endTransaction();
+    }
+
+    private function endTransaction(): bool
+    {
+        $this->inTransaction = false;
+        return true;
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->inTransaction;
     }
 }
 

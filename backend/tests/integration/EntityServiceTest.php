@@ -23,12 +23,14 @@ require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
+require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\ValidationException;
+use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
@@ -274,6 +276,88 @@ TestSuite::run('listRecords() returns only active records', function (): void {
     assertTrue(count($rows) === 2, 'listRecords() must return 2 active records, got: ' . count($rows));
 
     cleanTestData();
+});
+
+TestSuite::run('createRecord() rolls back beforeSave hook writes when persist fails', function (): void {
+    cleanTestData();
+    seedSchema();
+    $pdo = Database::connection();
+    $markerSlug = TEST_ENTITY_SLUG . '_hook_marker';
+
+    $hooks = new HookDispatcher();
+    $hooks->register('beforeSave', function (array $context) use ($pdo, $markerSlug): array {
+        $pdo->prepare(
+            "INSERT INTO plugin_entity_data (entity_slug, content) VALUES (:slug, '{}'::jsonb)"
+        )->execute([':slug' => $markerSlug]);
+
+        return $context;
+    });
+
+    $svc = new EntityService(new GenericRepository($pdo), new ValidationService(), $pdo, $hooks);
+    $caught = false;
+
+    try {
+        // NAN passes NumberFieldValidator (it is a float) but json_encode() cannot
+        // encode it, so GenericRepository::create() throws RepositoryException
+        // *after* the beforeSave hook has already written its own row.
+        $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Broken', 'age' => NAN]);
+    } catch (\Throwable) {
+        $caught = true;
+    }
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
+    $stmt->execute([':slug' => $markerSlug]);
+    $markerCount = (int) $stmt->fetchColumn();
+
+    assertTrue($caught, 'createRecord() must fail because NAN cannot be encoded as JSON');
+    assertTrue(
+        $markerCount === 0,
+        'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
+    );
+
+    cleanTestData();
+    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
+});
+
+TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fails', function (): void {
+    cleanTestData();
+    seedSchema();
+    $pdo = Database::connection();
+    $markerSlug = TEST_ENTITY_SLUG . '_hook_marker';
+
+    $plainSvc = buildService();
+    $created = $plainSvc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Original']);
+
+    $hooks = new HookDispatcher();
+    $hooks->register('beforeSave', function (array $context) use ($pdo, $markerSlug): array {
+        $pdo->prepare(
+            "INSERT INTO plugin_entity_data (entity_slug, content) VALUES (:slug, '{}'::jsonb)"
+        )->execute([':slug' => $markerSlug]);
+
+        return $context;
+    });
+
+    $svc = new EntityService(new GenericRepository($pdo), new ValidationService(), $pdo, $hooks);
+    $caught = false;
+
+    try {
+        $svc->updateRecord((string) $created['id'], TEST_ENTITY_SLUG, ['age' => NAN]);
+    } catch (\Throwable) {
+        $caught = true;
+    }
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_entity_data WHERE entity_slug = :slug');
+    $stmt->execute([':slug' => $markerSlug]);
+    $markerCount = (int) $stmt->fetchColumn();
+
+    assertTrue($caught, 'updateRecord() must fail because NAN cannot be encoded as JSON');
+    assertTrue(
+        $markerCount === 0,
+        'beforeSave hook write must be rolled back when the persist step fails, got: ' . $markerCount
+    );
+
+    cleanTestData();
+    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $markerSlug]);
 });
 
 // ---------------------------------------------------------------------------
