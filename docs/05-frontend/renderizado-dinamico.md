@@ -17,7 +17,7 @@ Construir UI de entidades sin hardcodear formularios por negocio.
 - DynamicForm
 - DynamicTable
 - DynamicTabs
-- EntityDetail
+- EntityEdit (compone `DynamicForm` + `DynamicTabs`; cambio de tab vía callback `onTabChange`)
 
 ## Mapeo de tipos
 
