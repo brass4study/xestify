@@ -55,8 +55,4 @@ export class RouteController {
 
 		window.history[replaceHash ? 'replaceState' : 'pushState'](null, '', targetHash);
 	}
-
-	resolveFromHash(hashValue) {
-		return this.resolvePage(hashValue, this.fallbackPage);
-	}
 }
