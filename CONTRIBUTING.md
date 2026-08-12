@@ -25,6 +25,17 @@ define los estandares tecnicos que deben aplicar personas, agentes y herramienta
   `php tests/unit/FooTest.php`. En la estructura actual del repo, usar
   `php backend/tests/unit/FooTest.php`.
 - Namespace raiz: `Xestify\` mapea a `backend/src/`.
+- Para scripts sueltos de verificacion puntual o utilidades ad-hoc de sesion
+  (servir ficheros estaticos, probar un endpoint, inspeccionar datos, un
+  servidor HTTP de usar y tirar) usar PHP CLI (`php -r`, `php -S`, scripts en
+  `tools/`), no Python ni Node: PHP es el lenguaje real del stack y evita
+  introducir un runtime ajeno solo para una comprobacion de una sesion. Las
+  excepciones ya asumidas son `node --check` para sintaxis JS (ver
+  Verificacion) y `frontend/tests/e2e/` (Playwright, dependencia ya
+  instalada). Esto no aplica a servir la SPA o los tests HTML de
+  `frontend/tests/integration/`: eso pasa siempre por el Apache+PHP
+  same-origin real, nunca por un servidor alternativo (ver "Desarrollo
+  local" en `AGENTS.md`).
 
 ## Verificacion
 
