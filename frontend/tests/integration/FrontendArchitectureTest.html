@@ -150,6 +150,8 @@
         'El controlador debe reconocer el token generado por el mapa');
       assertEquals(PluginRouteController.getPluginSlugFromPage(pluginPage), 'comments',
         'El controlador debe conservar el slug del plugin');
+      assertEquals(pluginConfigPage('comments'), 'plugins:comments',
+        'El token de configuración de plugin debe seguir la convención namespace:param, igual que users:id');
 
       assertEquals(getPageFromHash('#/', 'entity:clients'), 'entity:clients',
         'La raíz debe resolver al fallback de entidad');

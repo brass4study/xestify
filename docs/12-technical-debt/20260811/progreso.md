@@ -12,10 +12,10 @@
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 12 | 1 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 11 | 0 | 0 |
-| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 15 | 1 | 0 |
+| [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 16 | 0 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 12 | 0 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **80** | **3** | **2** |
+| **Total** | **85** | **81** | **2** | **2** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -105,7 +105,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 05.08 | ✅ | Menor | `renderLogin()` no resincroniza hash tras expirar sesión | `dc0b03a` | |
 | 05.09 | ✅ | Menor | `RouteController.resolveFromHash()` código muerto | `a11d6e4` | |
 | 05.10 | ✅ | Menor | Ruta `'ui'` reconocida pero sin handler | `00f6bc3` | |
-| 05.11 | ⏳ | Menor | Token de ruta de plugins rompe convención `namespace:param` | | |
+| 05.11 | ✅ | Menor | Token de ruta de plugins rompe convención `namespace:param` | `4342c19` | |
 | 05.12 | ✅ | Menor | `AppState` "god object" | `8a49f71` | ⚠️ Solo se corrige el desfase de documentación (checkbox de STORY 3.7). La concentración de responsabilidades en sí (sesión/UI/notificaciones/navegación/preferencias en un único objeto) queda como refactor mayor fuera de alcance de esta sesión — candidato para dividir `AppState` en stores especializados si se retoma. |
 | 05.13 | ✅ | Menor | `RouteController.navigate()` API dual sin uso real | `28ec6f3` | |
 | 05.14 | ✅ | Nit | `ThemeModel` fallback `'light'` como string mágico | `956ec24` | |

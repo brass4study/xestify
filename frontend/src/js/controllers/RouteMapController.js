@@ -53,17 +53,17 @@ export function entityTabPage(slug, recordId, tabId) {
 
 export function pluginConfigPage(slug) {
   const normalizedSlug = normalizeSegment(slug);
-  return normalizedSlug === '' || normalizedSlug.includes('/') ? 'plugins' : `/plugins/${normalizedSlug}`;
+  return normalizedSlug === '' ? 'plugins' : `plugins:${normalizedSlug}`;
 }
 
 export function parsePluginConfigPage(page) {
-  const prefix = '/plugins/';
+  const prefix = 'plugins:';
   if (typeof page !== 'string' || !page.startsWith(prefix)) {
     return null;
   }
 
   const slug = page.slice(prefix.length);
-  return slug === '' || slug.includes('/') ? null : { slug };
+  return slug === '' ? null : { slug };
 }
 
 export function userDetailPage(userId) {
