@@ -34,7 +34,7 @@ class EntityController
     public function __construct(
         private EntityService $service,
         private PDO $pdo,
-        private HookDispatcher $hookDispatcher = new HookDispatcher(),
+        private HookDispatcher $hookDispatcher,
         private ?RequestFactory $requestFactory = null
     ) {
     }

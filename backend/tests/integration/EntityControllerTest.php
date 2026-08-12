@@ -37,6 +37,7 @@ use Xestify\controllers\EntityController;
 use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
+use Xestify\plugins\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
@@ -110,7 +111,8 @@ function buildController(): EntityController
             new ValidationService(),
             $pdo
         ),
-        $pdo
+        $pdo,
+        new HookDispatcher()
     );
 }
 
