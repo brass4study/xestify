@@ -15,5 +15,6 @@ require_once BASE_PATH . '/src/validation/validators/DateFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/TimestampFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/EmailFieldValidator.php';
 require_once BASE_PATH . '/src/validation/validators/SelectFieldValidator.php';
+require_once BASE_PATH . '/src/validation/validators/UuidFieldValidator.php';
 require_once BASE_PATH . '/src/validation/DefaultFieldValidatorRegistryFactory.php';
 require_once BASE_PATH . '/src/services/ValidationService.php';

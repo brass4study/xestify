@@ -14,6 +14,7 @@ use Xestify\validation\validators\NumberFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
+use Xestify\validation\validators\UuidFieldValidator;
 
 TestSuite::run('StringFieldValidator accepts strings and rejects other values', function (): void {
     $validator = new StringFieldValidator();
@@ -73,6 +74,15 @@ TestSuite::run('EmailFieldValidator validates email format', function (): void {
 
     assertEquals([], $validator->validate('email', 'ana@example.com', []));
     assertEquals('invalid_email', $validator->validate('email', 'invalid_mail', [])[0]->code());
+});
+
+TestSuite::run('UuidFieldValidator validates UUID v4 format and rejects malformed values', function (): void {
+    $validator = new UuidFieldValidator();
+
+    assertEquals([], $validator->validate('id', '4c2b6b0a-9a3f-4f3e-8c1e-2a7e6a3b9d10', []));
+    assertEquals([], $validator->validate('id', '4C2B6B0A-9A3F-4F3E-8C1E-2A7E6A3B9D10', []));
+    assertEquals('invalid_type', $validator->validate('id', 'not-a-uuid', [])[0]->code());
+    assertEquals('invalid_type', $validator->validate('id', 123, [])[0]->code());
 });
 
 TestSuite::run('SelectFieldValidator validates scalar value and allowed options', function (): void {

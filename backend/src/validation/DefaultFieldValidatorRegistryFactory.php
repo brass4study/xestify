@@ -11,6 +11,7 @@ use Xestify\validation\validators\NumberFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
+use Xestify\validation\validators\UuidFieldValidator;
 
 final class DefaultFieldValidatorRegistryFactory
 {
@@ -25,6 +26,7 @@ final class DefaultFieldValidatorRegistryFactory
             'timestamp' => new TimestampFieldValidator(),
             'email' => new EmailFieldValidator(),
             'select' => new SelectFieldValidator(),
+            'uuid' => new UuidFieldValidator(),
         ]);
     }
 }

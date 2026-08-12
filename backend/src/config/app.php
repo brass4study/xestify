@@ -55,6 +55,7 @@ use Xestify\validation\validators\NumberFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
+use Xestify\validation\validators\UuidFieldValidator;
 
 if (!function_exists('xestifyRegisterCoreHttpServices')) {
     function xestifyRegisterCoreHttpServices(Container $container): void
@@ -92,6 +93,7 @@ if (!function_exists('xestifyRegisterEntityServices')) {
             'timestamp' => new TimestampFieldValidator(),
             'email' => new EmailFieldValidator(),
             'select' => new SelectFieldValidator(),
+            'uuid' => new UuidFieldValidator(),
         ]));
         $container->singleton(ValidationService::class, fn() => new ValidationService(
             $container->get(SchemaFieldExtractor::class),
