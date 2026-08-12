@@ -121,7 +121,11 @@ export class EntityEdit {
 
 		const schemaWithDefaults = this.#applyInitialData(this.#schema, initialData);
 		this.#form = new DynamicForm(schemaWithDefaults, formContainer);
-		this.#form.render();
+		const formEl = this.#form.render();
+		formEl.addEventListener('submit', (event) => {
+			event.preventDefault();
+			void this.submit();
+		});
 
 		const saveBtn = component.create('button', {
 			label: t('forms.save', 'Guardar'),
@@ -129,7 +133,7 @@ export class EntityEdit {
 			size: 'md',
 			dataRole: 'entity-edit-save',
 			onClick: () => {
-				this.submit();
+				formEl.requestSubmit();
 			},
 		});
 		layout.addAction(saveBtn);

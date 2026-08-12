@@ -342,6 +342,32 @@
     assertEquals(postCount, 1, 'Retry after fixing validation errors should reach the API');
   });
 
+  await test('pulsar Enter en un campo dispara el guardado via el evento submit del formulario', async () => {
+    const container = makeSandbox();
+    let capturedUrl = null;
+    let capturedBody = null;
+
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = url;
+      capturedBody = JSON.parse(init.body);
+      return { status: 201, json: async () => ({ ok: true, data: { id: 1, name: 'ACME' } }) };
+    };
+
+    const page = new EntityEdit(container, 'client', SCHEMA);
+    container.querySelector('[name="name"]').value = 'ACME';
+    container.querySelector('[name="email"]').value = 'info@acme.com';
+
+    const form = container.querySelector('form');
+    assertTrue(form !== null, 'DynamicForm debe renderizar un <form> real');
+    // El navegador convierte Enter dentro de un input en un evento "submit"
+    // nativo del <form> que lo contiene; lo simulamos directamente.
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assertTrue(capturedUrl !== null && capturedUrl.includes('/entities/client/records'), 'El submit del formulario debe llegar a la API igual que el botón Guardar');
+    assertEquals(capturedBody.name, 'ACME', 'El body debe contener name');
+  });
+
   await test('cancel button calls onCancel callback', async () => {
     const container = makeSandbox();
     let cancelled = false;
