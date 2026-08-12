@@ -25,6 +25,9 @@ try {
 }
 
 const STATUS_QUERY = 'SELECT status FROM plugins WHERE slug = :slug';
+const STATUS_PLUGIN_NAME = 'Status Plugin';
+const STATUS_PLUGIN_VERSION = '1.0.0';
+const STATUS_PLUGIN_SCHEMA = '{"fields":{"name":{"type":"string","required":true}}}';
 
 echo str_repeat('-', 40) . "\n";
 
@@ -45,17 +48,17 @@ final class Lifecycle implements PluginLifecycleInterface {
 PHP;
     $root = createPluginFixture([
         'slug' => $slug,
-        'name' => 'Status Plugin',
-        'version' => '1.0.0',
+        'name' => STATUS_PLUGIN_NAME,
+        'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
     $pdo->prepare(
         "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
          VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
     )->execute([
         ':slug' => $slug,
-        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
+        ':schema' => STATUS_PLUGIN_SCHEMA,
     ]);
 
     try {
@@ -92,17 +95,17 @@ final class Lifecycle implements PluginLifecycleInterface {
 PHP;
     $root = createPluginFixture([
         'slug' => $slug,
-        'name' => 'Status Plugin',
-        'version' => '1.0.0',
+        'name' => STATUS_PLUGIN_NAME,
+        'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
     $pdo->prepare(
         "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
          VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'active', 1, CAST(:schema AS jsonb))"
     )->execute([
         ':slug' => $slug,
-        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
+        ':schema' => STATUS_PLUGIN_SCHEMA,
     ]);
 
     try {
@@ -140,17 +143,17 @@ final class Lifecycle implements PluginLifecycleInterface {
 PHP;
     $root = createPluginFixture([
         'slug' => $slug,
-        'name' => 'Status Plugin',
-        'version' => '1.0.0',
+        'name' => STATUS_PLUGIN_NAME,
+        'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
     $pdo->prepare(
         "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
          VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
     )->execute([
         ':slug' => $slug,
-        ':schema' => '{"fields":{"name":{"type":"string","required":true}}}',
+        ':schema' => STATUS_PLUGIN_SCHEMA,
     ]);
 
     try {
