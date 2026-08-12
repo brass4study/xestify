@@ -353,7 +353,7 @@
       return { status: 201, json: async () => ({ ok: true, data: { id: 1, name: 'ACME' } }) };
     };
 
-    const page = new EntityEdit(container, 'client', SCHEMA);
+    new EntityEdit(container, 'client', SCHEMA);
     container.querySelector('[name="name"]').value = 'ACME';
     container.querySelector('[name="email"]').value = 'info@acme.com';
 

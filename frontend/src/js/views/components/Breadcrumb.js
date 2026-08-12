@@ -77,7 +77,7 @@ export class BreadcrumbComponent extends BaseComponent {
 
     this.appendItemIcon(node, item);
 
-    const text = component.create('span', {
+    component.create('span', {
       text: itemLabel,
       className: 'truncate',
     }).setParent(node);
@@ -91,7 +91,7 @@ export class BreadcrumbComponent extends BaseComponent {
 
   appendItemIcon(node, item) {
     if (typeof item?.iconClass === 'string' && item.iconClass !== '') {
-      const icon = component.create('i', {
+      component.create('i', {
         className: `${item.iconClass} text-[12px] text-slate-500`,
       })
         .setAttribute('aria-hidden', 'true')
