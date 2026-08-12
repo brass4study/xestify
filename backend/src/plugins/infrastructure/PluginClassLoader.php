@@ -42,7 +42,7 @@ final class PluginClassLoader
             return null;
         }
 
-        return new $class($this->pdo); // NOSONAR - plugin lifecycle convention
+        return $this->instantiateWithOptionalPdo($class);
     }
 
     private function requirePluginFile(string $slug, string $filename): void
