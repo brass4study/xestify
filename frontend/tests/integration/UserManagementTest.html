@@ -14,6 +14,7 @@
   import { UserManager } from '../../js/views/pages/UserManager.js';
   import { UserConfig } from '../../js/views/pages/UserConfig.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
+  import { displayEmail, displayName, getInitials, normalizeRoleList } from '../../js/models/UserModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -82,6 +83,22 @@
   }
 
   separator();
+
+  await test('UserModel.normalizeRoleList acepta array, string JSON, CSV y valor único', async () => {
+    assertEquals(normalizeRoleList(['admin', ' user ', '']), ['admin', 'user'], 'Filtra vacíos y recorta espacios en arrays');
+    assertEquals(normalizeRoleList('["admin","user"]'), ['admin', 'user'], 'Parsea JSON de array');
+    assertEquals(normalizeRoleList('admin, user'), ['admin', 'user'], 'Soporta lista separada por comas');
+    assertEquals(normalizeRoleList('admin'), ['admin'], 'Soporta un único rol como string');
+    assertEquals(normalizeRoleList(null), [], 'Valor no reconocido devuelve lista vacía');
+  });
+
+  await test('UserModel.displayName/displayEmail/getInitials comparten la misma lógica que consumen UserManager y UserConfig', async () => {
+    assertEquals(displayName({ name: ' Ana Pérez ' }), 'Ana Pérez', 'Recorta espacios del nombre');
+    assertEquals(displayName({ email: 'ana@xestify.local' }), 'ana@xestify.local', 'Sin nombre cae a displayEmail');
+    assertEquals(displayEmail({}), 'Sin email', 'Sin email devuelve el texto por defecto');
+    assertEquals(getInitials('Ana Pérez', 'ana@xestify.local'), 'AP', 'Iniciales de nombre y apellido');
+    assertEquals(getInitials('', 'ana@xestify.local'), 'AN', 'Sin nombre usa el email como base');
+  });
 
   await test('renderiza la tabla de usuarios con filas y columnas esperadas', async () => {
     const container = makeSandbox();

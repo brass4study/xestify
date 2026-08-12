@@ -4,6 +4,7 @@ import { SessionModel } from '../../models/SessionModel.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { component } from '../modules/ComponentFactory.js';
+import { displayEmail, displayName, getInitials, normalizeRoleList } from '../../models/UserModel.js';
 
 export class UserConfig {
 	#container;
@@ -232,8 +233,8 @@ export class UserConfig {
 	}
 
 	#buildFormNodes(form, user) {
-		const initialName = this.getDraftValue('name', this.#displayName(user));
-		const initialEmail = this.getDraftValue('email', this.#displayEmail(user));
+		const initialName = this.getDraftValue('name', displayName(user));
+		const initialEmail = this.getDraftValue('email', displayEmail(user));
 		const initialRole = this.getDraftValue('role', this.#primaryRole(user));
 		const initialAvatar = this.getDraftValue('avatar', this.#stringValue(user?.avatar));
 		const createdAt = this.#formatDateForInput(this.#resolveCreatedAt(user));
@@ -304,7 +305,7 @@ export class UserConfig {
 				className: 'h-full w-full object-cover',
 			}).setParent(avatar);
 		} else {
-			avatar.setText(this.#getInitials(initialName, initialEmail));
+			avatar.setText(getInitials(initialName, initialEmail));
 		}
 
 		const info = component.create('div', { className: 'grid gap-0.5' });
@@ -617,7 +618,7 @@ export class UserConfig {
 		const accepted = await UiResilienceService.confirm({
 			container: this.#container,
 			title: 'Confirmar borrado de usuario',
-			message: `¿Seguro que quieres borrar al usuario ${this.#displayName(user)}? Esta acción es irreversible.`,
+			message: `¿Seguro que quieres borrar al usuario ${displayName(user)}? Esta acción es irreversible.`,
 			confirmLabel: 'Borrar usuario',
 			cancelLabel: 'Cancelar',
 		});
@@ -778,22 +779,6 @@ export class UserConfig {
 		return '';
 	}
 
-	#displayName(user) {
-		const name = this.#stringValue(user?.name).trim();
-		if (name !== '') {
-			return name;
-		}
-		return this.#displayEmail(user);
-	}
-
-	#displayEmail(user) {
-		const email = this.#stringValue(user?.email).trim();
-		if (email !== '') {
-			return email;
-		}
-		return 'Sin email';
-	}
-
 	#userRoles(user) {
 		return normalizeRoleList(user?.roles);
 	}
@@ -846,18 +831,6 @@ export class UserConfig {
 		return this.#stringValue(user?.creation_stamp);
 	}
 
-	#getInitials(name, email = '') {
-		const base = typeof name === 'string' && name !== '' ? name : email;
-		const words = String(base).trim().split(/\s+/).filter(Boolean);
-		if (words.length === 0) {
-			return 'US';
-		}
-		if (words.length === 1) {
-			return words[0].slice(0, 2).toUpperCase();
-		}
-		return `${words[0][0]}${words[1][0]}`.toUpperCase();
-	}
-
 	resolveContainer(container) {
 		if (container instanceof HTMLElement) {
 			return container;
@@ -873,38 +846,3 @@ export class UserConfig {
 		throw new TypeError(`UserConfig: container "${String(container)}" not found`);
 	}
 }
-
-	function normalizeRoleList(rawRoles) {
-		if (Array.isArray(rawRoles)) {
-			return rawRoles
-				.filter((role) => typeof role === 'string' && role.trim() !== '')
-				.map((role) => role.trim());
-		}
-
-		if (typeof rawRoles === 'string') {
-			const trimmed = rawRoles.trim();
-			if (trimmed === '') {
-				return [];
-			}
-
-			try {
-				const parsed = JSON.parse(trimmed);
-				if (Array.isArray(parsed)) {
-					return normalizeRoleList(parsed);
-				}
-			} catch {
-				// Fall back to comma-separated or single role formats.
-			}
-
-			if (trimmed.includes(',')) {
-				return trimmed
-					.split(',')
-					.map((role) => role.trim())
-					.filter((role) => role !== '');
-			}
-
-			return [trimmed];
-		}
-
-		return [];
-	}

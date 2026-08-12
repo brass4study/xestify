@@ -14,8 +14,8 @@
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 5 | 6 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 7 | 9 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 5 | 7 | 0 |
-| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 2 | 5 | 0 |
-| **Total** | **85** | **32** | **53** | **0** |
+| [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 3 | 4 | 0 |
+| **Total** | **85** | **33** | **52** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 
@@ -135,7 +135,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 |---|---|---|---|---|---|
 | 07.01 | ✅ | Crítico | `EntityEdit.submit()` bloquea el formulario tras error (= **P2**) | `199e957` | |
 | 07.02 | ✅ | Crítico | Botones `PluginManager`/`PluginConfig` rotos tras usar el toolbar (= **P3**) | `beb2da7` | |
-| 07.03 | ⏳ | Mayor | `normalizeRoleList()` duplicada `UserManager`/`UserConfig` | | |
+| 07.03 | ✅ | Mayor | `normalizeRoleList()` duplicada `UserManager`/`UserConfig` | `d70bfa9` | |
 | 07.04 | ⏳ | Mayor | `DynamicForm` sin rama `number`/`time`; `inputTime` sin conectar | | |
 | 07.05 | ⏳ | Mayor | Dos patrones distintos para página CRUD con formulario | | |
 | 07.06 | ⏳ | Menor | `Login.js` sin guarda de re-entrada | | |

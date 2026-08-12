@@ -4,6 +4,7 @@ import { t } from '../../models/I18nModel.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { ListLayout } from '../layout/ListLayout.js';
 import { component } from '../modules/ComponentFactory.js';
+import { displayEmail, displayName, getInitials, normalizeRoleList } from '../../models/UserModel.js';
 
 export class UserManager {
 	#container;
@@ -101,8 +102,8 @@ export class UserManager {
 	#renderTable(layout) {
 		const rows = this.#users.map((user) => ({
 			__raw: user,
-			name: this.#displayName(user),
-			email: this.#displayEmail(user),
+			name: displayName(user),
+			email: displayEmail(user),
 			roles: this.#displayRoles(user),
 			created_at: this.#formatDate(user?.created_at),
 		}));
@@ -121,8 +122,8 @@ export class UserManager {
 				await this.#loadUsers();
 				table.setRecords(this.#users.map((user) => ({
 					__raw: user,
-					name: this.#displayName(user),
-					email: this.#displayEmail(user),
+					name: displayName(user),
+					email: displayEmail(user),
 					roles: this.#displayRoles(user),
 					created_at: this.#formatDate(user?.created_at),
 				})));
@@ -147,10 +148,10 @@ export class UserManager {
 
 		if (typeof user?.avatar === 'string' && user.avatar !== '') {
 			component.create('img')
-				.setAttributes({ src: user.avatar, alt: `Avatar de ${this.#displayName(user)}` })
+				.setAttributes({ src: user.avatar, alt: `Avatar de ${displayName(user)}` })
 				.setParent(avatar);
 		} else {
-			avatar.setText(this.#getInitials(this.#displayName(user), this.#displayEmail(user)));
+			avatar.setText(getInitials(displayName(user), displayEmail(user)));
 		}
 
 		return avatar;
@@ -196,22 +197,6 @@ export class UserManager {
 		this.#render();
 	}
 
-	#displayName(user) {
-		if (typeof user?.name === 'string' && user.name.trim() !== '') {
-			return user.name.trim();
-		}
-
-		return this.#displayEmail(user);
-	}
-
-	#displayEmail(user) {
-		if (typeof user?.email === 'string' && user.email.trim() !== '') {
-			return user.email.trim();
-		}
-
-		return 'Sin email';
-	}
-
 	#displayRoles(user) {
 		const roles = this.#userRoles(user);
 		if (roles.includes('admin')) {
@@ -246,20 +231,6 @@ export class UserManager {
 		return '';
 	}
 
-	#getInitials(name, email) {
-		const base = typeof name === 'string' && name !== '' ? name : email;
-		const words = String(base).trim().split(/\s+/).filter(Boolean);
-		if (words.length === 0) {
-			return 'US';
-		}
-
-		if (words.length === 1) {
-			return words[0].slice(0, 2).toUpperCase();
-		}
-
-		return `${words[0][0]}${words[1][0]}`.toUpperCase();
-	}
-
 	#setMessage(message, type) {
 		this.#message = message;
 		this.#messageType = type;
@@ -284,38 +255,3 @@ export class UserManager {
 		throw new TypeError(`UserManager: container "${String(container)}" not found`);
 	}
 }
-
-	function normalizeRoleList(rawRoles) {
-		if (Array.isArray(rawRoles)) {
-			return rawRoles
-				.filter((role) => typeof role === 'string' && role.trim() !== '')
-				.map((role) => role.trim());
-		}
-
-		if (typeof rawRoles === 'string') {
-			const trimmed = rawRoles.trim();
-			if (trimmed === '') {
-				return [];
-			}
-
-			try {
-				const parsed = JSON.parse(trimmed);
-				if (Array.isArray(parsed)) {
-					return normalizeRoleList(parsed);
-				}
-			} catch {
-				// Fall back to comma-separated or single role formats.
-			}
-
-			if (trimmed.includes(',')) {
-				return trimmed
-					.split(',')
-					.map((role) => role.trim())
-					.filter((role) => role !== '');
-			}
-
-			return [trimmed];
-		}
-
-		return [];
-	}
