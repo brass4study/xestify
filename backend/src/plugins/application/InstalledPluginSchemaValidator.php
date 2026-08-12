@@ -102,7 +102,7 @@ final class InstalledPluginSchemaValidator
         foreach (self::LIST_SECTIONS as $section) {
             $installedSection = $section === self::CUSTOM_FIELDS_SECTION
                 ? $this->installedCustomFieldsCatalog($installed)
-                : $this->requireArraySection($slug, $installed, $section);
+                : $this->arraySection($installed, $section);
             $installedByKey = $this->indexListSection($installedSection);
             $canonicalByKey = $this->indexListSection($this->arraySection($canonical, $section));
 
@@ -123,11 +123,11 @@ final class InstalledPluginSchemaValidator
     private function assertInstalledSectionsExist(string $slug, array $installed, array $target): void
     {
         $this->requireArraySection($slug, $installed, 'fields');
-        $this->requireArraySection($slug, $installed, 'custom_fields');
-        $this->requireArraySection($slug, $installed, 'relations');
 
-        if (isset($target['identities'])) {
-            $this->requireArraySection($slug, $installed, 'identities');
+        foreach (['identities', 'custom_fields', 'relations'] as $section) {
+            if (isset($target[$section])) {
+                $this->requireArraySection($slug, $installed, $section);
+            }
         }
     }
 

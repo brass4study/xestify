@@ -28,6 +28,7 @@ const UPDATE_SLUG_PARAM = ':slug';
 const UPDATE_VERSION_1_0 = '1.0.0';
 const UPDATE_VERSION_1_1 = '1.1.0';
 const UPDATE_VERSION_2_0 = '2.0.0';
+const MSG_VERSION_SHOULD_BE_UPDATED = 'Version should be updated';
 
 echo str_repeat('-', 40) . "\n";
 
@@ -155,9 +156,70 @@ TestSuite::run('update() merges additive schema changes and increments schema ve
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
-        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), 'Version should be updated');
+        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), MSG_VERSION_SHOULD_BE_UPDATED);
         assertEquals('3', (string) ($row['schema_version'] ?? ''), 'schema_version should increment');
         assertTrue(isset($decoded['fields']['email']), 'New field should be merged into live schema');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('update() merges additive schema changes for extension plugins', function () use ($pdo): void {
+    $slug = 'test_update_ext_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Extension Plugin', 'extension', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $slug,
+        ':schema' => json_encode([
+            'plugin' => $slug,
+            'version' => UPDATE_VERSION_1_0,
+            'target_entity' => '*',
+            'fields' => [
+                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Extension Plugin',
+        'version' => UPDATE_VERSION_1_1,
+        'type' => 'extension',
+        'core_version' => UPDATE_VERSION_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+    file_put_contents($root . '/' . $slug . '/schema.json', (string) json_encode([
+        'plugin' => $slug,
+        'version' => UPDATE_VERSION_1_1,
+        'target_entity' => '*',
+        'fields' => [
+            'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    try {
+        $service = buildPluginUpdateService($root, $pdo);
+        $result = $service->update($slug);
+
+        assertTrue($result['update']['schema_changed'] === true, 'Extension schema diff must propagate on update (04.02)');
+        assertTrue(
+            in_array('stamp', $result['update']['diff']['fields']['added'], true),
+            'stamp field should be reported as added'
+        );
+
+        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
+
+        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), MSG_VERSION_SHOULD_BE_UPDATED);
+        assertTrue(
+            isset($decoded['fields']['stamp']),
+            'New field must be merged into the installed extension schema, not silently dropped'
+        );
     } finally {
         cleanupPluginRecord($pdo, $slug);
         removePluginFixture($root);
@@ -233,7 +295,7 @@ TestSuite::run('update() applies an update after the plugin was configured, with
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
-        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), 'Version should be updated');
+        assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), MSG_VERSION_SHOULD_BE_UPDATED);
         assertEquals(1, count($decoded['custom_fields'] ?? []), 'Active custom_fields must not gain the new suggestion');
         assertEquals(
             'Mobile phone',

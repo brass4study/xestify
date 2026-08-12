@@ -28,6 +28,7 @@ const SYNC_SLUG_PARAM = ':slug';
 const SYNC_SEMVER_1_0 = '1.0.0';
 const SYNC_SEMVER_2_0 = '2.0.0';
 const MSG_PLUGIN_MUST_EXIST_AFTER_SYNC = 'Plugin must exist after sync';
+const SCHEMA_JSON_SUFFIX = '/schema.json';
 
 echo str_repeat('-', 40) . "\n";
 
@@ -183,6 +184,59 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged entity 
     }
 });
 
+TestSuite::run('syncAll() reports corrupt installed schema for unchanged extension plugin', function () use ($pdo): void {
+    $slug = 'test_sync_ext_corrupt_' . bin2hex(random_bytes(3));
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
+         VALUES (:slug, 'Corrupt Extension', 'extension', :version, 'inactive', 3, CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $slug,
+        ':version' => SYNC_SEMVER_1_0,
+        ':schema' => json_encode([
+            'plugin' => $slug,
+            'version' => SYNC_SEMVER_1_0,
+            'target_entity' => '*',
+            'fields' => [
+                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+
+    $manifest = [
+        'slug' => $slug,
+        'name' => 'Corrupt Extension',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'extension',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $root = createPluginFixture($manifest);
+    file_put_contents($root . '/' . $slug . SCHEMA_JSON_SUFFIX, (string) json_encode([
+        'plugin' => $slug,
+        'version' => SYNC_SEMVER_1_0,
+        'target_entity' => '*',
+        'fields' => [
+            'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+            'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        assertEquals(1, $result['summary']['errors'], 'Corrupt installed extension schema should be reported as error (04.02)');
+        assertEquals('error', $result['plugins'][$slug]['result'], 'Extension result should be error');
+
+        $stmt = $pdo->prepare('SELECT schema_version FROM plugins WHERE slug = :slug');
+        $stmt->execute([SYNC_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        assertEquals('3', (string) ($row['schema_version'] ?? ''), 'sync must not repair schema_version implicitly');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
 TestSuite::run('syncAll() does not report corruption for a configured plugin with an inactive suggested field', function () use ($pdo): void {
     // Once PluginAdministrationService::saveConfig() runs, custom_fields means
     // "active fields" (the admin left "phone" inactive here) and the real
@@ -296,7 +350,7 @@ TestSuite::run('syncAll() persists extension schema on first registration when s
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $root = createPluginFixture($manifest);
-    $schemaPath = $root . '/' . $slug . '/schema.json';
+    $schemaPath = $root . '/' . $slug . SCHEMA_JSON_SUFFIX;
     file_put_contents(
         $schemaPath,
         (string) json_encode([
@@ -348,7 +402,7 @@ TestSuite::run('syncAll() backfills missing extension schema_json from disk sche
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $root = createPluginFixture($manifest);
-    $schemaPath = $root . '/' . $slug . '/schema.json';
+    $schemaPath = $root . '/' . $slug . SCHEMA_JSON_SUFFIX;
     file_put_contents(
         $schemaPath,
         (string) json_encode([

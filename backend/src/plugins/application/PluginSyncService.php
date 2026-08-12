@@ -97,12 +97,11 @@ final class PluginSyncService
             ? self::RESULT_OUTDATED
             : self::RESULT_UNCHANGED;
 
-        if ($result === self::RESULT_UNCHANGED && ($manifest['type'] ?? '') === 'entity') {
-            $this->installedSchemaValidator->assertContainsCanonical(
-                $slug,
-                $this->schemaCodec->decode($existing['schema_json'] ?? null),
-                $schema
-            );
+        if ($result === self::RESULT_UNCHANGED && in_array($manifest['type'] ?? '', ['entity', 'extension'], true)) {
+            $installedSchema = $this->schemaCodec->decode($existing['schema_json'] ?? null);
+            if ($installedSchema !== null) {
+                $this->installedSchemaValidator->assertContainsCanonical($slug, $installedSchema, $schema);
+            }
         }
 
         $this->refreshMetadataIfNeeded($existing, $manifest);

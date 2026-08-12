@@ -64,7 +64,7 @@ final class PluginUpdateService
             $schemaChanged = false;
             $diff = $this->schemaMergeService->emptyDiff();
 
-            if (($manifest['type'] ?? '') === 'entity') {
+            if (in_array($manifest['type'] ?? '', ['entity', 'extension'], true)) {
                 $this->installedSchemaValidator->assertCanApplyUpdate($slug, $currentSchema, $targetSchema);
 
                 $merge = $this->schemaMergeService->mergeAdditively($slug, $currentSchema, $targetSchema);
