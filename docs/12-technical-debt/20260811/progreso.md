@@ -32,7 +32,7 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 | 01.05 | ✅ | Mayor | `UserSeeder` docblock dice auto-run al arrancar; es falso | `b38310a` | |
 | 01.06 | ✅ | Mayor | `JwtService::base64UrlDecode()` padding mal calculado | `b99b169` | |
 | 01.07 | ⏳ | Menor | Prefijos protegidos en lista paralela a `routes.php` | | |
-| 01.08 | ⏳ | Menor | `UserController::destroy()` usa bandera en vez de returns | | |
+| 01.08 | ⏳ | Menor | `UserController::destroy()` usa bandera en vez de returns | | ⚠️ Quitar la bandera con returns tempranos en el propio método dispara S1142 (>3 returns); moverlos a un helper privado (patrón `applyAdminUpdate`) dispara S1448 (>20 métodos en la clase). Requiere decidir antes: aceptar el NOSONAR de uno de los dos, o extraer una clase (relacionado con `01.02`, ausencia de `AuthorizationService`). |
 | 01.09 | ✅ | Menor | Normalización de avatar duplicada 3 veces | `3b6e846` | |
 | 01.10 | ⏳ | Menor | Desfases doc/código (login camelCase, refresh_token, endpoint password) | | |
 | 01.11 | ⏳ | Menor | No existe `POST /api/v1/users` (probablemente intencional) | | |
