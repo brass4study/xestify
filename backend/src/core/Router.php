@@ -14,11 +14,8 @@ use Xestify\middleware\AuthMiddleware;
  */
 class Router
 {
-    /** @var array<string, array<array{pattern: string, handler: callable|array}>> */
+    /** @var array<string, array<array{pattern: string, handler: callable|array, protected: bool}>> */
     private array $routes = [];
-
-    /** @var string[] */
-    private array $protectedPrefixes = ['/api/v1/entities', '/api/v1/plugins', '/api/v1/users', '/api/v1/configurations'];
 
     public function __construct(
         private Container $container,
@@ -27,24 +24,30 @@ class Router
     ) {
     }
 
-    public function get(string $path, callable|array $handler): void
+    /**
+     * @param bool $protected Whether this route requires a valid bearer token. Defaults to
+     *                        true (fail-closed): a route registered without an explicit
+     *                        `protected: false` is protected, so a new route can never be
+     *                        left unprotected by omission.
+     */
+    public function get(string $path, callable|array $handler, bool $protected = true): void
     {
-        $this->addRoute('GET', $path, $handler);
+        $this->addRoute('GET', $path, $handler, $protected);
     }
 
-    public function post(string $path, callable|array $handler): void
+    public function post(string $path, callable|array $handler, bool $protected = true): void
     {
-        $this->addRoute('POST', $path, $handler);
+        $this->addRoute('POST', $path, $handler, $protected);
     }
 
-    public function put(string $path, callable|array $handler): void
+    public function put(string $path, callable|array $handler, bool $protected = true): void
     {
-        $this->addRoute('PUT', $path, $handler);
+        $this->addRoute('PUT', $path, $handler, $protected);
     }
 
-    public function delete(string $path, callable|array $handler): void
+    public function delete(string $path, callable|array $handler, bool $protected = true): void
     {
-        $this->addRoute('DELETE', $path, $handler);
+        $this->addRoute('DELETE', $path, $handler, $protected);
     }
 
     /**
@@ -79,7 +82,7 @@ class Router
             $params = $this->matchRoute($route['pattern'], $normalizedUri);
             if ($params !== null) {
                 $request = $this->requestFactory->fromGlobals($params, $normalizedMethod, $normalizedUri);
-                $this->dispatchWithMiddleware($route['handler'], $params, $request, $normalizedUri);
+                $this->dispatchWithMiddleware($route['handler'], $params, $request, $route['protected']);
 
                 return true;
             }
@@ -92,10 +95,10 @@ class Router
     // Internals
     // -----------------------------------------------------------------------
 
-    private function addRoute(string $method, string $path, callable|array $handler): void
+    private function addRoute(string $method, string $path, callable|array $handler, bool $protected): void
     {
         $pattern = $this->buildPattern($path);
-        $this->routes[$method][] = ['pattern' => $pattern, 'handler' => $handler];
+        $this->routes[$method][] = ['pattern' => $pattern, 'handler' => $handler, 'protected' => $protected];
     }
 
     /**
@@ -133,9 +136,9 @@ class Router
      *   - [ControllerClass::class, 'method'] instancia via Container si esta registrado, sino new
      *   - callable
      */
-    private function dispatchWithMiddleware(callable|array $handler, array $params, Request $request, string $uri): void
+    private function dispatchWithMiddleware(callable|array $handler, array $params, Request $request, bool $protected): void
     {
-        if (!$this->requiresAuth($uri)) {
+        if (!$protected) {
             $this->callHandler($handler, $params, $request);
 
             return;
@@ -152,17 +155,6 @@ class Router
         $middleware->handle($request, function (Request $authenticatedRequest) use ($handler, $params): void {
             $this->callHandler($handler, $params, $authenticatedRequest);
         });
-    }
-
-    private function requiresAuth(string $uri): bool
-    {
-        foreach ($this->protectedPrefixes as $prefix) {
-            if ($uri === $prefix || str_starts_with($uri, $prefix . '/')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function callHandler(callable|array $handler, array $params, ?Request $request = null): void

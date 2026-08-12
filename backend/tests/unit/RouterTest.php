@@ -77,7 +77,7 @@ TestSuite::run('GET ruta estática hace match y ejecuta handler', function () {
 
     $router->get(ROUTE_HEALTH, function () use (&$called) {
         $called = true;
-    });
+    }, protected: false);
 
     [$result] = dispatchCapture($router, 'GET', ROUTE_HEALTH);
     assertTrue($result === true, 'dispatch debe retornar true');
@@ -88,7 +88,7 @@ TestSuite::run('POST ruta estática hace match', function () {
     $router = makeRouter();
     $called = false;
 
-    $router->post('/auth/login', function () use (&$called) { $called = true; });
+    $router->post('/auth/login', function () use (&$called) { $called = true; }, protected: false);
 
     [$result] = dispatchCapture($router, 'POST', '/auth/login');
     assertTrue($result === true);
@@ -99,7 +99,7 @@ TestSuite::run('PUT ruta estática hace match', function () {
     $router = makeRouter();
     $called = false;
 
-    $router->put(ROUTE_ENTITY_1, function () use (&$called) { $called = true; });
+    $router->put(ROUTE_ENTITY_1, function () use (&$called) { $called = true; }, protected: false);
 
     [$result] = dispatchCapture($router, 'PUT', ROUTE_ENTITY_1);
     assertTrue($result === true);
@@ -110,7 +110,7 @@ TestSuite::run('DELETE ruta estática hace match', function () {
     $router = makeRouter();
     $called = false;
 
-    $router->delete(ROUTE_ENTITY_1, function () use (&$called) { $called = true; });
+    $router->delete(ROUTE_ENTITY_1, function () use (&$called) { $called = true; }, protected: false);
 
     [$result] = dispatchCapture($router, 'DELETE', ROUTE_ENTITY_1);
     assertTrue($result === true);
@@ -123,7 +123,7 @@ TestSuite::run('Ruta dinámica extrae un parámetro :slug', function () {
 
     $router->get('/entities/:slug', function (array $params) use (&$captured) {
         $captured = $params;
-    });
+    }, protected: false);
 
     dispatchCapture($router, 'GET', '/entities/client');
     assertEquals('client', $captured['slug'] ?? null);
@@ -135,7 +135,7 @@ TestSuite::run('Ruta dinámica extrae múltiples parámetros', function () {
 
     $router->get('/entities/:slug/records/:id', function (array $params) use (&$captured) {
         $captured = $params;
-    });
+    }, protected: false);
 
     dispatchCapture($router, 'GET', '/entities/client/records/42');
     assertEquals('client', $captured['slug'] ?? null);
@@ -144,7 +144,7 @@ TestSuite::run('Ruta dinámica extrae múltiples parámetros', function () {
 
 TestSuite::run('Ruta no registrada retorna null', function () {
     $router = makeRouter();
-    $router->get(ROUTE_HEALTH, fn() => null);
+    $router->get(ROUTE_HEALTH, fn() => null, protected: false);
 
     [$result] = dispatchCapture($router, 'GET', '/nonexistent');
     assertNull($result, 'Ruta no registrada debería retornar null');
@@ -152,7 +152,7 @@ TestSuite::run('Ruta no registrada retorna null', function () {
 
 TestSuite::run('Método HTTP incorrecto no hace match', function () {
     $router = makeRouter();
-    $router->get(ROUTE_HEALTH, fn() => null);
+    $router->get(ROUTE_HEALTH, fn() => null, protected: false);
 
     [$result] = dispatchCapture($router, 'POST', ROUTE_HEALTH);
     assertNull($result, 'POST no debe hacer match con ruta GET');
@@ -162,7 +162,7 @@ TestSuite::run('Ruta con trailing slash es equivalente a sin slash', function ()
     $router = makeRouter();
     $called = false;
 
-    $router->get(ROUTE_HEALTH, function () use (&$called) { $called = true; });
+    $router->get(ROUTE_HEALTH, function () use (&$called) { $called = true; }, protected: false);
 
     dispatchCapture($router, 'GET', '/health/');
     assertTrue($called, 'Trailing slash no debe impedir el match');
@@ -174,7 +174,7 @@ TestSuite::run('Ruta bajo alias /xestify hace match con endpoints API', function
 
     $router->post('/api/v1/auth/login', function () use (&$called) {
         $called = true;
-    });
+    }, protected: false);
 
     [$result] = dispatchCapture($router, 'POST', '/xestify/api/v1/auth/login');
     assertTrue($result === true, 'dispatch debe retornar true bajo alias');
@@ -195,7 +195,7 @@ TestSuite::run('Handler [Controller::class, method] se instancia y llama', funct
     // Registrar la instancia bajo su clase en el container
     $container->singleton(get_class($controllerClass), fn() => $controllerClass);
 
-    $router->get('/test', [get_class($controllerClass), 'handle']);
+    $router->get('/test', [get_class($controllerClass), 'handle'], protected: false);
 
     dispatchCapture($router, 'GET', '/test');
     assertTrue($controllerClass->wasCalled, 'Controller::handle no fue invocado');
@@ -247,6 +247,28 @@ TestSuite::run('Ruta protegida entrega Request autenticada al controller', funct
     } finally {
         unset($_SERVER['HTTP_AUTHORIZATION']);
     }
+});
+
+TestSuite::run('Una ruta nueva sin declarar "protected" explicitamente queda protegida por defecto', function () {
+    $container = new Container();
+    $container->singleton(AuthMiddleware::class, fn() => new AuthMiddleware(new JwtService('router-secret')));
+    $normalizer = new RuntimePathNormalizer();
+    $router = new Router($container, new RequestFactory($normalizer), $normalizer);
+    $called = false;
+
+    // Ruta arbitraria que nunca habria estado en la antigua lista de
+    // prefijos hardcodeada ($protectedPrefixes) - debe quedar protegida
+    // igualmente, sin que nadie tenga que acordarse de añadirla a ningun sitio.
+    $router->get('/api/v1/a-brand-new-endpoint-nobody-remembered-to-protect', function () use (&$called) {
+        $called = true;
+    });
+
+    [$result, $output] = dispatchCapture($router, 'GET', '/api/v1/a-brand-new-endpoint-nobody-remembered-to-protect');
+    $decoded = json_decode($output, true);
+
+    assertTrue($result === true, 'dispatch debe retornar true');
+    assertFalse($called, 'una ruta nueva sin protected:false explicito no debe ejecutarse sin token');
+    assertEquals(401, $decoded['error']['code'] ?? null, 'debe devolver 401 por defecto, sin necesidad de listar el prefijo en ningun sitio');
 });
 
 // ---------------------------------------------------------------------------

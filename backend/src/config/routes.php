@@ -18,8 +18,8 @@ if (!defined('ROUTE_USER_ITEM')) {
     define('ROUTE_USER_ITEM', '/api/v1/users/{id}');
 }
 
-$router->get('/health', [HealthController::class, 'index']);
-$router->post('/api/v1/auth/login', [AuthController::class, 'login']);
+$router->get('/health', [HealthController::class, 'index'], protected: false);
+$router->post('/api/v1/auth/login', [AuthController::class, 'login'], protected: false);
 
 // Global configuration endpoints
 $router->get('/api/v1/configurations', [ConfigurationController::class, 'index']);
