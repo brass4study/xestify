@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AvatarUploadTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <h2>AvatarUploadTest</h2>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      initTestRunner,
+      test,
+      assertTrue,
+      finishTestRunner,
+    } from '../js/helpers.js';
+    import {
+      MAX_AVATAR_SIZE_BYTES,
+      isAvatarSizeValid,
+      readAvatarAsDataUrl,
+    } from '../../js/models/AvatarUpload.js';
+
+    initTestRunner('output');
+
+    await test('isAvatarSizeValid acepta ficheros pequeños y en el límite exacto', async () => {
+      const smallFile = new File([new Uint8Array(10)], 'small.png', { type: 'image/png' });
+      const exactFile = new File([new Uint8Array(MAX_AVATAR_SIZE_BYTES)], 'exact.png', { type: 'image/png' });
+
+      assertTrue(isAvatarSizeValid(smallFile), 'Un fichero pequeño debe ser válido');
+      assertTrue(isAvatarSizeValid(exactFile), 'Un fichero exactamente en el límite debe ser válido');
+    });
+
+    await test('isAvatarSizeValid rechaza ficheros que superan el límite', async () => {
+      const overFile = new File([new Uint8Array(MAX_AVATAR_SIZE_BYTES + 1)], 'over.png', { type: 'image/png' });
+
+      assertTrue(!isAvatarSizeValid(overFile), 'Un fichero que supera el límite debe ser inválido');
+    });
+
+    await test('readAvatarAsDataUrl resuelve con una data URL para una imagen válida', async () => {
+      const file = new File([new Uint8Array([137, 80, 78, 71])], 'avatar.png', { type: 'image/png' });
+
+      const dataUrl = await readAvatarAsDataUrl(file);
+      assertTrue(typeof dataUrl === 'string' && dataUrl.startsWith('data:image/png'), 'Debe devolver una data URL con el tipo MIME correcto');
+    });
+
+    await test('readAvatarAsDataUrl rechaza la promesa cuando FileReader falla', async () => {
+      const originalFileReader = window.FileReader;
+
+      class FailingFileReader {
+        set onload(fn) { this._onload = fn; }
+        get onload() { return this._onload; }
+        set onerror(fn) { this._onerror = fn; }
+        get onerror() { return this._onerror; }
+
+        readAsDataURL() {
+          this.error = new Error('boom');
+          queueMicrotask(() => this._onerror?.());
+        }
+      }
+
+      window.FileReader = FailingFileReader;
+
+      try {
+        const file = new File([new Uint8Array([1, 2, 3])], 'avatar.png', { type: 'image/png' });
+        let caught = null;
+        try {
+          await readAvatarAsDataUrl(file);
+        } catch (err) {
+          caught = err;
+        }
+
+        assertTrue(caught !== null, 'Debe rechazar la promesa cuando FileReader.onerror se dispara');
+      } finally {
+        window.FileReader = originalFileReader;
+      }
+    });
+
+    finishTestRunner('output');
+  </script>
+</body>
+</html>

@@ -5,6 +5,8 @@ import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { component } from '../modules/ComponentFactory.js';
 import { displayEmail, displayName, getInitials, normalizeRoleList } from '../../models/UserModel.js';
+import { isAvatarSizeValid, readAvatarAsDataUrl } from '../../models/AvatarUpload.js';
+import { copyToClipboard } from '../../models/ClipboardUtil.js';
 
 export class UserConfig {
 	#container;
@@ -494,7 +496,7 @@ export class UserConfig {
 		const copyButton = form.querySelector('[data-userconfig-copy-password]');
 		if (copyButton instanceof HTMLButtonElement && this.#temporaryPassword !== null) {
 			copyButton.addEventListener('click', async () => {
-				const copied = await this.copyToClipboard(this.#temporaryPassword ?? '');
+				const copied = await copyToClipboard(this.#temporaryPassword ?? '');
 				if (copied) {
 					this.setPageMessage('Contraseña copiada al portapapeles.', 'success');
 				} else {
@@ -668,14 +670,14 @@ export class UserConfig {
 			return;
 		}
 
-		if (file.size > 2 * 1024 * 1024) {
+		if (!isAvatarSizeValid(file)) {
 			this.setPageMessage('El avatar no puede superar 2MB.', 'error');
 			this.#render();
 			return;
 		}
 
 		try {
-			const imageDataUrl = await this.#readFileAsDataUrl(file);
+			const imageDataUrl = await readAvatarAsDataUrl(file);
 			this.#setAvatarValue(form, imageDataUrl);
 			this.#syncDraftValues(form);
 			this.setPageMessage('Avatar actualizado. Guarda cambios para confirmar.', 'success');
@@ -691,35 +693,6 @@ export class UserConfig {
 		if (avatarValueInput instanceof HTMLInputElement) {
 			avatarValueInput.value = value;
 		}
-	}
-
-	#readFileAsDataUrl(file) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					resolve(reader.result);
-					return;
-				}
-
-				reject(new Error('Formato no soportado.'));
-			};
-			reader.onerror = () => reject(reader.error ?? new Error('No se pudo leer el archivo.'));
-			reader.readAsDataURL(file);
-		});
-	}
-
-	async copyToClipboard(text) {
-		if (typeof text !== 'string' || text === '') {
-			return false;
-		}
-
-		if (navigator?.clipboard?.writeText) {
-			await navigator.clipboard.writeText(text);
-			return true;
-		}
-
-		return false;
 	}
 
 	#mountFeedback(layout) {
