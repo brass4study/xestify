@@ -34,5 +34,25 @@ TestSuite::run('mantiene rutas no runtime sin cambios', function (): void {
     assertEquals('/xestify/plugins/comments/plugin.js', $normalizer->normalize('/xestify/plugins/comments/plugin.js'));
 });
 
+TestSuite::run('recorta el alias de /api aunque no tenga subruta, igual que /health', function (): void {
+    $normalizer = new RuntimePathNormalizer();
+
+    assertEquals('/api', $normalizer->normalize('/xestify/api'));
+});
+
+TestSuite::run('reintenta tras una primera aparicion del marcador que no cae en limite de segmento', function (): void {
+    $normalizer = new RuntimePathNormalizer();
+
+    assertEquals('/api/v1/x', $normalizer->normalize('/apiary/api/v1/x'));
+    assertEquals('/health/x', $normalizer->normalize('/healthy/health/x'));
+});
+
+TestSuite::run('no recorta cuando el marcador solo aparece como prefijo de otra palabra', function (): void {
+    $normalizer = new RuntimePathNormalizer();
+
+    assertEquals('/apiary', $normalizer->normalize('/apiary'));
+    assertEquals('/healthy', $normalizer->normalize('/healthy'));
+});
+
 TestSuite::summary();
 exit(TestSuite::exitCode());
