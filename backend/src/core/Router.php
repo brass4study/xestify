@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Xestify\core;
 
-use ReflectionMethod;
 use Xestify\middleware\AuthMiddleware;
 
 /**
  * Router HTTP minimalista.
  * Soporta rutas estaticas y parametros dinamicos (:param).
- * Mapea rutas a [Controller::class, 'method'] o cualquier callable.
+ * Los handlers son siempre callables explicitos (closures); la resolucion de
+ * controladores vive en el propio registro de la ruta (routes.php), no aqui.
  */
 class Router
 {
-    /** @var array<string, array<array{pattern: string, handler: callable|array, protected: bool}>> */
+    /** @var array<string, array<array{pattern: string, handler: callable, protected: bool}>> */
     private array $routes = [];
 
     public function __construct(
@@ -30,22 +30,22 @@ class Router
      *                        `protected: false` is protected, so a new route can never be
      *                        left unprotected by omission.
      */
-    public function get(string $path, callable|array $handler, bool $protected = true): void
+    public function get(string $path, callable $handler, bool $protected = true): void
     {
         $this->addRoute('GET', $path, $handler, $protected);
     }
 
-    public function post(string $path, callable|array $handler, bool $protected = true): void
+    public function post(string $path, callable $handler, bool $protected = true): void
     {
         $this->addRoute('POST', $path, $handler, $protected);
     }
 
-    public function put(string $path, callable|array $handler, bool $protected = true): void
+    public function put(string $path, callable $handler, bool $protected = true): void
     {
         $this->addRoute('PUT', $path, $handler, $protected);
     }
 
-    public function delete(string $path, callable|array $handler, bool $protected = true): void
+    public function delete(string $path, callable $handler, bool $protected = true): void
     {
         $this->addRoute('DELETE', $path, $handler, $protected);
     }
@@ -95,7 +95,7 @@ class Router
     // Internals
     // -----------------------------------------------------------------------
 
-    private function addRoute(string $method, string $path, callable|array $handler, bool $protected): void
+    private function addRoute(string $method, string $path, callable $handler, bool $protected): void
     {
         $pattern = $this->buildPattern($path);
         $this->routes[$method][] = ['pattern' => $pattern, 'handler' => $handler, 'protected' => $protected];
@@ -131,15 +131,10 @@ class Router
         );
     }
 
-    /**
-     * Ejecuta el handler. Soporta:
-     *   - [ControllerClass::class, 'method'] instancia via Container si esta registrado, sino new
-     *   - callable
-     */
-    private function dispatchWithMiddleware(callable|array $handler, array $params, Request $request, bool $protected): void
+    private function dispatchWithMiddleware(callable $handler, array $params, Request $request, bool $protected): void
     {
         if (!$protected) {
-            $this->callHandler($handler, $params, $request);
+            $handler($params, $request);
 
             return;
         }
@@ -153,43 +148,7 @@ class Router
         /** @var AuthMiddleware $middleware */
         $middleware = $this->container->get(AuthMiddleware::class);
         $middleware->handle($request, function (Request $authenticatedRequest) use ($handler, $params): void {
-            $this->callHandler($handler, $params, $authenticatedRequest);
+            $handler($params, $authenticatedRequest);
         });
-    }
-
-    private function callHandler(callable|array $handler, array $params, ?Request $request = null): void
-    {
-        if (is_array($handler) && count($handler) === 2) {
-            [$target, $method] = $handler;
-
-            if (is_object($target)) {
-                $this->invokeController($target, (string) $method, $params, $request);
-
-                return;
-            }
-
-            $instance = $this->container->has($target)
-                ? $this->container->get($target)
-                : new $target(); // NOSONAR S5992 - clase conocida al registrar la ruta
-
-            $this->invokeController($instance, (string) $method, $params, $request);
-
-            return;
-        }
-
-        ($handler)($params, $this->container);
-    }
-
-    private function invokeController(object $instance, string $method, array $params, ?Request $request): void
-    {
-        $ref = new ReflectionMethod($instance, $method);
-
-        if ($request !== null && $ref->getNumberOfParameters() >= 2) {
-            $instance->$method($params, $request); // NOSONAR S5992 - metodo conocido al registrar la ruta
-
-            return;
-        }
-
-        $instance->$method($params); // NOSONAR S5992 - metodo conocido al registrar la ruta
     }
 }

@@ -7,6 +7,7 @@ use Xestify\controllers\ConfigurationController;
 use Xestify\controllers\EntityController;
 use Xestify\controllers\ExtensionPluginContentService;
 use Xestify\controllers\ExtensionPluginDataStore;
+use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
 use Xestify\controllers\UserController;
@@ -249,6 +250,8 @@ if (!function_exists('xestifyRegisterControllers')) {
         $container->singleton(ExtensionPluginContentService::class, fn() => new ExtensionPluginContentService(
             $container->get(Database::class)
         ));
+
+        $container->singleton(HealthController::class, fn() => new HealthController());
 
         $container->singleton(ExtensionPluginDataStore::class, fn() => new ExtensionPluginDataStore(
             $container->get(Database::class)

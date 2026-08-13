@@ -181,7 +181,7 @@ TestSuite::run('Ruta bajo alias /xestify hace match con endpoints API', function
     assertTrue($called, 'La ruta bajo alias debe resolver al endpoint API');
 });
 
-TestSuite::run('Handler [Controller::class, method] se instancia y llama', function () {
+TestSuite::run('Handler closure resuelve el controller desde el container y lo invoca', function () {
     // Clase inline anónima como stand-in de controller
     $controllerClass = new class {
         public bool $wasCalled = false;
@@ -195,7 +195,7 @@ TestSuite::run('Handler [Controller::class, method] se instancia y llama', funct
     // Registrar la instancia bajo su clase en el container
     $container->singleton(get_class($controllerClass), fn() => $controllerClass);
 
-    $router->get('/test', [get_class($controllerClass), 'handle'], protected: false);
+    $router->get('/test', fn() => $container->get(get_class($controllerClass))->handle(), protected: false);
 
     dispatchCapture($router, 'GET', '/test');
     assertTrue($controllerClass->wasCalled, 'Controller::handle no fue invocado');
@@ -239,7 +239,7 @@ TestSuite::run('Ruta protegida entrega Request autenticada al controller', funct
     $container->singleton(get_class($controller), fn() => $controller);
     $normalizer = new RuntimePathNormalizer();
     $router = new Router($container, new RequestFactory($normalizer), $normalizer);
-    $router->get(ROUTE_API_ENTITIES, [get_class($controller), 'index']);
+    $router->get(ROUTE_API_ENTITIES, fn(array $params, Request $request) => $container->get(get_class($controller))->index($params, $request));
 
     try {
         dispatchCapture($router, 'GET', ROUTE_API_ENTITIES);
