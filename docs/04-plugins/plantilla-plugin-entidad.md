@@ -195,5 +195,23 @@ $pdo->prepare(
 )->execute([':slug' => $slug, ':name' => $name, ':version' => $version]);
 ```
 
+Alternativa recomendada: en vez de escribir el SQL a mano, `Installer.php` puede
+extender `AbstractEntityInstaller`
+(`backend/src/plugins/contracts/AbstractEntityInstaller.php`), que ya implementa
+`install()` (registro idempotente en `plugins` vía `INSERT ... ON CONFLICT` + siembra
+de `schema_json` desde el propio `schema.json` del plugin) — el plugin concreto solo
+declara 4 métodos abstractos: `entitySlug()`, `entityName()`, `schemaVersion()` y
+`schemaPath()`.
+
 **No escribir en `system_entities`** - esa tabla fue eliminada en Release B.
 Toda consulta al catalogo de entidades usa: `SELECT * FROM plugins WHERE plugin_type = 'entity' AND status = 'active'`.
+
+## Unicidad de un campo en Hooks.php
+
+Si el plugin necesita impedir valores duplicados en un campo (p. ej. `email` en
+`clients`, `sku` en `products`), `Hooks.php` puede extender `AbstractUniqueFieldHook`
+(`backend/src/plugins/contracts/AbstractUniqueFieldHook.php`) en vez de reimplementar
+la comprobación: declara `entitySlug()`, `fieldName()` y
+`duplicateMessage(string $value)`, y `register($dispatcher)` engancha automáticamente
+un hook `beforeSave` (prioridad 5) que rechaza duplicados entre registros activos de
+esa entidad.

@@ -455,6 +455,7 @@ Objetivo: CRUD genérico con validación por schema.
   - ✅ Métodos setter/getter simples
   - ✅ Sin Proxy (Vanilla puro) — restricción vigente
   - ⚠️ "Sin listeners" fue una restricción inicial abandonada deliberadamente en STORY 9.7 (que exige expresamente "gestión de estado ampliada... notificaciones... theming en tiempo real"): `AppState` implementa hoy tres mecanismos `subscribe/unsubscribe/notify` (usuario/sesión, UI, notificaciones), evolución coherente pero no reflejada aquí hasta ahora
+  - ⚠️ `AppState`/`StateModel.js` se eliminó por completo en el hallazgo 05.12 de la auditoría técnica (20260811): `setCurrentEntity()` y el resto de campos sin consumidores reales (`records`, `metadata`, `loading`, `error`, `navigationState`) eran código muerto y se retiraron; los tres mecanismos `subscribe/notify` de la nota anterior se repartieron por dominio en `SessionModel.js` (usuario, token, entidades), `ThemeModel.js` (preferencias UI) y `NotificationModel.js` (notificación global) — mismo comportamiento observable, sin objeto único
 - **Dependencias:** STORY 0.6
 - **Blockers:** Ninguno
 

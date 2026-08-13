@@ -8,14 +8,14 @@
 
 | Fichero | Total | ✅ Resuelto | 🔧/⏳ Pendiente | 🚫 Descartado |
 |---|---|---|---|---|
-| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 12 | 0 | 2 |
+| [01](01-backend-core-auth-usuarios.md) — Core/Auth/Users | 14 | 14 | 0 | 0 |
 | [02](02-backend-modelo-datos-validacion.md) — Modelo de datos | 12 | 12 | 0 | 0 |
 | [03](03-backend-motor-plugins.md) — Motor de plugins | 13 | 13 | 0 | 0 |
 | [04](04-backend-plugins-actualizacion-extension.md) — Plugin update/extension | 11 | 11 | 0 | 0 |
 | [05](05-frontend-arquitectura-spa.md) — Arquitectura SPA | 16 | 16 | 0 | 0 |
 | [06](06-frontend-toolkit-ui.md) — Toolkit UI | 12 | 12 | 0 | 0 |
 | [07](07-frontend-paginas-modulos.md) — Páginas/módulos | 7 | 7 | 0 | 0 |
-| **Total** | **85** | **83** | **0** | **2** |
+| **Total** | **85** | **85** | **0** | **0** |
 
 Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.01`, **P2**=`07.01`, **P3**=`07.02`, **P4**=`04.01`, **P5**=`04.03`. No los cuentes dos veces al planificar las sesiones de la Fase 2.
 

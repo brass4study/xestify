@@ -42,19 +42,20 @@ transversales, ver [arquitectura.md](arquitectura.md).
 
 ## Patrones de datos
 
-- **Estado global**: `AppState` (`models/StateModel.js`) — usuario, entidad
-  activa, registros cargados, token, flags transversales y preferencias de
-  UI. No crear stores paralelos.
+- **Estado global**: repartido por dominio, cada uno con su propio
+  `subscribe`/`notify` — sesión (`models/SessionModel.js`: usuario, token,
+  entidades), tema/preferencias UI (`models/ThemeModel.js`) y notificación
+  global (`models/NotificationModel.js`). No crear stores paralelos.
 - **Acceso a API**: `Api` (`models/ApiClientModel.js`), cliente HTTP genérico
   con auth y errores tipados (`ApiError`). Una página nueva que consume el
   schema de una entidad hace `GET /entities/{slug}/schema` y pasa el
   resultado a `DynamicForm`/`DynamicTable` en vez de construir formularios a
   mano — ver el mapeo completo de tipos en
   [renderizado-dinamico.md](renderizado-dinamico.md).
-- **Persistencia de sesión y preferencias**: `SessionModel.js` (token,
-  snapshot de usuario en `localStorage`) y `AppConfigurationModel.js`
-  (preferencias de UI persistidas en el backend por cliente, vía
-  `AppState.subscribeUi` + guardado con debounce en `AppController`).
+- **Persistencia de sesión y preferencias**: `SessionModel.js` persiste
+  token y snapshot de usuario en `localStorage`; `AppConfigurationModel.js`
+  persiste las preferencias de UI en el backend por cliente, vía
+  `ThemeModel.subscribeUi` + guardado con debounce en `AppController`.
 
 ## Puntos de integración de plugins en UI
 

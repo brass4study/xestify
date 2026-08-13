@@ -23,14 +23,16 @@ frontend/src/js/
 │   ├── RouteMapController.js  Mapa bidireccional hash <-> identificador interno de página
 │   └── PluginRouteController.js  Parser de rutas de configuración de plugin
 ├── models/                    Estado y acceso a datos, sin DOM
-│   ├── StateModel.js           Estado global (AppState): usuario, entidad activa, preferencias UI
 │   ├── ApiClientModel.js       Cliente HTTP genérico (Api) con auth y manejo de errores
-│   ├── SessionModel.js         Persistencia de sesión (token, snapshot de usuario) en localStorage
-│   ├── ThemeModel.js           Schema de tema, normalización, aplicación WYSIWYG al documento
+│   ├── SessionModel.js         Estado de sesión (usuario, token, entidades) y su persistencia en localStorage
+│   ├── ThemeModel.js           Estado de preferencias UI/tema (subscribe/notify), normalización y aplicación WYSIWYG al documento
+│   ├── NotificationModel.js    Estado de la notificación global activa (subscribe/notify)
 │   ├── AppConfigurationModel.js  Persistencia remota de preferencias UI (`/configurations/*`)
 │   ├── I18nModel.js            Claves de traducción y resolución de locale
 │   ├── BasePathModel.js        Detección del base path en runtime (raíz vs subruta Apache)
-│   └── PluginPanelModel.js     Registro runtime de paneles de plugin (PluginPanelRegistry)
+│   ├── PluginPanelModel.js     Registro runtime de paneles de plugin (PluginPanelRegistry)
+│   ├── AvatarUpload.js         Validación de tamaño y lectura de avatar (FileReader), sin DOM
+│   └── ClipboardUtil.js        copyToClipboard() — única lógica pura del flujo de contraseña temporal
 ├── services/
 │   └── UiResilienceService.js  Estados compartidos de vista (loading/empty/error), notificaciones,
 │                                confirmaciones modales y pending buttons — capa única para toda la UX

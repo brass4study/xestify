@@ -38,7 +38,7 @@ Login usa la plantilla standalone `login` de `PageLayout` y no monta navbar.
 - **ShellLayout**: Armazón persistente de las páginas autenticadas y fuente de sus zonas estructurales.
 - **PageLayout / ListLayout / FormLayout**: Plantillas reutilizables para anatomía común, listados y formularios.
 - **PluginPanelRegistry**: Registro runtime de plugins frontend, ubicado en la capa `models`, para que cada extensión registre su UI sin abrir capas paralelas a MVC.
-- **State**: Contenedor global de estado (`models/StateModel.js`) con usuario, entidad activa, registros, token y flags transversales.
+- **State**: Estado global repartido por dominio — sesión (`models/SessionModel.js`: usuario, token, entidades), tema/preferencias UI (`models/ThemeModel.js`) y notificación global (`models/NotificationModel.js`) —, cada uno con su propio `subscribe`/`notify`.
 - **Api**: Cliente HTTP genérico (`models/ApiClientModel.js`) con manejo de autenticación y errores.
 
 ---
