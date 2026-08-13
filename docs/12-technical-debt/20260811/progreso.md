@@ -61,9 +61,9 @@ Los 5 hallazgos de la Fase 1 ("antes de la defensa") corresponden a: **P1**=`01.
 
 | ID | Estado | Sev. | Resumen | Commit | Notas |
 |---|---|---|---|---|---|
-| 03.01 | ✅ | Mayor | Tabla `plugin_hooks` desconectada del runtime real | `36e96a7` | ⚠️ Fallo preexistente no relacionado: `CommentsPluginTest.php::Comentarios tab does not appear for non-target entities` falla por estado de la BD de desarrollo (`comments` con `target_entity: '*'`), no por código; ya fallaba antes de esta sesión, fuera de alcance. |
-| 03.02 | ✅ | Mayor | 3 tests sin `exit()` — falso verde en runner agrupado | `156636c` | ⚠️ Mismo preexistente de `03.01`, no relacionado. |
-| 03.03 | ✅ | Mayor | `PluginClassLoader` instancia Hooks vs Lifecycle de forma distinta | `1a8f4a7` | ⚠️ Mismo preexistente de `03.01`, no relacionado. |
+| 03.01 | ✅ | Mayor | Tabla `plugin_hooks` desconectada del runtime real | `36e96a7` | |
+| 03.02 | ✅ | Mayor | 3 tests sin `exit()` — falso verde en runner agrupado | `156636c` | |
+| 03.03 | ✅ | Mayor | `PluginClassLoader` instancia Hooks vs Lifecycle de forma distinta | `1a8f4a7` | ⚠️ (`9f45c6b`) El fallo recurrente `CommentsPluginTest.php::Comentarios tab does not appear for non-target entities` (documentado aquí en sesiones anteriores como "problema de BD, fuera de alcance") se investigó y corrigió en sesión posterior — no era dato sucio de BD: `target_entity: '*'` es el valor *de diseño* del propio plugin (`plugins/comments/schema.json`), reproducible en cualquier entorno limpio. El test asumía un `target_entity` restringido sin garantizarlo; ahora lo fija explícitamente y lo restaura, igual que ya hacía con `status`. |
 | 03.04 | ✅ | Menor | Duplicación `clients`/`products` (~90 líneas) | `2bf306f` | |
 | 03.05 | ✅ | Menor | `EntityController` con `HookDispatcher` por defecto oculto | `eb03e93` | |
 | 03.06 | ✅ | Menor | `PluginBootTest`/`PluginHookRegistrarTest` casi duplicados | `84ab45d` | |

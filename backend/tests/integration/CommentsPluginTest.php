@@ -307,14 +307,32 @@ TestSuite::run('Comentarios tab appears in GET /entities/{slug}/tabs API respons
 });
 
 TestSuite::run('Comentarios tab does not appear for non-target entities', function (): void {
-    $dispatcher = new HookDispatcher();
-    $hooks      = new Hooks(Database::connection());
-    $hooks->register($dispatcher);
+    // comments ships with target_entity: '*' by design (schema.json) — this test needs
+    // it restricted to a single entity to have a genuine "non-target" case, so it must
+    // set that itself instead of assuming BD state nobody else guarantees.
+    $pdo = Database::connection();
+    $setTargetEntity = static function (string $target) use ($pdo): void {
+        $pdo->prepare(
+            "UPDATE plugins
+                SET schema_json = jsonb_set(schema_json, '{target_entity}', to_jsonb(:target::text))
+              WHERE slug = 'comments'"
+        )->execute([':target' => $target]);
+    };
 
-    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'products']);
-    $ids  = array_column($tabs, 'id');
+    $setTargetEntity(TEST_ENTITY);
 
-    assertFalse(in_array('comments', $ids, true), 'comments tab must not appear for non-target entities');
+    try {
+        $dispatcher = new HookDispatcher();
+        $hooks      = new Hooks(Database::connection());
+        $hooks->register($dispatcher);
+
+        $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'products']);
+        $ids  = array_column($tabs, 'id');
+
+        assertFalse(in_array('comments', $ids, true), 'comments tab must not appear for non-target entities');
+    } finally {
+        $setTargetEntity('*');
+    }
 });
 
 TestSuite::run('Comentarios tab does not appear when plugin is inactive', function (): void {
