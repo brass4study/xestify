@@ -29,6 +29,7 @@ $groups = [
         'backend/tests/unit/HookFilterTest.php',
         'backend/tests/unit/JwtServiceTest.php',
         'backend/tests/unit/ProfileSecretVerifierTest.php',
+        'backend/tests/unit/UserAuthorizerTest.php',
         'backend/tests/unit/RequestResponseTest.php',
         'backend/tests/unit/ContainerTest.php',
         'backend/tests/unit/ClientsPluginTest.php',

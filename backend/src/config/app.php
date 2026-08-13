@@ -45,6 +45,7 @@ use Xestify\plugins\runtime\PluginLifecycleInvoker;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 use Xestify\services\ProfileSecretVerifier;
+use Xestify\services\UserAuthorizer;
 use Xestify\services\ValidationService;
 use Xestify\validation\FieldValidatorRegistry;
 use Xestify\validation\schema\SchemaFieldExtractor;
@@ -115,6 +116,7 @@ if (!function_exists('xestifyRegisterEntityServices')) {
             $container->get(Database::class)
         ));
         $container->singleton(ProfileSecretVerifier::class, fn() => new ProfileSecretVerifier());
+        $container->singleton(UserAuthorizer::class, fn() => new UserAuthorizer());
         $container->singleton(ConfigurationRepository::class, fn() => new ConfigurationRepository(
             $container->get(Database::class)
         ));
@@ -266,7 +268,8 @@ if (!function_exists('xestifyRegisterControllers')) {
 
         $container->singleton(UserController::class, fn() => new UserController(
             $container->get(UserRepository::class),
-            $container->get(ProfileSecretVerifier::class)
+            $container->get(ProfileSecretVerifier::class),
+            $container->get(UserAuthorizer::class)
         ));
     }
 }

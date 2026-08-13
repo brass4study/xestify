@@ -9,6 +9,7 @@ use Xestify\core\Response;
 use Xestify\exceptions\RepositoryException;
 use Xestify\repositories\UserRepository;
 use Xestify\services\ProfileSecretVerifier;
+use Xestify\services\UserAuthorizer;
 
 class UserController
 {
@@ -27,7 +28,8 @@ class UserController
 
     public function __construct(
         private UserRepository $repository,
-        private ?ProfileSecretVerifier $secretVerifier = null
+        private ?ProfileSecretVerifier $secretVerifier = null,
+        private UserAuthorizer $authorizer = new UserAuthorizer()
     ) {
     }
 
@@ -204,26 +206,16 @@ class UserController
 
         $targetId = (string) ($params['id'] ?? '');
         $currentUser = $this->authenticatedUser($request);
-        $shouldStop = false;
+        $denialReason = $this->authorizer->authorizeDelete($request, $targetId, $currentUser);
 
-        if (!$request->hasRole('admin')) {
-            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
-            $shouldStop = true;
-        }
-
-        if (!$shouldStop && $targetId === '') {
-            Response::make()->notFound(self::MSG_USER_ID_REQUIRED);
-            $shouldStop = true;
-        }
-
-        if (!$shouldStop && $currentUser !== null && (string) ($currentUser['sub'] ?? '') === $targetId) {
-            Response::make()->unprocessable(self::MSG_SELF_DELETE_FORBIDDEN, [
-                'id' => [self::MSG_SELF_DELETE_DETAIL],
-            ]);
-            $shouldStop = true;
-        }
-
-        if ($shouldStop) {
+        if ($denialReason !== null) {
+            match ($denialReason) {
+                UserAuthorizer::ADMIN_REQUIRED => Response::make()->forbidden(self::MSG_ADMIN_REQUIRED),
+                UserAuthorizer::ID_REQUIRED => Response::make()->notFound(self::MSG_USER_ID_REQUIRED),
+                UserAuthorizer::SELF_DELETE => Response::make()->unprocessable(self::MSG_SELF_DELETE_FORBIDDEN, [
+                    'id' => [self::MSG_SELF_DELETE_DETAIL],
+                ]),
+            };
             return;
         }
 

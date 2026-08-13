@@ -21,6 +21,7 @@ require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/repositories/UserRepository.php';
 require_once BASE_PATH . '/src/services/ProfileSecretVerifier.php';
+require_once BASE_PATH . '/src/services/UserAuthorizer.php';
 require_once BASE_PATH . '/src/controllers/UserController.php';
 
 use Xestify\core\Database;
@@ -288,6 +289,38 @@ TestSuite::run('UserController::resetPassword forbids non-admin users', function
     } finally {
         cleanupUserRow($pdo, (string) $operator['id']);
         cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
+TestSuite::run('UserController::destroy forbids deletion for a non-admin requester', function () use ($pdo, $controller): void {
+    $target = insertUserRow($pdo, 'delete-nonadmin-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN);
+    $operator = insertUserRow($pdo, 'delete-operator-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador']);
+
+    try {
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $operator['id'], 'roles' => ['operador']]);
+
+        $response = captureControllerResponse(fn() => $controller->destroy(['id' => (string) $target['id']], $request));
+        assertFalse(($response['ok'] ?? true) === true, 'Non-admin deletion should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Non-admin deletion should return 403');
+    } finally {
+        cleanupUserRow($pdo, (string) $operator['id']);
+        cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
+TestSuite::run('UserController::destroy returns 404 when no id is provided', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'delete-admin-noid-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+
+    try {
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(fn() => $controller->destroy([], $request));
+        assertFalse(($response['ok'] ?? true) === true, 'Deletion without id should fail');
+        assertEquals(404, (int) ($response['error']['code'] ?? 0), 'Deletion without id should return 404');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
     }
 });
 
