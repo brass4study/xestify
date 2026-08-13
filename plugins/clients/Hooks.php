@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\clients;
 
-use Xestify\plugins\AbstractUniqueFieldHook;
+use Xestify\plugins\contracts\AbstractUniqueFieldHook;
 
 /**
  * Hooks for the clients plugin.

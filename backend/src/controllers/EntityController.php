@@ -13,7 +13,7 @@ use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\HookException;
 use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 use Xestify\services\EntityService;
 
 /**

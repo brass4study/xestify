@@ -7,10 +7,10 @@ define('BASE_PATH', dirname(__DIR__, 2));
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
-require_once BASE_PATH . '/src/plugins/infrastructure/PluginManifestReader.php';
+require_once BASE_PATH . '/src/plugins/discovery/PluginManifestReader.php';
 
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\infrastructure\PluginManifestReader;
+use Xestify\plugins\discovery\PluginManifestReader;
 
 const MANIFEST_VERSION = '1.0.0';
 

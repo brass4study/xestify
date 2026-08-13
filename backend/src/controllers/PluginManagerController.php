@@ -13,7 +13,7 @@ use Xestify\core\RequestFactory;
 use Xestify\core\Response;
 use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\application\PluginAdministrationService;
+use Xestify\services\PluginAdministrationService;
 
 /**
  * PluginManagerController — Management endpoints for plugins.

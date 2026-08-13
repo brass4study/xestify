@@ -10,9 +10,9 @@ define('BASE_PATH', dirname(BACKEND_PATH));
 
 require_once BACKEND_PATH . '/src/exceptions/HookException.php';
 require_once BACKEND_PATH . '/src/exceptions/PluginException.php';
-require_once BACKEND_PATH . '/src/plugins/HookDispatcher.php';
-require_once BACKEND_PATH . '/src/plugins/AbstractEntityInstaller.php';
-require_once BACKEND_PATH . '/src/plugins/AbstractUniqueFieldHook.php';
+require_once BACKEND_PATH . '/src/core/HookDispatcher.php';
+require_once BACKEND_PATH . '/src/plugins/contracts/AbstractEntityInstaller.php';
+require_once BACKEND_PATH . '/src/plugins/contracts/AbstractUniqueFieldHook.php';
 
 // Explicitly require plugin files (not in autoload path)
 require_once BASE_PATH . '/plugins/clients/Hooks.php';
@@ -22,7 +22,7 @@ require_once __DIR__ . '/helpers.php';
 
 use Xestify\plugins\clients\Hooks;
 use Xestify\plugins\clients\Installer;
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 use Xestify\exceptions\HookException;
 use Xestify\exceptions\PluginException;
 

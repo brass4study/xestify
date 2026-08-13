@@ -11,21 +11,21 @@ require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
 
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
-use Xestify\plugins\HookDispatcher;
-use Xestify\plugins\infrastructure\PluginClassLoader;
-use Xestify\plugins\runtime\PluginHookRegistrar;
+use Xestify\core\HookDispatcher;
+use Xestify\plugins\lifecycle\PluginClassLoader;
+use Xestify\plugins\lifecycle\PluginHookRegistrar;
 use Xestify\repositories\PluginRepository;
-use Xestify\plugins\infrastructure\PluginSchemaCodec;
-use Xestify\plugins\application\InstalledPluginSchemaValidator;
-use Xestify\plugins\application\PluginSyncService;
-use Xestify\plugins\application\PluginStatusService;
-use Xestify\plugins\infrastructure\PluginCompatibilityValidator;
-use Xestify\plugins\infrastructure\PluginDependencyValidator;
-use Xestify\plugins\infrastructure\PluginDiscoveryService;
-use Xestify\plugins\infrastructure\PluginManifestReader;
-use Xestify\plugins\infrastructure\PluginSchemaReader;
-use Xestify\plugins\infrastructure\PluginSourceService;
-use Xestify\plugins\runtime\PluginLifecycleInvoker;
+use Xestify\plugins\discovery\PluginSchemaCodec;
+use Xestify\plugins\schema\InstalledPluginSchemaValidator;
+use Xestify\plugins\lifecycle\PluginSyncService;
+use Xestify\plugins\lifecycle\PluginStatusService;
+use Xestify\plugins\guards\PluginCompatibilityValidator;
+use Xestify\plugins\guards\PluginDependencyValidator;
+use Xestify\plugins\discovery\PluginDiscoveryService;
+use Xestify\plugins\discovery\PluginManifestReader;
+use Xestify\plugins\discovery\PluginSchemaReader;
+use Xestify\plugins\discovery\PluginSourceService;
+use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
 
 loadPluginTestEnv(BASE_PATH);
 

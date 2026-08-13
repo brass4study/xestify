@@ -33,7 +33,7 @@ $lifecycle = <<<PHP
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
+use Xestify\plugins\contracts\PluginLifecycleInterface;
 final class Lifecycle implements PluginLifecycleInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void { \$GLOBALS['lc_install'] = (\$GLOBALS['lc_install'] ?? 0) + 1; }

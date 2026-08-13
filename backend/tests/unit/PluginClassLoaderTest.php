@@ -6,10 +6,10 @@ define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
-require_once BASE_PATH . '/src/plugins/PluginLifecycleInterface.php';
-require_once BASE_PATH . '/src/plugins/infrastructure/PluginClassLoader.php';
+require_once BASE_PATH . '/src/plugins/contracts/PluginLifecycleInterface.php';
+require_once BASE_PATH . '/src/plugins/lifecycle/PluginClassLoader.php';
 
-use Xestify\plugins\infrastructure\PluginClassLoader;
+use Xestify\plugins\lifecycle\PluginClassLoader;
 
 const CLASS_LOADER_TEST_MANIFEST_BASE = [
     'name' => 'ClassLoader fixture',
@@ -22,7 +22,7 @@ echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('instantiateLifecycle() injects PDO when the constructor declares it, same as instantiateHooks()', function (): void {
     $slug = 'lifecycle_with_pdo';
-    $lifecycleSource = "<?php\ndeclare(strict_types=1);\nnamespace Xestify\\plugins\\{$slug};\nuse PDO;\nuse Xestify\\plugins\\PluginLifecycleInterface;\nfinal class Lifecycle implements PluginLifecycleInterface {\n"
+    $lifecycleSource = "<?php\ndeclare(strict_types=1);\nnamespace Xestify\\plugins\\{$slug};\nuse PDO;\nuse Xestify\\plugins\\contracts\\PluginLifecycleInterface;\nfinal class Lifecycle implements PluginLifecycleInterface {\n"
         . "    public PDO \$pdo;\n"
         . "    public function __construct(PDO \$pdo) { \$this->pdo = \$pdo; }\n"
         . "    public function onInstall(): void {}\n"
@@ -63,7 +63,7 @@ TestSuite::run(
                 ? "    public function onInstall(): void {}\n    public function onActivate(): void {}\n    public function onDeactivate(): void {}\n"
                 : "    public function register(\$dispatcher): void {}\n";
 
-            return "<?php\ndeclare(strict_types=1);\nnamespace Xestify\\plugins\\{$slug};\nuse Xestify\\plugins\\PluginLifecycleInterface;\nfinal class {$className}{$implements} {\n"
+            return "<?php\ndeclare(strict_types=1);\nnamespace Xestify\\plugins\\{$slug};\nuse Xestify\\plugins\\contracts\\PluginLifecycleInterface;\nfinal class {$className}{$implements} {\n"
                 . "    public function __construct(private string \$config) {}\n"
                 . $extraMethods
                 . "}\n";

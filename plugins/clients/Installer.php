@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\clients;
 
-use Xestify\plugins\AbstractEntityInstaller;
+use Xestify\plugins\contracts\AbstractEntityInstaller;
 
 /**
  * Installer for the clients plugin.

@@ -6,7 +6,7 @@ namespace Xestify\controllers;
 
 use PDO;
 use Xestify\core\Request;
-use Xestify\plugins\application\PluginSchemaFieldNormalizer;
+use Xestify\plugins\schema\PluginSchemaFieldNormalizer;
 
 final class ExtensionPluginContentService
 {

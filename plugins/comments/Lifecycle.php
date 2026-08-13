@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\comments;
 
-use Xestify\plugins\PluginLifecycleInterface;
+use Xestify\plugins\contracts\PluginLifecycleInterface;
 
 /**
  * Lifecycle for the comments plugin.

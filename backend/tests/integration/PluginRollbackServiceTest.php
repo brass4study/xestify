@@ -81,7 +81,7 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleUpdateInterface;
+use Xestify\plugins\contracts\PluginLifecycleUpdateInterface;
 final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\comments;
 
 use PDO;
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 
 /**
  * Hooks for the comments plugin.

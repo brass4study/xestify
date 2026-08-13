@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\demoinventory;
 
 use PDO;
-use Xestify\plugins\PluginLifecycleUpdateInterface;
+use Xestify\plugins\contracts\PluginLifecycleUpdateInterface;
 
 final class Lifecycle implements PluginLifecycleUpdateInterface
 {

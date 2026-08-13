@@ -79,7 +79,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
 use RuntimeException;
-use Xestify\plugins\PluginLifecycleInterface;
+use Xestify\plugins\contracts\PluginLifecycleInterface;
 final class Lifecycle implements PluginLifecycleInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void { throw new RuntimeException('install failed on purpose'); }

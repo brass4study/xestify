@@ -7,10 +7,10 @@ define('BASE_PATH', dirname(__DIR__, 2));
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
 require_once BASE_PATH . '/src/exceptions/PluginException.php';
-require_once BASE_PATH . '/src/plugins/infrastructure/PluginSchemaReader.php';
+require_once BASE_PATH . '/src/plugins/discovery/PluginSchemaReader.php';
 
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\infrastructure\PluginSchemaReader;
+use Xestify\plugins\discovery\PluginSchemaReader;
 
 const TEST_SCHEMA_VERSION = '1.0.0';
 

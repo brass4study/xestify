@@ -9,7 +9,7 @@ use PDOException;
 use Throwable;
 use Xestify\exceptions\EntityServiceException;
 use Xestify\exceptions\ValidationException;
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\validation\schema\SchemaFieldExtractor;
 

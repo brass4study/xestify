@@ -42,7 +42,7 @@ use Xestify\core\RuntimePathNormalizer;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\EnvironmentException;
 use Xestify\exceptions\HookException;
-use Xestify\plugins\application\PluginAdministrationService;
+use Xestify\services\PluginAdministrationService;
 use Xestify\services\EntityService;
 use Xestify\services\JwtService;
 

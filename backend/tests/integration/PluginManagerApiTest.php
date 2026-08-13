@@ -24,20 +24,20 @@ require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
-require_once BASE_PATH . '/src/plugins/application/PluginAdministrationService.php';
+require_once BASE_PATH . '/src/services/PluginAdministrationService.php';
 require_once BASE_PATH . '/src/repositories/PluginRepository.php';
-require_once BASE_PATH . '/src/plugins/application/PluginSyncService.php';
-require_once BASE_PATH . '/src/plugins/application/PluginOutdatedService.php';
-require_once BASE_PATH . '/src/plugins/application/PluginUpdateService.php';
-require_once BASE_PATH . '/src/plugins/application/PluginStatusService.php';
+require_once BASE_PATH . '/src/plugins/lifecycle/PluginSyncService.php';
+require_once BASE_PATH . '/src/plugins/lifecycle/PluginOutdatedService.php';
+require_once BASE_PATH . '/src/plugins/lifecycle/PluginUpdateService.php';
+require_once BASE_PATH . '/src/plugins/lifecycle/PluginStatusService.php';
 
 use Xestify\controllers\PluginManagerController;
 use Xestify\core\Request;
-use Xestify\plugins\application\PluginAdministrationService;
-use Xestify\plugins\application\PluginOutdatedService;
-use Xestify\plugins\application\PluginStatusService;
-use Xestify\plugins\application\PluginSyncService;
-use Xestify\plugins\application\PluginUpdateService;
+use Xestify\services\PluginAdministrationService;
+use Xestify\plugins\lifecycle\PluginOutdatedService;
+use Xestify\plugins\lifecycle\PluginStatusService;
+use Xestify\plugins\lifecycle\PluginSyncService;
+use Xestify\plugins\lifecycle\PluginUpdateService;
 use Xestify\repositories\PluginRepository;
 
 final class TestPluginAdministrationService extends PluginAdministrationService

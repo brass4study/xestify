@@ -11,9 +11,9 @@ require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\infrastructure\PluginDependencyValidator;
+use Xestify\plugins\guards\PluginDependencyValidator;
 use Xestify\repositories\PluginRepository;
-use Xestify\plugins\infrastructure\PluginSchemaCodec;
+use Xestify\plugins\discovery\PluginSchemaCodec;
 
 loadPluginTestEnv(BASE_PATH);
 

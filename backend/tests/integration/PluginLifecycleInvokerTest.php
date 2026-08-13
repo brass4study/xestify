@@ -35,7 +35,7 @@ TestSuite::run('onInstall(), onActivate() and onDeactivate() call lifecycle meth
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
+use Xestify\plugins\contracts\PluginLifecycleInterface;
 final class Lifecycle implements PluginLifecycleInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void { \$GLOBALS['lc_install'] = (\$GLOBALS['lc_install'] ?? 0) + 1; }
@@ -76,7 +76,7 @@ TestSuite::run('onUpdate() is optional and receives context when implemented', f
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleUpdateInterface;
+use Xestify\plugins\contracts\PluginLifecycleUpdateInterface;
 final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}
@@ -111,7 +111,7 @@ TestSuite::run('onRollback() is optional and receives context when implemented',
 declare(strict_types=1);
 namespace Xestify\plugins\\{$slug};
 use PDO;
-use Xestify\plugins\PluginLifecycleUpdateInterface;
+use Xestify\plugins\contracts\PluginLifecycleUpdateInterface;
 final class Lifecycle implements PluginLifecycleUpdateInterface {
     public function __construct(private PDO \$pdo) {}
     public function onInstall(): void {}

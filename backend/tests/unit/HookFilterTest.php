@@ -15,9 +15,9 @@ define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
-require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
+require_once BASE_PATH . '/src/core/HookDispatcher.php';
 
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 
 echo str_repeat('-', 40) . "\n";
 

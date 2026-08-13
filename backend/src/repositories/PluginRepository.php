@@ -6,7 +6,7 @@ namespace Xestify\repositories;
 
 use PDO;
 use Xestify\exceptions\PluginException;
-use Xestify\plugins\infrastructure\PluginSchemaCodec;
+use Xestify\plugins\discovery\PluginSchemaCodec;
 
 final class PluginRepository
 {

@@ -5,17 +5,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 use Xestify\core\Database;
-use Xestify\plugins\application\InstalledPluginSchemaValidator;
-use Xestify\plugins\application\PluginSyncService;
-use Xestify\plugins\infrastructure\PluginCompatibilityValidator;
-use Xestify\plugins\infrastructure\PluginDependencyValidator;
-use Xestify\plugins\infrastructure\PluginDiscoveryService;
-use Xestify\plugins\infrastructure\PluginManifestReader;
-use Xestify\plugins\infrastructure\PluginSchemaCodec;
-use Xestify\plugins\infrastructure\PluginSchemaReader;
-use Xestify\plugins\infrastructure\PluginSourceService;
-use Xestify\plugins\infrastructure\PluginClassLoader;
-use Xestify\plugins\runtime\PluginLifecycleInvoker;
+use Xestify\plugins\schema\InstalledPluginSchemaValidator;
+use Xestify\plugins\lifecycle\PluginSyncService;
+use Xestify\plugins\guards\PluginCompatibilityValidator;
+use Xestify\plugins\guards\PluginDependencyValidator;
+use Xestify\plugins\discovery\PluginDiscoveryService;
+use Xestify\plugins\discovery\PluginManifestReader;
+use Xestify\plugins\discovery\PluginSchemaCodec;
+use Xestify\plugins\discovery\PluginSchemaReader;
+use Xestify\plugins\discovery\PluginSourceService;
+use Xestify\plugins\lifecycle\PluginClassLoader;
+use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
 use Xestify\repositories\PluginRepository;
 
 $pluginsDir = dirname(__DIR__, 2) . '/plugins';

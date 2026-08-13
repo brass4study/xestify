@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Xestify\plugins\products;
 
 use PDO;
-use Xestify\plugins\PluginLifecycleInterface;
+use Xestify\plugins\contracts\PluginLifecycleInterface;
 
 require_once __DIR__ . '/Installer.php';
 

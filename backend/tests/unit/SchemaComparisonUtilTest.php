@@ -5,9 +5,9 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
-require_once BASE_PATH . '/src/plugins/application/SchemaComparisonUtil.php';
+require_once BASE_PATH . '/src/plugins/schema/SchemaComparisonUtil.php';
 
-use Xestify\plugins\application\SchemaComparisonUtil;
+use Xestify\plugins\schema\SchemaComparisonUtil;
 
 $util = new SchemaComparisonUtil();
 

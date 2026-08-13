@@ -6,9 +6,9 @@ define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/tests/helpers/plugins/plugin_fixtures.php';
-require_once BASE_PATH . '/src/plugins/infrastructure/PluginDiscoveryService.php';
+require_once BASE_PATH . '/src/plugins/discovery/PluginDiscoveryService.php';
 
-use Xestify\plugins\infrastructure\PluginDiscoveryService;
+use Xestify\plugins\discovery\PluginDiscoveryService;
 
 echo str_repeat('-', 40) . "\n";
 

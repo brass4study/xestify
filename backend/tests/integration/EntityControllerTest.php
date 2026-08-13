@@ -30,14 +30,14 @@ require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
-require_once BASE_PATH . '/src/plugins/HookDispatcher.php';
+require_once BASE_PATH . '/src/core/HookDispatcher.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 
 use Xestify\controllers\EntityController;
 use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
-use Xestify\plugins\HookDispatcher;
+use Xestify\core\HookDispatcher;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
