@@ -1,5 +1,8 @@
 const UI_STORAGE_KEY = 'xestify_ui_preferences';
 
+let currentUiPreferences;
+let uiListeners = [];
+
 const PRIMARY_THEME_PRESETS = Object.freeze({
   blue: Object.freeze({
     50: '#eef8ff',
@@ -250,6 +253,8 @@ export function createDefaultUiPreferences() {
   return normalizeUiPreferences(DEFAULT_UI_PREFERENCES);
 }
 
+currentUiPreferences = readStoredUiPreferences(typeof window !== 'undefined' ? window.localStorage : null);
+
 export function getUiThemeSchema() {
   return UI_THEME_SCHEMA;
 }
@@ -281,6 +286,46 @@ export function persistUiPreferences(settings, storage = null) {
   }
 
   storage.setItem(UI_STORAGE_KEY, JSON.stringify(normalizeUiPreferences(settings)));
+}
+
+export function subscribeUi(listener) {
+  if (typeof listener !== 'function') {
+    return () => {};
+  }
+
+  uiListeners.push(listener);
+  return () => {
+    uiListeners = uiListeners.filter((entry) => entry !== listener);
+  };
+}
+
+export function notifyUi() {
+  const snapshot = getUiPreferences();
+  for (const listener of uiListeners) {
+    listener(snapshot);
+  }
+}
+
+export function setUiPreferences(preferences) {
+  currentUiPreferences = mergeUiPreferences(createDefaultUiPreferences(), preferences);
+  persistUiPreferences(currentUiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+  notifyUi();
+}
+
+export function updateUiPreferences(patch) {
+  currentUiPreferences = mergeUiPreferences(currentUiPreferences, patch);
+  persistUiPreferences(currentUiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+  notifyUi();
+}
+
+export function getUiPreferences() {
+  return mergeUiPreferences(createDefaultUiPreferences(), currentUiPreferences);
+}
+
+export function resetUiPreferences() {
+  currentUiPreferences = createDefaultUiPreferences();
+  persistUiPreferences(currentUiPreferences, typeof window !== 'undefined' ? window.localStorage : null);
+  notifyUi();
 }
 
 export function normalizeUiPreferences(value) {

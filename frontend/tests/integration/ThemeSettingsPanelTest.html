@@ -21,8 +21,12 @@
       finishTestRunner,
       makeSandbox,
     } from '../js/helpers.js';
-    import { AppState } from '../../js/models/StateModel.js';
-    import { applyUiPreferencesToDocument, createDefaultUiPreferences } from '../../js/models/ThemeModel.js';
+    import {
+      applyUiPreferencesToDocument,
+      createDefaultUiPreferences,
+      getUiPreferences,
+      setUiPreferences,
+    } from '../../js/models/ThemeModel.js';
     import { ThemeSettingsPanel } from '../../js/views/modules/ThemeSettingsPanel.js';
 
     initTestRunner('output');
@@ -43,7 +47,7 @@
     separator();
 
     await test('el boton UI abre y cierra el panel de configuracion', async () => {
-      AppState.setUiPreferences(createDefaultUiPreferences());
+      setUiPreferences(createDefaultUiPreferences());
       const { host, panel } = mountPanel();
 
       try {
@@ -78,7 +82,7 @@
     });
 
     await test('renderiza secciones en orden y opciones graficas cuadradas', async () => {
-      AppState.setUiPreferences(createDefaultUiPreferences());
+      setUiPreferences(createDefaultUiPreferences());
       const { host, panel } = mountPanel();
 
       try {
@@ -121,7 +125,7 @@
     });
 
     await test('pageStyle cambia a dark al seleccionar la tarjeta oscura', async () => {
-      AppState.setUiPreferences(createDefaultUiPreferences());
+      setUiPreferences(createDefaultUiPreferences());
       const { host, panel } = mountPanel();
 
       try {
@@ -130,7 +134,7 @@
 
         darkOption.click();
 
-        assertEquals(AppState.getUiPreferences().pageStyle, 'dark', 'El estado global debe cambiar a dark');
+        assertEquals(getUiPreferences().pageStyle, 'dark', 'El estado global debe cambiar a dark');
       } finally {
         panel.destroy();
         cleanupHost(host);
@@ -138,7 +142,7 @@
     });
 
     await test('navigationMode cambia al seleccionar Side menu', async () => {
-      AppState.setUiPreferences(createDefaultUiPreferences());
+      setUiPreferences(createDefaultUiPreferences());
       const { host, panel } = mountPanel();
 
       try {
@@ -146,7 +150,7 @@
         assertTrue(sideOption !== null, 'La opción side debe existir');
 
         sideOption.click();
-        assertEquals(AppState.getUiPreferences().navigationMode, 'side', 'El estado global debe cambiar a side');
+        assertEquals(getUiPreferences().navigationMode, 'side', 'El estado global debe cambiar a side');
       } finally {
         panel.destroy();
         cleanupHost(host);
@@ -154,7 +158,7 @@
     });
 
     await test('themeColor cambia a teal y actualiza la variable --x-brand-500', async () => {
-      AppState.setUiPreferences(createDefaultUiPreferences());
+      setUiPreferences(createDefaultUiPreferences());
       const { host, panel } = mountPanel();
 
       try {
@@ -162,7 +166,7 @@
         assertTrue(tealOption !== null, 'La opción teal debe existir');
 
         tealOption.click();
-        const settings = AppState.getUiPreferences();
+        const settings = getUiPreferences();
         applyUiPreferencesToDocument(settings, {
           root: document.documentElement,
           body: document.body,

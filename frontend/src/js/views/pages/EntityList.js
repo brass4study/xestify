@@ -9,7 +9,7 @@
  */
 
 import { Api, ApiError } from '../../models/ApiClientModel.js';
-import { AppState } from '../../models/StateModel.js';
+import { SessionModel } from '../../models/SessionModel.js';
 import { t } from '../../models/I18nModel.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { ListLayout } from '../layout/ListLayout.js';
@@ -57,7 +57,7 @@ export class EntityList {
 	}
 
 	/**
-	 * Load entities and store them in AppState.
+	 * Load entities and store them in SessionModel.
 	 *
 	 * @returns {Promise<void>}
 	 */
@@ -72,7 +72,7 @@ export class EntityList {
 		try {
 			const { data } = await this.#api.get('/entities');
 			const entities = Array.isArray(data) ? data : [];
-			AppState.setEntities(entities);
+			SessionModel.setEntities(entities);
 			this.#setLoading(false);
 
 			if (entities.length === 0) {
@@ -99,12 +99,10 @@ export class EntityList {
 	async loadEntity(slug) {
 		this.#setLoading(true);
 		this.#clearError();
-		AppState.setCurrentEntity(slug);
 
 		try {
 			const { data, meta } = await this.#api.get(this.#recordsUrl(slug));
 			const records = this.#normalizeRecords(data);
-			AppState.setRecords(records);
 
 			const schema = this.#schemaForSlug(slug);
 			this.#renderRecords(records, schema, slug, meta);
@@ -155,7 +153,6 @@ export class EntityList {
 				try {
 					const response = await this.#api.get(this.#recordsUrl(slug, query));
 					const refreshedRecords = this.#normalizeRecords(response.data);
-					AppState.setRecords(refreshedRecords);
 					return {
 						records: refreshedRecords,
 						total: Number.isInteger(response.meta?.total) ? response.meta.total : refreshedRecords.length,
@@ -194,13 +191,13 @@ export class EntityList {
 	}
 
 	#schemaForSlug(slug) {
-		const entities = AppState.getEntities();
+		const entities = SessionModel.getEntities();
 		const found = entities.find((e) => e.slug === slug);
 		return found ?? { slug, fields: [] };
 	}
 
 	#entityLabelForSlug(slug) {
-		const entities = AppState.getEntities();
+		const entities = SessionModel.getEntities();
 		const found = entities.find((e) => e.slug === slug);
 
 		if (found !== undefined && typeof found.label === 'string' && found.label.trim() !== '') {
@@ -211,7 +208,7 @@ export class EntityList {
 	}
 
 	#createLabelForSlug(slug) {
-		const entities = AppState.getEntities();
+		const entities = SessionModel.getEntities();
 		const found = entities.find((e) => e.slug === slug);
 		const singular = found !== undefined && typeof found.label_singular === 'string' && found.label_singular !== ''
 			? found.label_singular
@@ -265,8 +262,6 @@ export class EntityList {
 	}
 
 	#setLoading(loading) {
-		AppState.setLoading(loading);
-
 		if (loading) {
 			UiResilienceService.setViewState(this.#layout?.getContentTarget() ?? this.#container, {
 				type: 'loading',
@@ -284,7 +279,6 @@ export class EntityList {
 	}
 
 	#clearError() {
-		AppState.setError(null);
 		if (this.#notificationRole === 'entity-error') {
 			this.#layout?.setNotification(null);
 			this.#notificationRole = null;
@@ -293,7 +287,6 @@ export class EntityList {
 
 	#handleError(err) {
 		const message = err instanceof ApiError ? err.message : 'Error desconocido';
-		AppState.setError({ message });
 
 		this.#showNotification('error', message, 'entity-error');
 	}

@@ -10,7 +10,8 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { AppState } from '../../js/models/StateModel.js';
+  import { NotificationModel } from '../../js/models/NotificationModel.js';
+  import { getUiPreferences, setUiPreferences } from '../../js/models/ThemeModel.js';
   import { UiResilienceService } from '../../js/services/UiResilienceService.js';
   import { ApiError } from '../../js/models/ApiClientModel.js';
   import { Modal } from '../../js/views/modules/Modal.js';
@@ -23,9 +24,8 @@
 
   separator();
 
-  await test('AppState tracks global notification and navigation state', async () => {
-    AppState.clearNotification();
-    AppState.setNavigationState({ page: 'entity', entity: 'clients' });
+  await test('NotificationModel tracks global notification', async () => {
+    NotificationModel.clearNotification();
 
     UiResilienceService.showNotification({
       type: 'info',
@@ -33,13 +33,12 @@
       message: 'Cargando datos',
     });
 
-    const notification = AppState.getNotification();
+    const notification = NotificationModel.getNotification();
     assertTrue(notification !== null, 'Debe existir una notificación global');
     assertEquals(notification.message, 'Cargando datos');
-    assertEquals(AppState.getNavigationState().entity, 'clients');
 
-    AppState.clearNotification();
-    assertTrue(AppState.getNotification() === null, 'La notificación debe limpiarse');
+    NotificationModel.clearNotification();
+    assertTrue(NotificationModel.getNotification() === null, 'La notificación debe limpiarse');
   });
 
   await test('UiResilienceService normalizes errors into friendly messages', async () => {
@@ -233,6 +232,23 @@
     container.remove();
   });
 
+  await test('AppController.clearAuth() resetea las preferencias de UI además de la sesión', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+
+    const controller = new AppController(host);
+    setUiPreferences({ pageStyle: 'dark', themeColor: 'red', navigationMode: 'side' });
+    assertEquals(getUiPreferences().pageStyle, 'dark', 'Precondición: la preferencia debe quedar en dark antes de logout');
+
+    controller.clearAuth();
+
+    const preferences = getUiPreferences();
+    assertEquals(preferences.pageStyle, 'light', 'clearAuth() debe restaurar pageStyle al valor por defecto');
+    assertEquals(preferences.navigationMode, 'top', 'clearAuth() debe restaurar navigationMode al valor por defecto');
+
+    host.remove();
+  });
+
   await test('hydrateUiPreferences() aplica la misma política de 401 que loadEntitiesForNav/loadCurrentUserProfile', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
@@ -296,7 +312,7 @@
     host.remove();
   });
 
-  await test('AppController renders a global notification through the single AppState.subscribeNotification channel', async () => {
+  await test('AppController renders a global notification through the single NotificationModel.subscribe channel', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
 
@@ -433,13 +449,13 @@
 
   await test('Theme preferences persist in localStorage and normalize correctly', async () => {
     const before = window.localStorage.getItem('xestify_ui_preferences');
-    AppState.setUiPreferences({ pageStyle: 'dark', themeColor: 'red', navigationMode: 'side' });
+    setUiPreferences({ pageStyle: 'dark', themeColor: 'red', navigationMode: 'side' });
 
     const stored = window.localStorage.getItem('xestify_ui_preferences');
     assertTrue(typeof stored === 'string' && stored.includes('dark'), 'Debe persistir el estilo de página');
     assertTrue(typeof stored === 'string' && stored.includes('red'), 'Debe persistir el color del tema');
 
-    const preferences = AppState.getUiPreferences();
+    const preferences = getUiPreferences();
     assertEquals(preferences.pageStyle, 'dark');
     assertEquals(preferences.themeColor, 'red');
     assertEquals(preferences.navigationMode, 'side');

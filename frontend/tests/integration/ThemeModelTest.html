@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ThemeModelTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <h2>ThemeModelTest</h2>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      initTestRunner,
+      separator,
+      test,
+      assertEquals,
+      finishTestRunner,
+    } from '../js/helpers.js';
+    import {
+      getUiPreferences,
+      resetUiPreferences,
+      subscribeUi,
+      updateUiPreferences,
+    } from '../../js/models/ThemeModel.js';
+
+    initTestRunner('output');
+
+    separator();
+
+    await test('updateUiPreferences merges WYSIWYG shell settings', async () => {
+      resetUiPreferences();
+      updateUiPreferences({
+        contentWidth: 'fluid',
+        themeColor: 'teal',
+        regions: { footer: false },
+        tokens: { radiusPreset: 'expressive' },
+      });
+
+      const ui = getUiPreferences();
+      assertEquals(ui.contentWidth, 'fluid');
+      assertEquals(ui.themeColor, 'teal');
+      assertEquals(ui.regions.footer, false);
+      assertEquals(ui.regions.header, true);
+      assertEquals(ui.tokens.radiusPreset, 'expressive');
+    });
+
+    await test('subscribeUi receives normalized preference snapshots', async () => {
+      resetUiPreferences();
+      const snapshots = [];
+      const unsubscribe = subscribeUi((settings) => {
+        snapshots.push(settings);
+      });
+
+      updateUiPreferences({ navigationMode: 'invalid', regions: { menuHeader: false } });
+      unsubscribe();
+
+      assertEquals(snapshots.length, 1, 'Debe notificarse una sola vez');
+      assertEquals(snapshots[0].navigationMode, 'top');
+      assertEquals(snapshots[0].regions.menuHeader, false);
+    });
+
+    await test('resetUiPreferences restores default visual settings', async () => {
+      updateUiPreferences({ pageStyle: 'dark', weakMode: true });
+      resetUiPreferences();
+
+      const ui = getUiPreferences();
+      assertEquals(ui.pageStyle, 'light');
+      assertEquals(ui.contentWidth, 'boxed');
+      assertEquals(ui.weakMode, false);
+    });
+
+    separator();
+    finishTestRunner('output');
+  </script>
+</body>
+</html>

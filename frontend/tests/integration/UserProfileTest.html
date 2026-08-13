@@ -14,7 +14,7 @@
 <script type="module">
   import { UserProfile } from '../../js/views/pages/UserProfile.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
-  import { AppState } from '../../js/models/StateModel.js';
+  import { SessionModel } from '../../js/models/SessionModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -55,7 +55,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
@@ -88,7 +88,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     const newPassword = container.querySelector('input[name="newPassword"]');
     const passwordStrength = container.querySelector('[data-password-strength]');
@@ -131,7 +131,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
@@ -159,7 +159,7 @@
     const api = new MockApi();
     api.user.avatar = 'data:image/png;base64,abc';
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(shell.getTarget('shell-main-content'), { ...api.user }, api, { shellLayout: shell });
     assertTrue(page instanceof UserProfile, 'Debe crear el perfil dentro de la shell');
 
@@ -182,7 +182,7 @@
     const api = new MockApi();
     api.user.avatar = 'data:image/png;base64,abc';
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
@@ -215,7 +215,7 @@
     window.localStorage.setItem('xestify_user_avatar', api.user.avatar);
     window.localStorage.setItem('xestify_user_name', 'Nombre desactualizado');
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
@@ -226,9 +226,9 @@
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    assertEquals(AppState.getUser().avatar, '', 'El estado en memoria debe reflejar el guardado');
+    assertEquals(SessionModel.getUser().avatar, '', 'El estado en memoria debe reflejar el guardado');
     assertTrue(window.localStorage.getItem('xestify_user_avatar') === null,
-      'El snapshot persistido debe limpiarse tras guardar, aunque StateModel ya no toque localStorage');
+      'El snapshot persistido debe limpiarse tras guardar, aunque SessionModel ya no toque localStorage');
     assertEquals(window.localStorage.getItem('xestify_user_name'), api.user.name,
       'El snapshot persistido debe sincronizarse con el nombre guardado');
 
@@ -241,7 +241,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
@@ -266,7 +266,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    AppState.setUser({ ...api.user });
+    SessionModel.setUser({ ...api.user });
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 

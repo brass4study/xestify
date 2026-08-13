@@ -14,7 +14,7 @@
   import { EntityList } from '../../js/views/pages/EntityList.js';
   import { EntityEdit } from '../../js/views/pages/EntityEdit.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
-  import { AppState } from '../../js/models/StateModel.js';
+  import { SessionModel } from '../../js/models/SessionModel.js';
   import { initTestRunner, log, assertEquals, assertTrue, makeSandbox } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -78,7 +78,7 @@
   async function test(name, fn) {
     const originalFetch = globalThis.fetch;
     try {
-      AppState.reset();
+      SessionModel.reset();
       await fn();
       log(`  ✅ ${name}`);
       passed++;
@@ -134,7 +134,7 @@
     mockFetch([{ url: '/entities', data: ENTITIES }]);
     const page = new EntityList(container);
     await page.init();
-    const entities = AppState.getEntities();
+    const entities = SessionModel.getEntities();
     assertTrue(entities.length > 0, 'Should have loaded entities');
     assertEquals(entities[0].slug, 'clients', 'First entity should be client');
     container.remove();

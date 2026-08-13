@@ -1,5 +1,4 @@
 import { Api } from '../../models/ApiClientModel.js';
-import { AppState } from '../../models/StateModel.js';
 import { SessionModel } from '../../models/SessionModel.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
@@ -545,13 +544,13 @@ export class UserConfig {
 			this.setPageMessage('Usuario actualizado correctamente.', 'success');
 
 			if (this.shouldSyncAppStateAfterSave()) {
-				const current = AppState.getUser();
+				const current = SessionModel.getUser();
 				const merged = {
 					...(current && typeof current === 'object' ? current : {}),
 					...this.#user,
 					...updated,
 				};
-				AppState.setUser(merged);
+				SessionModel.setUser(merged);
 				SessionModel.persistUserSnapshot(merged);
 			}
 
@@ -710,7 +709,7 @@ export class UserConfig {
 
 	#resolveUser() {
 		if (this.#mode === 'profile') {
-			const stateUser = AppState.getUser();
+			const stateUser = SessionModel.getUser();
 			if (stateUser !== null && typeof stateUser === 'object') {
 				return stateUser;
 			}

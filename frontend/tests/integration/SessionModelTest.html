@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SessionModelTest - Xestify Frontend</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<h2>SessionModelTest</h2>
+<pre id="output"></pre>
+
+<script type="module">
+  import { SessionModel } from '../../js/models/SessionModel.js';
+  import { initTestRunner, separator, test, assertEquals, assertTrue, finishTestRunner } from '../js/helpers.js';
+
+  initTestRunner('output');
+
+  separator();
+
+  await test('setUser/getUser stores and returns user', async () => {
+    const user = { id: 'u1', email: 'admin@xestify.local' };
+    SessionModel.setUser(user);
+    assertEquals(SessionModel.getUser(), {
+      id: 'u1',
+      email: 'admin@xestify.local',
+      roles: [],
+    });
+  });
+
+  await test('setUser(null) clears user', async () => {
+    SessionModel.setUser({ id: 'u1' });
+    SessionModel.setUser(null);
+    assertTrue(SessionModel.getUser() === null, 'user must be null');
+  });
+
+  await test('setEntities/getEntities stores list', async () => {
+    SessionModel.setEntities([{ slug: 'client' }, { slug: 'invoice' }]);
+    assertEquals(SessionModel.getEntities().length, 2);
+  });
+
+  await test('setEntities with non-array resets to []', async () => {
+    SessionModel.setEntities('invalid');
+    assertEquals(SessionModel.getEntities(), []);
+  });
+
+  await test('setToken/getToken stores token', async () => {
+    SessionModel.setToken('jwt-token');
+    assertTrue(SessionModel.getToken() === 'jwt-token', 'token must match');
+  });
+
+  await test('reset() restores initial state', async () => {
+    SessionModel.setUser({ id: 'u1' });
+    SessionModel.setEntities([{ slug: 'client' }]);
+    SessionModel.setToken('abc');
+
+    SessionModel.reset();
+
+    assertTrue(SessionModel.getUser() === null, 'user must be null');
+    assertEquals(SessionModel.getEntities(), []);
+    assertTrue(SessionModel.getToken() === null, 'token must be null');
+  });
+
+  separator();
+  finishTestRunner('output');
+</script>
+</body>
+</html>

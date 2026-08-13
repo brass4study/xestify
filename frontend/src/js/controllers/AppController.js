@@ -12,9 +12,9 @@ import {
   parseEntityTabPage,
   userDetailPage,
 } from './RouteMapController.js';
+import { NotificationModel } from '../models/NotificationModel.js';
 import { SessionModel } from '../models/SessionModel.js';
-import { AppState } from '../models/StateModel.js';
-import { applyUiPreferencesToDocument } from '../models/ThemeModel.js';
+import { applyUiPreferencesToDocument, getUiPreferences, resetUiPreferences, setUiPreferences, subscribeUi } from '../models/ThemeModel.js';
 import { t } from '../models/I18nModel.js';
 import { UiResilienceService } from '../services/UiResilienceService.js';
 import { PageLayout } from '../views/layout/PageLayout.js';
@@ -71,7 +71,7 @@ export class AppController {
     };
     window.addEventListener('error', this.globalErrorHandler);
     window.addEventListener('unhandledrejection', this.globalErrorHandler);
-    this.notificationSubscription = AppState.subscribeNotification(() => {
+    this.notificationSubscription = NotificationModel.subscribe(() => {
       this.scheduleGlobalNotificationsRender();
     });
   }
@@ -188,7 +188,7 @@ export class AppController {
   async renderDashboard() {
     this.shellLayout = ShellLayout.create(this.container).build();
     this.contentContainer = this.shellLayout.getTarget('shell-main-content');
-    const uiPreferences = AppState.getUiPreferences();
+    const uiPreferences = getUiPreferences();
     const isMixedNavigation = uiPreferences.navigationMode === 'mixed';
     let navbarContainer;
     let themeSettingsContainer;
@@ -405,14 +405,14 @@ export class AppController {
       return;
     }
 
-    this.uiSubscription = AppState.subscribeUi(() => {
+    this.uiSubscription = subscribeUi(() => {
       this.syncUiPreferences();
       this.scheduleUiPreferencesSave();
     });
   }
 
   syncUiPreferences() {
-    const uiPreferences = AppState.getUiPreferences();
+    const uiPreferences = getUiPreferences();
     applyUiPreferencesToDocument(uiPreferences, {
       app: this.container,
     });
@@ -444,7 +444,7 @@ export class AppController {
     try {
       const settings = await loadUiPreferences(this.dashboardApi);
       if (settings !== null) {
-        AppState.setUiPreferences(settings);
+        setUiPreferences(settings);
       }
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -482,7 +482,7 @@ export class AppController {
     }
 
     try {
-      await saveUiPreferences(this.dashboardApi, AppState.getUiPreferences());
+      await saveUiPreferences(this.dashboardApi, getUiPreferences());
     } catch {
       // Mantener la UX local aunque falle el guardado remoto.
     }
@@ -909,6 +909,8 @@ export class AppController {
 
     SessionModel.reset();
     SessionModel.clearStoredSession();
+    NotificationModel.clearNotification();
+    resetUiPreferences();
   }
 
   unsubscribeNavbar() {
@@ -1004,7 +1006,7 @@ export class AppController {
     return fallbackHost;
   }
 
-  renderPageNotification(notification = AppState.getNotification()) {
+  renderPageNotification(notification = NotificationModel.getNotification()) {
     if (!(this.shellLayout instanceof ShellLayout)) {
       return;
     }
@@ -1068,7 +1070,7 @@ export class AppController {
       return;
     }
 
-    const notification = AppState.getNotification();
+    const notification = NotificationModel.getNotification();
     target.replaceChildren();
 
     if (!notification || typeof notification !== 'object') {
@@ -1127,7 +1129,7 @@ export class AppController {
       dialog.style.animation = 'toast-slide-out 220ms ease-in forwards';
       backdrop.style.animation = 'theme-backdrop-exit 220ms ease-in forwards';
       window.setTimeout(() => {
-        AppState.clearNotification();
+        NotificationModel.clearNotification();
         this.renderGlobalNotifications();
       }, 220);
     });

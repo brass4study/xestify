@@ -1,6 +1,5 @@
-import { AppState } from '../../models/StateModel.js';
 import { t } from '../../models/I18nModel.js';
-import { getUiThemeSchema } from '../../models/ThemeModel.js';
+import { getUiPreferences, getUiThemeSchema, subscribeUi, updateUiPreferences } from '../../models/ThemeModel.js';
 import { component } from './ComponentFactory.js';
 
 export class ThemeSettingsPanel {
@@ -27,7 +26,7 @@ export class ThemeSettingsPanel {
     this.#panel = null;
     this.#panelBody = null;
     this.#expanded = false;
-    this.#unsubscribe = AppState.subscribeUi(() => {
+    this.#unsubscribe = subscribeUi(() => {
       this.#renderPanelBody();
     });
     this.#onDocumentPointerDown = (event) => {
@@ -182,7 +181,7 @@ export class ThemeSettingsPanel {
       return;
     }
 
-    const settings = AppState.getUiPreferences();
+    const settings = getUiPreferences();
     const schema = getUiThemeSchema();
     this.#panelBody.replaceChildren();
 
@@ -203,7 +202,7 @@ export class ThemeSettingsPanel {
         type: 'button',
         ariaLabel: option.label,
         onClick: () => {
-          AppState.updateUiPreferences({ navigationMode: option.value });
+          updateUiPreferences({ navigationMode: option.value });
         },
       }).setClassName('theme-option-card relative overflow-hidden')
         .setData('role', 'theme-navigation-mode-option')
@@ -227,7 +226,7 @@ export class ThemeSettingsPanel {
         type: 'button',
         ariaLabel: option.label,
         onClick: () => {
-          AppState.updateUiPreferences({ pageStyle: option.value });
+          updateUiPreferences({ pageStyle: option.value });
         },
       }).setClassName(active
         ? 'theme-option-card is-active relative flex items-center justify-center overflow-hidden'
@@ -253,7 +252,7 @@ export class ThemeSettingsPanel {
         type: 'button',
         ariaLabel: option.label,
         onClick: () => {
-          AppState.updateUiPreferences({ themeColor: option.value });
+          updateUiPreferences({ themeColor: option.value });
         },
       }).setClassName(active
         ? 'theme-color-swatch is-active relative flex items-center justify-center'

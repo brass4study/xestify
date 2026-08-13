@@ -13,7 +13,7 @@
 <script type="module">
   import { EntityList } from '../../js/views/pages/EntityList.js';
   import { ShellLayout } from '../../js/views/layout/ShellLayout.js';
-  import { AppState } from '../../js/models/StateModel.js';
+  import { SessionModel } from '../../js/models/SessionModel.js';
   import { DynamicTable } from '../../js/views/modules/DynamicTable.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, mockFetchWithMap, finishTestRunner } from '../js/helpers.js';
 
@@ -53,13 +53,13 @@
     const page = new EntityList(container);
     await page.init();
 
-    const entities = AppState.getEntities();
+    const entities = SessionModel.getEntities();
     assertEquals(entities.length, 2, 'Should load 2 entities');
     assertEquals(entities[0].slug, 'clients', 'First entity slug');
     assertEquals(entities[1].slug, 'order', 'Second entity slug');
   });
 
-  await test('init stores entities in AppState', async () => {
+  await test('init stores entities in SessionModel', async () => {
     const container = makeSandbox();
     const entities = [{ slug: 'clients', label: 'Clientes' }];
     mockFetchWithMap({ '/entities': entities });
@@ -67,7 +67,7 @@
     const page = new EntityList(container);
     await page.init();
 
-    assertEquals(AppState.getEntities(), entities, 'AppState.entities should match');
+    assertEquals(SessionModel.getEntities(), entities, 'SessionModel.entities should match');
   });
 
   await test('init renders empty state when no entities', async () => {
@@ -136,25 +136,6 @@
     assertEquals(shellToolbar.querySelectorAll('[data-role="record-create"]').length, 1, 'Rerender should keep one create action');
 
     host.remove();
-  });
-
-  await test('loadEntity stores records in AppState', async () => {
-    const container = makeSandbox();
-    mockFetchWithMap({
-      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
-      '/entities/clients/records': [
-        { id: '1', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'ACME' } },
-      ],
-    });
-
-    const page = new EntityList(container);
-    await page.init();
-    await page.loadEntity('clients');
-
-    const stored = AppState.getRecords();
-    assertEquals(stored.length, 1, 'Should have 1 record');
-    assertEquals(stored[0].name, 'ACME', 'Record name should be ACME');
-    assertEquals(AppState.getCurrentEntity(), 'clients', 'AppState.currentEntity should be set');
   });
 
   await test('loadEntity requests 20 records and delegates pagination and sorting to API', async () => {

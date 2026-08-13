@@ -1,4 +1,4 @@
-import { AppState } from '../models/StateModel.js';
+import { NotificationModel } from '../models/NotificationModel.js';
 import { t } from '../models/I18nModel.js';
 import { Modal } from '../views/modules/Modal.js';
 import { component } from '../views/modules/ComponentFactory.js';
@@ -18,13 +18,13 @@ export class UiResilienceService {
       global: shouldRenderGlobally,
     };
 
-    AppState.setNotification(notification);
+    NotificationModel.setNotification(notification);
 
     return notification;
   }
 
   static clearNotification() {
-    AppState.clearNotification();
+    NotificationModel.clearNotification();
   }
 
   static setViewState(container, config = {}) {
