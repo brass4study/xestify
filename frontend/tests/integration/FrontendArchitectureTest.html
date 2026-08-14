@@ -40,6 +40,11 @@
 
     initTestRunner('output');
 
+    function fillTemplate(template, ...params) {
+      let index = 0;
+      return template.replace(/:[a-zA-Z]+/g, () => encodeURIComponent(params[index++] ?? ''));
+    }
+
     await test('RouteController soporta entrada directa, refresh y navegación programática por hash', async () => {
       const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       const visited = [];
@@ -177,11 +182,6 @@
         'El hash de detalle de entidad debe derivar del propio HASH_ROUTE_MAP.entityDetail');
       assertEquals(hashFromPage(entityTabPage('clients', 'record-9', 'comments')), fillTemplate(HASH_ROUTE_MAP.entityTab, 'clients', 'record-9', 'comments'),
         'El hash de tab de entidad debe derivar del propio HASH_ROUTE_MAP.entityTab');
-
-      function fillTemplate(template, ...params) {
-        let index = 0;
-        return template.replace(/:[a-zA-Z]+/g, () => encodeURIComponent(params[index++] ?? ''));
-      }
     });
 
     await test('parseEntityRecordPage es la única implementación del parser entity-record:', async () => {
