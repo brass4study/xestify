@@ -27,6 +27,7 @@ export class EntityEdit {
 	#onSaved;
 	#onCancel;
 	#onTabChange;
+	#onTabsReady;
 	#dynamicTabs = null;
 	#pluginPanels = [];
 	#renderToken = 0;
@@ -38,7 +39,7 @@ export class EntityEdit {
 	 * @param {HTMLElement|string} container
 	 * @param {string} slug
 	 * @param {Object} schema
-	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function}} options
+	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function, onTabsReady?: Function}} options
 	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -55,6 +56,7 @@ export class EntityEdit {
 		this.#onSaved = typeof options.onSaved === 'function' ? options.onSaved : null;
 		this.#onCancel = typeof options.onCancel === 'function' ? options.onCancel : null;
 		this.#onTabChange = typeof options.onTabChange === 'function' ? options.onTabChange : null;
+		this.#onTabsReady = typeof options.onTabsReady === 'function' ? options.onTabsReady : null;
 
 		this.#render(options.initialData ?? {});
 	}
@@ -213,6 +215,8 @@ export class EntityEdit {
 
 			wrapper.classList.remove('p-4');
 			wrapper.classList.add('px-4', 'pb-4', 'pt-0');
+
+			this.#onTabsReady?.(tabDefs.map((tab) => ({ id: tab.id, label: tab.label })));
 
 			layout.setHeaderBottom((tabBarContainer) => {
 				const dynamicTabs = new DynamicTabs(wrapper, {

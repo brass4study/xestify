@@ -44,6 +44,7 @@ export class AppController {
     this.contentContainer = null;
     this.currentEntityEdit = null;
     this.currentEntityRoute = null;
+    this.entityTabsBySlug = new Map();
     this.themeSettingsPanel = null;
     this.currentThemeSettingsNavigationMode = null;
     this.uiSubscription = null;
@@ -876,6 +877,18 @@ export class AppController {
           PageLayout.create(this.contentContainer, { shell: this.shellLayout })
             .setBreadcrumbs(template.breadcrumbs ?? []);
         },
+      onTabsReady: (tabs) => {
+        this.entityTabsBySlug.set(slug, tabs);
+        if (this.currentEntityRoute === null
+          || this.currentEntityRoute.slug !== slug
+          || this.currentEntityRoute.recordId !== recordId) {
+          return;
+        }
+        const page = getPageFromHash(window.location.hash, '');
+        const template = this.buildTemplateDefinition(page);
+        PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+          .setBreadcrumbs(template.breadcrumbs ?? []);
+      },
       shellLayout: this.shellLayout,
       title: pageHeader.title,
       description: pageHeader.subtitle,
@@ -1352,7 +1365,7 @@ export class AppController {
       { label: `Registro ${entityData.recordId}`, active: !isTabPage },
     ];
     if (isTabPage) {
-      breadcrumbs.push({ label: entityData.tabId, active: true });
+      breadcrumbs.push({ label: this.resolveEntityTabLabel(entityData.slug, entityData.tabId), active: true });
     }
 
     return {
@@ -1454,6 +1467,13 @@ export class AppController {
       : null;
     const label = typeof match?.label === 'string' ? match.label.trim() : '';
     return label === '' ? normalizedSlug : label;
+  }
+
+  resolveEntityTabLabel(slug, tabId) {
+    const tabs = this.entityTabsBySlug.get(slug);
+    const match = Array.isArray(tabs) ? tabs.find((tab) => tab?.id === tabId) : null;
+    const label = typeof match?.label === 'string' ? match.label.trim() : '';
+    return label === '' ? tabId : label;
   }
 
   makeBreadcrumbItems(items) {
