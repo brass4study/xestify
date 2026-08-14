@@ -16,6 +16,7 @@ const TEST_EMAIL_DOMAIN = '@xestify.test';
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
+require_once BASE_PATH . '/src/core/AppDebug.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
@@ -201,6 +202,36 @@ TestSuite::run('UserController::listUsers allows admins and returns active users
     } finally {
         cleanupUserRow($pdo, (string) $admin['id']);
         cleanupUserRow($pdo, (string) $user['id']);
+    }
+});
+
+TestSuite::run('UserController::listUsers hides is_seed users when APP_DEBUG is false', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'admin-seedlist-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $seedUser = insertUserRow($pdo, 'seed-list-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'secret', true);
+
+    $originalDebug = $_ENV['APP_DEBUG'] ?? null;
+
+    try {
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $_ENV['APP_DEBUG'] = 'false';
+        $hidden = captureControllerResponse(fn() => $controller->listUsers([], $request));
+        $hiddenIds = array_column($hidden['data'] ?? [], 'id');
+        assertFalse(in_array($seedUser['id'], $hiddenIds, true), 'is_seed users must not be listed when APP_DEBUG=false');
+
+        $_ENV['APP_DEBUG'] = 'true';
+        $shown = captureControllerResponse(fn() => $controller->listUsers([], $request));
+        $shownIds = array_column($shown['data'] ?? [], 'id');
+        assertTrue(in_array($seedUser['id'], $shownIds, true), 'is_seed users must be listed when APP_DEBUG=true');
+    } finally {
+        if ($originalDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $originalDebug;
+        }
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $seedUser['id']);
     }
 });
 

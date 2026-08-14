@@ -153,7 +153,7 @@ export class EntityEdit {
 
 		void this.#loadAndRenderTabs(wrapper, renderToken, layout);
 		requestAnimationFrame(() => {
-			const firstInput = this.#container.querySelector('input, textarea, select');
+			const firstInput = this.#container.querySelector('input, textarea, select:not([hidden]), [data-role="input-select-trigger"]');
 			if (firstInput instanceof HTMLElement) {
 				firstInput.focus();
 			}

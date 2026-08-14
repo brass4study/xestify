@@ -5,37 +5,38 @@
 	font-family: 'Inter', sans-serif;
 }
 	.logo {
+		--x-logo-size: 64px;
 		display: flex;
 		align-items: center;
 	}
 		.logo .logo-icon {
 			position: relative;
-			width: 64px;
-			height: 64px;
+			width: var(--x-logo-size);
+			height: var(--x-logo-size);
 			display: flex;
 			align-items: center;
 		}
 			.logo .chevron{
 				--s: 50%;
 				background: var(--x-brand-600, rgb(18, 95, 220));
-				height: 64px;
+				height: var(--x-logo-size);
 				aspect-ratio: 4 / 5;
 			}
 				.logo .chevron.left{
 					clip-path: polygon(0 0,var(--s) 0,100% 50%,var(--s) 100%,0 100%,calc(100% - var(--s)) 50%);
 				}
 				.logo .chevron.right{
-					margin-left: -24px;
+					margin-left: calc(var(--x-logo-size) * -0.375);
 					clip-path: polygon(100% 0, calc(100% - var(--s)) 0, 0 50%, calc(100% - var(--s)) 100%, 100% 100%, var(--s) 50%);
 					opacity: .6;
 				}
 		.logo .logo-text {
 			font-weight: 600;
-			font-size: 3.4rem;
+			font-size: calc(var(--x-logo-size) * 0.85);
 			color: #1e293b;
-			letter-spacing: -1.5px;
+			letter-spacing: calc(var(--x-logo-size) * -0.0234375);
 			line-height: 1;
-			height: 60px;
+			height: calc(var(--x-logo-size) * 0.9375);
 		}
 		[data-ui-page-style="dark"] .logo .logo-text {
 			color: #ffffff;

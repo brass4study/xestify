@@ -1,5 +1,6 @@
 import { component } from './ComponentFactory.js';
 import { UserMenu } from './UserMenu.js';
+import { hashFromPage } from '../../controllers/RouteMapController.js';
 
 export class Navbar {
 	#container;
@@ -51,6 +52,10 @@ export class Navbar {
 	}
 
 	setLayoutTargets(options = {}) {
+		const previousContainer = this.#container;
+		const previousUserContainer = this.#userContainer;
+		const previousLinksContainer = this.#linksContainer;
+
 		if (options.container !== undefined) {
 			this.#container = this.resolveContainer(options.container);
 		}
@@ -65,6 +70,16 @@ export class Navbar {
 		}
 		if (options.orientation !== undefined) {
 			this.#orientation = options.orientation === 'top' ? 'top' : 'side';
+		}
+
+		if (previousContainer !== this.#container) {
+			previousContainer.replaceChildren();
+		}
+		if (previousUserContainer !== this.#userContainer) {
+			previousUserContainer.replaceChildren();
+		}
+		if (previousLinksContainer instanceof HTMLElement && previousLinksContainer !== this.#linksContainer) {
+			previousLinksContainer.replaceChildren();
 		}
 
 		this.render();
@@ -161,11 +176,12 @@ export class Navbar {
 		});
 
 		if (this.#showBrand) {
-			component.create('span', {
-				className: 'pr-2 text-xl font-semibold tracking-tight',
+			const brand = component.create('span', {
+				className: 'pr-2',
 				dataset: { role: 'navbar-brand' },
-				text: 'Xestify',
-			}).setParent(nav);
+			});
+			component.create('logo').setParent(brand);
+			brand.setParent(nav);
 		}
 
 		const linksOrientation = this.#linksOrientation ?? this.#orientation;
@@ -215,9 +231,13 @@ export class Navbar {
 			className: 'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-white/85 transition hover:bg-white/15 hover:text-white',
 			dataset: { role: 'navbar-link', page },
 			text: label,
-			attributes: { href: '#' },
+			attributes: { href: hashFromPage(page) || '#' },
 		});
 		a.addEventListener('click', (event) => {
+			if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+				return;
+			}
+
 			event.preventDefault();
 			this.setActive(page);
 			if (this.#onNavigate !== null) {

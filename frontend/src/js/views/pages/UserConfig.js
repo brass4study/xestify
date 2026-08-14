@@ -311,7 +311,7 @@ export class UserConfig {
 
 		const info = component.create('div', { className: 'grid gap-0.5' });
 		component.create('p', {
-			className: 'text-sm font-semibold text-slateui-950',
+			className: 'text-sm font-semibold text-slate-900',
 			text: 'Avatar',
 		}).setParent(info);
 		component.create('p', {

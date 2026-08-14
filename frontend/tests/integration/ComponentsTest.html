@@ -117,7 +117,12 @@
       assertTrue(input.id !== '', 'formField debe asignar un id al input cuando falta');
       assertEquals(field.querySelector('label').getAttribute('for'), input.id, 'label for debe apuntar al id real del input');
       assertTrue(textArea instanceof HTMLTextAreaElement, 'textarea should be a HTMLTextAreaElement');
-      assertTrue(select instanceof HTMLSelectElement, 'select should be a HTMLSelectElement');
+      assertTrue(select instanceof HTMLElement, 'select wrapper should be an HTMLElement');
+      assertTrue(select.dataset.role === 'input-select', 'select wrapper should expose data-role="input-select"');
+      assertTrue(select.getInput() instanceof HTMLSelectElement, 'select should wrap a native hidden select');
+      assertTrue(select.querySelector('[role="combobox"]') !== null, 'select trigger button missing');
+      assertTrue(select.querySelector('[role="listbox"]') !== null, 'select panel missing');
+      assertEquals(select.value, 'active', 'select should default to the first/only option value');
       assertTrue(email instanceof HTMLInputElement, 'email input should be an HTMLInputElement');
       assertTrue(password instanceof HTMLInputElement, 'password input should be an HTMLInputElement');
       assertTrue(radio instanceof HTMLInputElement, 'radio should be an HTMLInputElement');
@@ -303,10 +308,16 @@
       const originalBase = InputComponent.BASE_CLASSNAME;
       InputComponent.BASE_CLASSNAME = 'test-marker-base-class';
       try {
-        ['inputText', 'inputEmail', 'inputPassword', 'inputDate', 'inputTime', 'inputTextArea', 'inputSelect'].forEach((name) => {
+        ['inputText', 'inputEmail', 'inputPassword', 'inputDate', 'inputTime', 'inputTextArea'].forEach((name) => {
           const el = component.create(name, { name: 'x' });
           assertEquals(el.className, 'test-marker-base-class', `${name} debe leer InputComponent.BASE_CLASSNAME en vez de un literal propio`);
         });
+
+        // inputSelect's root is a wrapper div; the base classname lands on its trigger button.
+        const select = component.create('inputSelect', { name: 'x' });
+        const trigger = select.querySelector('[role="combobox"]');
+        assertTrue(trigger !== null, 'inputSelect trigger missing');
+        assertTrue(trigger.className.includes('test-marker-base-class'), 'inputSelect trigger debe leer InputComponent.BASE_CLASSNAME en vez de un literal propio');
       } finally {
         InputComponent.BASE_CLASSNAME = originalBase;
       }

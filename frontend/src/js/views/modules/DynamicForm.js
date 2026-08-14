@@ -79,7 +79,7 @@ export class DynamicForm {
 			return result;
 		}
 
-		if (field.type === 'select' && input instanceof HTMLSelectElement) {
+		if (field.type === 'select') {
 			result.value = input.value;
 			return result;
 		}

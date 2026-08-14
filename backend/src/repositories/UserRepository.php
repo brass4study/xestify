@@ -6,6 +6,7 @@ namespace Xestify\repositories;
 
 use PDO;
 use PDOException;
+use Xestify\core\AppDebug;
 use Xestify\exceptions\RepositoryException;
 
 final class UserRepository
@@ -53,12 +54,20 @@ final class UserRepository
      */
     public function all(): array
     {
-        $stmt = $this->pdo->query(
-            'SELECT id, email, password_hash, roles, name, avatar, is_seed, created_at
-             FROM users
-             WHERE deleted_at IS NULL
-             ORDER BY created_at ASC'
-        );
+        $sql = 'SELECT id, email, password_hash, roles, name, avatar, is_seed, created_at
+                FROM users
+                WHERE deleted_at IS NULL';
+
+        // Los usuarios semilla (STORY 10.1) tienen credenciales fijas y públicas
+        // (visibles en el JS servido); fuera de depuración no deben aparecer ni
+        // siquiera en el listado admin.
+        if (!AppDebug::enabled()) {
+            $sql .= ' AND is_seed = FALSE';
+        }
+
+        $sql .= ' ORDER BY created_at ASC';
+
+        $stmt = $this->pdo->query($sql);
 
         if ($stmt === false) {
             return [];

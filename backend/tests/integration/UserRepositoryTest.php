@@ -16,6 +16,7 @@ const TEST_EMAIL_DOMAIN = '@xestify.test';
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
+require_once BASE_PATH . '/src/core/AppDebug.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/repositories/UserRepository.php';
 
@@ -44,7 +45,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all UserRepositoryTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-007).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

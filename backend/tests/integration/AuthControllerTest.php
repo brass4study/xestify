@@ -14,10 +14,13 @@ declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__, 2));
 
+const TEST_EMAIL_DOMAIN = '@xestify.test';
+
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/AuthException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
+require_once BASE_PATH . '/src/core/AppDebug.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
@@ -82,6 +85,11 @@ function callLogin(AuthController $controller, array $body): array
 
     $decoded = json_decode((string) $output, true);
     return is_array($decoded) ? $decoded : [];
+}
+
+function deleteUserByEmail(\PDO $pdo, string $email): void
+{
+    $pdo->prepare('DELETE FROM users WHERE email = :email')->execute([':email' => $email]);
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +172,7 @@ TestSuite::run('login does not reveal whether email exists (same 401 for both ca
 
 TestSuite::run('login rejects deleted users', function () use ($controller): void {
     $pdo = Database::connection();
-    $email = 'deleted-' . uniqid('', true) . '@xestify.test';
+    $email = 'deleted-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
     $password = 'deleted-pass';
     $hash = password_hash($password, PASSWORD_BCRYPT);
 
@@ -185,7 +193,104 @@ TestSuite::run('login rejects deleted users', function () use ($controller): voi
         assertFalse($result['ok'] ?? true, 'Deleted users should not be able to log in');
         assertEquals(401, $result['error']['code'] ?? null, 'Deleted users should receive 401');
     } finally {
-        $pdo->prepare('DELETE FROM users WHERE email = :email')->execute([':email' => $email]);
+        deleteUserByEmail($pdo, $email);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// is_seed users (STORY 10.1 quick-access accounts) must be unusable outside
+// of debug mode, since their credentials ship in plain text in the frontend
+// bundle. Each test inserts its own throwaway seed user instead of reusing
+// the real admin/usuario accounts, and always restores APP_DEBUG afterwards.
+// ---------------------------------------------------------------------------
+
+function insertThrowawaySeedUser(\PDO $pdo, string $email, string $password): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO users (email, password_hash, roles, name, is_seed)
+         VALUES (:email, :password_hash, :roles, :name, TRUE)'
+    );
+    $stmt->execute([
+        ':email' => $email,
+        ':password_hash' => password_hash($password, PASSWORD_BCRYPT),
+        ':roles' => '[]',
+        ':name' => 'Seed User',
+    ]);
+}
+
+TestSuite::run('login rejects is_seed users when APP_DEBUG is false', function () use ($controller): void {
+    $pdo = Database::connection();
+    $email = 'seed-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $password = 'seed-pass';
+    insertThrowawaySeedUser($pdo, $email, $password);
+
+    $originalDebug = $_ENV['APP_DEBUG'] ?? null;
+    $_ENV['APP_DEBUG'] = 'false';
+
+    try {
+        $result = callLogin($controller, ['email' => $email, 'password' => $password]);
+
+        assertFalse($result['ok'] ?? true, 'is_seed users should not be able to log in when APP_DEBUG=false');
+        assertEquals(401, $result['error']['code'] ?? null, 'Blocked is_seed users should receive 401');
+    } finally {
+        if ($originalDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $originalDebug;
+        }
+        deleteUserByEmail($pdo, $email);
+    }
+});
+
+TestSuite::run('login allows is_seed users when APP_DEBUG is true', function () use ($controller): void {
+    $pdo = Database::connection();
+    $email = 'seed-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $password = 'seed-pass';
+    insertThrowawaySeedUser($pdo, $email, $password);
+
+    $originalDebug = $_ENV['APP_DEBUG'] ?? null;
+    $_ENV['APP_DEBUG'] = 'true';
+
+    try {
+        $result = callLogin($controller, ['email' => $email, 'password' => $password]);
+
+        assertTrue($result['ok'] ?? false, 'is_seed users should be able to log in when APP_DEBUG=true');
+        assertTrue(isset($result['data']['access_token']), 'access_token should be present when allowed');
+    } finally {
+        if ($originalDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $originalDebug;
+        }
+        deleteUserByEmail($pdo, $email);
+    }
+});
+
+TestSuite::run('a blocked is_seed user gets the same generic 401 as an unknown email', function () use ($controller): void {
+    $pdo = Database::connection();
+    $email = 'seed-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $password = 'seed-pass';
+    insertThrowawaySeedUser($pdo, $email, $password);
+
+    $originalDebug = $_ENV['APP_DEBUG'] ?? null;
+    $_ENV['APP_DEBUG'] = 'false';
+
+    try {
+        $blockedSeed = callLogin($controller, ['email' => $email, 'password' => $password]);
+        $unknownEmail = callLogin($controller, ['email' => 'ghost-' . uniqid('', true) . TEST_EMAIL_DOMAIN, 'password' => 'bad']);
+
+        assertEquals(
+            $blockedSeed['error']['message'] ?? null,
+            $unknownEmail['error']['message'] ?? null,
+            'A blocked is_seed account must be indistinguishable from an unknown email'
+        );
+    } finally {
+        if ($originalDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $originalDebug;
+        }
+        deleteUserByEmail($pdo, $email);
     }
 });
 

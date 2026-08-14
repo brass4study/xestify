@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\controllers;
 
+use Xestify\core\AppDebug;
 use Xestify\core\Request;
 use Xestify\core\RequestFactory;
 use Xestify\core\Response;
@@ -43,8 +44,9 @@ class AuthController
         }
 
         $user = $this->users->findByEmail($email);
+        $isBlockedSeedUser = $user !== null && ($user['is_seed'] ?? false) === true && !AppDebug::enabled();
 
-        if ($user === null || !password_verify($password, (string) $user['password_hash'])) {
+        if ($user === null || $isBlockedSeedUser || !password_verify($password, (string) $user['password_hash'])) {
             Response::make()->unauthorized('Invalid credentials.');
             return;
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Xestify\controllers\HealthController;
 
 require_once __DIR__ . '/helpers.php';
+require_once dirname(__DIR__, 2) . '/src/core/AppDebug.php';
 require_once dirname(__DIR__, 2) . '/src/core/Response.php';
 require_once dirname(__DIR__, 2) . '/src/controllers/HealthController.php';
 

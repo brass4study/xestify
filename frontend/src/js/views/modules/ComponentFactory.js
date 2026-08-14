@@ -74,7 +74,7 @@ const componentDefinitions = [
 		'Campo de texto'),
 	defineComponent('inputTextArea', InputTextAreaComponent, 'textarea', 'dataEntry',
 		'Área de texto'),
-	defineComponent('inputSelect', InputSelectComponent, 'select', 'dataEntry',
+	defineComponent('inputSelect', InputSelectComponent, 'div', 'dataEntry',
 		'Selector'),
 	defineComponent('inputDate', InputDateComponent, 'input', 'dataEntry',
 		'Campo de fecha'),

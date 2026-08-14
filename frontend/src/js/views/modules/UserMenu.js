@@ -1,4 +1,5 @@
 import { component } from './ComponentFactory.js';
+import { hashFromPage } from '../../controllers/RouteMapController.js';
 
 export class UserMenu {
 	#container;
@@ -78,22 +79,42 @@ export class UserMenu {
 			{ key: 'logout', label: 'Cerrar sesion' },
 		];
 
+		const itemClassName = 'rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100';
+
 		for (const action of actions) {
 			const isAdminOnly = action.key === 'users';
 			if (isAdminOnly && !this.isAdmin()) {
 				continue;
 			}
-			const item = component.create('button', {
-				label: action.label,
-			})
-				.setClassName('rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100')
-				.setData('menuAction', action.key);
-			item.addEventListener('click', () => {
+
+			const targetHash = hashFromPage(action.key);
+			const select = () => {
 				this.setOpen(false);
 				if (this.#onSelect !== null) {
 					this.#onSelect(action.key);
 				}
-			});
+			};
+
+			let item;
+			if (targetHash === '') {
+				item = component.create('button', { label: action.label }).setClassName(itemClassName);
+				item.addEventListener('click', select);
+			} else {
+				item = component.create('a', {
+					text: action.label,
+					attributes: { href: targetHash },
+				}).setClassName(itemClassName);
+				item.addEventListener('click', (event) => {
+					if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+						return;
+					}
+
+					event.preventDefault();
+					select();
+				});
+			}
+
+			item.setData('menuAction', action.key);
 			item.setParent(menu);
 		}
 

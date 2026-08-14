@@ -82,7 +82,8 @@
     assertTrue(nav !== null, 'Expected [data-role="navbar"] element');
     const brand = container.querySelector('[data-role="navbar-brand"]');
     assertTrue(brand !== null, 'Expected [data-role="navbar-brand"]');
-    assertEquals(brand.textContent, 'Xestify', 'Brand text should be Xestify');
+    assertTrue(brand.querySelector('.logo') !== null, 'Brand should render the Logo component');
+    assertEquals(brand.textContent, 'estify', 'Brand wordmark text should be estify (the X is the chevron mark)');
   });
 
   it('renders one nav link per entity and Plugins', (container) => {
