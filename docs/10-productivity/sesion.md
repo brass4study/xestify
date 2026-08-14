@@ -411,16 +411,18 @@ Story completada. Archivos creados/modificados:
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
 | 10.1 ✅ | Mejoras en la sección de login | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 229/229 assertions (21 runners); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
+| 10.2 ✅ | Renombrar plugin `clients` a `persons` | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 10 runners afectados en verde (headless, pendiente confirmación visual del usuario en navegador integrado); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 
 **Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
+**Detalle de la story 10.2:** ver sesión completa más abajo (2026-08-15).
 
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-14
+**Fecha:** 2026-08-15
 **EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
-**Próxima story:** STORY 10.2 - Renombrar plugin `clients` a `persons` (EPIC 10)
+**Próxima story:** STORY 10.3 - Desacoplar `plugin_name` de `slug` y descripción editable con i18n (EPIC 10)
 
 ---
 
@@ -1106,5 +1108,119 @@ tras cada iteración de la UI):
   en login (login inicial, tras logout, y con cualquier `themeColor`).
 - Backlog alineado: STORY 10.1 queda implementada; el siguiente punto es
   STORY 10.2.
+
+---
+
+## Sesion 2026-08-15 - STORY 10.2 Renombrar plugin `clients` a `persons`
+
+Story implementada y verificada, con dos hallazgos reales durante la propia
+implementación que ampliaron el alcance más allá del AC literal del backlog
+(acordados con el usuario antes de aplicarlos, no desvíos silenciosos).
+
+**Decisiones tomadas en esta sesión:**
+- La etiqueta visible del plugin se mantiene sin cambios (`"name": "Clientes"`
+  en `manifest.json`, `"label_singular": "cliente"` en `schema.json`): solo se
+  renombran las claves técnicas (`slug`, `entity`, namespace, carpeta). El
+  desacoplo de `name`/`description` editable queda para STORY 10.3.
+- El ajuste de datos incluye también `plugin_extension_data.entity_slug` (no
+  solo `plugin_entity_data.entity_slug` como dice el AC literal), para no
+  dejar huérfanos los comentarios existentes sobre registros de `clients`
+  (5 filas reales afectadas en la BD local).
+- Se amplía el barrido a toda la documentación viva (14 ficheros, incluidos
+  7 enlaces markdown que habrían quedado rotos) y a todos los tests frontend
+  que usan `clients`/`client` como fixture, no solo los imprescindibles para
+  que la suite E2E siga en verde.
+- **Hallazgo durante la implementación (no en el plan original):**
+  `007_users_add_is_seed.sql` mezclaba una columna estructural (`is_seed`)
+  con un backfill de datos puntual en el mismo fichero de migración
+  permanente. Dado que el proyecto está en fase MVP sin ninguna instalación
+  real que migrar de forma incremental, se decidió fusionar la columna en
+  `001_users.sql` (baseline) y borrar `007`; el backfill y el propio rename
+  `clients`→`persons` en BD pasan a ser ajustes puntuales documentados en el
+  chat, no migraciones committeadas.
+- **Hallazgo durante la verificación (no en el plan original):** el campo
+  `"entity"` dentro de `plugins.schema_json` (copia del contrato instalado)
+  quedó con el valor antiguo `"clients"` tras el ajuste de datos, porque el
+  rename de columnas no toca el contenido JSON. Sin corregirlo,
+  `InstalledPluginSchemaValidator::assertEntityMatches()` habría lanzado
+  `DomainException` en el próximo sync de plugins. Se corrigió con
+  `jsonb_set` como ajuste puntual adicional.
+- Corrección adicional detectada por el usuario: la clave técnica
+  `id_cliente` (ejemplo de FK en el bloque `relations`, mezclando español en
+  una clave técnica) se renombra a `id_person` en el test real que la ejercita
+  (`ValidationServiceTest.php`) y en la documentación ilustrativa; las
+  etiquetas de negocio en español asociadas (p.ej. "Cliente del pedido") se
+  mantienen sin cambios por ser texto de UI, no clave técnica.
+- Se discutió si el diseño de STORY 10.3 (`plugin_name` fijo vs `slug`
+  editable) debería absorber también la gestión de `schema_json.entity`; se
+  deja hablado para cuando se aborde esa story, sin tocar el backlog todavía.
+
+**Cambios principales:**
+- `plugins/clients/` → `plugins/persons/` (vía `git mv`): namespace PHP
+  `Xestify\plugins\clients` → `Xestify\plugins\persons` en `Hooks.php`,
+  `Installer.php`, `Lifecycle.php`; `manifest.json` (`slug`) y `schema.json`
+  (`entity`) actualizados; mismos campos que tenía `clients` (`name`,
+  `surnames`, `email` + `custom_fields` `phone`/`creation_stamp`/`is_active`),
+  sin ampliar el modelo.
+- `backend/database/migrations/001_users.sql`: columna `is_seed` fusionada en
+  el `CREATE TABLE` base; `007_users_add_is_seed.sql` eliminado.
+- `backend/tests/integration/MigrationIdempotenceTest.php`: lista de
+  migraciones y mensaje de skip actualizados a `001-006`.
+- `backend/tests/unit/ClientsPluginTest.php` → `PersonsPluginTest.php`
+  (`git mv` + contenido): namespace, `PLUGIN_DIR`, stubs `PersonsPdoStub`/
+  `PersonsStmtStub`, descripciones de test; `backend/tests/run.php` actualizado.
+- `backend/tests/integration/AppWiringTest.php`, `CommentsPluginTest.php`
+  (incluida `canonicalPersonsSchemaJson()`), `PluginBootTest.php`: slug/entidad
+  `clients` → `persons`.
+- Fixtures genéricas renombradas por coherencia con la regla de `AGENTS.md`:
+  `ValidationServiceTest.php` (incluida la clave `id_cliente` → `id_person`),
+  `RequestFactoryTest.php`, `PluginTypeGuardTest.php`,
+  `PluginSchemaMergeServiceTest.php`, `SchemaComparisonUtilTest.php`,
+  `PluginManagerApiTest.php`.
+- 10 tests de integración frontend (`EntityListTest.html`, `EntityEditTest.html`
+  con `PERSONS_SCHEMA`, `FrontendArchitectureTest.html`, `PluginManagerTest.html`,
+  `PluginConfigTest.html`, `NavbarTest.html`, `SessionModelTest.html`,
+  `ApiTest.html`, `UiResilienceTest.html`, `E2ETest.html` — este último no
+  detectado en la exploración inicial, encontrado en el barrido final) y 3
+  specs E2E (`entity-crud.spec.js`, `shell-navigation.spec.js`,
+  `plugin-manager.spec.js`).
+- `AGENTS.md`: sección "Convenciones de entidades y plugins" reescrita sin el
+  condicional pendiente de STORY 10.2; sección "Schemas y datos" actualizada a
+  `persons` añadiendo `surnames` (faltaba en la lista pese a ser campo real).
+- `README.md`, `docs/09-history/decisiones-tecnicas.md`,
+  `docs/01-architecture/plugins.md`, `docs/03-api/contratos/{entities,plugins}.md`,
+  `docs/04-plugins/{README,plantilla-plugin-entidad,plantilla-plugin-extension}.md`,
+  `docs/07-security/README.md`, `docs/05-frontend/{renderizado-dinamico,testing-ui}.md`:
+  referencias y enlaces a `clients` actualizados a `persons` (incluida
+  `id_cliente` → `id_person` en los ejemplos de relación).
+- Ajustes puntuales aplicados una sola vez contra la BD local vía `psql`
+  (documentados aquí, sin fichero de migración): backfill `users.is_seed`
+  (0 filas, ya estaba correcto), `plugins.slug` (1 fila), `plugin_entity_data.entity_slug`
+  (243 filas), `plugin_extension_data.entity_slug` (5 filas), y
+  `jsonb_set(schema_json, '{entity}', '"persons"')` sobre la fila de `persons`.
+
+**Verificaciones finales:**
+- Backend: `php backend/tests/run.php` (vía `C:\php\php.exe`, el binario con
+  `pdo_pgsql` cargado) → 56/56 archivos en verde, incluidos `PersonsPluginTest.php`,
+  `AppWiringTest.php`, `CommentsPluginTest.php`, `PluginBootTest.php` y
+  `MigrationIdempotenceTest.php` sin la entrada `007`.
+- BD local: verificado sin rastro de `clients` ni en columnas (`slug`,
+  `entity_slug`) ni en contenido JSON (`schema_json`, `content`).
+- Frontend integración: comprobación headless de apoyo sobre los 10 runners
+  afectados → 0 fallos, sin errores de consola (pendiente confirmación visual
+  del usuario en el navegador integrado de VS Code, que es la vía canónica).
+- Frontend E2E: `npx playwright test` → 12/12 specs en verde contra el
+  runtime real Apache+PHP+Postgres, incluido `entity-crud.spec.js` operando
+  sobre `#/entity/persons/...` con el campo `surnames` real.
+
+**Cierre verificado (2026-08-15):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: el rename de carpeta/namespace y el ajuste de datos en
+  BD se aplicaron en el mismo ciclo de trabajo (evitando la ventana en la que
+  los hooks del plugin dejarían de cargarse silenciosamente si uno se aplica
+  sin el otro); no queda ningún rastro funcional de `clients` en backend,
+  frontend, BD ni documentación viva.
+- Backlog alineado: STORY 10.2 queda implementada; el siguiente punto es
+  STORY 10.3.
 
 ---

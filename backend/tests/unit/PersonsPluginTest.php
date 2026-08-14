@@ -15,13 +15,13 @@ require_once BACKEND_PATH . '/src/plugins/contracts/AbstractEntityInstaller.php'
 require_once BACKEND_PATH . '/src/plugins/contracts/AbstractUniqueFieldHook.php';
 
 // Explicitly require plugin files (not in autoload path)
-require_once BASE_PATH . '/plugins/clients/Hooks.php';
-require_once BASE_PATH . '/plugins/clients/Installer.php';
+require_once BASE_PATH . '/plugins/persons/Hooks.php';
+require_once BASE_PATH . '/plugins/persons/Installer.php';
 
 require_once __DIR__ . '/helpers.php';
 
-use Xestify\plugins\clients\Hooks;
-use Xestify\plugins\clients\Installer;
+use Xestify\plugins\persons\Hooks;
+use Xestify\plugins\persons\Installer;
 use Xestify\core\HookDispatcher;
 use Xestify\exceptions\HookException;
 use Xestify\exceptions\PluginException;
@@ -34,7 +34,7 @@ use Xestify\exceptions\PluginException;
  * PDO stub that records prepared statements and simulates fetchColumn().
  * Avoid calling parent::__construct (requires a real DSN).
  */
-class ClientsPdoStub extends PDO
+class PersonsPdoStub extends PDO
 {
     public array $executedSqls    = [];
     public array $executedParams  = [];
@@ -52,16 +52,16 @@ class ClientsPdoStub extends PDO
 
     public function prepare(string $query, array $options = []): \PDOStatement|false
     {
-        return new ClientsStmtStub($this, $query);
+        return new PersonsStmtStub($this, $query);
     }
 }
 
-class ClientsStmtStub extends \PDOStatement
+class PersonsStmtStub extends \PDOStatement
 {
-    private ClientsPdoStub $pdoStub;
+    private PersonsPdoStub $pdoStub;
     private string $sql;
 
-    public function __construct(ClientsPdoStub $pdoStub, string $sql)
+    public function __construct(PersonsPdoStub $pdoStub, string $sql)
     {
         $this->pdoStub = $pdoStub;
         $this->sql     = $sql;
@@ -83,33 +83,33 @@ class ClientsStmtStub extends \PDOStatement
 // ---------------------------------------------------------------------------
 // PLUGIN_DIR constant for structure tests
 // ---------------------------------------------------------------------------
-define('PLUGIN_DIR', BASE_PATH . '/plugins/clients');
+define('PLUGIN_DIR', BASE_PATH . '/plugins/persons');
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-TestSuite::run('Plugin clients - manifest.json existe', function (): void {
+TestSuite::run('Plugin persons - manifest.json existe', function (): void {
     $path = PLUGIN_DIR . '/manifest.json';
     assertTrue(file_exists($path), 'manifest.json not found');
 });
 
-TestSuite::run('Plugin clients - manifest.json campos requeridos', function (): void {
+TestSuite::run('Plugin persons - manifest.json campos requeridos', function (): void {
     $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/manifest.json'), true);
     assertTrue(is_array($data), 'manifest.json must be a JSON object');
     foreach (['slug', 'name', 'version', 'type', 'core_version'] as $field) {
         assertTrue(isset($data[$field]) && $data[$field] !== '', "manifest.json missing field: {$field}");
     }
-    assertTrue($data['slug'] === 'clients', 'slug must be clients');
+    assertTrue($data['slug'] === 'persons', 'slug must be persons');
     assertTrue($data['type'] === 'entity', 'type must be entity');
 });
 
-TestSuite::run('Plugin clients - schema.json existe', function (): void {
+TestSuite::run('Plugin persons - schema.json existe', function (): void {
     $path = PLUGIN_DIR . '/schema.json';
     assertTrue(file_exists($path), 'schema.json not found');
 });
 
-TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/custom_fields/relations', function (): void {
+TestSuite::run('Plugin persons - schema.json respeta contrato identities/fields/custom_fields/relations', function (): void {
     $data = json_decode((string) file_get_contents(PLUGIN_DIR . '/schema.json'), true);
     assertTrue(is_array($data), 'schema.json must be a JSON object');
     assertTrue(isset($data['identities']) && is_array($data['identities']), 'schema.json must have "identities"');
@@ -157,12 +157,12 @@ TestSuite::run('Plugin clients - schema.json respeta contrato identities/fields/
     assertTrue(($customFieldsByKey['is_active']['default'] ?? null) === true, 'is_active default must be true');
 });
 
-TestSuite::run('Plugin clients - Hooks.php existe', function (): void {
+TestSuite::run('Plugin persons - Hooks.php existe', function (): void {
     assertTrue(file_exists(PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
 });
 
 TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
-    $pdo   = new ClientsPdoStub();
+    $pdo   = new PersonsPdoStub();
     $hooks = new Hooks($pdo);
     $ctx   = ['slug' => 'other_entity', 'data' => ['email' => 'x@test.com']];
 
@@ -175,9 +175,9 @@ TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
 });
 
 TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
-    $pdo   = new ClientsPdoStub();
+    $pdo   = new PersonsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => '']];
+    $ctx   = ['slug' => 'persons', 'data' => ['name' => 'Test', 'email' => '']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -188,10 +188,10 @@ TestSuite::run('Hooks - email vacío no ejecuta consulta', function (): void {
 });
 
 TestSuite::run('Hooks - email único permite guardar', function (): void {
-    $pdo = new ClientsPdoStub();
+    $pdo = new PersonsPdoStub();
     $pdo->setFetchColumnReturn(0); // no duplicates
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'nuevo@test.com']];
+    $ctx   = ['slug' => 'persons', 'data' => ['name' => 'Test', 'email' => 'nuevo@test.com']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -202,10 +202,10 @@ TestSuite::run('Hooks - email único permite guardar', function (): void {
 });
 
 TestSuite::run('Hooks - email duplicado lanza HookException', function (): void {
-    $pdo = new ClientsPdoStub();
+    $pdo = new PersonsPdoStub();
     $pdo->setFetchColumnReturn(1); // duplicate found
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['name' => 'Test', 'email' => 'dup@test.com']];
+    $ctx   = ['slug' => 'persons', 'data' => ['name' => 'Test', 'email' => 'dup@test.com']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -221,10 +221,10 @@ TestSuite::run('Hooks - email duplicado lanza HookException', function (): void 
 });
 
 TestSuite::run('Hooks - email único en update excluye el propio registro', function (): void {
-    $pdo = new ClientsPdoStub();
+    $pdo = new PersonsPdoStub();
     $pdo->setFetchColumnReturn(0);
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'clients', 'data' => ['id' => 'uuid-123', 'email' => 'same@test.com']];
+    $ctx   = ['slug' => 'persons', 'data' => ['id' => 'uuid-123', 'email' => 'same@test.com']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -236,13 +236,13 @@ TestSuite::run('Hooks - email único en update excluye el propio registro', func
 });
 
 TestSuite::run('Installer - instancia sin errores', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new PersonsPdoStub();
     $installer = new Installer($pdo);
     assertTrue($installer instanceof Installer, 'Installer must instantiate correctly');
 });
 
 TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new PersonsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
@@ -253,16 +253,16 @@ TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', f
 });
 
 TestSuite::run('Installer - install() pasa slug correcto', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new PersonsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 
     $params = $pdo->executedParams[0] ?? [];
-    assertTrue(($params[':slug'] ?? '') === 'clients', 'slug bound to "clients"');
+    assertTrue(($params[':slug'] ?? '') === 'persons', 'slug bound to "persons"');
 });
 
 TestSuite::run('Installer - schema sembrado en plugins conserva contrato completo', function (): void {
-    $pdo       = new ClientsPdoStub();
+    $pdo       = new PersonsPdoStub();
     $installer = new Installer($pdo);
     $installer->install();
 

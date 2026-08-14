@@ -3,7 +3,7 @@ import { loginAsAdmin } from './_helpers.js';
 
 // `test_entity_ctrl` is a leftover fixture plugin from backend integration tests.
 // It is safe to toggle without touching the plugins the other specs (entity-crud,
-// theme-wysiwyg) rely on staying active (clients, comments). Its status at rest is
+// theme-wysiwyg) rely on staying active (persons, comments). Its status at rest is
 // not guaranteed across runs, so the test reads its current state instead of
 // assuming one, and always restores it before finishing.
 const TARGET_SLUG = 'test_entity_ctrl';

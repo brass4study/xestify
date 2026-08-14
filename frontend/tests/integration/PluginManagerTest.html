@@ -98,7 +98,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
             { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
           ],
         },
@@ -110,7 +110,7 @@
 
     const rows = container.querySelectorAll('[data-role="plugin-row"]');
     assertEquals(rows.length, 2, 'Should render 2 rows');
-    assertEquals(rows[0].dataset.slug, 'clients', 'First row slug');
+    assertEquals(rows[0].dataset.slug, 'persons', 'First row slug');
     assertEquals(rows[1].dataset.slug, 'comments', 'Second row slug');
     const headers = [...container.querySelectorAll('thead th')].map((header) => header.textContent.trim());
     assertEquals(headers.join('|'), 'Nombre|Tipo|Versión|Estado|Acciones', 'Las columnas deben estar en español');
@@ -139,7 +139,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
             { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
           ],
         },
@@ -184,7 +184,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
           ],
         },
       },
@@ -349,7 +349,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
             { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
           ],
         },
@@ -391,7 +391,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
           ],
         },
       },
@@ -427,7 +427,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
           ],
         },
       },
@@ -435,7 +435,7 @@
         ok: true,
         data: {
           updates: [
-            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+            { slug: 'persons', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Persons' },
           ],
         },
       },
@@ -457,7 +457,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: true },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: true },
           ],
         },
       },
@@ -465,7 +465,7 @@
         ok: true,
         data: {
           updates: [
-            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+            { slug: 'persons', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Persons' },
           ],
         },
       },
@@ -486,7 +486,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
             { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active', can_rollback: false },
           ],
         },
@@ -501,9 +501,9 @@
     await manager.init();
 
     const rows = [...container.querySelectorAll('[data-role="plugin-row"]')];
-    const rollbackForClients = rows[0].querySelector('[data-action="rollback"]');
+    const rollbackForPersons = rows[0].querySelector('[data-action="rollback"]');
     const rollbackForComments = rows[1].querySelector('[data-action="rollback"]');
-    assertTrue(rollbackForClients !== null, 'Rollback should exist for clients');
+    assertTrue(rollbackForPersons !== null, 'Rollback should exist for persons');
     assertTrue(rollbackForComments === null, 'Rollback should not exist for comments');
   });
 
@@ -514,7 +514,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active', can_rollback: false },
           ],
         },
       },
@@ -522,14 +522,14 @@
         ok: true,
         data: {
           updates: [
-            { slug: 'clients', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Clients' },
+            { slug: 'persons', installed_version: '1.0.0', available_version: '2.0.0', plugin_type: 'entity', name: 'Persons' },
           ],
         },
       },
-      '/plugins/clients/update': {
+      '/plugins/persons/update': {
         ok: true,
         data: {
-          plugin: { slug: 'clients', version: '2.0.0', status: 'active' },
+          plugin: { slug: 'persons', version: '2.0.0', status: 'active' },
           update: { from_version: '1.0.0', to_version: '2.0.0', schema_changed: false, diff: {} },
         },
       },
@@ -546,7 +546,7 @@
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/clients/update'), 'Update endpoint should be called after confirm');
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/persons/update'), 'Update endpoint should be called after confirm');
   });
 
   await test('asks confirmation before rollback and calls endpoint on confirm', async () => {
@@ -556,7 +556,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '2.0.0', status: 'active', can_rollback: true },
           ],
         },
       },
@@ -564,10 +564,10 @@
         ok: true,
         data: { updates: [] },
       },
-      '/plugins/clients/rollback': {
+      '/plugins/persons/rollback': {
         ok: true,
         data: {
-          plugin: { slug: 'clients', version: '1.0.0', status: 'active' },
+          plugin: { slug: 'persons', version: '1.0.0', status: 'active' },
           rollback: { from_version: '2.0.0', to_version: '1.0.0', snapshot_id: 's1' },
         },
       },
@@ -584,7 +584,7 @@
     confirmBtn.click();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/clients/rollback'), 'Rollback endpoint should be called after confirm');
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/persons/rollback'), 'Rollback endpoint should be called after confirm');
   });
 
   await test('calls onConfigure callback when configure button is clicked', async () => {
@@ -594,7 +594,7 @@
         ok: true,
         data: {
           plugins: [
-            { slug: 'clients', name: 'Clients', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
           ],
         },
       },
@@ -612,7 +612,7 @@
     assertTrue(configureBtn !== null, 'Configure button should exist');
     configureBtn.click();
 
-    assertEquals(configuredSlug, 'clients', 'onConfigure should receive plugin slug');
+    assertEquals(configuredSlug, 'persons', 'onConfigure should receive plugin slug');
   });
 
   await test('buildActionButton defaults to theme color when no explicit tone is passed', () => {

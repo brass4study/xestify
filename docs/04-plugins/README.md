@@ -6,7 +6,7 @@ Esta carpeta contiene plantillas, ejemplos y documentación sobre el desarrollo 
 
 ## Tipos de plugin
 
-- **Plugin de entidad** (`type: "entity"`): define una entidad base reusable (ejemplo: `clients`). Gestiona su propio schema y lógica de validación. Se registra en la tabla `plugins` y expone su metadata vía manifest y schema.
+- **Plugin de entidad** (`type: "entity"`): define una entidad base reusable (ejemplo: `persons`). Gestiona su propio schema y lógica de validación. Se registra en la tabla `plugins` y expone su metadata vía manifest y schema.
 - **Plugin de extensión** (`type: "extension"`): amplía el comportamiento de una entidad existente mediante hooks y UI adicional (ejemplo: `comments`). Puede inyectar tabs, acciones o paneles personalizados.
 
 ---
@@ -19,13 +19,13 @@ Esta carpeta contiene plantillas, ejemplos y documentación sobre el desarrollo 
 
 ---
 
-## Ejemplo real: plugin de entidad `clients`
+## Ejemplo real: plugin de entidad `persons`
 
-- [plugins/clients/manifest.json](../../plugins/clients/manifest.json): metadatos y compatibilidad
-- [plugins/clients/schema.json](../../plugins/clients/schema.json): definición de campos, custom_fields y relaciones
-- [plugins/clients/Hooks.php](../../plugins/clients/Hooks.php): validación de unicidad de email
-- [plugins/clients/Lifecycle.php](../../plugins/clients/Lifecycle.php): registro y activación
-- [plugins/clients/Installer.php](../../plugins/clients/Installer.php): alta idempotente en la tabla `plugins`
+- [plugins/persons/manifest.json](../../plugins/persons/manifest.json): metadatos y compatibilidad
+- [plugins/persons/schema.json](../../plugins/persons/schema.json): definición de campos, custom_fields y relaciones
+- [plugins/persons/Hooks.php](../../plugins/persons/Hooks.php): validación de unicidad de email
+- [plugins/persons/Lifecycle.php](../../plugins/persons/Lifecycle.php): registro y activación
+- [plugins/persons/Installer.php](../../plugins/persons/Installer.php): alta idempotente en la tabla `plugins`
 
 ## Ejemplo real: plugin de extensión `comments`
 

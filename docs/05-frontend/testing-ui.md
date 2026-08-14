@@ -86,7 +86,7 @@ XESTIFY_E2E_BASE_URL=http://127.0.0.1/otra-ruta/ npx playwright test
 |------|-----------|
 | `login.spec.js` | Login con credenciales válidas e inválidas |
 | `shell-navigation.spec.js` | Navegación entre entidades, shell persistente, back/forward |
-| `entity-crud.spec.js` | Alta y edición de un registro real de la entidad `clients` |
+| `entity-crud.spec.js` | Alta y edición de un registro real de la entidad `persons` |
 | `plugin-manager.spec.js` | Activar/desactivar un plugin desde `PluginManager` |
 | `theme-wysiwyg.spec.js` | Cambiar el tema, verificar aplicación inmediata (WYSIWYG) y persistencia tras recargar |
 

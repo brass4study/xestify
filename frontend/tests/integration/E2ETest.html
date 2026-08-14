@@ -95,12 +95,12 @@
   // ── Fixtures ───────────────────────────────────────────────────────────────
 
   const ENTITIES = [
-    { slug: 'clients', label: 'Clientes', fields: [
+    { slug: 'persons', label: 'Clientes', fields: [
       { name: 'name', label: 'Nombre', type: 'string', required: true },
       { name: 'email', label: 'Email', type: 'email' },
     ] },
   ];
-  const CLIENTS_SCHEMA = {
+  const PERSONS_SCHEMA = {
     fields: {
       name: { label: 'Nombre', type: 'string', required: true },
       email: { label: 'Email', type: 'email' },
@@ -113,8 +113,8 @@
   };
 
   const RECORDS = [
-    { id: '1', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'Alice', email: 'alice@test.com' } },
-    { id: '2', entity_slug: 'clients', created_at: null, updated_at: null, content: { name: 'Bob', email: 'bob@test.com' } },
+    { id: '1', entity_slug: 'persons', created_at: null, updated_at: null, content: { name: 'Alice', email: 'alice@test.com' } },
+    { id: '2', entity_slug: 'persons', created_at: null, updated_at: null, content: { name: 'Bob', email: 'bob@test.com' } },
   ];
 
   const CREATED_RECORD = { id: '3', name: 'Carol', email: 'carol@test.com' };
@@ -136,19 +136,19 @@
     await page.init();
     const entities = SessionModel.getEntities();
     assertTrue(entities.length > 0, 'Should have loaded entities');
-    assertEquals(entities[0].slug, 'clients', 'First entity should be client');
+    assertEquals(entities[0].slug, 'persons', 'First entity should be person');
     container.remove();
   });
 
   await test('loadEntity renders records table', async () => {
     const container = makeSandbox();
     mockFetch([
-      { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/persons/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
     const page = new EntityList(container);
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
     const table = container.querySelector('table');
     assertTrue(table !== null, 'Expected a <table> element after loadEntity');
     const rows = table.querySelectorAll('tbody tr');
@@ -159,12 +159,12 @@
   await test('loadEntity renders "Crear nuevo registro" button', async () => {
     const { host, shell, content } = makeShellSandbox();
     mockFetch([
-      { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/persons/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
     const page = new EntityList(content, { shellLayout: shell });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
     const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     assertTrue(createBtn !== null, 'Expected primary button');
     assertTrue(createBtn.textContent.includes('Crear'), 'Button should say "Crear"');
@@ -174,12 +174,12 @@
   await test('loadEntity renders "Editar" button per row when onEdit provided', async () => {
     const container = makeSandbox();
     mockFetch([
-      { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/persons/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
     const page = new EntityList(container, { onEdit: () => { return; } });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
     const editBtns = container.querySelectorAll('[data-role="record-edit"]');
     assertEquals(editBtns.length, RECORDS.length, `Expected ${RECORDS.length} edit buttons`);
     container.remove();
@@ -191,7 +191,7 @@
   await test('clicking "Crear nuevo registro" calls onCreateNew with slug', async () => {
     const { host, shell, content } = makeShellSandbox();
     mockFetch([
-      { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/persons/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
 
@@ -201,18 +201,18 @@
       onCreateNew: (slug) => { receivedSlug = slug; },
     });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
 
     const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     createBtn.click();
-    assertEquals(receivedSlug, 'clients', 'onCreateNew should be called with "clients"');
+    assertEquals(receivedSlug, 'persons', 'onCreateNew should be called with "persons"');
     host.remove();
   });
 
   await test('clicking "Editar" calls onEdit with slug, recordId and record', async () => {
     const container = makeSandbox();
     mockFetch([
-      { url: '/entities/clients/records', data: RECORDS },
+      { url: '/entities/persons/records', data: RECORDS },
       { url: '/entities', data: ENTITIES },
     ]);
 
@@ -221,13 +221,13 @@
       onEdit: (slug, recordId, record) => { editArgs = { slug, recordId, record }; },
     });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
 
     const firstEditBtn = container.querySelector('[data-role="record-edit"]');
     assertTrue(firstEditBtn !== null, 'Expected at least one edit button');
     firstEditBtn.click();
     assertTrue(editArgs !== null, 'onEdit should have been called');
-    assertEquals(editArgs.slug, 'clients', 'onEdit slug should be "clients"');
+    assertEquals(editArgs.slug, 'persons', 'onEdit slug should be "persons"');
     assertEquals(editArgs.recordId, '1', 'onEdit recordId should be "1"');
     assertEquals(editArgs.record.name, 'Alice', 'onEdit record should match first record');
     container.remove();
@@ -238,9 +238,9 @@
 
   await test('EntityEdit renders form for the entity schema', async () => {
     const container = makeSandbox();
-    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
+    mockFetch([{ url: '/entities/persons/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
-    const page = new EntityEdit(container, 'clients', schema);
+    const page = new EntityEdit(container, 'persons', schema);
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     const inputs = container.querySelectorAll('input');
     assertEquals(inputs.length, 2, 'Should render 2 inputs');
@@ -251,8 +251,8 @@
 
   await test('EntityEdit renders custom_fields from the full entity schema', async () => {
     const container = makeSandbox();
-    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
-    const page = new EntityEdit(container, 'clients', CLIENTS_SCHEMA);
+    mockFetch([{ url: '/entities/persons/tabs', data: { tabs: [] } }]);
+    const page = new EntityEdit(container, 'persons', PERSONS_SCHEMA);
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     assertTrue(container.querySelector('input[name="phone"]') !== null, 'phone should render');
     assertTrue(container.querySelector('input[name="creation_stamp"]') !== null, 'creation_stamp should render');
@@ -262,10 +262,10 @@
 
   await test('EntityEdit validates required fields on submit', async () => {
     const container = makeSandbox();
-    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
+    mockFetch([{ url: '/entities/persons/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
     let savedCalled = false;
-    const page = new EntityEdit(container, 'clients', schema, {
+    const page = new EntityEdit(container, 'persons', schema, {
       onSaved: () => { savedCalled = true; },
     });
     await page.submit();
@@ -284,7 +284,7 @@
     ]);
 
     let savedRecord = null;
-    const page = new EntityEdit(container, 'clients', schema, {
+    const page = new EntityEdit(container, 'persons', schema, {
       onSaved: (record) => { savedRecord = record; },
     });
 
@@ -306,7 +306,7 @@
       { url: '/records', method: 'POST', status: 500, data: 'Internal server error' },
     ]);
 
-    const page = new EntityEdit(container, 'clients', schema);
+    const page = new EntityEdit(container, 'persons', schema);
 
     const nameInput = container.querySelector('input[name="name"]');
     nameInput.value = 'Test';
@@ -320,10 +320,10 @@
 
   await test('EntityEdit onCancel is called when cancel button clicked', async () => {
     const container = makeSandbox();
-    mockFetch([{ url: '/entities/clients/tabs', data: { tabs: [] } }]);
+    mockFetch([{ url: '/entities/persons/tabs', data: { tabs: [] } }]);
     const schema = ENTITIES[0];
     let cancelCalled = false;
-    const page = new EntityEdit(container, 'clients', schema, {
+    const page = new EntityEdit(container, 'persons', schema, {
       onCancel: () => { cancelCalled = true; },
     });
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
@@ -341,9 +341,9 @@
     const { host, shell, content: container } = makeShellSandbox();
 
     mockFetch([
-      { url: '/entities/clients/records', method: 'POST', data: CREATED_RECORD },
-      { url: '/entities/clients/records', data: RECORDS },
-      { url: '/entities/clients/schema', data: { entity_slug: 'clients', schema_version: 1, schema: CLIENTS_SCHEMA } },
+      { url: '/entities/persons/records', method: 'POST', data: CREATED_RECORD },
+      { url: '/entities/persons/records', data: RECORDS },
+      { url: '/entities/persons/schema', data: { entity_slug: 'persons', schema_version: 1, schema: PERSONS_SCHEMA } },
       { url: '/entities', data: ENTITIES },
     ]);
 
@@ -378,7 +378,7 @@
         },
       });
       entityListPage.init().then(() => {
-        entityListPage.loadEntity('clients').then(() => {
+        entityListPage.loadEntity('persons').then(() => {
           // Click "Crear nuevo registro" to trigger onCreateNew
           const btn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
           if (btn) btn.click();
@@ -397,7 +397,7 @@
 
     const rows = container.querySelectorAll('tbody tr');
     assertEquals(rows.length, 2, 'EntityList should show 2 rows after reload');
-    assertEquals(reloadSlug, 'clients', 'Reloaded entity slug should be "clients"');
+    assertEquals(reloadSlug, 'persons', 'Reloaded entity slug should be "persons"');
     assertTrue(schemaEndpointLoaded, 'Create flow should load the full schema endpoint');
     host.remove();
   });

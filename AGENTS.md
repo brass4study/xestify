@@ -137,11 +137,10 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Convenciones de entidades y plugins
 
-- `persons` es el slug canonico de personas (STORY 10.2 renombra el plugin
-  desde `clients` para generalizar el modelo a clientes/distribuidores/
-  oculistas). Hasta que STORY 10.2 se implemente, el codigo real todavia usa
-  `clients`; una vez completada esa migracion, no reintroducir `client`/
-  `clients` como slug funcional, fixture o dato demo.
+- `persons` es el slug canonico de personas: unifica clientes, distribuidores
+  y oculistas bajo un unico modelo (STORY 10.2 renombro el plugin desde
+  `clients` con este objetivo). No reintroducir `client`/`clients` como slug
+  funcional, fixture o dato demo.
 - Los plugins de tipo `entity` son la fuente de verdad del catalogo de entidades.
 - El catalogo debe salir de plugins instalados y activos, no de seeders de entidades.
 - Los seeders deben limitarse a usuario admin y datos demo explicitos cuando se pidan.
@@ -149,8 +148,9 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 ## Schemas y datos
 
 - Las claves tecnicas de schemas, payloads y DB deben ir en ingles.
-- Para `clients`, usar:
+- Para `persons`, usar:
   - `name`
+  - `surnames`
   - `email`
   - `phone`
   - `creation_stamp`

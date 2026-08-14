@@ -53,26 +53,26 @@
       });
 
       window.history.replaceState(null, '', '#/users/user-7');
-      await router.start('entity:clients');
+      await router.start('entity:persons');
 
       const navigationCount = visited.length;
       await router.navigate(getPageFromHash('#/profile', router.fallbackPage), { updateHash: true, notify: false });
       assertEquals(window.location.hash, '#/profile', 'Debe actualizar el hash sin despachar la página');
       assertEquals(visited.length, navigationCount, 'notify false no debe invocar onNavigate');
 
-      await router.navigate(getPageFromHash('#/entity/clients/record-9/comments', router.fallbackPage), { updateHash: true });
+      await router.navigate(getPageFromHash('#/entity/persons/record-9/comments', router.fallbackPage), { updateHash: true });
 
       assertEquals(visited[0], 'users:user-7', 'Debe resolver la entrada directa por hash');
-      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe navegar a un token de página resuelto a partir de un hash público');
-      assertEquals(window.location.hash, '#/entity/clients/record-9/comments', 'Debe sincronizar el hash programático');
+      assertEquals(visited.at(-1), 'entity-tab:persons:record-9:comments', 'Debe navegar a un token de página resuelto a partir de un hash público');
+      assertEquals(window.location.hash, '#/entity/persons/record-9/comments', 'Debe sincronizar el hash programático');
 
       router.stop();
       const restarted = new RouteController({
         onNavigate: async (page) => visited.push(page),
       });
-      await restarted.start('entity:clients');
+      await restarted.start('entity:persons');
 
-      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Debe restaurar la vista tras reiniciar con el hash preservado');
+      assertEquals(visited.at(-1), 'entity-tab:persons:record-9:comments', 'Debe restaurar la vista tras reiniciar con el hash preservado');
       restarted.stop();
       window.history.replaceState(null, '', originalUrl);
     });
@@ -84,15 +84,15 @@
         onNavigate: async (page) => visited.push(page),
       });
 
-      window.history.replaceState(null, '', '#/entity/clients/record-9');
+      window.history.replaceState(null, '', '#/entity/persons/record-9');
       await router.start('home');
-      await router.navigate(getPageFromHash('#/entity/clients/record-9/comments', router.fallbackPage), { updateHash: true });
+      await router.navigate(getPageFromHash('#/entity/persons/record-9/comments', router.fallbackPage), { updateHash: true });
       await router.navigate(getPageFromHash('#/profile', router.fallbackPage), { updateHash: true });
 
       const backNavigation = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }));
       window.history.back();
       await backNavigation;
-      assertEquals(visited.at(-1), 'entity-tab:clients:record-9:comments', 'Back debe recuperar registro y tab');
+      assertEquals(visited.at(-1), 'entity-tab:persons:record-9:comments', 'Back debe recuperar registro y tab');
 
       const forwardNavigation = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }));
       window.history.forward();
@@ -111,17 +111,17 @@
       });
 
       window.history.replaceState(null, '', '#/home');
-      await router.start('entity:clients');
-      assertEquals(visited.at(-1), 'entity:clients', 'Home debe abrir la primera entidad');
-      assertEquals(window.location.hash, '#/entity/clients', 'Home debe reemplazarse por la ruta real');
+      await router.start('entity:persons');
+      assertEquals(visited.at(-1), 'entity:persons', 'Home debe abrir la primera entidad');
+      assertEquals(window.location.hash, '#/entity/persons', 'Home debe reemplazarse por la ruta real');
 
       const rootNavigation = new Promise((resolve) => {
         window.addEventListener('hashchange', resolve, { once: true });
       });
       window.location.hash = '#/';
       await rootNavigation;
-      assertEquals(visited.at(-1), 'entity:clients', 'La raíz debe abrir la primera entidad');
-      assertEquals(window.location.hash, '#/entity/clients', 'La raíz debe reemplazarse por la ruta real');
+      assertEquals(visited.at(-1), 'entity:persons', 'La raíz debe abrir la primera entidad');
+      assertEquals(window.location.hash, '#/entity/persons', 'La raíz debe reemplazarse por la ruta real');
 
       router.stop();
       window.history.replaceState(null, '', originalUrl);
@@ -132,10 +132,10 @@
         ['profile', '#/profile'],
         ['users', '#/users'],
         [userDetailPage('user-7'), '#/users/user-7'],
-        [entityPage('clients'), '#/entity/clients'],
-        [entityCreatePage('clients'), '#/entity/clients/new'],
-        [entityRecordPage('clients', 'record-9'), '#/entity/clients/record-9'],
-        [entityTabPage('clients', 'record-9', 'comments'), '#/entity/clients/record-9/comments'],
+        [entityPage('persons'), '#/entity/persons'],
+        [entityCreatePage('persons'), '#/entity/persons/new'],
+        [entityRecordPage('persons', 'record-9'), '#/entity/persons/record-9'],
+        [entityTabPage('persons', 'record-9', 'comments'), '#/entity/persons/record-9/comments'],
         ['plugins', '#/plugins'],
         [pluginConfigPage('comments'), '#/plugins/comments'],
         ['login', '#/login'],
@@ -147,7 +147,7 @@
       });
 
       assertEquals(hashFromPage('home'), '#/home', 'El alias home debe conservar hash navegable');
-      assertEquals(getPageFromHash('#/home', 'entity:clients'), 'entity:clients',
+      assertEquals(getPageFromHash('#/home', 'entity:persons'), 'entity:persons',
         'Home debe resolver al fallback de entidad');
 
       const pluginPage = getPageFromHash('#/plugins/comments', 'home');
@@ -158,13 +158,13 @@
       assertEquals(pluginConfigPage('comments'), 'plugins:comments',
         'El token de configuración de plugin debe seguir la convención namespace:param, igual que users:id');
 
-      assertEquals(getPageFromHash('#/', 'entity:clients'), 'entity:clients',
+      assertEquals(getPageFromHash('#/', 'entity:persons'), 'entity:persons',
         'La raíz debe resolver al fallback de entidad');
       assertEquals(getPageFromHash('#/plugins/comments/config', 'home'), 'home',
         'La antigua ruta de configuración de plugins debe quedar fuera del mapa');
-      assertEquals(getPageFromHash('#/entity/clients/record-9/comments?panel=activity', 'home'),
-        'entity-tab:clients:record-9:comments', 'La query no debe destruir el contexto de tab');
-      assertEquals(getPageFromHash('#/entity/clients/record-9/comments/extra', 'home'),
+      assertEquals(getPageFromHash('#/entity/persons/record-9/comments?panel=activity', 'home'),
+        'entity-tab:persons:record-9:comments', 'La query no debe destruir el contexto de tab');
+      assertEquals(getPageFromHash('#/entity/persons/record-9/comments/extra', 'home'),
         'home', 'Las rutas fuera del mapa deben usar fallback');
     });
 
@@ -178,21 +178,21 @@
         'El hash de detalle de usuario debe derivar del propio HASH_ROUTE_MAP.userDetail');
       assertEquals(hashFromPage(pluginConfigPage('comments')), fillTemplate(HASH_ROUTE_MAP.pluginConfig, 'comments'),
         'El hash de configuración de plugin debe derivar del propio HASH_ROUTE_MAP.pluginConfig');
-      assertEquals(hashFromPage(entityRecordPage('clients', 'record-9')), fillTemplate(HASH_ROUTE_MAP.entityDetail, 'clients', 'record-9'),
+      assertEquals(hashFromPage(entityRecordPage('persons', 'record-9')), fillTemplate(HASH_ROUTE_MAP.entityDetail, 'persons', 'record-9'),
         'El hash de detalle de entidad debe derivar del propio HASH_ROUTE_MAP.entityDetail');
-      assertEquals(hashFromPage(entityTabPage('clients', 'record-9', 'comments')), fillTemplate(HASH_ROUTE_MAP.entityTab, 'clients', 'record-9', 'comments'),
+      assertEquals(hashFromPage(entityTabPage('persons', 'record-9', 'comments')), fillTemplate(HASH_ROUTE_MAP.entityTab, 'persons', 'record-9', 'comments'),
         'El hash de tab de entidad debe derivar del propio HASH_ROUTE_MAP.entityTab');
     });
 
     await test('parseEntityRecordPage es la única implementación del parser entity-record:', async () => {
-      assertEquals(parseEntityRecordPage('entity-record:clients:record-9'), { slug: 'clients', recordId: 'record-9' },
+      assertEquals(parseEntityRecordPage('entity-record:persons:record-9'), { slug: 'persons', recordId: 'record-9' },
         'Debe extraer slug y recordId del token');
-      assertTrue(parseEntityRecordPage('entity-record:clients') === null, 'Debe rechazar tokens sin recordId');
+      assertTrue(parseEntityRecordPage('entity-record:persons') === null, 'Debe rechazar tokens sin recordId');
       assertTrue(parseEntityRecordPage('entity-record::record-9') === null, 'Debe rechazar slug vacío');
-      assertTrue(parseEntityRecordPage('entity-record:clients:') === null, 'Debe rechazar recordId vacío');
-      assertTrue(parseEntityRecordPage('entity:clients') === null, 'Debe rechazar tokens de otro tipo de página');
-      assertEquals(parseEntityRecordPage('entity-record:clients:record-9:extra'),
-        { slug: 'clients', recordId: 'record-9:extra' },
+      assertTrue(parseEntityRecordPage('entity-record:persons:') === null, 'Debe rechazar recordId vacío');
+      assertTrue(parseEntityRecordPage('entity:persons') === null, 'Debe rechazar tokens de otro tipo de página');
+      assertEquals(parseEntityRecordPage('entity-record:persons:record-9:extra'),
+        { slug: 'persons', recordId: 'record-9:extra' },
         'El recordId conserva cualquier resto tras el segundo separador');
     });
 
@@ -321,14 +321,14 @@
       });
 
       const mixedNavbar = new Navbar(shell.getTarget('shell-mixed-bar-nav'), {
-        entities: [{ slug: 'clients', label: 'Clientes' }],
-        currentPage: 'entity:clients',
+        entities: [{ slug: 'persons', label: 'Clientes' }],
+        currentPage: 'entity:persons',
         userContainer: shell.getTarget('shell-mixed-bar-config-user'),
         linksContainer: shell.getTarget('shell-menu-nav'),
         linksOrientation: 'side',
         showUserMenu: false,
       });
-      mixedNavbar.setActive('entity:clients');
+      mixedNavbar.setActive('entity:persons');
       assertTrue(shell.getTarget('shell-mixed-bar').querySelector('[data-role="navbar-brand"]') !== null, 'La barra mixed debe renderizar la marca');
 
       assertEquals(shell.getTarget('shell').dataset.uiNavigationMode, 'mixed', 'El shell debe conservar el modo mixed');

@@ -309,8 +309,8 @@ function pluginListFixture(): array
 {
     return [
         [
-            'slug' => 'clients',
-            'name' => 'Clients',
+            'slug' => 'persons',
+            'name' => 'Persons',
             'plugin_type' => 'entity',
             'version' => SEMVER_1_0,
             'status' => 'active',
@@ -355,7 +355,7 @@ TestSuite::run('GET /api/v1/plugins returns plugins ordered by slug', function (
     });
 
     $response = json_decode($output, true);
-    assertEquals('clients', $response['data']['plugins'][0]['slug'] ?? null, 'First plugin should be clients');
+    assertEquals('persons', $response['data']['plugins'][0]['slug'] ?? null, 'First plugin should be persons');
     assertEquals('comments', $response['data']['plugins'][1]['slug'] ?? null, 'Second plugin should be comments');
 });
 
@@ -365,7 +365,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/status requires status parameter', fu
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->updatePluginStatus(['slug' => 'clients'], $request);
+        $controller->updatePluginStatus(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -405,8 +405,8 @@ TestSuite::run('GET /api/v1/plugins/updates returns outdated plugins', function 
     $controller = new PluginManagerController(new TestPluginAdministrationService(
         pluginListFixture(),
         [[
-            'slug' => 'clients',
-            'name' => 'Clients',
+            'slug' => 'persons',
+            'name' => 'Persons',
             'plugin_type' => 'entity',
             'installed_version' => SEMVER_1_0,
             'available_version' => SEMVER_2_0,
@@ -437,8 +437,8 @@ TestSuite::run('POST /api/v1/plugins/sync returns sync summary for admin', funct
                 'errors' => 0,
             ],
             'plugins' => [
-                'clients' => [
-                    'slug' => 'clients',
+                'persons' => [
+                    'slug' => 'persons',
                     'result' => 'outdated',
                     'installed_version' => SEMVER_1_0,
                     'available_version' => SEMVER_2_0,
@@ -456,7 +456,7 @@ TestSuite::run('POST /api/v1/plugins/sync returns sync summary for admin', funct
     $response = json_decode($output, true);
     assertTrue($response['ok'] === true, 'Sync should succeed for admin');
     assertEquals(2, $response['data']['summary']['discovered'] ?? null, 'Summary should include discovered count');
-    assertEquals('outdated', $response['data']['plugins']['clients']['result'] ?? null, 'clients should be outdated');
+    assertEquals('outdated', $response['data']['plugins']['persons']['result'] ?? null, 'persons should be outdated');
 });
 
 TestSuite::run('POST /api/v1/plugins/{slug}/update returns update result for admin', function (): void {
@@ -466,8 +466,8 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns update result for adm
         ['summary' => [], 'plugins' => []],
         [
             'plugin' => [
-                'slug' => 'clients',
-                'name' => 'Clients',
+                'slug' => 'persons',
+                'name' => 'Persons',
                 'plugin_type' => 'entity',
                 'version' => SEMVER_2_0,
                 'status' => 'active',
@@ -487,7 +487,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns update result for adm
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->updatePlugin(['slug' => 'clients'], $request);
+        $controller->updatePlugin(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -527,7 +527,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns 409 for unsupported u
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->updatePlugin(['slug' => 'clients'], $request);
+        $controller->updatePlugin(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -544,8 +544,8 @@ TestSuite::run('POST /api/v1/plugins/{slug}/rollback restores plugin for admin',
         null,
         [
             'plugin' => [
-                'slug' => 'clients',
-                'name' => 'Clients',
+                'slug' => 'persons',
+                'name' => 'Persons',
                 'plugin_type' => 'entity',
                 'version' => SEMVER_1_0,
                 'status' => 'active',
@@ -562,7 +562,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/rollback restores plugin for admin',
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->rollbackPlugin(['slug' => 'clients'], $request);
+        $controller->rollbackPlugin(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -607,7 +607,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/rollback returns 409 when no snapsho
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->rollbackPlugin(['slug' => 'clients'], $request);
+        $controller->rollbackPlugin(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -621,12 +621,12 @@ TestSuite::run('GET /api/v1/plugins/{slug}/config returns plugin configuration f
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->getPluginConfig(['slug' => 'clients'], $request);
+        $controller->getPluginConfig(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === true, 'Config fetch should succeed');
-    assertEquals('clients', $response['data']['plugin']['slug'] ?? null, 'Response should include plugin slug');
+    assertEquals('persons', $response['data']['plugin']['slug'] ?? null, 'Response should include plugin slug');
     assertTrue(is_array($response['data']['config']['fields'] ?? null), 'fields should be an array');
     assertTrue($response['data']['config']['fields'][0]['summaryView'] === true, 'Base fields should include summaryView');
 });
@@ -654,7 +654,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config persists extension target_enti
     $plugins[1]['status'] = 'active';
     $controller = new PluginManagerController(new TestPluginAdministrationService($plugins));
     $request = new TestRequest(json_encode([
-        'target_entity' => 'clients',
+        'target_entity' => 'persons',
         'fields' => [
             [
                 'active' => true,
@@ -674,7 +674,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config persists extension target_enti
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === true, 'Extension config save should succeed');
-    assertEquals('clients', $response['data']['config']['target_entity'] ?? null, 'Extension target_entity should be persisted');
+    assertEquals('persons', $response['data']['config']['target_entity'] ?? null, 'Extension target_entity should be persisted');
 });
 
 TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schema version', function (): void {
@@ -716,7 +716,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config updates config and bumps schem
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->updatePluginConfig(['slug' => 'clients'], $request);
+        $controller->updatePluginConfig(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);
@@ -732,7 +732,7 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/config validates payload arrays', fun
     $request->setUser(['roles' => ['admin']]);
 
     $output = testController(function () use ($controller, $request): void {
-        $controller->updatePluginConfig(['slug' => 'clients'], $request);
+        $controller->updatePluginConfig(['slug' => 'persons'], $request);
     });
 
     $response = json_decode($output, true);

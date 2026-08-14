@@ -252,7 +252,7 @@ Plugin define contrato schema.json        Admin configura la entidad
 
 ```json
 {
-    "entity": "clients",
+    "entity": "persons",
     "version": "1.0.0",
     "identities": {
         "id": {
@@ -380,9 +380,9 @@ Si la clave de relación no viene informada, el registro sigue siendo válido.
 {
     "relations": [
         {
-            "key": "id_cliente",
+            "key": "id_person",
             "type": "belongs_to",
-            "target_entity": "clients",
+            "target_entity": "persons",
             "target_field": "id",
             "required": false,
             "label": "Cliente del pedido"
@@ -399,11 +399,11 @@ Si la clave de relación no viene informada, el registro sigue siendo válido.
 | `has_one` | Un único otro registro apunta a este (1:1) | `content` del otro registro |
 
 ### Cómo se resuelve una relación
-Para `belongs_to`: el valor de `key` (ej. `id_cliente`) en `content` apunta al registro destino. Para resolver:
+Para `belongs_to`: el valor de `key` (ej. `id_person`) en `content` apunta al registro destino. Para resolver:
 ```sql
 SELECT content FROM entity_data
-WHERE entity_slug = 'clients'
-  AND id = :id_cliente_value
+WHERE entity_slug = 'persons'
+  AND id = :id_person_value
   AND deleted_at IS NULL
 ```
 No hay JOIN automático — la resolución es explícita, bajo demanda (lazy).

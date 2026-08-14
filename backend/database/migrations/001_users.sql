@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     roles         JSONB       NOT NULL DEFAULT '["operador"]',
     name          VARCHAR(255),
     avatar        BYTEA,
+    is_seed       BOOLEAN     NOT NULL DEFAULT FALSE, -- fixed seed users (admin/normal) are protected: not editable nor deletable
     deleted_at    TIMESTAMPTZ,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

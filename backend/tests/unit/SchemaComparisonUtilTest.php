@@ -41,7 +41,7 @@ TestSuite::run('normalize() detects a real difference after normalization', func
 });
 
 TestSuite::run('normalize() returns scalars unchanged', function () use ($util): void {
-    assertEquals('clients', $util->normalize('clients'), 'Scalar strings must pass through unchanged');
+    assertEquals('persons', $util->normalize('persons'), 'Scalar strings must pass through unchanged');
     assertEquals(42, $util->normalize(42), 'Scalar ints must pass through unchanged');
 });
 

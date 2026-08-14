@@ -10,7 +10,7 @@ use Xestify\core\HookDispatcher;
 
 /**
  * Base beforeSave hook that enforces a single field's uniqueness across all
- * active records of one entity — the pattern both `clients` (email) and
+ * active records of one entity — the pattern both `persons` (email) and
  * `products` (sku) implement identically apart from the field/entity names
  * and the duplicate-error wording.
  */

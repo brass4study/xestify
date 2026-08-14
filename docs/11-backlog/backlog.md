@@ -835,7 +835,7 @@ Objetivo: Ciclo de vida completo de plugins con versionado, actualización contr
 - Permitir configuración de campos del `schema` del plugin extension desde la misma tabla unificada.
 - Añadir configuración de relación de extensión mediante `target_entity`:
   - `*` para aplicar a cualquier entidad.
-  - slug explícito (por ejemplo `clients`) para restringir el alcance.
+  - slug explícito (por ejemplo `persons`) para restringir el alcance.
 - Mantener compatibilidad completa con configuración de plugins `entity` ya implementada.
 - Actualizar tests backend/frontend para cubrir:
   - visibilidad de `Configure` en plugins extension activos,
@@ -1163,6 +1163,7 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 - **Verificación:** Backend `php backend/tests/run.php` 56/56 ficheros en verde (incluye `AuthControllerTest`/`MigrationIdempotenceTest`, existentes pero nunca registrados en el runner hasta esta verificación — corregido). Frontend `frontend/tests/integration/` 229/229 assertions en verde (21 runners HTML) + `frontend/tests/e2e/` 12/12 specs Playwright contra el runtime real Apache+PHP+Postgres. 2 aserciones obsoletas en `UiResilienceTest.html` corregidas (asumían el comportamiento previo, con bug, de `clearAuth()`/`hydrateUiPreferences()` que esta misma story corrigió) y añadida cobertura unitaria antes ausente del interceptor de sesión caducada en `ApiTest.html`
 
 ### STORY 10.2: Renombrar plugin `clients` a `persons`
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Fullstack
@@ -1170,10 +1171,10 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
   - ✅ Carpeta `plugins/clients/` renombrada a `plugins/persons/`
   - ✅ Namespace PHP actualizado de `Xestify\plugins\clients` a `Xestify\plugins\persons` en `Hooks.php`, `Installer.php`, `Lifecycle.php`
   - ✅ `manifest.json` y `schema.json` actualizados (`slug`, `entity`) a `persons`
-  - ✅ Migración que renombra las filas existentes en `plugins.slug` y `plugin_entity_data.entity_slug` de `clients` a `persons`, sin pérdida de datos
+  - ✅ Filas existentes en `plugins.slug`, `plugin_entity_data.entity_slug` y `plugin_extension_data.entity_slug` renombradas de `clients` a `persons` sin pérdida de datos (243 + 5 filas en BD local); aplicado como ajuste puntual documentado vía `psql`, no como migración committeada — el proyecto está en fase MVP sin ninguna instalación real que migrar de forma incremental (decisión acordada con el usuario, ver `docs/10-productivity/sesion.md`)
   - ✅ Mismos campos que tenía `clients` (rename directo, sin ampliar el modelo): `name`, `surnames`, `email` + `custom_fields` opcionales (`phone`, `creation_stamp`, `is_active`)
   - ✅ Regla de `AGENTS.md` actualizada: `persons` pasa a ser el slug canónico de personas, documentando el motivo del cambio; se retira la prohibición sobre `client`
-- **IA Usage:** Rename asistido de carpeta/namespace/manifest/schema + script de migración de datos + actualización de AGENTS.md
+- **IA Usage:** Exploración paralela con 3 agentes + rename asistido de carpeta/namespace/manifest/schema + ajuste puntual de datos en BD vía `psql` + fix de `schema_json.entity` desincronizado (hallazgo durante la verificación) + actualización de AGENTS.md y 14 ficheros de documentación viva
 - **Dependencias:** Ninguna (plugin ya existente desde EPIC 3)
 - **Blockers:** Ninguno
 

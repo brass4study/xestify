@@ -1158,3 +1158,24 @@
 - **Iteraciones:** 20+ (planificación con preguntas de aclaración, implementación backend, refactor UX frontend completo, identidad visual con componentes nuevos, más de 15 rondas de correcciones visuales/UX punto por punto, verificación final con detección de gaps de test)
 - **Decisión manual:** El loader se reimplementa como componente propio en vez de reutilizar el genérico existente (decisión explícita del usuario, rechazando la primera propuesta de reutilizarlo); los componentes `Logo`/`BrandLogo` se implementan con el HTML/CSS exacto proporcionado por el usuario, sin margen de interpretación; `brand.css` queda como única excepción documentada a "Tailwind como capa principal".
 - **Decisión manual:** Ante cada hallazgo que tocaba código de producción (`frontend/src/`) o cambiaba el comportamiento esperado de un test existente, la IA paró y pidió confirmación explícita antes de aplicar el fix, en vez de asumir alcance ampliado por su cuenta.
+
+---
+
+### STORY 10.2: Renombrar plugin `clients` a `persons`
+
+- **Fecha:** 2026-08-14 a 2026-08-15
+- **Estimado sin IA:** 6h (rename mecánico pero de alcance amplio: backend, ~10 tests frontend, ~14 ficheros de documentación, ajustes de datos en BD, y dos bugs de sincronización de schema no evidentes hasta ejecutar la verificación real)
+- **Tiempo real con IA:** ~2h30 repartidas en dos sesiones, con el usuario pidiendo explícitamente pausar y pedir confirmación tras cada bloque del plan antes de continuar
+- **Aceleración:** ~58%
+- **Qué hizo IA:**
+  - Investigación previa con 3 agentes `Explore` en paralelo (backend, frontend, documentación) para mapear todas las referencias reales a `clients` antes de planificar, evitando planificar a ciegas.
+  - Detectó por su cuenta, revisando el patrón de migración a seguir, que `007_users_add_is_seed.sql` mezclaba una columna estructural con un backfill puntual, y que `UserSeeder.php` exige la columna desde el primer `INSERT` — proponiendo fusionar la columna en `001_users.sql` y tratar el backfill como ajuste puntual documentado, no como migración permanente.
+  - Ejecutó el rename completo: carpeta/namespace/manifest/schema del plugin, ~15 ficheros de test backend, 10 tests de integración frontend (incluido `E2ETest.html`, no detectado en la exploración inicial y encontrado en un barrido final de verificación), 3 specs E2E, `AGENTS.md` y 14 ficheros de documentación viva.
+  - Aplicó los ajustes de datos puntuales contra la BD local vía `psql` (backfill `is_seed`, rename `clients`→`persons` en `plugins`/`plugin_entity_data`/`plugin_extension_data`), documentando en el chat las filas afectadas de cada sentencia.
+  - Detectó por su cuenta, al revisar la pregunta del usuario sobre `schema_json`, que el campo `"entity"` embebido en `plugins.schema_json` había quedado obsoleto tras el ajuste de columnas (`InstalledPluginSchemaValidator::assertEntityMatches()` habría fallado en el próximo sync) y lo corrigió con `jsonb_set`.
+  - Ejecutó la verificación completa: backend 56/56 (diagnosticando y resolviendo un problema de PATH que resolvía a un PHP sin `pdo_pgsql`), comprobación headless de apoyo de los 10 runners frontend afectados, y 12/12 specs E2E contra el runtime real.
+- **Iteraciones:** 15+ (exploración en paralelo, 4 rondas de `AskUserQuestion` para cerrar decisiones de alcance antes de escribir el plan, ejecución en bloques con pausa y confirmación explícita tras cada uno, corrección de `id_cliente`→`id_person` señalada por el usuario, hallazgo y fix del `schema_json.entity` obsoleto, verificación final)
+- **Decisión manual:** El usuario interrumpió `ExitPlanMode` para señalar el riesgo de `007_users_add_is_seed.sql` antes de aprobar el plan, cambiando el enfoque de migración committeada a ajuste puntual documentado — una decisión de arquitectura de datos que la IA no había planteado por su cuenta.
+- **Decisión manual:** El usuario pidió explícitamente pausar tras cada bloque del plan para revisar y stagear cambios antes de continuar, en vez de ejecutar la story de una sola vez.
+- **Decisión manual:** El usuario detectó la clave técnica en español `id_cliente` (mezclada en un test real, no solo en documentación) y especificó directamente el nombre de reemplazo (`id_person`), sin dejarlo a interpretación de la IA.
+- **Decisión manual:** Ante la duda planteada por el usuario sobre si el diseño de STORY 10.3 debería absorber la gestión de `schema_json.entity`, se decidió dejarlo hablado sin tocar el backlog todavía, para no ampliar el alcance de esta story.

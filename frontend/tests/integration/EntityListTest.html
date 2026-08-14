@@ -45,7 +45,7 @@
     const container = makeSandbox();
     mockFetchWithMap({
       '/entities': [
-        { slug: 'clients', label: 'Clientes' },
+        { slug: 'persons', label: 'Clientes' },
         { slug: 'order', label: 'Pedidos' },
       ],
     });
@@ -55,13 +55,13 @@
 
     const entities = SessionModel.getEntities();
     assertEquals(entities.length, 2, 'Should load 2 entities');
-    assertEquals(entities[0].slug, 'clients', 'First entity slug');
+    assertEquals(entities[0].slug, 'persons', 'First entity slug');
     assertEquals(entities[1].slug, 'order', 'Second entity slug');
   });
 
   await test('init stores entities in SessionModel', async () => {
     const container = makeSandbox();
-    const entities = [{ slug: 'clients', label: 'Clientes' }];
+    const entities = [{ slug: 'persons', label: 'Clientes' }];
     mockFetchWithMap({ '/entities': entities });
 
     const page = new EntityList(container);
@@ -84,8 +84,8 @@
   await test('loadEntity renders records section with table', async () => {
     const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
-      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
-      '/entities/clients/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
+      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
+      '/entities/persons/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
     });
 
     const page = new EntityList(content, {
@@ -94,7 +94,7 @@
       description: 'Explora registros y accede a acciones contextuales.',
     });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
 
     const section = content.querySelector('[data-role="list-section"]');
     assertTrue(section !== null, 'List section should exist');
@@ -119,14 +119,14 @@
     const { host, shell, content } = makeShellSandbox();
 
     mockFetchWithMap({
-      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
-      '/entities/clients/records': [{ name: 'ACME' }],
+      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [] }],
+      '/entities/persons/records': [{ name: 'ACME' }],
     });
 
     const page = new EntityList(content, { shellLayout: shell });
     await page.init();
-    await page.loadEntity('clients');
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
+    await page.loadEntity('persons');
 
     const localHeader = content.querySelector('[data-role="page-header"]');
     const shellToolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
@@ -145,7 +145,7 @@
       async get(url) {
         calls.push(url);
         if (url === '/entities') {
-          return { data: [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+          return { data: [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
         }
         return {
           data: [{ id: String(calls.length), content: { name: 'Cliente paginado' } }],
@@ -155,7 +155,7 @@
     };
     const page = new EntityList(container, { api });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
 
     assertTrue(calls[1].includes('page=1&page_size=20'), 'Initial request must use 20 records');
     container.querySelector('[data-role="table-page"][data-page="2"]').click();
@@ -181,14 +181,14 @@
         async get(url) {
           calls.push(url);
           if (url === '/entities') {
-            return { data: [{ slug: 'clients', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+            return { data: [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
           }
           return { data: [], meta: { page: 1, page_size: 50, total: 0, total_pages: 1 } };
         },
       };
       const page = new EntityList(container, { api });
       await page.init();
-      await page.loadEntity('clients');
+      await page.loadEntity('persons');
 
       assertTrue(calls[1].includes('page=1&page_size=50'), 'Initial request must use the saved page size');
     } finally {
@@ -199,8 +199,8 @@
   await test('"Crear nuevo registro" button calls onCreateNew callback', async () => {
     const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
-      '/entities': [{ slug: 'clients', label: 'Clientes', fields: [] }],
-      '/entities/clients/records': [],
+      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [] }],
+      '/entities/persons/records': [],
     });
 
     let calledWith = null;
@@ -208,13 +208,13 @@
 
     const page = new EntityList(content, { onCreateNew, shellLayout: shell });
     await page.init();
-    await page.loadEntity('clients');
+    await page.loadEntity('persons');
 
     const createBtn = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"] [data-role="record-create"]');
     assertTrue(createBtn !== null, '"Crear nuevo registro" button should exist');
     createBtn.click();
 
-    assertEquals(calledWith, 'clients', 'onCreateNew should be called with the entity slug');
+    assertEquals(calledWith, 'persons', 'onCreateNew should be called with the entity slug');
   });
 
   // ------------------------------------------------------------------------

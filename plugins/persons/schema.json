@@ -1,5 +1,5 @@
 {
-    "entity": "clients",
+    "entity": "persons",
     "label_singular": "cliente",
     "version": "1.0.0",
     "identities": {

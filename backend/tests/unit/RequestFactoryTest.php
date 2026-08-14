@@ -19,7 +19,7 @@ TestSuite::run('create() construye Request con method y uri normalizados', funct
         query: ['page' => '2'],
         body: ['name' => 'Ana'],
         headers: ['Authorization' => 'Bearer token-123'],
-        routeParams: ['slug' => 'clients'],
+        routeParams: ['slug' => 'persons'],
         method: 'post',
         uri: '/xestify/api/v1/entities'
     );
@@ -29,7 +29,7 @@ TestSuite::run('create() construye Request con method y uri normalizados', funct
     assertEquals('2', $request->query('page'));
     assertEquals('Ana', $request->body('name'));
     assertEquals('token-123', $request->bearerToken());
-    assertEquals('clients', $request->param('slug'));
+    assertEquals('persons', $request->param('slug'));
 });
 
 TestSuite::run('fromGlobals() usa fallback Authorization y normaliza alias', function (): void {

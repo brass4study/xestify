@@ -6,7 +6,7 @@
 {
   "ok": true,
   "data": [
-    { "slug": "clients", "name": "Clientes", "status": "active" },
+    { "slug": "persons", "name": "Clientes", "status": "active" },
     ...
   ]
 }
@@ -18,7 +18,7 @@
 {
   "ok": true,
   "data": {
-    "entity": "clients",
+    "entity": "persons",
     "fields": [ ... ],
     "custom_fields": [ ... ]
   }
@@ -38,7 +38,7 @@ Parámetros de query:
 | `sort` | `created_at` | Campo del schema o `id`, `created_at`, `updated_at` |
 | `direction` | `asc` | Dirección `asc` o `desc` |
 
-Ejemplo: `GET /api/v1/entities/clients/records?page=2&page_size=20&sort=name&direction=asc`
+Ejemplo: `GET /api/v1/entities/persons/records?page=2&page_size=20&sort=name&direction=asc`
 
 ```json
 {
@@ -46,7 +46,7 @@ Ejemplo: `GET /api/v1/entities/clients/records?page=2&page_size=20&sort=name&dir
   "data": [
     {
       "id": "...",
-      "entity_slug": "clients",
+      "entity_slug": "persons",
       "content": "{\"name\":\"Cliente\"}"
     }
   ],

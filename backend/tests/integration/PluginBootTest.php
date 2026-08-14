@@ -83,7 +83,7 @@ TestSuite::run('registerActiveHooks() registers comments tab when comments is ac
 
     $registrar->registerActiveHooks($dispatcher);
 
-    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'persons']);
     $ids = array_column($tabs, 'id');
 
     assertTrue(in_array('comments', $ids, true), 'comments tab must appear after registerActiveHooks()');
@@ -99,7 +99,7 @@ TestSuite::run('registerActiveHooks() is idempotent — repeated calls do not du
     $registrar->registerActiveHooks($dispatcher);
     $registrar->registerActiveHooks($dispatcher);
 
-    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'persons']);
     $commentTabs = array_filter($tabs, static fn(array $tab): bool => $tab['id'] === 'comments');
 
     assertTrue(count($commentTabs) === 1, 'comments tab must appear exactly once, not once per registerActiveHooks() call');
@@ -114,11 +114,11 @@ TestSuite::run('tab endpoint contains entity placeholder', function () use ($pdo
 
     $registrar->registerActiveHooks($dispatcher);
 
-    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'persons']);
     $found = array_values(array_filter($tabs, static fn(array $tab): bool => $tab['id'] === 'comments'));
 
     assertTrue(!empty($found), 'comments tab must exist');
-    assertTrue(str_contains($found[0]['endpoint'] ?? '', 'clients'), 'endpoint must contain entity slug');
+    assertTrue(str_contains($found[0]['endpoint'] ?? '', 'persons'), 'endpoint must contain entity slug');
     assertTrue(str_contains($found[0]['endpoint'] ?? '', '{id}'), 'endpoint must contain {id} placeholder');
 });
 

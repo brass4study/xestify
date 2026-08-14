@@ -17,9 +17,9 @@ echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('mergeAdditively() adds new field and custom field', function () use ($service): void {
     $result = $service->mergeAdditively(
-        'clients',
+        'persons',
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => [
                 'name' => ['type' => 'string', 'required' => true],
             ],
@@ -27,7 +27,7 @@ TestSuite::run('mergeAdditively() adds new field and custom field', function () 
             'relations' => [],
         ],
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => [
                 'name' => ['type' => 'string', 'required' => true],
                 'email' => ['type' => 'email', 'required' => false],
@@ -52,9 +52,9 @@ TestSuite::run('mergeAdditively() fails on non-additive field change', function 
 
     try {
         $service->mergeAdditively(
-            'clients',
+            'persons',
             [
-                'entity' => 'clients',
+                'entity' => 'persons',
                 'fields' => [
                     'name' => ['type' => 'string', 'required' => true],
                 ],
@@ -62,7 +62,7 @@ TestSuite::run('mergeAdditively() fails on non-additive field change', function 
                 'relations' => [],
             ],
             [
-                'entity' => 'clients',
+                'entity' => 'persons',
                 'fields' => [
                     'name' => ['type' => 'text', 'required' => true],
                 ],
@@ -83,9 +83,9 @@ TestSuite::run('mergeAdditively() does not treat an edited active custom field a
     // catalog moves to plugin_suggested_custom_fields. An update must compare
     // against the catalog, not the edited active copy, or this throws.
     $result = $service->mergeAdditively(
-        'clients',
+        'persons',
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => ['name' => ['type' => 'string', 'required' => true]],
             'custom_fields' => [
                 ['key' => 'phone', 'type' => 'string', 'label' => 'Telefono movil'],
@@ -96,7 +96,7 @@ TestSuite::run('mergeAdditively() does not treat an edited active custom field a
             'relations' => [],
         ],
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => ['name' => ['type' => 'string', 'required' => true]],
             'custom_fields' => [
                 ['key' => 'phone', 'type' => 'string', 'label' => 'Telefono'],
@@ -114,9 +114,9 @@ TestSuite::run('mergeAdditively() does not treat an edited active custom field a
 
 TestSuite::run('mergeAdditively() adds a new suggested field to the catalog, not to active custom_fields', function () use ($service): void {
     $result = $service->mergeAdditively(
-        'clients',
+        'persons',
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => ['name' => ['type' => 'string', 'required' => true]],
             'custom_fields' => [],
             'plugin_suggested_custom_fields' => [
@@ -125,7 +125,7 @@ TestSuite::run('mergeAdditively() adds a new suggested field to the catalog, not
             'relations' => [],
         ],
         [
-            'entity' => 'clients',
+            'entity' => 'persons',
             'fields' => ['name' => ['type' => 'string', 'required' => true]],
             'custom_fields' => [
                 ['key' => 'phone', 'type' => 'string', 'label' => 'Telefono'],
@@ -151,8 +151,8 @@ TestSuite::run('mergeAdditively() fails when entity identifier changes', functio
 
     try {
         $service->mergeAdditively(
-            'clients',
-            ['entity' => 'clients', 'fields' => [], 'custom_fields' => [], 'relations' => []],
+            'persons',
+            ['entity' => 'persons', 'fields' => [], 'custom_fields' => [], 'relations' => []],
             ['entity' => 'contacts', 'fields' => [], 'custom_fields' => [], 'relations' => []]
         );
     } catch (DomainException) {

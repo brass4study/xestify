@@ -279,7 +279,7 @@
 
   await test('renderLogin() resincroniza el hash cuando la sesión expira en una ruta protegida', async () => {
     const originalHash = window.location.hash;
-    window.history.replaceState(null, '', '#/entity/clients/42');
+    window.history.replaceState(null, '', '#/entity/persons/42');
 
     const host = document.createElement('div');
     document.body.appendChild(host);

@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Xestify\plugins\clients;
+namespace Xestify\plugins\persons;
 
 use Xestify\plugins\contracts\AbstractUniqueFieldHook;
 
 /**
- * Hooks for the clients plugin.
+ * Hooks for the persons plugin.
  *
  * Registers a beforeSave hook that enforces email uniqueness
- * across all records of the clients entity.
+ * across all records of the persons entity.
  */
 final class Hooks extends AbstractUniqueFieldHook
 {
     protected function entitySlug(): string
     {
-        return 'clients';
+        return 'persons';
     }
 
     protected function fieldName(): string

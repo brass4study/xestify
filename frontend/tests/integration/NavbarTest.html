@@ -63,7 +63,7 @@
   }
 
   const ENTITIES = [
-    { slug: 'client', label: 'Clientes' },
+    { slug: 'person', label: 'Clientes' },
     { slug: 'product', label: 'Productos' },
   ];
   const AVATAR_DATA_URI = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
@@ -92,7 +92,7 @@
     const links = container.querySelectorAll('[data-role="navbar-link"]');
     assertEquals(links.length, 3, 'Expected 3 nav links');
     const pages = new Set(Array.from(links).map((l) => l.dataset.page));
-    assertTrue(pages.has('entity:client'), 'Missing client entity link');
+    assertTrue(pages.has('entity:person'), 'Missing person entity link');
     assertTrue(pages.has('entity:product'), 'Missing product entity link');
     assertTrue(pages.has('plugins'), 'Missing plugins link');
   });

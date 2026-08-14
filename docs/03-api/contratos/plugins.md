@@ -7,7 +7,7 @@
   "ok": true,
   "data": {
     "plugins": [
-      { "slug": "clients", "name": "Clientes", "type": "entity", "status": "active" },
+      { "slug": "persons", "name": "Clientes", "type": "entity", "status": "active" },
       { "slug": "comments", "name": "Comentarios", "type": "extension", "status": "active" }
     ]
   }
@@ -25,6 +25,6 @@
 ```json
 {
   "ok": true,
-  "data": { "slug": "clients", "status": "active" }
+  "data": { "slug": "persons", "status": "active" }
 }
 ```

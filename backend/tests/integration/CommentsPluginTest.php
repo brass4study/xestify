@@ -83,7 +83,7 @@ try {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const TEST_ENTITY   = 'clients';
+const TEST_ENTITY   = 'persons';
 const TEST_RECORD   = '00000000-0000-0000-0000-000000000001';
 const TEST_COMMENT_BODY = 'Primer comentario de prueba';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
@@ -166,7 +166,7 @@ function seedParentRecord(): void
              updated_at = NOW()"
     )->execute([
         ':slug' => TEST_ENTITY,
-        ':schema' => canonicalClientsSchemaJson(),
+        ':schema' => canonicalPersonsSchemaJson(),
     ]);
 
     Database::connection()->prepare(
@@ -208,27 +208,27 @@ function deleteUser(string $id): void
     Database::connection()->prepare('DELETE FROM users WHERE id = :id')->execute([':id' => $id]);
 }
 
-function canonicalClientsSchemaJson(): string
+function canonicalPersonsSchemaJson(): string
 {
-    $schemaPath = PLUGINS_PATH . '/clients/schema.json';
+    $schemaPath = PLUGINS_PATH . '/persons/schema.json';
     $raw = file_get_contents($schemaPath);
     if ($raw === false) {
         throw new ValidationException([
-            ['field' => 'schema', 'code' => 'read_error', 'message' => 'clients schema fixture is not readable'],
+            ['field' => 'schema', 'code' => 'read_error', 'message' => 'persons schema fixture is not readable'],
         ]);
     }
 
     $schema = json_decode($raw, true);
     if (!is_array($schema) || !isset($schema['fields']['email'], $schema['identities']['id'])) {
         throw new ValidationException([
-            ['field' => 'schema', 'code' => 'invalid_fixture', 'message' => 'clients schema fixture is invalid'],
+            ['field' => 'schema', 'code' => 'invalid_fixture', 'message' => 'persons schema fixture is invalid'],
         ]);
     }
 
     $json = json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
         throw new ValidationException([
-            ['field' => 'schema', 'code' => 'encode_error', 'message' => 'clients schema fixture cannot be encoded'],
+            ['field' => 'schema', 'code' => 'encode_error', 'message' => 'persons schema fixture cannot be encoded'],
         ]);
     }
 
@@ -285,7 +285,7 @@ TestSuite::run('Hooks::register() injects Comentarios tab via registerTabs hook'
     $hooks      = new Hooks(Database::connection());
     $hooks->register($dispatcher);
 
-    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'persons']);
 
     $found = array_filter($tabs, static fn(array $t): bool => $t['id'] === 'comments');
     assertTrue(count($found) > 0, 'registerTabs must inject a comments tab');

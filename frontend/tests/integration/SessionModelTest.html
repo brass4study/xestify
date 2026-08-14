@@ -34,7 +34,7 @@
   });
 
   await test('setEntities/getEntities stores list', async () => {
-    SessionModel.setEntities([{ slug: 'client' }, { slug: 'invoice' }]);
+    SessionModel.setEntities([{ slug: 'person' }, { slug: 'invoice' }]);
     assertEquals(SessionModel.getEntities().length, 2);
   });
 
@@ -50,7 +50,7 @@
 
   await test('reset() restores initial state', async () => {
     SessionModel.setUser({ id: 'u1' });
-    SessionModel.setEntities([{ slug: 'client' }]);
+    SessionModel.setEntities([{ slug: 'person' }]);
     SessionModel.setToken('abc');
 
     SessionModel.reset();

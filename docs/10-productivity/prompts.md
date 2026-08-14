@@ -1229,3 +1229,55 @@ ningun agente.
 **Iteraciones:** 30+ (planificación con 2 rondas de preguntas de aclaración y una tercera de refinamiento forzado, implementación backend, refactor UX frontend completo, más de 15 rondas de corrección visual/UX punto por punto, verificación final con detección de 3 gaps reales de test, y la corrección de proceso de documentación al cierre).
 **Lección:** Dos lecciones distintas en esta story. (1) UX/UI: pedir explícitamente opinión de diseño en vez de solo "valorar sugerencias" fuerza una propuesta real en vez de una implementación literal sin criterio — el primer plan rechazado lo demuestra. (2) Proceso: ante una regla de "actualizar la documentación" que ya existe en el repositorio, no inferir el alcance por el commit vivo más reciente — buscar explícitamente si hay una checklist vinculante (en este caso, en `AGENTS.md`, que además necesitaba un `CLAUDE.md` puente para cargarse automáticamente en sesiones de Claude Code).
 **Estado final:** STORY 10.1 implementada y verificada — backend 56/56 archivos, frontend integración 229/229 assertions (21 runners), E2E 12/12 specs Playwright — con `docs/10-productivity/`, `README.md`, `docs/11-backlog/backlog.md`, `docs/05-frontend/*`, `AGENTS.md` y `CLAUDE.md` sincronizados antes del commit; EPIC 10 en progreso, siguiente foco STORY 10.2.
+
+### STORY 10.2 — Renombrar plugin `clients` a `persons`
+**Prompt inicial (modo plan):**
+```
+Preparemos la implementacion de la story 10.2. Si tienes cualquier duda o
+cualquier pregunta, no dudes en hacermela hasta que todo quede 100%
+detallado
+```
+**Resultado:** 3 agentes `Explore` en paralelo (backend, frontend, documentación) mapearon todas las referencias reales a `clients` antes de planificar. 4 rondas de `AskUserQuestion` cerraron: mantener la etiqueta visible "Clientes" sin cambios, incluir `plugin_extension_data.entity_slug` en el ajuste de datos, barrer toda la documentación viva (no solo `AGENTS.md`), y renombrar también los tests frontend con fixtures mockeadas (no solo los E2E imprescindibles).
+
+**Interrupción del usuario tras revisar el plan (antes de `ExitPlanMode`):**
+```
+Deberia borrarse [007_users_add_is_seed.sql] para evitar que futuros
+porgamadores lo ejecuten por error. Seria un error grave de por error
+dejasen expuesto el user admin de debug como is_seeder=false
+```
+**Resultado:** Investigación reveló que `UserSeeder.php` exige la columna `is_seed` desde su primer `INSERT` (no es opcional), y que el proyecto está en fase MVP sin ninguna instalación real que migrar de forma incremental. Tras dos rondas adicionales de `AskUserQuestion` para acotar el alcance exacto, se decidió fusionar `is_seed` en `001_users.sql`, borrar `007`, y tratar tanto el backfill de `is_seed` como el rename `clients`→`persons` en BD como ajustes puntuales documentados en el chat en vez de migraciones committeadas — el AC de la story pedía literalmente "una migración", pero se resolvió actualizando los datos reales en vez de dejar un artefacto versionado sin ninguna instalación real a la que aplicarse.
+
+**Prompt de ejecución por bloques:**
+```
+Parate para pedirme feedback en cada paso del "to do". Para que que a mi me
+de tiempo a revisar y stagear los cambios que vayas realizando. Continua
+solo cuando yo de lo diga activamente
+```
+**Resultado:** Ejecución en 17 bloques (rename de plugin, migración, tests backend, tests frontend integración, specs E2E, `AGENTS.md`, documentación viva, ajustes SQL, verificación backend/frontend/E2E, cierre de documentación), con pausa y resumen tras cada uno. En el barrido de tests frontend se encontró `E2ETest.html`, no detectado por la exploración inicial, con uso extenso de `clients`/`CLIENTS_SCHEMA`.
+
+**Corrección del usuario durante la revisión de documentación:**
+```
+En el array relations del plugin, 'id_cliente deberia cambiar a 'id_person',
+esto no solo afecta a la documentacion
+```
+**Resultado:** La clave técnica `id_cliente` (mezcla de español en una clave que debía ir en inglés, per regla de `AGENTS.md`) estaba también en un test real (`ValidationServiceTest.php:245`, no solo en documentación ilustrativa). Se corrigió a `id_person` en las 3 ubicaciones; las etiquetas de negocio en español asociadas ("Cliente del pedido") se dejaron sin cambios por ser texto de UI.
+
+**Pregunta del usuario tras el ajuste de datos en BD:**
+```
+En DB en la tabla plugins el el json_schema de persons sigue teniendo la
+propedad"entity": "clients". ¿Es esto correcto?
+```
+**Resultado:** No era correcto — `InstalledPluginSchemaValidator::assertEntityMatches()` compara ese campo contra el `schema.json` en disco (ya `"persons"`) y habría lanzado `DomainException: entity mismatch` en el próximo sync de plugins. Se corrigió con `jsonb_set` como ajuste puntual adicional, y se verificó con una consulta `ILIKE '%clients%'` sobre todas las tablas relevantes que no quedara ningún otro rastro en contenido JSON.
+
+**Pregunta de arquitectura del usuario (STORY 10.3, fuera del alcance de esta story):**
+```
+Hay algo que no estoy entiendo, y que creo que hemos cometido un error al
+plantearnos la story 10.3 [...] no tiene sentido tener el entity en el
+schema_json, deberia vivir como una columna de la tabla "plugins" en vez de
+implementar hacer esos cambios con "plugin_name" y "slug"
+```
+**Resultado:** Se verificó contra el backlog que la premisa del usuario (un plugin representando varias entidades simultáneas) no está documentada en ningún sitio — STORY 10.4-10.6 tratan `persons` como una única entidad. Se validó en cambio el hallazgo real y más preciso: la AC de STORY 10.3 no contempla que el rename de `slug` deje `schema_json.entity` desincronizado, el mismo bug que se acababa de corregir a mano. El usuario decidió dejarlo hablado sin tocar el backlog todavía.
+
+**Iteraciones:** 15+ (exploración en paralelo, 4 rondas de `AskUserQuestion` de alcance, 2 rondas adicionales sobre la migración `007`, ejecución en 17 bloques con confirmación explícita, corrección de `id_cliente`, hallazgo y fix de `schema_json.entity`, discusión de arquitectura de STORY 10.3, verificación final).
+**Lección:** Seguir el patrón de migración citado como referencia (`007_users_add_is_seed.sql`) sin cuestionarlo habría perpetuado un diseño frágil (columna estructural mezclada con backfill puntual) en la nueva migración de esta story; preguntar "por qué existe así" antes de copiar el patrón evitó heredar el problema. Además, un rename de columnas en BD no toca el contenido de columnas JSONB que dupliquen esa información (`schema_json.entity`) — cualquier rename de slug futuro (STORY 10.3) necesita decidir explícitamente qué pasa con ese campo.
+**Estado final:** STORY 10.2 implementada y verificada — backend 56/56 archivos, 10 tests de integración frontend afectados en verde (comprobación headless de apoyo, pendiente confirmación visual del usuario en navegador integrado), 12/12 specs E2E Playwright contra el runtime real — sin ningún rastro funcional de `clients` en backend, frontend, BD ni documentación viva; EPIC 10 en progreso, siguiente foco STORY 10.3.

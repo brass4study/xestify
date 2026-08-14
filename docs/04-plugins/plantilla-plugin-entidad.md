@@ -25,7 +25,7 @@ Notas:
 
 ```json
 {
-  "slug": "clients",
+  "slug": "persons",
   "name": "Clientes",
   "version": "1.0.0",
   "type": "entity",
@@ -66,11 +66,11 @@ El `schema.json` define el contrato fijo del plugin:
 }
 ```
 
-### Ejemplo: plugin clients
+### Ejemplo: plugin persons
 
 ```json
 {
-  "entity": "clients",
+  "entity": "persons",
   "version": "1.0.0",
   "identities": {
     "id": {
@@ -85,6 +85,11 @@ El `schema.json` define el contrato fijo del plugin:
       "type": "string",
       "required": true,
       "label": "Nombre"
+    },
+    "surnames": {
+      "type": "string",
+      "required": true,
+      "label": "Apellidos"
     },
     "email": {
       "type": "email",
@@ -154,9 +159,9 @@ Ejemplo: un pedido puede estar enlazado a un cliente, pero tambien puede ser ano
   "custom_fields": [],
   "relations": [
     {
-      "key": "id_cliente",
+      "key": "id_person",
       "type": "belongs_to",
-      "target_entity": "clients",
+      "target_entity": "persons",
       "target_field": "id",
       "required": false,
       "label": "Cliente del pedido"
@@ -166,9 +171,9 @@ Ejemplo: un pedido puede estar enlazado a un cliente, pero tambien puede ser ano
 ```
 
 Interpretacion de este ejemplo:
-- Si `id_cliente` viene informado, el pedido queda relacionado con ese cliente.
-- Si `id_cliente` viene vacio o `null`, el pedido es valido y se considera anonimo.
-- `target_field: "id"` apunta al campo de identidad de `clients`, por lo que el tipo se infiere de esa definicion.
+- Si `id_person` viene informado, el pedido queda relacionado con ese cliente.
+- Si `id_person` viene vacio o `null`, el pedido es valido y se considera anonimo.
+- `target_field: "id"` apunta al campo de identidad de `persons`, por lo que el tipo se infiere de esa definicion.
 
 ## Checklist
 
@@ -209,7 +214,7 @@ Toda consulta al catalogo de entidades usa: `SELECT * FROM plugins WHERE plugin_
 ## Unicidad de un campo en Hooks.php
 
 Si el plugin necesita impedir valores duplicados en un campo (p. ej. `email` en
-`clients`, `sku` en `products`), `Hooks.php` puede extender `AbstractUniqueFieldHook`
+`persons`, `sku` en `products`), `Hooks.php` puede extender `AbstractUniqueFieldHook`
 (`backend/src/plugins/contracts/AbstractUniqueFieldHook.php`) en vez de reimplementar
 la comprobación: declara `entitySlug()`, `fieldName()` y
 `duplicateMessage(string $value)`, y `register($dispatcher)` engancha automáticamente

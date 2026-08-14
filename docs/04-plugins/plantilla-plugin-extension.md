@@ -29,7 +29,7 @@ Notas:
   "version": "1.0.0",
   "type": "extension",
   "core_version": "1.0.0",
-  "target_entity": "clients"
+  "target_entity": "persons"
 }
 ```
 
@@ -55,7 +55,7 @@ Notas:
 
 ## Checklist
 
-- `target_entity` definido (`clients` o `*`)
+- `target_entity` definido (`persons` o `*`)
 - Dependencias declaradas (si aplica)
 - Tab UI desacoplada del Core
 - Integridad referencial logica con owner_id

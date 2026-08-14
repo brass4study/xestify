@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Xestify\plugins\clients;
+namespace Xestify\plugins\persons;
 
 use Xestify\plugins\contracts\AbstractEntityInstaller;
 
 /**
- * Installer for the clients plugin.
+ * Installer for the persons plugin.
  *
- * Registers metadata for the "clients" entity plugin and seeds its schema.
+ * Registers metadata for the "persons" entity plugin and seeds its schema.
  */
 final class Installer extends AbstractEntityInstaller
 {
     protected function entitySlug(): string
     {
-        return 'clients';
+        return 'persons';
     }
 
     protected function entityName(): string

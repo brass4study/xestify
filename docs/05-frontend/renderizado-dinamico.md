@@ -38,7 +38,7 @@ Roadmap, no implementado en `DynamicForm`/`DynamicTable` (sin fecha ni issue aso
 
 ```json
 {
-  "entity": "clients",
+  "entity": "persons",
   "version": "1.0.0",
   "fields": [
     {"name": "name", "type": "string", "required": true},

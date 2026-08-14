@@ -23,7 +23,7 @@ final class TimestampFieldValidator implements FieldValidatorInterface
     /**
      * Accepts absolute timestamps (ISO-8601 and other formats PHP's date
      * parser recognizes) as well as the 'now' keyword used as schema default
-     * for auto-generated fields (e.g. plugins/clients/schema.json). Rejects
+     * for auto-generated fields (e.g. plugins/persons/schema.json). Rejects
      * arbitrary non-date strings, which the old is_string()-only check let through.
      */
     private function isValidTimestamp(string $value): bool

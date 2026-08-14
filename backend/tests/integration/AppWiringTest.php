@@ -143,18 +143,18 @@ TestSuite::run('protected entity route accepts valid token', function (): void {
 
 TestSuite::run('boot wiring injects active hooks into EntityService', function (): void {
     $pdo = Database::connection();
-    $pdo->prepare("UPDATE plugins SET status = 'active' WHERE slug = 'clients'")->execute();
+    $pdo->prepare("UPDATE plugins SET status = 'active' WHERE slug = 'persons'")->execute();
 
     $container = new Container();
     buildAppRouter($container);
 
     $email = 'duplicate-' . bin2hex(random_bytes(4)) . '@test.local';
-    $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'clients' AND content->>'email' = :email")
+    $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'persons' AND content->>'email' = :email")
         ->execute([':email' => $email]);
 
     /** @var EntityService $service */
     $service = $container->get(EntityService::class);
-    $service->createRecord('clients', [
+    $service->createRecord('persons', [
         'name' => 'Ana Uno',
         'surnames' => 'Prueba Uno',
         'email' => $email,
@@ -162,7 +162,7 @@ TestSuite::run('boot wiring injects active hooks into EntityService', function (
 
     $threw = false;
     try {
-        $service->createRecord('clients', [
+        $service->createRecord('persons', [
             'name' => 'Ana Dos',
             'surnames' => 'Prueba Dos',
             'email' => $email,
@@ -170,11 +170,11 @@ TestSuite::run('boot wiring injects active hooks into EntityService', function (
     } catch (HookException) {
         $threw = true;
     } finally {
-        $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'clients' AND content->>'email' = :email")
+        $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'persons' AND content->>'email' = :email")
             ->execute([':email' => $email]);
     }
 
-    assertTrue($threw, 'duplicate email must be blocked by the clients beforeSave hook');
+    assertTrue($threw, 'duplicate email must be blocked by the persons beforeSave hook');
 });
 
 TestSuite::run('boot wiring resolves PluginAdministrationService and its dependencies', function (): void {

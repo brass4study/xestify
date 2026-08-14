@@ -26,12 +26,12 @@
 
     async get(url) {
       this.calls.push({ method: 'GET', url });
-      if (url === '/plugins/clients/config') {
+      if (url === '/plugins/persons/config') {
         return {
           data: {
             plugin: {
-              slug: 'clients',
-              name: 'Clients',
+              slug: 'persons',
+              name: 'Persons',
               plugin_type: 'entity',
               status: 'active',
               version: '1.0.0',
@@ -74,7 +74,7 @@
       if (url === '/entities') {
         return {
           data: [
-            { slug: 'clients', label: 'Clientes' },
+            { slug: 'persons', label: 'Clientes' },
             { slug: 'orders', label: 'Pedidos' },
           ],
         };
@@ -87,12 +87,12 @@
       this.calls.push({ method: 'PUT', url, body });
       this.savedPayload = body;
 
-      if (url === '/plugins/clients/config') {
+      if (url === '/plugins/persons/config') {
         return {
           data: {
             plugin: {
-              slug: 'clients',
-              name: 'Clients',
+              slug: 'persons',
+              name: 'Persons',
               plugin_type: 'entity',
               status: 'active',
               version: '1.0.0',
@@ -171,7 +171,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    const page = new PluginConfig(container, { slug: 'clients', api });
+    const page = new PluginConfig(container, { slug: 'persons', api });
     await page.init();
 
     const headers = [...container.querySelectorAll('[data-role="plugin-config-table"] thead th')].map((th) => th.textContent.trim());
@@ -192,7 +192,7 @@
     let backCalled = false;
 
     const page = new PluginConfig(content, {
-      slug: 'clients',
+      slug: 'persons',
       api,
       shellLayout: shell,
       onBack: () => {
@@ -224,7 +224,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    const page = new PluginConfig(container, { slug: 'clients', api });
+    const page = new PluginConfig(container, { slug: 'persons', api });
     await page.init();
 
     const firstRow = container.querySelector('[data-row-index="0"]');
@@ -246,7 +246,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    const page = new PluginConfig(container, { slug: 'clients', api });
+    const page = new PluginConfig(container, { slug: 'persons', api });
     await page.init();
 
     const suggestedRow = container.querySelector('[data-row-index="1"]');
@@ -276,7 +276,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    const page = new PluginConfig(container, { slug: 'clients', api });
+    const page = new PluginConfig(container, { slug: 'persons', api });
     await page.init();
 
     const moveDownFirst = container.querySelector('[data-action="move-down"][data-row-index="0"]');
@@ -294,7 +294,7 @@
     const container = makeSandbox();
     const api = new MockApi();
 
-    const page = new PluginConfig(container, { slug: 'clients', api });
+    const page = new PluginConfig(container, { slug: 'persons', api });
     await page.init();
 
     // Simula un cambio de densidad desde la barra de herramientas propia de la
@@ -331,13 +331,13 @@
     assertTrue(allOption !== null, 'Debe incluir opcion Todos');
     assertEquals(allOption.textContent.trim(), 'Todos', 'La opcion * debe mostrarse como Todos');
 
-    targetSelect.value = 'clients';
+    targetSelect.value = 'persons';
 
     const saveButton = container.querySelector('[data-action="save"]');
     saveButton.click();
     await new Promise((resolve) => setTimeout(resolve, 40));
 
-    assertEquals(api.savedPayload.target_entity, 'clients', 'Debe enviar target_entity al guardar extension');
+    assertEquals(api.savedPayload.target_entity, 'persons', 'Debe enviar target_entity al guardar extension');
   });
 
   await test('plugin extension muestra campos base sin mentir sobre su origen', async () => {

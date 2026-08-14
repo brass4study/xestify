@@ -459,7 +459,7 @@ export class PluginConfig {
 			: [...entityOptions, { slug: targetEntity, label: `${targetEntity} (no activa)` }];
 
 		return [
-			{ value: '*', label: 'Todos' },
+			{ value: '*', label: 'Todas' },
 			...allTargetOptions.map((entity) => ({
 				value: entity.slug,
 				label: entity.label,

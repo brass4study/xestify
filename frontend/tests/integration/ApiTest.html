@@ -25,9 +25,9 @@
     const req = {};
     mockFetch(200, { ok: true, data: { id: 1 } }, req);
     const api = new Api('/api/v1');
-    await api.get('/entities/client/records');
+    await api.get('/entities/person/records');
     assertEquals(req.init.method, 'GET');
-    assertTrue(req.url.endsWith('/api/v1/entities/client/records'));
+    assertTrue(req.url.endsWith('/api/v1/entities/person/records'));
   });
 
   await test('get() returns data from envelope', async () => {
@@ -42,7 +42,7 @@
     const req = {};
     mockFetch(201, { ok: true, data: { id: 5 } }, req);
     const api = new Api('/api/v1');
-    await api.post('/entities/client/records', { name: 'Acme' });
+    await api.post('/entities/person/records', { name: 'Acme' });
     assertEquals(req.init.method, 'POST');
     assertEquals(JSON.parse(req.init.body), { name: 'Acme' });
   });
@@ -51,7 +51,7 @@
     const req = {};
     mockFetch(200, { ok: true, data: { id: 5 } }, req);
     const api = new Api('/api/v1');
-    await api.put('/entities/client/records/5', { name: 'Updated' });
+    await api.put('/entities/person/records/5', { name: 'Updated' });
     assertEquals(req.init.method, 'PUT');
     assertEquals(JSON.parse(req.init.body), { name: 'Updated' });
   });
@@ -60,7 +60,7 @@
     const req = {};
     mockFetch(200, { ok: true, data: null }, req);
     const api = new Api('/api/v1');
-    await api.delete('/entities/client/records/5');
+    await api.delete('/entities/person/records/5');
     assertEquals(req.init.method, 'DELETE');
     assertTrue(req.init.body === undefined, 'DELETE must not send body');
   });
@@ -107,7 +107,7 @@
     mockFetch(422, { ok: false, error: { code: 422, message: 'Validation failed', details } });
     const api = new Api('/api/v1');
     let caught = null;
-    try { await api.post('/entities/client/records', {}); } catch (e) { caught = e; }
+    try { await api.post('/entities/person/records', {}); } catch (e) { caught = e; }
     assertTrue(caught instanceof ApiError);
     assertEquals(caught.details, details);
   });

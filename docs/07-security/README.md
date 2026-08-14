@@ -17,7 +17,7 @@ Esta carpeta contiene la documentación sobre el modelo de seguridad local, estr
 ## Recomendaciones para desarrolladores
 
 - Nunca ejecutar lógica sensible en hooks sin validar origen y permisos
-- Usar siempre validación de datos en backend (ver ejemplo en [plugins/clients/Hooks.php](../../plugins/clients/Hooks.php))
+- Usar siempre validación de datos en backend (ver ejemplo en [plugins/persons/Hooks.php](../../plugins/persons/Hooks.php))
 - Declarar dependencias y compatibilidad en manifest.json
 - Evitar exponer endpoints de plugin sin autenticación
 - Revisar logs y auditar acciones de plugins
@@ -27,5 +27,5 @@ Esta carpeta contiene la documentación sobre el modelo de seguridad local, estr
 ## Ejemplos y referencia
 
 - [modelo-seguridad-local.md](modelo-seguridad-local.md): Modelo de seguridad local y recomendaciones
-- [plugins/clients/Hooks.php](../../plugins/clients/Hooks.php): Validación de unicidad y control de acceso
+- [plugins/persons/Hooks.php](../../plugins/persons/Hooks.php): Validación de unicidad y control de acceso
 - [plugins/comments/Hooks.php](../../plugins/comments/Hooks.php): Inyección controlada de UI

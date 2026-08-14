@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-14
-> **Estado del proyecto:** **STORY 10.1 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.2`
+> **Última actualización:** 2026-08-15
+> **Estado del proyecto:** **STORY 10.2 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.3`
 
 ---
 
@@ -39,7 +39,8 @@ El corte funcional vigente del producto queda fijado en:
 - `EPIC 8` cerrada
 - `EPIC 9` cerrada
 - `STORY 10.1` completada (mejoras en la sección de login)
-- siguiente foco funcional: `STORY 10.2` (renombrar plugin `clients` a `persons`)
+- `STORY 10.2` completada (renombrar plugin `clients` a `persons`)
+- siguiente foco funcional: `STORY 10.3` (desacoplar `plugin_name` de `slug`)
 
 ### Funcionalidades nucleares (Core)
 
@@ -331,7 +332,8 @@ uso óptico.
 
 **Estado real**
 - ✅ Story 10.1 implementada: identidad visual (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio
-- siguiente punto: Story 10.2 (renombrar plugin `clients` a `persons`)
+- ✅ Story 10.2 implementada: plugin `clients` renombrado a `persons` (carpeta, namespace, manifest/schema, tests y datos existentes en BD), generalizando el modelo sin ampliar sus campos
+- siguiente punto: Story 10.3 (desacoplar `plugin_name` de `slug`, descripción editable con i18n)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
@@ -588,8 +590,7 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de login — cerrada)
-   - rename `clients` → `persons` (`STORY 10.2`)
+1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de login — y `STORY 10.2` — rename `clients` → `persons` — cerradas)
    - desacoplar `plugin_name` de `slug` con descripción editable e i18n (`STORY 10.3`)
    - plugins de demostración de entidad y extensión (`STORY 10.4`-`10.5`)
    - datos de ejemplo para los plugins de demostración (`STORY 10.6`)

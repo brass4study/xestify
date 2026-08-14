@@ -7,7 +7,7 @@
 - Al instalarse, registra una fila en `plugins` con `name`, `slug`, `schema_json` y estado.
 - Es el catalogo de entidades del sistema.
 - No existe tabla separada `system_entities`.
-- Ejemplo: `clients`.
+- Ejemplo: `persons`.
 
 2. Plugin de extension (`plugin_type = 'extension'`)
 - Se acopla a una entidad existente mediante hooks.
@@ -51,7 +51,7 @@ Notas:
 
 ```json
 {
-  "slug": "clients",
+  "slug": "persons",
   "name": "Clientes",
   "version": "1.0.0",
   "type": "entity",
@@ -87,7 +87,7 @@ Para plugins de tipo `entity`, el filtro:
 
 es el catalogo completo de entidades del sistema. No hay otra fuente.
 
-El slug canonico de cliente en el MVP es `clients`.
+El slug canonico de personas (clientes/distribuidores/oculistas) en el MVP es `persons`.
 
 ## Integracion frontend de plugins
 
@@ -144,7 +144,7 @@ Una vista de detalle dedicada y la pagina PluginManager quedan para STORY 6.5+.
 
 ## Caso ejemplo
 
-- `clients` aporta CRUD base (registrado en `plugins` con `plugin_type='entity'`).
+- `persons` aporta CRUD base (registrado en `plugins` con `plugin_type='entity'`).
 - `comments` registra tab en ficha de cliente via hook `registerTabs`.
 - `comments` usa frontend propio en `plugin.js`.
 - `comments` persiste sus datos en `plugin_extension_data` con `plugin_slug='comments'`.

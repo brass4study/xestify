@@ -238,11 +238,11 @@ TestSuite::run('validate allows relation keys through without type validation', 
             'name' => ['type' => 'string', 'required' => true],
         ],
         'relations' => [
-            ['key' => 'id_cliente', 'type' => 'belongs_to', 'target_entity' => 'clients', 'required' => false],
+            ['key' => 'id_person', 'type' => 'belongs_to', 'target_entity' => 'persons', 'required' => false],
         ],
     ];
 
-    $result = $service->validate(['name' => 'Pedido', 'id_cliente' => 'not-a-validated-uuid'], $schema);
+    $result = $service->validate(['name' => 'Pedido', 'id_person' => 'not-a-validated-uuid'], $schema);
 
     assertTrue($result->isValid(), 'Expected relation keys to be accepted without type checks');
 });
