@@ -135,10 +135,10 @@ persistente.
 ```js
 const loginLayout = PageLayout.create(root)
   .setTemplate('login')
-  .setFooter('Xestify MVP · Acceso seguro')
+  .setFooter('Xestify MVP · v.0.1.0')
   .build();
 
-new Login(loginLayout.getContentTarget(), { api, onSuccess });
+new Login(loginLayout.getContentTarget(), { api, appDebug, sessionExpired, onSuccess });
 ```
 
 La plantilla `login` crea `login-shell`, `login-content` y el footer opcional,

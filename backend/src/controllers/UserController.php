@@ -8,7 +8,7 @@ use Xestify\core\Request;
 use Xestify\core\Response;
 use Xestify\exceptions\RepositoryException;
 use Xestify\repositories\UserRepository;
-use Xestify\services\ProfileSecretVerifier;
+use Xestify\services\ProfileUpdateAuthorizer;
 use Xestify\services\UserAuthorizer;
 
 class UserController
@@ -25,10 +25,11 @@ class UserController
     private const MSG_SELF_DELETE_FORBIDDEN = 'No puedes eliminar tu propia cuenta.';
     private const MSG_SELF_DELETE_DETAIL = 'No está permitido eliminarse a sí mismo.';
     private const MSG_EMAIL_ALREADY_IN_USE = 'El email ya está en uso.';
+    private const MSG_PROTECTED_SEED_FORBIDDEN = 'Este usuario es una cuenta protegida del sistema y no puede editarse ni eliminarse.';
 
     public function __construct(
         private UserRepository $repository,
-        private ?ProfileSecretVerifier $secretVerifier = null,
+        private ProfileUpdateAuthorizer $profileUpdateAuthorizer = new ProfileUpdateAuthorizer(),
         private UserAuthorizer $authorizer = new UserAuthorizer()
     ) {
     }
@@ -65,9 +66,22 @@ class UserController
         }
 
         $payload = $request->allBody();
-        $isEmailChange = $this->secretVerifier()->isEmailChange($payload);
-        $isPasswordChange = $this->secretVerifier()->isPasswordChange($payload);
-        if (!$this->validateCurrentSecret($payload, $id, $isEmailChange, $isPasswordChange)) {
+        $profile = $this->repository->find($id);
+        $denialReason = $this->profileUpdateAuthorizer->authorize($payload, $profile);
+        if ($denialReason !== null) {
+            match ($denialReason) {
+                ProfileUpdateAuthorizer::NOT_FOUND => Response::make()->notFound(self::MSG_USER_NOT_FOUND),
+                ProfileUpdateAuthorizer::PROTECTED_SEED => Response::make()->forbidden(self::MSG_PROTECTED_SEED_FORBIDDEN),
+                ProfileUpdateAuthorizer::EMAIL_SECRET_REQUIRED => Response::make()->unprocessable(self::MSG_EMAIL_CHANGE_SECRET_REQUIRED, [
+                    'current_password' => ['Requerido.'],
+                ]),
+                ProfileUpdateAuthorizer::PASSWORD_SECRET_REQUIRED => Response::make()->unprocessable(self::MSG_SECRET_CHANGE_REQUIRED, [
+                    'current_password' => ['Requerido.'],
+                ]),
+                ProfileUpdateAuthorizer::SECRET_MISMATCH => Response::make()->unprocessable(self::MSG_SECRET_MISMATCH, [
+                    'current_password' => ['Incorrecto.'],
+                ]),
+            };
             return;
         }
 
@@ -126,12 +140,27 @@ class UserController
         }
 
         $id = (string) ($params['id'] ?? '');
-        if ($id === '') {
-            Response::make()->notFound(self::MSG_USER_ID_REQUIRED);
+        if (!$this->assertEditableTarget($id)) {
             return;
         }
 
         $this->applyAdminUpdate($id, $request->allBody());
+    }
+
+    private function assertEditableTarget(string $id): bool
+    {
+        if ($id === '') {
+            Response::make()->notFound(self::MSG_USER_ID_REQUIRED);
+            return false;
+        }
+
+        $targetUser = $this->repository->find($id);
+        if ($targetUser !== null && ($targetUser['is_seed'] ?? false) === true) {
+            Response::make()->forbidden(self::MSG_PROTECTED_SEED_FORBIDDEN);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -179,8 +208,7 @@ class UserController
         }
 
         $id = (string) ($params['id'] ?? '');
-        if ($id === '') {
-            Response::make()->notFound(self::MSG_USER_ID_REQUIRED);
+        if (!$this->assertEditableTarget($id)) {
             return;
         }
 
@@ -206,12 +234,14 @@ class UserController
 
         $targetId = (string) ($params['id'] ?? '');
         $currentUser = $this->authenticatedUser($request);
-        $denialReason = $this->authorizer->authorizeDelete($request, $targetId, $currentUser);
+        $targetUser = $targetId === '' ? null : $this->repository->find($targetId);
+        $denialReason = $this->authorizer->authorizeDelete($request, $targetId, $currentUser, $targetUser);
 
         if ($denialReason !== null) {
             match ($denialReason) {
                 UserAuthorizer::ADMIN_REQUIRED => Response::make()->forbidden(self::MSG_ADMIN_REQUIRED),
                 UserAuthorizer::ID_REQUIRED => Response::make()->notFound(self::MSG_USER_ID_REQUIRED),
+                UserAuthorizer::PROTECTED_SEED => Response::make()->forbidden(self::MSG_PROTECTED_SEED_FORBIDDEN),
                 UserAuthorizer::SELF_DELETE => Response::make()->unprocessable(self::MSG_SELF_DELETE_FORBIDDEN, [
                     'id' => [self::MSG_SELF_DELETE_DETAIL],
                 ]),
@@ -273,47 +303,6 @@ class UserController
     {
         unset($user['password_hash']);
         return $user;
-    }
-
-    private function validateCurrentSecret(array $payload, string $id, bool $isEmailChange, bool $isPasswordChange): bool
-    {
-        if (!$isEmailChange && !$isPasswordChange) {
-            return true;
-        }
-
-        $profile = $this->repository->find($id);
-        if ($profile === null) {
-            Response::make()->notFound(self::MSG_USER_NOT_FOUND);
-            return false;
-        }
-
-        $requiresVerification = $this->secretVerifier()->requiresVerification($payload, $profile, $isEmailChange, $isPasswordChange);
-        $currentPassword = (string) ($payload['current_password'] ?? '');
-        $isValid = true;
-
-        if ($requiresVerification && $currentPassword === '') {
-            $message = $isEmailChange ? self::MSG_EMAIL_CHANGE_SECRET_REQUIRED : self::MSG_SECRET_CHANGE_REQUIRED;
-            Response::make()->unprocessable($message, [
-                'current_password' => ['Requerido.'],
-            ]);
-            $isValid = false;
-        } elseif ($requiresVerification && !$this->secretVerifier()->matches($currentPassword, $profile)) {
-            Response::make()->unprocessable(self::MSG_SECRET_MISMATCH, [
-                'current_password' => ['Incorrecto.'],
-            ]);
-            $isValid = false;
-        }
-
-        return $isValid;
-    }
-
-    private function secretVerifier(): ProfileSecretVerifier
-    {
-        if ($this->secretVerifier === null) {
-            $this->secretVerifier = new ProfileSecretVerifier();
-        }
-
-        return $this->secretVerifier;
     }
 
     private function updatePasswordIfNeeded(array $payload, string $id): void

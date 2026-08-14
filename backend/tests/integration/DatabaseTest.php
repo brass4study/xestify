@@ -127,51 +127,76 @@ TestSuite::run('users table has expected columns', function (): void {
     );
     assertTrue($stmt !== false, 'Query should execute');
     $columns = array_column($stmt->fetchAll(), 'column_name');
-    foreach (['id', 'email', 'password_hash', 'roles', 'created_at'] as $col) {
+    foreach (['id', 'email', 'password_hash', 'roles', 'is_seed', 'created_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
     }
 });
 
-TestSuite::run('UserSeeder::seedIfEmpty inserts admin when table is empty', function (): void {
+TestSuite::run('UserSeeder::seedIfEmpty inserts the fixed admin and normal accounts when the table is empty', function (): void {
     $pdo = Database::connection();
 
-    // Backup and empty the table
     $pdo->exec('BEGIN');
     $pdo->exec('DELETE FROM users');
 
     UserSeeder::seedIfEmpty();
 
-    $stmt = $pdo->prepare('SELECT email, roles FROM users WHERE email = :email');
+    $stmt = $pdo->prepare('SELECT email, roles, is_seed FROM users WHERE email = :email');
+
     $stmt->execute([':email' => 'admin@xestify.local']);
-    $row = $stmt->fetch();
+    $adminRow = $stmt->fetch();
+
+    $stmt->execute([':email' => 'usuario@xestify.local']);
+    $userRow = $stmt->fetch();
 
     $pdo->exec('ROLLBACK');
 
-    assertTrue($row !== false, 'Admin row should exist after seeder');
-    assertEquals('admin@xestify.local', $row['email'] ?? null, 'email mismatch');
-    $roles = json_decode((string) ($row['roles'] ?? '[]'), true);
-    assertTrue(in_array('admin', $roles, true), 'roles should contain "admin"');
+    assertTrue($adminRow !== false, 'Admin row should exist after seeder');
+    $adminRoles = json_decode((string) ($adminRow['roles'] ?? '[]'), true);
+    assertTrue(in_array('admin', $adminRoles, true), 'admin roles should contain "admin"');
+    assertTrue((bool) $adminRow['is_seed'], 'admin row should be marked as a protected seed account');
+
+    assertTrue($userRow !== false, 'Normal user row should exist after seeder');
+    $userRoles = json_decode((string) ($userRow['roles'] ?? '[]'), true);
+    assertTrue(in_array('operador', $userRoles, true), 'normal user roles should contain "operador"');
+    assertTrue((bool) $userRow['is_seed'], 'normal user row should be marked as a protected seed account');
 });
 
-TestSuite::run('UserSeeder::seedIfEmpty does not insert when table already has rows', function (): void {
+TestSuite::run('UserSeeder::seedIfEmpty inserts the fixed accounts alongside pre-existing, unrelated users', function (): void {
     $pdo = Database::connection();
 
-    // Ensure at least one row exists (from previous test rollback, use our own)
     $pdo->exec('BEGIN');
     $pdo->exec('DELETE FROM users');
     $pdo->prepare(
         'INSERT INTO users (email, password_hash, roles) VALUES (:e, :h, :r)'
-    )->execute([':e' => 'existing@xestify.local', ':h' => 'hash', ':r' => '["user"]']);
-
-    $countBefore = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    )->execute([':e' => 'existing@xestify.local', ':h' => 'hash', ':r' => '["operador"]']);
 
     UserSeeder::seedIfEmpty();
 
-    $countAfter = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    $count = (int) $pdo->query(
+        "SELECT COUNT(*) FROM users WHERE email IN ('admin@xestify.local', 'usuario@xestify.local')"
+    )->fetchColumn();
 
     $pdo->exec('ROLLBACK');
 
-    assertEquals($countBefore, $countAfter, 'Seeder should not insert when table has rows');
+    assertEquals(2, $count, 'Seeder should still insert both fixed accounts even when other users already exist');
+});
+
+TestSuite::run('UserSeeder::seedIfEmpty is idempotent when run twice', function (): void {
+    $pdo = Database::connection();
+
+    $pdo->exec('BEGIN');
+    $pdo->exec('DELETE FROM users');
+
+    UserSeeder::seedIfEmpty();
+    UserSeeder::seedIfEmpty();
+
+    $count = (int) $pdo->query(
+        "SELECT COUNT(*) FROM users WHERE email IN ('admin@xestify.local', 'usuario@xestify.local')"
+    )->fetchColumn();
+
+    $pdo->exec('ROLLBACK');
+
+    assertEquals(2, $count, 'Running the seeder twice should not duplicate either fixed account');
 });
 
 TestSuite::run('connection() throws DatabaseException on wrong database name', function (): void {

@@ -43,6 +43,16 @@ body[data-ui-page-style="dark"] {
 	background-color: var(--x-brand-500) !important;
 }
 
+[data-role="password-visibility-toggle"]:focus,
+[data-role="password-visibility-toggle"]:focus-visible {
+	color: var(--x-brand-600) !important;
+}
+
+[data-role="password-visibility-toggle"]:disabled,
+[data-role="password-visibility-toggle"][disabled] {
+	background-color: transparent !important;
+}
+
 
 [data-role="shell"][data-ui-page-style="dark"] [data-role="tabs-list"] [data-role="tabs-button"][data-state="inactive"] {
 	color: var(--x-brand-200) !important;
@@ -287,6 +297,25 @@ button,
 	}
 	to {
 		opacity: 0;
+	}
+}
+
+@keyframes login-shake {
+	10%, 90% { transform: translateX(-1px); }
+	20%, 80% { transform: translateX(2px); }
+	30%, 50%, 70% { transform: translateX(-4px); }
+	40%, 60% { transform: translateX(4px); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.login-feedback-shake {
+		animation: login-shake 400ms ease;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-role="login-feedback"] .animate-spin {
+		animation: none;
 	}
 }
 
@@ -589,6 +618,18 @@ button,
 	background-color: var(--x-ui-page-surface) !important;
 }
 
+[data-role="shell"][data-ui-page-style="dark"] .border-slate-300.bg-white.text-slate-700 {
+	background-color: #262626 !important;
+	border-color: #3a3a3a !important;
+	color: #f5f5f5 !important;
+}
+
+[data-role="shell"][data-ui-page-style="dark"] .border-slate-300.bg-white.text-slate-700:hover {
+	background-color: #2f3237 !important;
+	border-color: #4a4a4a !important;
+	color: #e6f4ff !important;
+}
+
 [data-role="shell"][data-ui-page-style="dark"] [data-role="page-header"] {
 	background-color: transparent !important;
 }
@@ -621,10 +662,30 @@ button,
 	box-shadow: none !important;
 }
 
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-100,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-200,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-300,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-400 {
+	border-color: #303030 !important;
+}
+
 body[data-ui-page-style="dark"] [data-role="login-shell"] [data-role="login-card"] {
 	background-color: #1f1f1f !important;
 	border-color: #303030 !important;
 	box-shadow: none !important;
+}
+
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-300.bg-white.text-slate-700 {
+	background-color: #262626 !important;
+	border-color: #3a3a3a !important;
+	color: #f5f5f5 !important;
+}
+
+body[data-ui-page-style="dark"] [data-role="login-shell"] .border-slate-300.bg-white.text-slate-700:hover {
+	background-color: #2f3237 !important;
+	border-color: #4a4a4a !important;
+	color: #e6f4ff !important;
 }
 
 body[data-ui-page-style="dark"] [data-role="login-shell"] [data-role="login-title"] {
@@ -634,6 +695,21 @@ body[data-ui-page-style="dark"] [data-role="login-shell"] [data-role="login-titl
 body[data-ui-page-style="dark"] [data-role="login-shell"] p,
 body[data-ui-page-style="dark"] [data-role="login-shell"] label,
 body[data-ui-page-style="dark"] [data-role="login-shell"] [data-role="login-footer"] {
+	color: #bfbfbf !important;
+}
+
+body[data-ui-page-style="dark"] [data-role="login-shell"] .bg-slate-50,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .bg-slate-100 {
+	background-color: #262626 !important;
+}
+
+body[data-ui-page-style="dark"] [data-role="login-shell"] .text-slate-900 {
+	color: #f5f5f5 !important;
+}
+
+body[data-ui-page-style="dark"] [data-role="login-shell"] .text-slate-700,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .text-slate-600,
+body[data-ui-page-style="dark"] [data-role="login-shell"] .text-slate-500 {
 	color: #bfbfbf !important;
 }
 
@@ -667,6 +743,21 @@ body[data-ui-page-style="dark"] [data-role="login-shell"] textarea::placeholder 
 	color: #8c8c8c !important;
 }
 
+/* El autofill nativo del navegador (campos de email/password reconocidos y
+   previamente guardados) pinta su propio fondo claro con un mecanismo interno
+   que "background-color" normal no puede vencer — solo el truco del inset
+   box-shadow lo sobrescribe. Sin esto, un input autorrellenado se ve claro
+   aunque el resto de la regla de arriba ya esté aplicada. */
+body[data-ui-page-style="dark"] [data-role="login-shell"] input:-webkit-autofill,
+body[data-ui-page-style="dark"] [data-role="login-shell"] input:-webkit-autofill:hover,
+body[data-ui-page-style="dark"] [data-role="login-shell"] input:-webkit-autofill:focus {
+	-webkit-text-fill-color: #f5f5f5 !important;
+	caret-color: #f5f5f5;
+	-webkit-box-shadow: 0 0 0 1000px #141414 inset !important;
+	box-shadow: 0 0 0 1000px #141414 inset !important;
+	transition: background-color 600000s ease-in-out 0s;
+}
+
 [data-role="shell"][data-ui-page-style="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
 [data-role="shell"][data-ui-page-style="dark"] select,
 [data-role="shell"][data-ui-page-style="dark"] textarea {
@@ -695,6 +786,16 @@ body[data-ui-page-style="dark"] [data-role="login-shell"] textarea::placeholder 
 [data-role="shell"][data-ui-page-style="dark"] input::placeholder,
 [data-role="shell"][data-ui-page-style="dark"] textarea::placeholder {
 	color: #8c8c8c !important;
+}
+
+[data-role="shell"][data-ui-page-style="dark"] input:-webkit-autofill,
+[data-role="shell"][data-ui-page-style="dark"] input:-webkit-autofill:hover,
+[data-role="shell"][data-ui-page-style="dark"] input:-webkit-autofill:focus {
+	-webkit-text-fill-color: #f5f5f5 !important;
+	caret-color: #f5f5f5;
+	-webkit-box-shadow: 0 0 0 1000px #141414 inset !important;
+	box-shadow: 0 0 0 1000px #141414 inset !important;
+	transition: background-color 600000s ease-in-out 0s;
 }
 
 [data-role="shell"][data-ui-page-style="dark"] table thead th {

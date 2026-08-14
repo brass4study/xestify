@@ -12,6 +12,7 @@
 
 <script type="module">
   import { Login } from '../../js/views/pages/Login.js';
+  import { ApiError } from '../../js/models/ApiClientModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, makeSandbox, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -54,16 +55,50 @@
     }
   });
 
-  await test('submit shows required field errors when empty', async () => {
+  await test('feedback zone is hidden until there is something to show', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback !== null, 'Feedback zone should exist');
+    assertTrue(feedback.hidden === true, 'Feedback zone should start hidden');
+  });
+
+  await test('submit shows a single required-field warning and marks both inputs invalid when empty', async () => {
     const container = makeSandbox();
     const page = new Login(container);
 
     await page.submit();
 
-    const emailErrors = container.querySelector('[data-role="login-field-errors"][data-field="email"]');
-    const passwordErrors = container.querySelector('[data-role="login-field-errors"][data-field="password"]');
-    assertTrue(emailErrors !== null, 'Email errors should exist');
-    assertTrue(passwordErrors !== null, 'Password errors should exist');
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback !== null && feedback.hidden === false, 'Feedback zone should be visible');
+    assertTrue(feedback.textContent.includes('obligatorio'), 'Feedback should explain both fields are required');
+
+    const emailInput = container.querySelector('[name="email"]');
+    const passwordInput = container.querySelector('[name="password"]');
+    assertTrue(emailInput.getAttribute('aria-invalid') === 'true', 'Email should be marked invalid');
+    assertTrue(passwordInput.getAttribute('aria-invalid') === 'true', 'Password should be marked invalid');
+    // Focus itself isn't observable here: #sandbox is display:none, and hidden
+    // elements can never become document.activeElement. Real focus behavior is
+    // covered by the Playwright E2E suite (login.spec.js), where the page is
+    // actually visible.
+  });
+
+  await test('submit blocks and warns on an invalid email format without calling the API', async () => {
+    const container = makeSandbox();
+    let calls = 0;
+    const apiStub = { post: async () => { calls += 1; return { data: {} }; } };
+    const page = new Login(container, { api: apiStub });
+
+    container.querySelector('[name="email"]').value = 'not-an-email';
+    container.querySelector('[name="password"]').value = 'secret';
+    await page.submit();
+
+    assertEquals(calls, 0, 'The API must not be called when the email format is invalid');
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback.textContent.includes('formato válido'), 'Feedback should explain the email format is invalid');
+    assertTrue(container.querySelector('[name="email"]').getAttribute('aria-invalid') === 'true', 'Email should be marked invalid');
   });
 
   await test('submit calls onSuccess with access token on valid credentials', async () => {
@@ -87,11 +122,11 @@
     assertEquals(payload, { accessToken: 'jwt-demo-token', email: null }, 'onSuccess payload should match');
   });
 
-  await test('submit shows global error on invalid credentials', async () => {
+  await test('submit shows a fixed, neutral message on invalid credentials (401)', async () => {
     const container = makeSandbox();
     const apiStub = {
       post: async () => {
-        throw new Error('Invalid credentials.');
+        throw new ApiError(401, 'Invalid credentials.');
       },
     };
 
@@ -100,9 +135,30 @@
     container.querySelector('[name="password"]').value = 'wrong';
     await page.submit();
 
-    const banner = container.querySelector('[data-role="login-error"]');
-    assertTrue(banner !== null && !banner.hidden, 'Global error should be visible');
-    assertTrue(banner.textContent.includes('Ha ocurrido un error inesperado.'), 'Should show fallback error text');
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback !== null && feedback.hidden === false, 'Feedback zone should be visible');
+    assertTrue(
+      feedback.textContent.includes('inválidas'),
+      'Should show the fixed invalid-credentials message, without hinting which field is wrong'
+    );
+  });
+
+  await test('submit shows a generic error for unexpected failures', async () => {
+    const container = makeSandbox();
+    const apiStub = {
+      post: async () => {
+        throw new Error('boom');
+      },
+    };
+
+    const page = new Login(container, { api: apiStub });
+    container.querySelector('[name="email"]').value = 'admin@xestify.local';
+    container.querySelector('[name="password"]').value = 'wrong';
+    await page.submit();
+
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback !== null && feedback.hidden === false, 'Feedback zone should be visible');
+    assertTrue(feedback.textContent.includes('Ha ocurrido un error inesperado.'), 'Should show fallback error text');
   });
 
   await test('submit ignores re-entrant calls while a login request is in flight', async () => {
@@ -132,15 +188,101 @@
     await second;
   });
 
+  await test('inputs and the submit button are disabled while a login request is in flight', async () => {
+    const container = makeSandbox();
+    let resolvePost;
+    const apiStub = {
+      post: async () => new Promise((resolve) => {
+        resolvePost = () => resolve({ data: { access_token: 'jwt-demo-token' } });
+      }),
+    };
+
+    const page = new Login(container, { api: apiStub });
+    container.querySelector('[name="email"]').value = 'admin@xestify.local';
+    container.querySelector('[name="password"]').value = 'secret';
+
+    const pending = page.submit();
+    await Promise.resolve();
+
+    assertTrue(container.querySelector('[name="email"]').disabled === true, 'Email input should be disabled while submitting');
+    assertTrue(container.querySelector('[name="password"]').disabled === true, 'Password input should be disabled while submitting');
+    assertTrue(container.querySelector('button[type="submit"]').disabled === true, 'Submit button should be disabled while submitting');
+
+    resolvePost();
+    await pending;
+  });
+
+  await test('password visibility toggle switches the input type', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    const passwordInput = container.querySelector('[name="password"]');
+    const toggle = container.querySelector('[data-role="password-visibility-toggle"]');
+    assertTrue(toggle !== null, 'Password visibility toggle should exist');
+    assertEquals(passwordInput.type, 'password', 'Password should start hidden');
+
+    toggle.click();
+    assertEquals(passwordInput.type, 'text', 'Password should become visible after toggling');
+
+    toggle.click();
+    assertEquals(passwordInput.type, 'password', 'Password should become hidden again after toggling back');
+  });
+
+  await test('a session-expired warning is shown on mount when requested', async () => {
+    const container = makeSandbox();
+    const page = new Login(container, { sessionExpired: true });
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    const feedback = container.querySelector('[data-role="login-feedback"]');
+    assertTrue(feedback !== null && feedback.hidden === false, 'Feedback zone should be visible');
+    assertTrue(feedback.textContent.includes('caducado'), 'Should show the session-expired message');
+  });
+
+  await test('quick-access buttons are hidden unless appDebug is enabled', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    assertTrue(container.querySelector('[data-role="login-quick-admin"]') === null, 'Quick-access admin button should not render when appDebug is off');
+    assertTrue(container.querySelector('[data-role="login-quick-user"]') === null, 'Quick-access user button should not render when appDebug is off');
+  });
+
+  await test('quick-access buttons appear when appDebug is enabled and log in with fixed credentials', async () => {
+    const container = makeSandbox();
+    let capturedBody = null;
+    const apiStub = {
+      post: async (path, body) => {
+        capturedBody = body;
+        return { data: { access_token: 'jwt-demo-token' } };
+      },
+    };
+
+    const page = new Login(container, { api: apiStub, appDebug: true });
+    assertTrue(page instanceof Login, 'Login instance should be created');
+
+    const adminButton = container.querySelector('[data-role="login-quick-admin"]');
+    assertTrue(adminButton !== null, 'Quick-access admin button should render when appDebug is on');
+
+    adminButton.click();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+
+    assertTrue(capturedBody !== null && capturedBody.email === 'admin@xestify.local', 'Quick admin login should submit the fixed admin credentials');
+  });
+
+  await test('setAppDebug(true) reveals the quick-access section after construction', async () => {
+    const container = makeSandbox();
+    const page = new Login(container);
+
+    assertTrue(container.querySelector('[data-role="login-quick-admin"]') === null, 'Quick-access should not render before setAppDebug');
+
+    page.setAppDebug(true);
+
+    assertTrue(container.querySelector('[data-role="login-quick-admin"]') !== null, 'Quick-access should render after setAppDebug(true)');
+  });
+
   finishTestRunner('output');
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-

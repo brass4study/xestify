@@ -10,7 +10,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Api, ApiError } from '../../js/models/ApiClientModel.js';
+  import { Api, ApiError, setSessionExpiredHandler } from '../../js/models/ApiClientModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, mockFetch, mockFetchNetworkError, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -127,6 +127,39 @@
     try { await api.get('/things'); } catch (e) { caught = e; }
     assertTrue(caught instanceof ApiError, 'Debe lanzar ApiError en error de red');
     assertEquals(caught.code, 0);
+  });
+
+  await test('401 con token invoca el handler de sesión caducada antes de lanzar el error', async () => {
+    mockFetch(401, { ok: false, error: { code: 401, message: 'Unauthorized' } });
+    const api = new Api('/api/v1');
+    api.setToken('expired-token');
+
+    let handlerCalls = 0;
+    setSessionExpiredHandler(() => { handlerCalls++; });
+    try {
+      let caught = null;
+      try { await api.get('/things'); } catch (e) { caught = e; }
+      assertTrue(caught instanceof ApiError, 'El 401 debe seguir lanzando ApiError como antes');
+      assertEquals(handlerCalls, 1, 'El handler de sesión caducada debe invocarse exactamente una vez');
+    } finally {
+      setSessionExpiredHandler(null);
+    }
+  });
+
+  await test('401 sin token (login con credenciales inválidas) NO invoca el handler de sesión caducada', async () => {
+    mockFetch(401, { ok: false, error: { code: 401, message: 'Unauthorized' } });
+    const api = new Api('/api/v1');
+
+    let handlerCalls = 0;
+    setSessionExpiredHandler(() => { handlerCalls++; });
+    try {
+      let caught = null;
+      try { await api.post('/auth/login', { email: 'a@a.com', password: 'wrong' }); } catch (e) { caught = e; }
+      assertTrue(caught instanceof ApiError, 'El 401 debe seguir lanzando ApiError como antes');
+      assertEquals(handlerCalls, 0, 'Sin token, un 401 es credenciales inválidas, no sesión caducada');
+    } finally {
+      setSessionExpiredHandler(null);
+    }
   });
 
   // ────────────────────────────────────────────────────────────────────────

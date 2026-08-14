@@ -21,6 +21,7 @@ require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/core/Response.php';
 require_once BASE_PATH . '/src/repositories/UserRepository.php';
 require_once BASE_PATH . '/src/services/ProfileSecretVerifier.php';
+require_once BASE_PATH . '/src/services/ProfileUpdateAuthorizer.php';
 require_once BASE_PATH . '/src/services/UserAuthorizer.php';
 require_once BASE_PATH . '/src/controllers/UserController.php';
 
@@ -45,13 +46,13 @@ class TestUserInsertException extends RuntimeException
 {
 }
 
-function insertUserRow(PDO $pdo, string $email, array $roles = ['operador'], string $password = 'secret'): array
+function insertUserRow(PDO $pdo, string $email, array $roles = ['operador'], string $password = 'secret', bool $isSeed = false): array
 {
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
     $stmt = $pdo->prepare(
-        'INSERT INTO users (email, password_hash, roles, name, avatar)
-         VALUES (:email, :password_hash, :roles, :name, :avatar)
-         RETURNING id, email, password_hash, roles, name, avatar, created_at'
+        'INSERT INTO users (email, password_hash, roles, name, avatar, is_seed)
+         VALUES (:email, :password_hash, :roles, :name, :avatar, :is_seed)
+         RETURNING id, email, password_hash, roles, name, avatar, is_seed, created_at'
     );
     $stmt->execute([
         ':email' => $email,
@@ -59,6 +60,10 @@ function insertUserRow(PDO $pdo, string $email, array $roles = ['operador'], str
         ':roles' => json_encode($roles),
         ':name' => 'Test User',
         ':avatar' => null,
+        // PDO's implicit array-bind casts PHP `false` to '' (via (string) false),
+        // which Postgres rejects for a boolean column — bind explicit string literals
+        // instead of the raw bool.
+        ':is_seed' => $isSeed ? 'true' : 'false',
     ]);
 
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -344,6 +349,119 @@ TestSuite::run('UserController::destroy soft deletes a user but blocks self dele
     } finally {
         cleanupUserRow($pdo, (string) $admin['id']);
         cleanupUserRow($pdo, (string) $target['id']);
+    }
+});
+
+TestSuite::run('UserController::update forbids editing a protected seed user', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'seed-update-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $seed = insertUserRow($pdo, 'seed-update-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'secret', true);
+
+    try {
+        $request = new Request([], ['name' => 'Renombrado'], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(function () use ($controller, $seed, $request): void {
+            $controller->update(['id' => (string) $seed['id']], $request);
+        });
+
+        assertFalse(($response['ok'] ?? true) === true, 'Editing a seed user should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Editing a seed user should return 403');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $seed['id']);
+    }
+});
+
+TestSuite::run('UserController::resetPassword forbids resetting a protected seed user', function () use ($pdo, $controller): void {
+    $admin = insertUserRow($pdo, 'seed-reset-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $seed = insertUserRow($pdo, 'seed-reset-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'secret', true);
+
+    try {
+        $beforeHash = fetchUserPasswordHash($pdo, (string) $seed['id']);
+
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(function () use ($controller, $seed, $request): void {
+            $controller->resetPassword(['id' => (string) $seed['id']], $request);
+        });
+
+        assertFalse(($response['ok'] ?? true) === true, 'Resetting a seed user password should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Resetting a seed user password should return 403');
+        assertEquals($beforeHash, fetchUserPasswordHash($pdo, (string) $seed['id']), 'The seed user password hash must be unchanged');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $seed['id']);
+    }
+});
+
+TestSuite::run('UserController::destroy forbids deleting a protected seed user', function () use ($pdo, $repo, $controller): void {
+    $admin = insertUserRow($pdo, 'seed-delete-admin-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin']);
+    $seed = insertUserRow($pdo, 'seed-delete-target-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['operador'], 'secret', true);
+
+    try {
+        $request = new Request([], [], [], []);
+        $request->setUser(['sub' => (string) $admin['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(fn() => $controller->destroy(['id' => (string) $seed['id']], $request));
+
+        assertFalse(($response['ok'] ?? true) === true, 'Deleting a seed user should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Deleting a seed user should return 403');
+        assertTrue($repo->find((string) $seed['id']) !== null, 'The seed user must still exist');
+    } finally {
+        cleanupUserRow($pdo, (string) $admin['id']);
+        cleanupUserRow($pdo, (string) $seed['id']);
+    }
+});
+
+TestSuite::run('UserController::updateMe forbids a seed user from changing their own email', function () use ($pdo, $controller): void {
+    $seed = insertUserRow($pdo, 'seed-self-email-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin'], 'secret', true);
+
+    try {
+        $request = new Request([], ['email' => 'new-seed-email@xestify.test', 'current_password' => 'secret'], [], []);
+        $request->setUser(['sub' => (string) $seed['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(fn() => $controller->updateMe([], $request));
+
+        assertFalse(($response['ok'] ?? true) === true, 'A seed user changing their own email should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Seed self email change should return 403');
+    } finally {
+        cleanupUserRow($pdo, (string) $seed['id']);
+    }
+});
+
+TestSuite::run('UserController::updateMe forbids a seed user from changing their own password', function () use ($pdo, $controller): void {
+    $seed = insertUserRow($pdo, 'seed-self-password-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin'], 'secret', true);
+
+    try {
+        $beforeHash = fetchUserPasswordHash($pdo, (string) $seed['id']);
+
+        $request = new Request([], ['password' => 'new-secret-123', 'current_password' => 'secret'], [], []);
+        $request->setUser(['sub' => (string) $seed['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(fn() => $controller->updateMe([], $request));
+
+        assertFalse(($response['ok'] ?? true) === true, 'A seed user changing their own password should fail');
+        assertEquals(403, (int) ($response['error']['code'] ?? 0), 'Seed self password change should return 403');
+        assertEquals($beforeHash, fetchUserPasswordHash($pdo, (string) $seed['id']), 'The seed user password hash must be unchanged');
+    } finally {
+        cleanupUserRow($pdo, (string) $seed['id']);
+    }
+});
+
+TestSuite::run('UserController::updateMe allows a seed user to update their own name', function () use ($pdo, $controller): void {
+    $seed = insertUserRow($pdo, 'seed-self-name-' . uniqid('', true) . TEST_EMAIL_DOMAIN, ['admin'], 'secret', true);
+
+    try {
+        $request = new Request([], ['name' => 'Nombre actualizado', 'email' => $seed['email']], [], []);
+        $request->setUser(['sub' => (string) $seed['id'], 'roles' => ['admin']]);
+
+        $response = captureControllerResponse(fn() => $controller->updateMe([], $request));
+
+        assertTrue(($response['ok'] ?? false) === true, 'A seed user should still be able to rename themselves');
+        assertEquals('Nombre actualizado', (string) ($response['data']['name'] ?? ''), 'The name should be updated');
+    } finally {
+        cleanupUserRow($pdo, (string) $seed['id']);
     }
 });
 

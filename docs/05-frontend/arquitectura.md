@@ -96,6 +96,17 @@ errores JS/red no capturados, aplica las preferencias de tema al documento en
 cada cambio (WYSIWYG) y guarda esas preferencias en el backend con un
 debounce corto cuando el usuario activo es admin.
 
+Desde STORY 10.1, también centraliza la detección de sesión caducada: `Api`
+(`models/ApiClientModel.js`) invoca un único handler registrado vía
+`setSessionExpiredHandler()` ante cualquier 401 con token activo, sin
+importar la página que lo origina. `AppController` lo registra una vez en su
+constructor (`clearAuth()` + `renderLogin({ sessionExpired: true })`); ninguna
+página comprueba 401 por su cuenta. Un 401 sin token (login con credenciales
+inválidas) no dispara el handler — esa distinción la da gratis el estado del
+token en `Api`, no lógica adicional. `clearAuth()` limpia solo estado de
+sesión: `ui-preferences` es config global de la instalación, no de sesión, y
+sobrevive al logout.
+
 ## Decisiones de routing
 
 Xestify usa **hash routing** (`#/ruta`) como convención oficial, sin History

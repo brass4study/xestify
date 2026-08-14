@@ -1188,3 +1188,44 @@ Ok, si esos son test de componentes/integracion, ¿no es buena idea que los mova
 **Iteraciones:** 4 rondas de "encuentro un fallo → explico causa raíz → pregunto si lo corrijo → aplico solo con confirmación", una por cada hallazgo que tocaba comportamiento real en vez de solo mover archivos.
 **Lección:** Ejecutar tests contra el runtime real (no mocks) durante una simple reubicación de ficheros destapa deriva acumulada entre tests y código real que la verificación manual en navegador no siempre atrapa; parar y pedir confirmación antes de tocar `frontend/src/` evita que una story de documentación/testing se convierta silenciosamente en una story de fixes de producción sin que el usuario lo decida.
 **Estado final:** STORY 9.9 implementada: `frontend/tests/integration/` (19/19 en verde) + `frontend/tests/e2e/` (7/7 specs Playwright: login, shell-navigation, entity-crud, plugin-manager, theme-wysiwyg) contra `http://127.0.0.1/xestify/` real; `arquitectura.md`, `guia-extension.md` y `testing-ui.md` documentados; EPIC 9 cerrado.
+
+### STORY 10.1 — Mejoras en la sección de login
+**Prompt:**
+```
+En esta sesion vamos a implementar la STORY 10.1. Pero antes de empezar a
+implementarla, debemos analizar si debemos refactorizar por completo la
+pagina de login: mensajes de error/advertencia/información bajo la card
+coloreados por tipo con shake, loader visible con título y mensaje, inputs y
+botón deshabilitados durante el submit, redirección a login con aviso de
+sesión caducada desde cualquier sección, texto fijo y neutro para
+credenciales inválidas, y bloqueo de envío con advertencia si el email/
+password están vacíos o el email no tiene formato válido. Vamos a realizar un
+plan de implantacion, valora estas sugerencias, analisis UX/UI, hazme tu
+preguntas o sugerencias que se me puedan haber olvidado o mejoras que creas
+conveniente.
+```
+**Resultado:** Primer plan propuesto y rechazado por el usuario: no aportaba opinión real de UX/UI y proponía reutilizar el loader existente. Segunda ronda tras la corrección, y una tercera ronda explícita pidiendo un mínimo de 10 preguntas adicionales de refinamiento, produjeron el plan final aprobado (ver `docs/12-technical-debt/` histórico de la sesión para el detalle completo de decisiones).
+
+**Prompt de corrección del primer plan:**
+```
+No, el loader que existe esta mal implementado, hay que reimplementarlo
+entero. Sus estilos, visualizacion, tamaño, comportamiento, no estan bien o
+no son los esperados. Aparte de eso, no me has hecho ninguna pregunta o
+sugerencia sobre UI/UX. No has aportado nada.
+```
+**Resultado:** Tras el plan aprobado, la implementación se ejecutó en dos partes (refactor UX de Login + criterios oficiales de la story) y fue seguida de más de 15 rondas de corrección visual/UX punto por punto por parte del usuario contra el resultado real en navegador: iconos Font Awesome obligatorios, toggle de contraseña integrado en el componente, mensajes vía `Alert`, wordmark con identidad real, extracción de un componente `Loader` reutilizable (spinner/título/descripción opcionales, tamaño configurable), sustitución del logo por componentes `Logo`/`BrandLogo` a partir de HTML/CSS exacto proporcionado por el usuario, reactividad al `themeColor`/`pageStyle` configurado en cada elemento (logo, inputs, botones, loader, bordes, foco del toggle), y un hallazgo de bug real (`clearAuth()` reseteaba `ui-preferences`, config global, en cada logout).
+
+**Prompt final de cierre — auditoría de proceso:**
+```
+No, estas inclumpliendo una regla MANDATORIO antes de subir una story,
+registar todo en la documentacion de productirvidad. Ademas, te has olvidado
+tambien de actualizar la seccion de estado actual del proyecto en README.md
+principal del proyecto. Antes de empezar a corregir documentacion, quiero que
+me expliques por que te has saltado esta norma, sin excusas, la razon real y
+propuestas de como solucionarlo para que no vuelva a ocurrir contigo ni con
+ningun agente.
+```
+**Resultado:** Al preparar el commit final, la IA sincronizó `docs/11-backlog/backlog.md` y `docs/05-frontend/*` pero omitió por completo `docs/10-productivity/` y `README.md`, pese a que `AGENTS.md` define esto como regla mandatoria explícita. Causa raíz identificada: el alcance de "actualizar la documentación" se infirió por imitación del último commit de sincronización de docs en vez de buscar si existía una regla vinculante; además, `AGENTS.md` nunca entraba en contexto automáticamente porque el repositorio no tenía `CLAUDE.md` (el nombre de archivo que Claude Code carga por defecto). Remedio aplicado: se creó `CLAUDE.md` apuntando a `AGENTS.md` (mismo patrón que `.github/copilot-instructions.md`), y se documentó el incidente en la sección "Errores y lecciones aprendidas" de `AGENTS.md`.
+**Iteraciones:** 30+ (planificación con 2 rondas de preguntas de aclaración y una tercera de refinamiento forzado, implementación backend, refactor UX frontend completo, más de 15 rondas de corrección visual/UX punto por punto, verificación final con detección de 3 gaps reales de test, y la corrección de proceso de documentación al cierre).
+**Lección:** Dos lecciones distintas en esta story. (1) UX/UI: pedir explícitamente opinión de diseño en vez de solo "valorar sugerencias" fuerza una propuesta real en vez de una implementación literal sin criterio — el primer plan rechazado lo demuestra. (2) Proceso: ante una regla de "actualizar la documentación" que ya existe en el repositorio, no inferir el alcance por el commit vivo más reciente — buscar explícitamente si hay una checklist vinculante (en este caso, en `AGENTS.md`, que además necesitaba un `CLAUDE.md` puente para cargarse automáticamente en sesiones de Claude Code).
+**Estado final:** STORY 10.1 implementada y verificada — backend 56/56 archivos, frontend integración 229/229 assertions (21 runners), E2E 12/12 specs Playwright — con `docs/10-productivity/`, `README.md`, `docs/11-backlog/backlog.md`, `docs/05-frontend/*`, `AGENTS.md` y `CLAUDE.md` sincronizados antes del commit; EPIC 10 en progreso, siguiente foco STORY 10.2.

@@ -79,6 +79,25 @@ TestSuite::run('authorizeDelete() reports ADMIN_REQUIRED even when the id is als
 });
 
 // -----------------------------------------------------------------------
+// authorizeDelete() — STORY 10.1 seed-user protection
+// -----------------------------------------------------------------------
+
+TestSuite::run('authorizeDelete() denies with PROTECTED_SEED when the target user is a seed account', function () use ($authorizer): void {
+    $reason = $authorizer->authorizeDelete(adminRequest(), TARGET_USER_ID, ['sub' => 'admin-1'], ['is_seed' => true]);
+    assertEquals(UserAuthorizer::PROTECTED_SEED, $reason);
+});
+
+TestSuite::run('authorizeDelete() allows (null) when the target user exists but is not a seed account', function () use ($authorizer): void {
+    $reason = $authorizer->authorizeDelete(adminRequest(), TARGET_USER_ID, ['sub' => 'admin-1'], ['is_seed' => false]);
+    assertNull($reason);
+});
+
+TestSuite::run('authorizeDelete() reports PROTECTED_SEED even when the target is also the requester (self-delete)', function () use ($authorizer): void {
+    $reason = $authorizer->authorizeDelete(adminRequest(), 'admin-1', ['sub' => 'admin-1'], ['is_seed' => true]);
+    assertEquals(UserAuthorizer::PROTECTED_SEED, $reason);
+});
+
+// -----------------------------------------------------------------------
 
 TestSuite::summary();
 exit(TestSuite::exitCode());

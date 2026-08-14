@@ -406,13 +406,21 @@ Story completada. Archivos creados/modificados:
 - Se eliminó la dependencia runtime del Play CDN de Tailwind: `frontend/src/index.html` carga ahora `frontend/src/css/tailwind.generated.css`, con fuente en `frontend/src/css/tailwind.src.css` y configuración en `frontend/tailwind.config.cjs`.
 - Los estilos residuales necesarios dejaron de vivir en `main.css` y pasaron a capas `@layer base` / `@layer utilities` dentro de Tailwind.
 
+### 🔄 EPIC 10 — Login, Persons y Plugins de Demostración (EN PROGRESO)
+
+| Story | Descripción | Commit | Verificación |
+|-------|-------------|--------|--------------|
+| 10.1 ✅ | Mejoras en la sección de login | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 229/229 assertions (21 runners); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
+
+**Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
+
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-11
-**EPIC activo:** EPIC 9 - Sistema UI, shell frontend y arquitectura SPA (COMPLETADO)
-**Próxima story:** STORY 10.1 - Mejoras en la sección de login (EPIC 10)
+**Fecha:** 2026-08-14
+**EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
+**Próxima story:** STORY 10.2 - Renombrar plugin `clients` a `persons` (EPIC 10)
 
 ---
 
@@ -993,5 +1001,110 @@ Story implementada y verificada. Cierra EPIC 9.
 - Commit de story: pendiente (este commit)
 - Verificación crítica: la suite E2E corre contra backend y base de datos reales, no mocks; detectó y permitió corregir 2 bugs reales de producción antes del cierre.
 - Backlog alineado: EPIC 9 queda cerrada; el siguiente punto es STORY 10.1.
+
+---
+
+## Sesion 2026-08-14 - STORY 10.1 Mejoras en la sección de login
+
+Story implementada y verificada. Alcance ampliado antes de implementar (acordado
+con el usuario, no un desvío posterior): además de los criterios oficiales del
+backlog, se rehizo por completo el sistema de mensajes/carga/validación de
+`Login.js`.
+
+**Decisiones tomadas en esta sesión:**
+- Unificar toda la retroalimentación de Login (error, warning, info, loading)
+  en una única zona `[data-role="login-feedback"]` con `aria-live="polite"`,
+  sustituyendo los errores por campo previos.
+- No reutilizar `UiResilienceService.setViewState` para el loader: ese
+  componente está pensado para estados vacíos (caja con borde discontinuo) y
+  no encajaba visualmente con el resto de mensajes. Se construyó un componente
+  `Loader` propio, reutilizable, sin fondo/borde.
+- Centralizar la detección de sesión caducada en un único interceptor
+  (`setSessionExpiredHandler` en `ApiClientModel.js`) en vez de repetir
+  comprobaciones de 401 en cada página.
+- Duración mínima de loading (~400ms) para evitar parpadeo en respuestas
+  rápidas, aplicada igual al camino de éxito y de error.
+- Extraer la identidad visual (logo + tagline) a componentes reutilizables
+  `Logo`/`BrandLogo`, con una hoja de estilos dedicada `brand.css` como única
+  excepción a "Tailwind como capa principal" (layout de marca con chevrons
+  superpuestos que las utilidades no expresaban con fidelidad).
+
+**Cambios principales:**
+- `backend/src/controllers/HealthController.php`: expone `APP_DEBUG` como
+  `debug` en `/health`.
+- `backend/src/database/seeders/UserSeeder.php` +
+  `backend/database/migrations/007_users_add_is_seed.sql`: segundo usuario
+  seed "normal" (rol `operador`), ambos marcados `is_seed=TRUE` de forma
+  idempotente (`ON CONFLICT ... DO NOTHING`).
+- `backend/src/services/UserAuthorizer.php`,
+  `backend/src/services/ProfileUpdateAuthorizer.php` (nuevo) y
+  `backend/src/controllers/UserController.php`: protegen a ambos usuarios seed
+  frente a edición/borrado/reset desde Gestión de Usuarios y frente a
+  autoservicio (`PUT /users/me`) sobre su propio email/password.
+- `frontend/src/js/views/pages/Login.js`: refactor completo — zona de
+  feedback única, loader con duración mínima anti-parpadeo, shake accesible
+  (`prefers-reduced-motion`), inputs+botón deshabilitados durante el envío,
+  validación de cliente con foco automático al primer campo inválido, texto
+  fijo para credenciales inválidas y botones de acceso rápido (solo con
+  `APP_DEBUG=true`).
+- `frontend/src/js/models/ApiClientModel.js` y
+  `frontend/src/js/controllers/AppController.js`: interceptor centralizado de
+  sesión caducada; `clearAuth()` deja de resetear `ui-preferences` (es config
+  global de la instalación, no de sesión — bug real detectado y corregido
+  durante la verificación: el login dejaba de respetar el tema tras logout).
+- `frontend/src/js/views/components/Loader.js`, `Logo.js`, `BrandLogo.js`
+  (nuevos), `frontend/src/css/brand.css` (nuevo): identidad visual reutilizable
+  y reactiva al `themeColor`/`pageStyle`.
+- `frontend/src/js/views/components/InputPassword.js`, `Button.js`,
+  `Alert.js`, `Typography.js` y `frontend/src/css/theme.runtime.css`: toggle
+  de mostrar/ocultar contraseña integrado, adaptación a `pageStyle` dark de
+  botones sin `variant`/inputs/loader/bordes (varios bugs de tema oscuro
+  detectados y corregidos tras la implementación inicial), opción `align` en
+  Typography, iconos opcionales en Alert.
+
+**Bugs reales de producción encontrados y corregidos durante la verificación**
+(no estaban en el alcance original, los expuso la prueba real en navegador
+tras cada iteración de la UI):
+- Login no aplicaba el tema global (`themeColor`/`pageStyle`) tras logout:
+  `clearAuth()` reseteaba `ui-preferences`, que es configuración global de la
+  instalación, no estado de sesión.
+- `inputEmail` mantenía fondo claro en `pageStyle` dark (no respetaba los
+  estilos de input).
+- Botones sin `variant` (por defecto `bg-white`), el contenedor del loader y
+  el borde superior de `login-quick-access` seguían en claro dentro de
+  `pageStyle` dark; el color de foco de `password-visibility-toggle` seguía
+  fijo en azul en vez de seguir el `themeColor` configurado.
+- El toggle de contraseña mostraba fondo gris/blanco al deshabilitarse
+  (heredado de la regla base global `button:disabled`, pensada para botones
+  normales, no para un icono de toggle sin caja).
+- Dos aserciones obsoletas en `UiResilienceTest.html` asumían el
+  comportamiento previo (con bug) de `clearAuth()`/`hydrateUiPreferences()`
+  que esta misma story corrigió; se actualizaron para reflejar el
+  comportamiento correcto ya validado.
+- `MigrationIdempotenceTest.php` y `AuthControllerTest.php` existían pero
+  nunca se ejecutaban: no estaban registrados en `backend/tests/run.php`. Se
+  registraron ambos.
+- Cobertura unitaria ausente del interceptor de sesión caducada
+  (`setSessionExpiredHandler`), antes solo probado end-to-end vía Playwright;
+  se añadió en `ApiTest.html`.
+
+**Verificaciones finales:**
+- Backend: `php backend/tests/run.php` → 56/56 archivos en verde.
+- Frontend integración: `frontend/tests/integration/` → 229/229 assertions en
+  verde (21 runners HTML).
+- Frontend E2E: `frontend/tests/e2e/` → 12/12 specs Playwright en verde contra
+  el runtime real Apache+PHP+Postgres.
+- Verificación manual repetida en navegador real tras cada iteración de UI:
+  shake, colores/iconos por tipo de mensaje, loader sin parpadeo, inputs
+  deshabilitados durante el submit, toggle de contraseña, foco al campo
+  inválido, y adaptación a tema claro/oscuro con `themeColor` no-default.
+
+**Cierre verificado (2026-08-14):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: ambos usuarios seed quedan protegidos incluyendo
+  autoservicio, y el tema visual configurado se respeta de extremo a extremo
+  en login (login inicial, tras logout, y con cualquier `themeColor`).
+- Backlog alineado: STORY 10.1 queda implementada; el siguiente punto es
+  STORY 10.2.
 
 ---

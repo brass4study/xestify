@@ -232,7 +232,7 @@
     container.remove();
   });
 
-  await test('AppController.clearAuth() resetea las preferencias de UI además de la sesión', async () => {
+  await test('AppController.clearAuth() NO resetea las preferencias de UI, solo la sesión', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
 
@@ -243,17 +243,25 @@
     controller.clearAuth();
 
     const preferences = getUiPreferences();
-    assertEquals(preferences.pageStyle, 'light', 'clearAuth() debe restaurar pageStyle al valor por defecto');
-    assertEquals(preferences.navigationMode, 'top', 'clearAuth() debe restaurar navigationMode al valor por defecto');
+    // ui-preferences es config global de la instalación (docs/03-api: "Global
+    // configuration endpoints"), no estado de la sesión — cerrar sesión no debe
+    // resetear el tema/pageStyle al que vuelve la pantalla de login.
+    assertEquals(preferences.pageStyle, 'dark', 'clearAuth() no debe tocar pageStyle');
+    assertEquals(preferences.navigationMode, 'side', 'clearAuth() no debe tocar navigationMode');
 
+    setUiPreferences({ pageStyle: 'light', themeColor: 'blue', navigationMode: 'top' });
     host.remove();
   });
 
-  await test('hydrateUiPreferences() aplica la misma política de 401 que loadEntitiesForNav/loadCurrentUserProfile', async () => {
+  await test('hydrateUiPreferences() ante un 401 no repite clearAuth()/renderLogin(): confía en el interceptor centralizado', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
 
     const controller = new AppController(host);
+    let clearAuthCalls = 0;
+    let renderLoginCalls = 0;
+    controller.clearAuth = () => { clearAuthCalls++; };
+    controller.renderLogin = () => { renderLoginCalls++; };
     controller.dashboardApi = {
       get: async () => {
         throw new ApiError(401, 'Unauthorized');
@@ -262,9 +270,9 @@
 
     const result = await controller.hydrateUiPreferences();
 
-    assertTrue(result === null, 'Debe señalar al llamador que el 401 forzó logout, como loadEntitiesForNav');
-    assertTrue(host.querySelector('[data-role="login-shell"]') !== null,
-      'Un 401 en hydrateUiPreferences ya no debe engullirse en silencio: debe forzar clearAuth() + renderLogin()');
+    assertTrue(result === null, 'Debe seguir señalando al llamador que el 401 detuvo la hidratación');
+    assertEquals(clearAuthCalls, 0, 'hydrateUiPreferences() ya no debe llamar a clearAuth() por su cuenta');
+    assertEquals(renderLoginCalls, 0, 'hydrateUiPreferences() ya no debe llamar a renderLogin() por su cuenta');
 
     host.remove();
   });

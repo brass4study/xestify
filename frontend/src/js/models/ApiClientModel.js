@@ -2,6 +2,18 @@ import { buildAppUrl } from './BasePathModel.js';
 
 export const API_BASE_URL = buildAppUrl('/api/v1');
 
+let onSessionExpired = null;
+
+/**
+ * Registers the single handler invoked when an authenticated request (one made with a
+ * token set) comes back 401. A 401 on a request with no token (e.g. the login call
+ * itself) never triggers this — that is an invalid-credentials response, not an expired
+ * session.
+ */
+export function setSessionExpiredHandler(handler) {
+	onSessionExpired = typeof handler === 'function' ? handler : null;
+}
+
 export class ApiError extends Error {
 	constructor(code, message, details = {}) {
 		super(message);
@@ -80,6 +92,11 @@ export class Api {
 		}
 
 		const err = envelope.error ?? {};
+
+		if (response.status === 401 && this.#token !== null && onSessionExpired !== null) {
+			onSessionExpired();
+		}
+
 		throw new ApiError(
 			err.code ?? response.status,
 			err.message ?? 'Unknown error',

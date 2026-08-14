@@ -75,8 +75,19 @@ Formato de commit obligatorio para stories y EPICs:
 - Para stories y EPICs, usar el formato obligatorio definido en la regla anterior.
 - Antes de ejecutar cualquier `git commit`, mostrar al usuario el mensaje completo
   propuesto, incluyendo titulo y descripcion/cuerpo, y esperar confirmacion
-  explicita.
-- No crear commits sin confirmacion previa del usuario.
+  explicita. Esto aplica siempre, sin excepcion, incluso para cambios masivos,
+  de solo documentacion o de limpieza del arbol de trabajo — no hay categoria de
+  commit exenta.
+- No crear commits sin confirmacion previa del usuario. Una confirmacion ya dada
+  no cubre commits futuros, aunque sean del mismo tipo o continuen la misma
+  tarea: cada `git commit` necesita su propia confirmacion explicita. Ante
+  cualquier duda sobre si aplica una excepcion, pausar y preguntar antes de
+  actuar.
+- Antes de comitear una story, releer explicitamente la REGLA OBLIGATORIA de
+  `docs/10-productivity/` (arriba) y tratarla como checklist a verificar, en vez
+  de inferir su alcance copiando el commit de documentacion vivo mas reciente:
+  el commit anterior es evidencia de un alcance valido para ese caso, no del
+  alcance completo exigido en general.
 - Despues de crear un commit confirmado, ejecutar `git push` para sincronizar el
   repositorio local con el remoto, salvo que el usuario indique explicitamente lo
   contrario.
@@ -217,13 +228,9 @@ git config --local core.eol lf
 
 # Errores y lecciones aprendidas
 
-## Confirmación obligatoria de commits (incidente 05/05/2026)
+Historial de incidentes de procedimiento reales: que ocurrió, la causa raíz y
+el remedio aplicado. La regla que queda vigente tras cada incidente se integra
+en la sección de este archivo a la que corresponda (`## Commits`, `## Tests`,
+etc.); aquí solo se archiva el caso concreto como referencia.
 
-- Se detectó un error grave: se realizó commit y push de documentación sin mostrar el mensaje ni esperar confirmación del usuario, incumpliendo la pauta del repositorio.
-- Causa: automatización excesiva ante muchos archivos pendientes y asunción incorrecta de que la confirmación previa era suficiente.
-- Remedio:
-  - Siempre mostrar al usuario el mensaje de commit propuesto y esperar confirmación explícita antes de ejecutar cualquier commit o push, sin excepción.
-  - Esta regla aplica incluso para cambios masivos, de documentación o de limpieza de árbol de trabajo.
-  - No asumir nunca que una confirmación previa cubre commits futuros, aunque sean del mismo tipo o contexto.
-  - Si hay dudas sobre la excepción de la regla, pausar y consultar al usuario antes de actuar.
-- El incumplimiento de esta pauta se considera un error grave de procedimiento y debe ser reportado y corregido.
+Todavía no hay incidentes registrados en esta sección.

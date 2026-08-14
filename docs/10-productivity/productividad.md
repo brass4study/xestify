@@ -1139,4 +1139,22 @@
   - Depuró condiciones de carrera propias de los tests (navegación antes de que el listado inicial asentara, paginación sobre un dataset local de 200+ registros) sin tocar código de producción salvo cuando el hallazgo era un bug real confirmado.
   - Redactó `arquitectura.md`, `guia-extension.md` y `testing-ui.md`, enlazándolos desde `README.md` y actualizando la ruta de tests en `AGENTS.md`.
 - **Iteraciones:** 7 (reorganización de tests, scaffold Playwright, diagnóstico y fix de bugs de producción, corrección de aserciones obsoletas, 5 specs E2E, estabilización de condiciones de carrera, documentación)
+
+## EPIC 10 — Login, Persons y Plugins de Demostración
+
+### STORY 10.1: Mejoras en la sección de login
+
+- **Fecha:** 2026-08-13 a 2026-08-14
+- **Estimado sin IA:** 16h (refactor UX completo de login + protección de usuarios seed + identidad visual nueva + adaptación a tema oscuro, con su verificación)
+- **Tiempo real con IA:** No medido con precisión; sesión larga repartida en varios días con iteraciones de feedback UI/UX punto por punto
+- **Aceleración:** No calculable con datos fiables
+- **Qué hizo IA:**
+  - Diseñó y planificó con el usuario (varias rondas de `AskUserQuestion`) el refactor completo de mensajes/carga/validación de `Login.js` antes de tocar código, documentando explícitamente las decisiones y lo descartado.
+  - Implementó el backend de STORY 10.1: `/health` expone `APP_DEBUG`, segundo usuario seed idempotente, protección de ambos usuarios seed (incluida autoservicio `PUT /users/me`).
+  - Implementó el refactor frontend: zona de feedback única, componente `Loader` propio, shake accesible, duración mínima anti-parpadeo, interceptor centralizado de sesión caducada, toggle de contraseña, validación de cliente con foco automático.
+  - Iteró en más de 15 rondas de feedback visual/UX punto por punto del usuario (iconos Font Awesome, wordmark, colores por tema, componentes `Logo`/`BrandLogo`/`Loader` extraídos a partir de HTML/CSS exacto proporcionado, adaptación a `pageStyle` dark de cada elemento reportado uno a uno).
+  - Verificó cada cambio contra el runtime real Apache+PHP+Postgres con Playwright (no solo tests con mocks), detectando y corrigiendo 6+ bugs reales de producción durante el proceso (tema no persistía tras logout, varios elementos sin adaptar a dark, fondo del toggle deshabilitado).
+  - Al preparar el commit final, auditó el cumplimiento completo de la story contra el plan original y encontró 3 gaps de verificación reales: 2 tests de integración nunca registrados en el runner (`AuthControllerTest`, `MigrationIdempotenceTest`), 2 aserciones obsoletas que validaban el comportamiento previo con bug, y cobertura unitaria ausente del interceptor de sesión caducada.
+- **Iteraciones:** 20+ (planificación con preguntas de aclaración, implementación backend, refactor UX frontend completo, identidad visual con componentes nuevos, más de 15 rondas de correcciones visuales/UX punto por punto, verificación final con detección de gaps de test)
+- **Decisión manual:** El loader se reimplementa como componente propio en vez de reutilizar el genérico existente (decisión explícita del usuario, rechazando la primera propuesta de reutilizarlo); los componentes `Logo`/`BrandLogo` se implementan con el HTML/CSS exacto proporcionado por el usuario, sin margen de interpretación; `brand.css` queda como única excepción documentada a "Tailwind como capa principal".
 - **Decisión manual:** Ante cada hallazgo que tocaba código de producción (`frontend/src/`) o cambiaba el comportamiento esperado de un test existente, la IA paró y pidió confirmación explícita antes de aplicar el fix, en vez de asumir alcance ampliado por su cuenta.

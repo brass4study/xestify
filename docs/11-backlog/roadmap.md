@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-11
-> **Estado del proyecto:** **STORY 9.9 incluida** — EPIC 8 y EPIC 9 cerradas, siguiente foco `STORY 10.1`
+> **Última actualización:** 2026-08-14
+> **Estado del proyecto:** **STORY 10.1 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.2`
 
 ---
 
@@ -38,7 +38,8 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 9.9` completada
 - `EPIC 8` cerrada
 - `EPIC 9` cerrada
-- siguiente foco funcional: `STORY 10.1` (mejoras en la sección de login)
+- `STORY 10.1` completada (mejoras en la sección de login)
+- siguiente foco funcional: `STORY 10.2` (renombrar plugin `clients` a `persons`)
 
 ### Funcionalidades nucleares (Core)
 
@@ -122,8 +123,8 @@ La estrategia vigente de implementación es:
 - cada fase deja un entregable verificable y demostrable
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
-- el siguiente bloque transversal prioritario ya abierto es `EPIC 9` (SPA y sistema UI)
-- el MVP académico cierra con `EPIC 11` (login/persons/plugins de demostración en `EPIC 10` + cierre formal en `EPIC 11`); ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
+- `EPIC 9` (SPA y sistema UI) está cerrado; el bloque prioritario ya abierto es `EPIC 10` (login/persons/plugins de demostración)
+- el MVP académico cierra con `EPIC 11` (cierre formal); ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
 
 ---
 
@@ -143,7 +144,7 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | ✅ Completada | STORY 9.1 a 9.9 cerradas |
-| 10 | Login, Persons y Plugins de Demostración | ⏭ Pendiente | Login pulido, rename persons, plugin_name/slug, plugins demo |
+| 10 | Login, Persons y Plugins de Demostración | 🔄 En progreso | STORY 10.1 (login pulido) cerrada; pendiente rename persons, plugin_name/slug, plugins demo |
 | 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
@@ -297,7 +298,7 @@ Consolidar la capa frontend como una SPA modular, consistente y extensible, con 
 - ✅ Story 9.7 implementada: infraestructura transversal de frontend (estado global, resiliencia, i18n base, theming) y persistencia de configuración visual por cliente
 - ✅ Story 9.8 implementada: UX transversal, accesibilidad y microinteracciones (estados unificados, confirmaciones, foco, prevención de doble submit)
 - ✅ Story 9.9 implementada: documentación de arquitectura frontend (`arquitectura.md`, `guia-extension.md`, `testing-ui.md`) y suite E2E Playwright (`frontend/tests/e2e/`) cubriendo login, navegación de shell, CRUD de entidad, PluginManager y flujo WYSIWYG de tema
-- EPIC 9 cerrada; siguiente punto: Story 10.1 (mejoras en la sección de login)
+- EPIC 9 cerrada
 
 **Alcance**
 - fundamentos de diseño, navegación y anatomía de páginas
@@ -327,6 +328,10 @@ Completar el MVP para la defensa del TFM: pulir la experiencia de login,
 generalizar el modelo de personas, flexibilizar la identidad de los plugins y
 dotar al sistema de plugins de demostración con datos reales de un caso de
 uso óptico.
+
+**Estado real**
+- ✅ Story 10.1 implementada: identidad visual (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio
+- siguiente punto: Story 10.2 (renombrar plugin `clients` a `persons`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
@@ -505,8 +510,8 @@ Y deja fuera, por ahora (post-MVP):
 | 6 | Plugins tipo Extension | ✅ | Fase 6 | 19 pts | MUST |
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Gestión de Usuarios | ✅ | Fase 8 | 19 pts | MUST |
-| 9 | Sistema UI, Shell Frontend y Arquitectura SPA | 🔄 | Fase 9 | 38 pts | MUST |
-| 10 | Login, Persons y Plugins de Demostración | ⏭ | Fase 10 | 31 pts | MUST |
+| 9 | Sistema UI, Shell Frontend y Arquitectura SPA | ✅ | Fase 9 | 38 pts | MUST |
+| 10 | Login, Persons y Plugins de Demostración | 🔄 | Fase 10 | 31 pts | MUST |
 | 11 | Cierre Formal y Exhaustivo del MVP | ⏭ | Fase 11 | 18 pts | MUST |
 | A1 | Ajustes Finos de UI/UX | ⏭ | Adición post-MVP | 37 pts | POST-MVP |
 | A2 | Operación Técnica y Observabilidad | ⏭ | Fase A2 | 12 pts | POST-MVP |
@@ -583,12 +588,11 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Abrir la Fase 10 como siguiente bloque transversal**
-   - sistema UI
-   - shell SPA
-   - routing
-   - resiliencia frontend
-   - UX y testing UI
+1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de login — cerrada)
+   - rename `clients` → `persons` (`STORY 10.2`)
+   - desacoplar `plugin_name` de `slug` con descripción editable e i18n (`STORY 10.3`)
+   - plugins de demostración de entidad y extensión (`STORY 10.4`-`10.5`)
+   - datos de ejemplo para los plugins de demostración (`STORY 10.6`)
 
 2. **Cerrar el MVP con la Fase 11 y luego abordar las adiciones post-MVP**
    - Fase 11 (dentro del MVP)

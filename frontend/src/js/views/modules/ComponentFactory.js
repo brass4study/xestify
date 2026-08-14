@@ -1,5 +1,6 @@
 import { BaseComponent } from '../components/BaseComponent.js';
 import { AlertComponent } from '../components/Alert.js';
+import { BrandLogoComponent } from '../components/BrandLogo.js';
 import { BreadcrumbComponent } from '../components/Breadcrumb.js';
 import { ButtonComponent } from '../components/Button.js';
 import { EmptyStateComponent } from '../components/EmptyState.js';
@@ -18,6 +19,8 @@ import { InputTextComponent } from '../components/InputText.js';
 import { InputTextAreaComponent } from '../components/InputTextArea.js';
 import { InputTimeComponent } from '../components/InputTime.js';
 import { InputSwitchComponent } from '../components/InputSwitch.js';
+import { LoaderComponent } from '../components/Loader.js';
+import { LogoComponent } from '../components/Logo.js';
 import { ModalComponent } from '../components/Modal.js';
 import { PageComponent } from '../components/Page.js';
 import { PageHeaderComponent } from '../components/PageHeader.js';
@@ -51,6 +54,10 @@ const componentDefinitions = [
 		'Acciones primarias y secundarias'),
 	defineComponent('typography', TypographyComponent, (options = {}) => options.as ?? 'p', 'general',
 		'Textos y encabezados base'),
+	defineComponent('logo', LogoComponent, 'div', 'general',
+		'Marca gráfica "Xestify" (chevrons + texto)'),
+	defineComponent('brandLogo', BrandLogoComponent, 'div', 'general',
+		'Logo + tagline de marca, listo para reutilizar'),
 	defineComponent('page', PageComponent, 'section', 'layout',
 		'Contenedor principal de página'),
 	defineComponent('pageHeader', PageHeaderComponent, 'header', 'layout',
@@ -105,6 +112,8 @@ const componentDefinitions = [
 		'Diálogos y confirmaciones'),
 	defineComponent('spinner', SpinnerComponent, 'div', 'feedback',
 		'Indicador de carga'),
+	defineComponent('loader', LoaderComponent, 'div', 'feedback',
+		'Spinner con título y descripción opcionales'),
 	defineComponent('skeleton', SkeletonComponent, 'div', 'feedback',
 		'Marcadores de carga'),
 	...[

@@ -1,4 +1,5 @@
-import { createApi, createApiWithToken, isUnauthorizedError } from '../models/ApiClientModel.js';
+import { createApi, createApiWithToken, isUnauthorizedError, setSessionExpiredHandler } from '../models/ApiClientModel.js';
+import { buildAppUrl } from '../models/BasePathModel.js';
 import { loadUiPreferences, saveUiPreferences } from '../models/AppConfigurationModel.js';
 import { PluginRouteController } from './PluginRouteController.js';
 import {
@@ -14,7 +15,7 @@ import {
 } from './RouteMapController.js';
 import { NotificationModel } from '../models/NotificationModel.js';
 import { SessionModel } from '../models/SessionModel.js';
-import { applyUiPreferencesToDocument, getUiPreferences, resetUiPreferences, setUiPreferences, subscribeUi } from '../models/ThemeModel.js';
+import { applyUiPreferencesToDocument, getUiPreferences, setUiPreferences, subscribeUi } from '../models/ThemeModel.js';
 import { t } from '../models/I18nModel.js';
 import { UiResilienceService } from '../services/UiResilienceService.js';
 import { PageLayout } from '../views/layout/PageLayout.js';
@@ -73,6 +74,11 @@ export class AppController {
     window.addEventListener('unhandledrejection', this.globalErrorHandler);
     this.notificationSubscription = NotificationModel.subscribe(() => {
       this.scheduleGlobalNotificationsRender();
+    });
+
+    setSessionExpiredHandler(() => {
+      this.clearAuth();
+      this.renderLogin({ sessionExpired: true });
     });
   }
 
@@ -138,7 +144,7 @@ export class AppController {
     this.renderLogin();
   }
 
-  renderLogin() {
+  renderLogin(options = {}) {
     this.router.stop();
     this.unsubscribeNavbar();
     this.destroyThemeSettingsPanel();
@@ -156,14 +162,17 @@ export class AppController {
 
     const loginLayout = PageLayout.create(this.container)
       .setTemplate('login')
-      .setFooter('Xestify MVP · Acceso seguro')
+      .setFooter('Xestify MVP · v.0.1.0')
       .build();
     this.contentContainer = loginLayout.getContentTarget();
 
     const loginApi = createApi();
+    const sessionExpired = options.sessionExpired === true;
 
-    return new Login(this.contentContainer, {
+    const login = new Login(this.contentContainer, {
       api: loginApi,
+      appDebug: false,
+      sessionExpired,
       onSuccess: async ({ accessToken, email }) => {
         SessionModel.persistAccessToken(accessToken);
         SessionModel.setToken(accessToken);
@@ -183,6 +192,26 @@ export class AppController {
         await this.renderDashboard();
       },
     });
+
+    this.checkAppDebug().then((appDebug) => {
+      if (appDebug) {
+        login.setAppDebug(true);
+      }
+    });
+
+    return login;
+  }
+
+  async checkAppDebug() {
+    try {
+      const response = await fetch(buildAppUrl('/health'));
+      const body = await response.json();
+      // /health responds inside the standard { ok, data, meta } envelope, same as
+      // every other endpoint — the flag is body.data.debug, not body.debug.
+      return body?.data?.debug === true;
+    } catch {
+      return false;
+    }
   }
 
   async renderDashboard() {
@@ -448,8 +477,10 @@ export class AppController {
       }
     } catch (error) {
       if (isUnauthorizedError(error)) {
-        this.clearAuth();
-        this.renderLogin();
+        // El interceptor centralizado de ApiClientModel.js ya hizo clearAuth()
+        // + renderLogin({ sessionExpired: true }) de forma síncrona antes de
+        // que este catch se ejecute; aquí solo hace falta señalar al llamador
+        // que pare (repetirlo pisaría el aviso de sesión caducada ya mostrado).
         return null;
       }
       // La UI ya dispone de fallback local/default; no bloquear el arranque.
@@ -757,8 +788,8 @@ export class AppController {
       return entities;
     } catch (error) {
       if (isUnauthorizedError(error)) {
-        this.clearAuth();
-        this.renderLogin();
+        // Ver comentario equivalente en hydrateUiPreferences(): el interceptor
+        // centralizado ya redirigió a login con el aviso de sesión caducada.
         return null;
       }
 
@@ -910,7 +941,9 @@ export class AppController {
     SessionModel.reset();
     SessionModel.clearStoredSession();
     NotificationModel.clearNotification();
-    resetUiPreferences();
+    // ui-preferences es config global de la instalación (docs/03-api: "Global
+    // configuration endpoints"), no estado de la sesión — cerrar sesión no debe
+    // resetear el tema/pageStyle al que vuelve la pantalla de login.
   }
 
   unsubscribeNavbar() {
@@ -1451,8 +1484,8 @@ export class AppController {
       return profile;
     } catch (error) {
       if (isUnauthorizedError(error)) {
-        this.clearAuth();
-        this.renderLogin();
+        // Ver comentario equivalente en hydrateUiPreferences(): el interceptor
+        // centralizado ya redirigió a login con el aviso de sesión caducada.
         return null;
       }
 

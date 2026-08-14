@@ -45,7 +45,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all MigrationIdempotenceTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-007).\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -123,6 +123,7 @@ TestSuite::run('re-running all migrations does not cause errors', function (): v
         '004_plugin_extension_data.sql',
         '005_plugin_update_history.sql',
         '006_configuration.sql',
+        '007_users_add_is_seed.sql',
     ];
 
     foreach ($migrations as $file) {

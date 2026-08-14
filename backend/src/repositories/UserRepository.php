@@ -22,7 +22,7 @@ final class UserRepository
     public function find(string $id): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, email, password_hash, roles, name, avatar, created_at
+            'SELECT id, email, password_hash, roles, name, avatar, is_seed, created_at
              FROM users
              WHERE id = :id AND deleted_at IS NULL'
         );
@@ -38,7 +38,7 @@ final class UserRepository
     public function findByEmail(string $email): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, email, password_hash, roles, name, avatar, created_at
+            'SELECT id, email, password_hash, roles, name, avatar, is_seed, created_at
              FROM users
              WHERE email = :email AND deleted_at IS NULL'
         );
@@ -54,7 +54,7 @@ final class UserRepository
     public function all(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT id, email, password_hash, roles, name, avatar, created_at
+            'SELECT id, email, password_hash, roles, name, avatar, is_seed, created_at
              FROM users
              WHERE deleted_at IS NULL
              ORDER BY created_at ASC'
@@ -90,7 +90,7 @@ final class UserRepository
             return $this->find($id) ?? [];
         }
 
-        $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = :id AND deleted_at IS NULL RETURNING id, email, password_hash, roles, name, avatar, created_at';
+        $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = :id AND deleted_at IS NULL RETURNING id, email, password_hash, roles, name, avatar, is_seed, created_at';
         $stmt = $this->pdo->prepare($sql);
 
         foreach ($params as $placeholder => $value) {
@@ -166,7 +166,24 @@ final class UserRepository
             $row['roles'] = $this->normalizeRolesValue($row['roles']);
         }
 
+        if (array_key_exists('is_seed', $row)) {
+            $row['is_seed'] = $this->normalizeBooleanValue($row['is_seed']);
+        }
+
         return $row;
+    }
+
+    private function normalizeBooleanValue(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return $value === 't' || $value === 'true' || $value === '1';
+        }
+
+        return (bool) $value;
     }
 
     private function normalizeRolesValue(mixed $value): mixed

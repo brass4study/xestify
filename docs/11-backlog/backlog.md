@@ -1141,6 +1141,7 @@ Objetivo: Definir un sistema UI inspirado conceptualmente en Ant Design, consoli
 Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de login, generalizar el modelo de personas, flexibilizar la identidad de los plugins, y dotar al sistema de plugins de demostración con datos reales de un caso de uso óptico.
 
 ### STORY 10.1: Mejoras en la sección de login
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Fullstack
@@ -1150,11 +1151,16 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
   - ✅ `APP_DEBUG` se expone al frontend (vía `/health` o endpoint equivalente) para poder condicionar UI de desarrollo
   - ✅ Solo si `APP_DEBUG=true`, aparecen dos botones de acceso rápido: "Entrar como admin" y "Entrar como usuario", que inician sesión con credenciales fijas de los usuarios seed sin que el usuario las escriba
   - ✅ Nuevo `UserSeeder` para un usuario "normal" (rol no-admin) fijo, análogo al seed de `admin@xestify.local` ya existente
-  - ✅ Ambos usuarios seed (admin y normal) quedan protegidos: no editables ni eliminables desde Gestión de Usuarios, para no romper el login automático
+  - ✅ Ambos usuarios seed (admin y normal) quedan protegidos: no editables ni eliminables desde Gestión de Usuarios, para no romper el login automático (incluye autoservicio: `PUT /users/me` rechaza cambios de email/password propios de un usuario seed)
   - ✅ Los botones de acceso rápido no aparecen si `APP_DEBUG=false`
-- **IA Usage:** Diseño del wordmark + wiring de `APP_DEBUG` a `/health` + nuevo seeder + botones de login automático + protección de usuarios seed
+  - ✅ Ampliación acordada antes de implementar (no un desvío posterior): refactor completo del sistema de mensajes/carga/validación de `Login.js` — zona de feedback única con `aria-live` (sustituye los errores por campo), loader rediseñado como componente `Loader` propio (no reutiliza el `UiResilienceService.setViewState` genérico, pensado para estados vacíos), animación shake accesible (respeta `prefers-reduced-motion`), inputs y botón deshabilitados durante el envío, duración mínima de loading (~400ms) para evitar parpadeo, toggle de mostrar/ocultar contraseña integrado en `InputPassword`, validación de cliente (campos vacíos/formato de email) con foco automático al primer campo inválido, y texto fijo y neutro para credenciales inválidas
+  - ✅ Detección de sesión caducada centralizada en un único interceptor (`setSessionExpiredHandler` en `ApiClientModel.js`): cualquier 401 autenticado, desde cualquier página, redirige a login con aviso — no solo el que se originaba en Login
+  - ✅ Identidad visual nueva y reutilizable: componentes `Logo`/`BrandLogo`/`Loader`, hoja de estilos dedicada `frontend/src/css/brand.css` (única excepción vigente a "Tailwind como capa principal", ver `ui-foundations-ant.md`), reactiva al `themeColor`/`pageStyle` configurados
+  - ✅ Corregidos varios defectos de adaptación a `pageStyle` dark detectados tras la implementación inicial: login no aplicaba el tema global tras logout (`clearAuth()` reseteaba `ui-preferences`, que es config global de la instalación, no de sesión), `inputEmail`/botones sin `variant`/loader con fondo claro fijo, borde de `login-quick-access` y color de foco del toggle de contraseña sin seguir el tema
+- **IA Usage:** Diseño del wordmark + wiring de `APP_DEBUG` a `/health` + nuevo seeder + botones de login automático + protección de usuarios seed + refactor UX completo de mensajes/carga/validación + interceptor de sesión caducada centralizado + identidad visual (Logo/BrandLogo/Loader) + adaptación a tema claro/oscuro
 - **Dependencias:** STORY 1.2, STORY 1.3, STORY 8.2
 - **Blockers:** Ninguno
+- **Verificación:** Backend `php backend/tests/run.php` 56/56 ficheros en verde (incluye `AuthControllerTest`/`MigrationIdempotenceTest`, existentes pero nunca registrados en el runner hasta esta verificación — corregido). Frontend `frontend/tests/integration/` 229/229 assertions en verde (21 runners HTML) + `frontend/tests/e2e/` 12/12 specs Playwright contra el runtime real Apache+PHP+Postgres. 2 aserciones obsoletas en `UiResilienceTest.html` corregidas (asumían el comportamiento previo, con bug, de `clearAuth()`/`hydrateUiPreferences()` que esta misma story corrigió) y añadida cobertura unitaria antes ausente del interceptor de sesión caducada en `ApiTest.html`
 
 ### STORY 10.2: Renombrar plugin `clients` a `persons`
 - **Points:** 5

@@ -51,6 +51,8 @@ La Story 9.1 establece las bases para la librería de 9.3 con equivalencias conc
 - Los anclajes de comportamiento y tests deben usar `data-role`/`data-*`; evitar prefijos de clase acoplados a implementación.
 - `frontend/src/css/main.css` queda restringido a **overrides mínimos** justificados.
 - Los botones de accion de tablas pueden ajustar el tamaño del icono inline cuando el foco es la legibilidad del glyph; no se deben crear clases CSS paralelas para ese caso.
+- Los iconos se implementan siempre con Font Awesome (`fa-solid`, `aria-hidden="true"`), cargado vía CDN en `index.html`; no se mezclan SVG inline ni glifos Unicode como alternativa.
+- Excepción vigente a "Tailwind como capa principal": `frontend/src/css/brand.css` (Logo/BrandLogo, STORY 10.1) es CSS a mano, sin utilidades Tailwind, por requerir un layout de marca (chevrons superpuestos, tipografía a medida) que las utilidades no expresan con la misma fidelidad. Sigue reaccionando a los tokens de tema (`--x-brand-*`) igual que el resto de componentes.
 
 ## Siguientes pasos (EPIC 9)
 

@@ -18,6 +18,7 @@ final class UserAuthorizer
     public const ADMIN_REQUIRED = 'admin_required';
     public const ID_REQUIRED = 'id_required';
     public const SELF_DELETE = 'self_delete';
+    public const PROTECTED_SEED = 'protected_seed';
 
     public function requireAdmin(Request $request): bool
     {
@@ -26,12 +27,15 @@ final class UserAuthorizer
 
     /**
      * @param array<string, mixed>|null $currentUser
+     * @param array<string, mixed>|null $targetUser Fetched by the caller; null if not found
+     *                                               (in that case delete() itself reports 404).
      */
-    public function authorizeDelete(Request $request, string $targetUserId, ?array $currentUser): ?string
+    public function authorizeDelete(Request $request, string $targetUserId, ?array $currentUser, ?array $targetUser = null): ?string
     {
         return match (true) {
             !$this->requireAdmin($request) => self::ADMIN_REQUIRED,
             $targetUserId === '' => self::ID_REQUIRED,
+            $targetUser !== null && ($targetUser['is_seed'] ?? false) === true => self::PROTECTED_SEED,
             $currentUser !== null && (string) ($currentUser['sub'] ?? '') === $targetUserId => self::SELF_DELETE,
             default => null,
         };

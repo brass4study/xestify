@@ -220,6 +220,24 @@ TestSuite::run('UserRepository::updatePassword updates the password hash', funct
     }
 });
 
+TestSuite::run('UserRepository::find normalizes is_seed to a PHP boolean', function (): void {
+    $pdo = Database::connection();
+    $email = 'repo-is-seed-' . uniqid('', true) . TEST_EMAIL_DOMAIN;
+    $created = insertTestUser($pdo, $email);
+
+    try {
+        $pdo->prepare('UPDATE users SET is_seed = TRUE WHERE id = :id')->execute([':id' => $created['id']]);
+
+        $repo = new UserRepository($pdo);
+        $found = $repo->find((string) $created['id']);
+
+        assertTrue(is_bool($found['is_seed']), 'is_seed must be normalized to a PHP boolean, not a driver-specific string');
+        assertTrue($found['is_seed'] === true, 'is_seed should reflect the persisted TRUE value');
+    } finally {
+        cleanupTestUser($pdo, (string) $created['id']);
+    }
+});
+
 TestSuite::run('UserRepository::delete removes a user row', function (): void {
     $pdo = Database::connection();
     $email = 'repo-delete-' . uniqid('', true) . TEST_EMAIL_DOMAIN;

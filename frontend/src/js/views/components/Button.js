@@ -57,7 +57,7 @@ export class ButtonComponent extends BaseComponent {
       ? `fa-solid ${icon}`
       : icon;
     const iconElement = component.create('i', {
-      className: `inline-flex items-center ${iconClassName}`,
+      className: `inline-flex items-center text-base leading-4 ${iconClassName}`,
       attributes: { 'aria-hidden': 'true' },
     });
     this.prepend(iconElement);
