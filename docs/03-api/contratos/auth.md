@@ -18,4 +18,7 @@
   }
 }
 ```
-- Sin refresh token: la sesión expira a los `JWT_EXPIRY` segundos y hay que volver a hacer login.
+- Sin endpoint de refresh dedicado: la sesión es deslizante. Cualquier ruta protegida
+  reemite el token en la cabecera de respuesta `X-Refreshed-Token` cuando le queda menos
+  de la mitad de su `JWT_EXPIRY`, extendiendo la sesión mientras haya actividad
+  autenticada. Ver `docs/03-api/autenticacion.md` para el detalle del contrato.

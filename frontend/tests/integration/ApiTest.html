@@ -10,7 +10,7 @@
 <pre id="output"></pre>
 
 <script type="module">
-  import { Api, ApiError, setSessionExpiredHandler } from '../../js/models/ApiClientModel.js';
+  import { Api, ApiError, setSessionExpiredHandler, setTokenRefreshedHandler } from '../../js/models/ApiClientModel.js';
   import { initTestRunner, separator, test, assertEquals, assertTrue, mockFetch, mockFetchNetworkError, finishTestRunner } from '../js/helpers.js';
 
   initTestRunner('output');
@@ -159,6 +159,63 @@
       assertEquals(handlerCalls, 0, 'Sin token, un 401 es credenciales inválidas, no sesión caducada');
     } finally {
       setSessionExpiredHandler(null);
+    }
+  });
+
+  await test('respuesta con cabecera X-Refreshed-Token actualiza el token usado en la siguiente petición', async () => {
+    const req = {};
+    mockFetch(200, { ok: true, data: {} }, req, { 'X-Refreshed-Token': 'renewed-token' });
+    const api = new Api('/api/v1');
+    api.setToken('old-token');
+    await api.get('/things');
+
+    const req2 = {};
+    mockFetch(200, { ok: true, data: {} }, req2);
+    await api.get('/things');
+    assertEquals(req2.init.headers['Authorization'], 'Bearer renewed-token', 'Las siguientes peticiones deben usar el token renovado');
+  });
+
+  await test('respuesta con cabecera X-Refreshed-Token invoca el handler de refresco', async () => {
+    mockFetch(200, { ok: true, data: {} }, null, { 'X-Refreshed-Token': 'renewed-token' });
+    const api = new Api('/api/v1');
+    api.setToken('old-token');
+
+    let receivedToken = null;
+    setTokenRefreshedHandler((token) => { receivedToken = token; });
+    try {
+      await api.get('/things');
+      assertEquals(receivedToken, 'renewed-token', 'El handler debe recibir el nuevo token');
+    } finally {
+      setTokenRefreshedHandler(null);
+    }
+  });
+
+  await test('respuesta con cabecera X-Refreshed-Token pero sin token previo la ignora', async () => {
+    mockFetch(200, { ok: true, data: {} }, null, { 'X-Refreshed-Token': 'renewed-token' });
+    const api = new Api('/api/v1');
+
+    let handlerCalls = 0;
+    setTokenRefreshedHandler(() => { handlerCalls++; });
+    try {
+      await api.get('/things');
+      assertEquals(handlerCalls, 0, 'Sin token activo (ruta pública) no debe aplicarse ningún refresco');
+    } finally {
+      setTokenRefreshedHandler(null);
+    }
+  });
+
+  await test('respuesta sin cabecera X-Refreshed-Token no invoca el handler de refresco', async () => {
+    mockFetch(200, { ok: true, data: {} });
+    const api = new Api('/api/v1');
+    api.setToken('old-token');
+
+    let handlerCalls = 0;
+    setTokenRefreshedHandler(() => { handlerCalls++; });
+    try {
+      await api.get('/things');
+      assertEquals(handlerCalls, 0, 'Sin cabecera de refresco no debe invocarse el handler');
+    } finally {
+      setTokenRefreshedHandler(null);
     }
   });
 

@@ -3,6 +3,7 @@ import { buildAppUrl } from './BasePathModel.js';
 export const API_BASE_URL = buildAppUrl('/api/v1');
 
 let onSessionExpired = null;
+let onTokenRefreshed = null;
 
 /**
  * Registers the single handler invoked when an authenticated request (one made with a
@@ -12,6 +13,16 @@ let onSessionExpired = null;
  */
 export function setSessionExpiredHandler(handler) {
 	onSessionExpired = typeof handler === 'function' ? handler : null;
+}
+
+/**
+ * Registers the handler invoked whenever the backend renews the session token (sliding
+ * expiration — see AuthMiddleware::shouldRefresh) on an authenticated response. The Api
+ * instance that received the header already keeps using it for its own next requests;
+ * this handler is for the caller to persist the new token (e.g. SessionModel + storage).
+ */
+export function setTokenRefreshedHandler(handler) {
+	onTokenRefreshed = typeof handler === 'function' ? handler : null;
 }
 
 export class ApiError extends Error {
@@ -80,6 +91,8 @@ export class Api {
 			throw new ApiError(0, 'Network error — server unreachable');
 		}
 
+		this.#applyRefreshedToken(response);
+
 		let envelope;
 		try {
 			envelope = await response.json();
@@ -102,6 +115,27 @@ export class Api {
 			err.message ?? 'Unknown error',
 			err.details ?? {}
 		);
+	}
+
+	/**
+	 * AuthMiddleware renews the token (sliding expiration) on any authenticated
+	 * response once it's past the midpoint of its TTL. `headers` is absent on the
+	 * plain mocks used by non-Api tests, hence the optional chaining.
+	 */
+	#applyRefreshedToken(response) {
+		if (this.#token === null) {
+			return;
+		}
+
+		const refreshedToken = response.headers?.get('X-Refreshed-Token');
+		if (typeof refreshedToken !== 'string' || refreshedToken === '') {
+			return;
+		}
+
+		this.#token = refreshedToken;
+		if (onTokenRefreshed !== null) {
+			onTokenRefreshed(refreshedToken);
+		}
 	}
 }
 

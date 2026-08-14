@@ -1,4 +1,4 @@
-import { createApi, createApiWithToken, isUnauthorizedError, setSessionExpiredHandler } from '../models/ApiClientModel.js';
+import { createApi, createApiWithToken, isUnauthorizedError, setSessionExpiredHandler, setTokenRefreshedHandler } from '../models/ApiClientModel.js';
 import { buildAppUrl } from '../models/BasePathModel.js';
 import { loadUiPreferences, saveUiPreferences } from '../models/AppConfigurationModel.js';
 import { PluginRouteController } from './PluginRouteController.js';
@@ -79,6 +79,11 @@ export class AppController {
     setSessionExpiredHandler(() => {
       this.clearAuth();
       this.renderLogin({ sessionExpired: true });
+    });
+
+    setTokenRefreshedHandler((newToken) => {
+      SessionModel.setToken(newToken);
+      SessionModel.persistAccessToken(newToken);
     });
   }
 

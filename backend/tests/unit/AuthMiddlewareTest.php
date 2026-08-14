@@ -120,6 +120,31 @@ TestSuite::run('handle does not call next on malformed token', function (): void
 });
 
 // -----------------------------------------------------------------------
+// Sliding refresh
+// -----------------------------------------------------------------------
+
+TestSuite::run('handle still calls next when the token is past its refresh midpoint', function (): void {
+    // decode() is stubbed to hand back a payload 40s from expiry on a 100s TTL,
+    // deterministically landing past the midpoint without depending on real elapsed time.
+    $jwt = new class(AUTH_SECRET, 100) extends JwtService {
+        public function decode(string $token): array
+        {
+            return ['sub' => '1', 'email' => 'a@x.com', 'exp' => time() + 40];
+        }
+    };
+    $middleware = new AuthMiddleware($jwt);
+    $request    = makeRequest(['authorization' => 'Bearer stubbed-decode-ignores-this']);
+
+    $called = false;
+    $middleware->handle($request, function (Request $req) use (&$called): void {
+        $called = true;
+        assertEquals('1', $req->user()['sub'] ?? null, 'user should still be attached when refresh fires');
+    });
+
+    assertTrue($called, 'next() should still be called on the refresh path');
+});
+
+// -----------------------------------------------------------------------
 
 TestSuite::summary();
 exit(TestSuite::exitCode());

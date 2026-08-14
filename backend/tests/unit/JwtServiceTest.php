@@ -11,6 +11,7 @@ use Xestify\exceptions\AuthException;
 
 const JWT_TEST_SECRET = 'test-secret-key-for-unit-tests';
 const JWT_TEST_TTL    = 3600;
+const JWT_TEST_EMAIL  = 'a@b.com';
 
 // -----------------------------------------------------------------------
 // encode → decode roundtrip
@@ -18,11 +19,11 @@ const JWT_TEST_TTL    = 3600;
 
 TestSuite::run('encode/decode roundtrip preserves payload', function (): void {
     $jwt   = new JwtService(JWT_TEST_SECRET, JWT_TEST_TTL);
-    $token = $jwt->encode(['sub' => '42', 'email' => 'a@b.com', 'roles' => ['admin']]);
+    $token = $jwt->encode(['sub' => '42', 'email' => JWT_TEST_EMAIL, 'roles' => ['admin']]);
     $data  = $jwt->decode($token);
 
     assertEquals('42', $data['sub'], 'sub mismatch');
-    assertEquals('a@b.com', $data['email'], 'email mismatch');
+    assertEquals(JWT_TEST_EMAIL, $data['email'], 'email mismatch');
     assertEquals(['admin'], $data['roles'], 'roles mismatch');
 });
 
@@ -139,6 +140,53 @@ TestSuite::run('decode throws AuthException for expired token', function (): voi
         $threw = true;
     }
     assertTrue($threw, 'Should have thrown AuthException for expired token');
+});
+
+// -----------------------------------------------------------------------
+// Sliding refresh (shouldRefresh / refresh)
+// -----------------------------------------------------------------------
+
+TestSuite::run('shouldRefresh is false for a freshly issued token', function (): void {
+    $jwt     = new JwtService(JWT_TEST_SECRET, JWT_TEST_TTL);
+    $payload = $jwt->decode($jwt->encode(['sub' => '1']));
+
+    assertFalse($jwt->shouldRefresh($payload), 'A token at full TTL should not need refresh yet');
+});
+
+TestSuite::run('shouldRefresh is true once past the TTL midpoint', function (): void {
+    $jwt = new JwtService(JWT_TEST_SECRET, 100);
+    // Fabricate a payload as if issued 60s ago (40s remaining out of 100s TTL).
+    $payload = ['sub' => '1', 'iat' => time() - 60, 'exp' => time() + 40];
+
+    assertTrue($jwt->shouldRefresh($payload), 'A token past its TTL midpoint should be refreshed');
+});
+
+TestSuite::run('shouldRefresh is false for an already expired payload', function (): void {
+    $jwt     = new JwtService(JWT_TEST_SECRET, 100);
+    $payload = ['sub' => '1', 'iat' => time() - 200, 'exp' => time() - 100];
+
+    assertFalse($jwt->shouldRefresh($payload), 'An expired payload is AuthMiddleware\'s job to reject, not refresh');
+});
+
+TestSuite::run('shouldRefresh is false when payload has no exp claim', function (): void {
+    $jwt = new JwtService(JWT_TEST_SECRET, JWT_TEST_TTL);
+
+    assertFalse($jwt->shouldRefresh(['sub' => '1']), 'Without exp there is nothing to judge refresh against');
+});
+
+TestSuite::run('refresh() re-signs the same claims with a renewed exp', function (): void {
+    $jwt = new JwtService(JWT_TEST_SECRET, JWT_TEST_TTL);
+    // A payload with a stale exp, as if decoded moments before the refresh threshold fired.
+    $staleExp = time() - 1;
+    $payload  = ['sub' => '7', 'email' => JWT_TEST_EMAIL, 'roles' => ['admin'], 'iat' => time() - 3600, 'exp' => $staleExp];
+
+    $refreshedToken   = $jwt->refresh($payload);
+    $refreshedPayload = $jwt->decode($refreshedToken);
+
+    assertEquals('7', $refreshedPayload['sub'], 'sub must survive refresh');
+    assertEquals(JWT_TEST_EMAIL, $refreshedPayload['email'], 'email must survive refresh');
+    assertEquals(['admin'], $refreshedPayload['roles'], 'roles must survive refresh');
+    assertTrue($refreshedPayload['exp'] > $staleExp, 'refreshed token must have a later exp than the stale one it replaces');
 });
 
 // -----------------------------------------------------------------------

@@ -66,6 +66,19 @@ class Response
         return $this;
     }
 
+    /**
+     * Emits a raw header outside of the envelope helpers, for middleware that
+     * runs before the controller builds its own Response instance. PHP
+     * buffers headers set via header() until the first byte of output, so
+     * this is safe to call ahead of whatever Response::send() follows.
+     */
+    public static function emitHeader(string $name, string $value): void
+    {
+        if (PHP_SAPI !== 'cli') {
+            header("{$name}: {$value}");
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Respuestas envelopadas
     // -----------------------------------------------------------------------

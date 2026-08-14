@@ -42,6 +42,10 @@ class AuthMiddleware
             return;
         }
 
+        if ($this->jwt->shouldRefresh($payload)) {
+            Response::emitHeader('X-Refreshed-Token', $this->jwt->refresh($payload));
+        }
+
         $request->setUser($payload);
         $next($request);
     }

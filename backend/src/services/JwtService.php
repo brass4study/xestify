@@ -77,6 +77,32 @@ class JwtService
         return $payload;
     }
 
+    /**
+     * Sliding-session policy: true once a valid token has burned through more
+     * than half of its TTL, so activity within the second half keeps renewing
+     * it and an idle user still expires after up to 1.5x the TTL.
+     */
+    public function shouldRefresh(array $payload): bool
+    {
+        if (!isset($payload['exp'])) {
+            return false;
+        }
+
+        $remaining = (int) $payload['exp'] - time();
+
+        return $remaining > 0 && $remaining < intdiv($this->ttl, 2);
+    }
+
+    /**
+     * Re-issues a token for the same claims with a fresh iat/exp.
+     */
+    public function refresh(array $payload): string
+    {
+        unset($payload['iat'], $payload['exp']);
+
+        return $this->encode($payload);
+    }
+
     private function sign(string $data): string
     {
         return $this->base64UrlEncode(

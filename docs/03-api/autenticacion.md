@@ -4,7 +4,13 @@
 - Login vía `POST /api/v1/auth/login` con email y password
 - Respuesta: `{ ok, data: { access_token, email } }`
 - Usar token en header `Authorization: Bearer <token>`
-- No hay refresh token: la sesión expira a los `JWT_EXPIRY` segundos y hay que volver a hacer login
+- Sesión deslizante (sliding session), sin endpoint de refresh dedicado: `AuthMiddleware`
+  reemite el token en la cabecera de respuesta `X-Refreshed-Token` en cualquier request
+  autenticado cuya vida restante sea menor que la mitad de `JWT_EXPIRY`. Mientras el
+  usuario siga haciendo peticiones autenticadas, la sesión no caduca; un usuario
+  realmente inactivo caduca entre `JWT_EXPIRY` y `1.5 × JWT_EXPIRY` segundos después de
+  su última actividad. El frontend (`ApiClientModel.js`) aplica ese token renovado de
+  forma transparente y lo persiste vía `SessionModel`.
 
 ## Roles y permisos
 - admin: acceso total

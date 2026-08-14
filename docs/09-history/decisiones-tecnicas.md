@@ -198,7 +198,15 @@ Si en producción se requiere pipeline optimizado (purge/minificado), se podrá 
 - Tokens refresh: access_token (1-2h) + refresh_token (7d).
 - Cliente debe manejar renovación automática.
 
-> Nota (implementación real): no se construyó blacklist ni refresh_token. `JwtService` emite un único `access_token` con expiración fija vía `JWT_EXPIRY` (por defecto 1h); al expirar, el cliente debe volver a hacer login. Alcance reducido razonable para el MVP/TFM, documentado aquí para no inducir a error al contrastar esta decisión con el código.
+> Nota (implementación real): no se construyó blacklist ni un refresh_token separado.
+> `JwtService` emite un único `access_token` con TTL vía `JWT_EXPIRY` (por defecto 1h),
+> pero la renovación automática sí se implementó como sesión deslizante: `AuthMiddleware`
+> reemite el token en la cabecera `X-Refreshed-Token` en cualquier request autenticado
+> cuando le queda menos de la mitad de su TTL, y `ApiClientModel.js` lo aplica de forma
+> transparente. Un usuario activo nunca ve expirar la sesión; uno inactivo caduca entre
+> `JWT_EXPIRY` y `1.5 × JWT_EXPIRY` tras su última actividad y debe volver a hacer login.
+> Alcance reducido razonable para el MVP/TFM (sin token de revocación independiente),
+> documentado aquí para no inducir a error al contrastar esta decisión con el código.
 
 ### Riesgos mitigados
 - XSS puede leer localStorage (mitigar con CSP headers).

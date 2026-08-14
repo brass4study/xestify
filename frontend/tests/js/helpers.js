@@ -114,8 +114,9 @@ export function makeSandbox(sandboxElementId = 'sandbox') {
  * @param {number} status - HTTP status
  * @param {object} envelope - Response data
  * @param {object} captureRequest - Optional object to capture request details
+ * @param {object} responseHeaders - Optional plain object of response headers (e.g. { 'X-Refreshed-Token': '...' })
  */
-export function mockFetch(status, envelope, captureRequest = null) {
+export function mockFetch(status, envelope, captureRequest = null, responseHeaders = {}) {
   globalThis.fetch = async (url, init) => {
     if (captureRequest) {
       captureRequest.url = url;
@@ -124,6 +125,7 @@ export function mockFetch(status, envelope, captureRequest = null) {
     return {
       status,
       json: async () => envelope,
+      headers: { get: (name) => responseHeaders[name] ?? null },
     };
   };
 }
