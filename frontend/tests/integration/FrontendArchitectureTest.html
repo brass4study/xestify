@@ -214,14 +214,18 @@
       assertEquals(shell.getTarget('shell-main-notifications').parentElement.dataset.role, 'shell-main', 'Notificaciones fuera de main');
       assertEquals(shell.getTarget('shell-main-content').parentElement.dataset.role, 'shell-main', 'Contenido fuera de main');
       assertEquals(shell.getTarget('shell-main-actions').parentElement.dataset.role, 'shell-main', 'Acciones fuera de main');
-      const mainTargets = ['shell-main', 'shell-header', 'shell-main-notifications', 'shell-main-content', 'shell-main-actions'];
-      mainTargets.forEach((targetName) => {
+      const mainClassNames = shell.getTarget('shell-main').classList;
+      assertTrue(mainClassNames.contains('pb-4'), 'shell-main debe separarse con pb-4');
+      assertTrue(![...mainClassNames].some((className) => /^m[trblxy]?-/.test(className)), 'shell-main no debe usar márgenes');
+      const marginTargets = ['shell-header', 'shell-main-notifications', 'shell-main-content', 'shell-main-actions'];
+      marginTargets.forEach((targetName) => {
         const classNames = shell.getTarget(targetName).classList;
         if (targetName !== 'shell-main-notifications') {
           assertTrue(classNames.contains('pb-4'), `${targetName} debe separarse con pb-4`);
         }
-        assertTrue(![...classNames].some((className) => /^m[trblxy]?-/.test(className)), `${targetName} no debe usar márgenes`);
+        assertTrue(classNames.contains('mx-5'), `${targetName} debe usar mx-5`);
       });
+      assertTrue(shell.getTarget('shell-footer').classList.contains('mx-5'), 'shell-footer debe usar mx-5');
       const notifications = shell.getTarget('shell-main-notifications');
       assertTrue(notifications.classList.contains('flex'), 'Notificaciones debe usar flex');
       assertTrue(notifications.classList.contains('flex-col'), 'Notificaciones debe apilarse en columna');

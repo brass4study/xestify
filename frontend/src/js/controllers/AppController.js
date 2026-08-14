@@ -996,6 +996,7 @@ export class AppController {
       .setHeaderBottom(null)
       .setActions(null)
       .setFooter(template.footerText ?? '');
+    UiResilienceService.clearNotification();
     this.shellLayout.clearZone('shell-main-notifications');
     this.contentContainer = this.shellLayout.getTarget('shell-main-content');
   }
@@ -1062,7 +1063,7 @@ export class AppController {
     const banner = component.create('div')
       .setData('role', 'page-notification')
       .setData('type', type)
-      .setClassName(`flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ${toneClasses}`);
+      .setClassName(`mx-5 flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ${toneClasses}`);
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
 
@@ -1253,8 +1254,7 @@ export class AppController {
       pageHeader: {
         title: 'Configuración de plugin',
         subtitle: 'Ajusta opciones específicas del plugin activo.',
-      },
-      footerText: slug === '' ? '' : `Plugin objetivo: ${slug}`,
+      }
     };
   }
 

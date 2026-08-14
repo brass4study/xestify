@@ -268,13 +268,8 @@ export class EntityList {
 				title: t('ui.loading', 'Cargando…'),
 				message: 'Estamos preparando la vista y sus datos.',
 			});
-			this.#showNotification('info', 'Cargando…', 'entity-loading');
 		} else {
 			UiResilienceService.clearViewState(this.#layout?.getContentTarget() ?? this.#container);
-			if (this.#notificationRole === 'entity-loading') {
-				this.#layout?.setNotification(null);
-				this.#notificationRole = null;
-			}
 		}
 	}
 

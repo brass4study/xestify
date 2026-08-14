@@ -46,7 +46,7 @@ export class ShellLayout {
     floatingUi.style.display = 'flex';
     floatingUi.style.justifyContent = 'center';
     const menu = this.#createTarget('shell-menu', 'header',
-      'top-0 z-50 flex flex-wrap items-center gap-3 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white', shell);
+      'top-0 z-50 mx-5 flex flex-wrap items-center gap-3 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white', shell);
     this.#createTarget('shell-menu-nav', 'div', 'min-w-0 flex-1', menu);
     const menuConfig = this.#createTarget('shell-menu-config', 'div', 'ml-auto flex items-center gap-2', menu);
     this.#createTarget('shell-menu-config-theme', 'div', '', menuConfig);
@@ -60,17 +60,17 @@ export class ShellLayout {
 
     const body = this.#createTarget('shell-body', 'div', 'flex flex-1 gap-4', shell);
     const main = this.#createTarget('shell-main', 'main', 'flex flex-1 flex-col pb-4', body);
-    this.#createTarget('shell-header', 'header', 'pb-4', main);
+    this.#createTarget('shell-header', 'header', 'mx-5 pb-4', main);
     this.#createTarget('shell-main-notifications', 'section',
-      'flex flex-col gap-2', main, {
+      'mx-5 flex flex-col gap-2', main, {
         'aria-label': 'Notificaciones',
         'aria-live': 'polite',
       });
-    this.#createTarget('shell-main-content', 'section', 'pb-4', main);
+    this.#createTarget('shell-main-content', 'section', 'mx-5 pb-4', main);
     this.#createTarget('shell-main-actions', 'div',
-      'flex flex-wrap justify-end gap-2 pb-4', main);
+      'mx-5 flex flex-wrap justify-end gap-2 pb-4', main);
     this.#createTarget('shell-footer', 'footer',
-      'px-3 pb-4 pt-1 text-xs text-slate-500 sm:px-4 sm:pb-6', shell);
+      'mx-5 px-3 pb-4 pt-1 text-xs text-slate-500 sm:px-4 sm:pb-6', shell);
 
     this.#syncAutoHiddenZone('shell-main-notifications');
     this.#syncAutoHiddenZone('shell-main-actions');
@@ -111,6 +111,7 @@ export class ShellLayout {
     this.#syncModeClasses({
       body,
       main,
+      header,
       menu,
       mixedBar,
       menuConfig,
@@ -351,6 +352,7 @@ export class ShellLayout {
     const {
       body,
       main,
+      header,
       menu,
       mixedBar,
       menuConfig,
@@ -360,6 +362,7 @@ export class ShellLayout {
 
     body.className = isSideNavigation ? 'flex flex-1 gap-0' : 'flex flex-1 gap-4';
     main.className = isSideNavigation ? 'flex flex-1 flex-col' : 'flex flex-1 flex-col pb-4';
+    header.className = isSideNavigation ? 'pb-4' : 'mx-5 pb-4';
     menu.className = this.#menuClassName(normalized);
     mixedBar.className = this.#mixedBarClassName(normalized);
     if (menuConfig.parentElement !== menu) {
@@ -442,7 +445,7 @@ export class ShellLayout {
 
     return [
       settings.fixedHeader ? 'top-0' : 'relative',
-      'z-50 flex flex-wrap items-center gap-3 px-4 py-3',
+      'z-50 mx-5 flex flex-wrap items-center gap-3 px-4 py-3',
       styleClassMap[settings.menuStyle] ?? styleClassMap.brand,
     ].join(' ');
   }
