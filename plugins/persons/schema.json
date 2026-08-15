@@ -1,7 +1,4 @@
 {
-    "entity": "persons",
-    "label_singular": "cliente",
-    "version": "1.0.0",
     "identities": {
         "id": {
             "type": "uuid",
@@ -20,36 +17,63 @@
             "type": "string",
             "required": true,
             "label": "Apellidos"
-        },        
-        "email": {
-            "type": "email",
-            "required": true,
-            "label": "Email",
-            "summaryView": false
         }
     },
     "custom_fields": [
         {
-            "key": "phone",
+            "key": "identity_document_number",
             "type": "string",
+            "required": false,
+            "label": "DNI",
+            "summaryView": false
+        },
+        {
+            "key": "address",
+            "type": "string",
+            "required": false,
+            "label": "Direccion",
+            "summaryView": false
+        },
+        {
+            "key": "town",
+            "type": "string",
+            "required": false,
+            "label": "Ciudad",
+            "summaryView": false
+        },
+        {
+            "key": "county",
+            "type": "string",
+            "required": false,
+            "label": "Provincia",
+            "summaryView": false
+        },
+        {
+            "key": "postal_code",
+            "type": "string",
+            "required": false,
+            "label": "Codigo postal",
+            "summaryView": false
+        },
+        {
+            "key": "mail",
+            "type": "mail",
+            "required": true,
+            "label": "Email",
+            "summaryView": false
+        },
+        {
+            "key": "phone",
+            "type": "phone",
             "required": false,
             "label": "Telefono",
             "summaryView": false
-        },
+        },        
         {
-            "key": "creation_stamp",
-            "type": "timestamp",
+            "key": "notes",
+            "type": "text",
             "required": false,
-            "default": "now",
-            "label": "Fecha de alta",
-            "summaryView": false
-        },
-        {
-            "key": "is_active",
-            "type": "boolean",
-            "required": false,
-            "default": true,
-            "label": "Activo",
+            "label": "Notas",
             "summaryView": false
         }
     ],

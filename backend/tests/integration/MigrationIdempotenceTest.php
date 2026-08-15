@@ -140,16 +140,22 @@ TestSuite::run('idempotent re-run preserves existing data', function (): void {
 
     // Insert a test plugin row into plugins (entity type).
     $testSlug = 'idempotence_test_' . uniqid();
+    $manifest = json_encode([
+        'name' => $testSlug,
+        'label' => 'Idempotence Test Entity',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $pdo->prepare(
-        'INSERT INTO plugins (slug, name, plugin_type, version, status)
-         VALUES (:slug, :name, :type, :version, :status)
+        'INSERT INTO plugins (slug, status, manifest_json)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb))
          ON CONFLICT (slug) DO NOTHING'
     )->execute([
         ':slug'    => $testSlug,
-        ':name'    => 'Idempotence Test Entity',
-        ':type'    => 'entity',
-        ':version' => '1.0.0',
         ':status'  => 'active',
+        ':manifest' => $manifest,
     ]);
 
     // Retrieve row count before re-running migrations.

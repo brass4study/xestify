@@ -20,12 +20,15 @@ use Xestify\services\PluginAdministrationService;
  *
  * Routes (require AuthMiddleware + admin role):
  *   GET    /api/v1/plugins
+ *   GET    /api/v1/plugins/available
+ *   POST   /api/v1/plugins
  *   POST   /api/v1/plugins/sync
  *   POST   /api/v1/plugins/{slug}/update
  *   POST   /api/v1/plugins/{slug}/rollback
  *   PUT    /api/v1/plugins/{slug}/status
  *   GET    /api/v1/plugins/{slug}/config
  *   PUT    /api/v1/plugins/{slug}/config
+ *   DELETE /api/v1/plugins/{slug}
  */
 class PluginManagerController
 {
@@ -44,6 +47,7 @@ class PluginManagerController
     private const MSG_PLUGIN_ROLLBACK_FAILED = 'Plugin rollback failed.';
     private const MSG_PLUGIN_CONFIG_FAILED = 'Plugin config update failed.';
     private const MSG_ERROR_PREFIX = 'Error: ';
+    private const MSG_PLUGIN_NAME_REQUIRED = 'plugin_name is required.';
 
     /**
      * GET /api/v1/plugins
@@ -63,6 +67,60 @@ class PluginManagerController
             Response::make()->json(['plugins' => $plugins]);
         } catch (Exception $e) {
             Response::make()->serverError('Database error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /api/v1/plugins/available
+     * Disk plugin_name folders not yet registered — candidates for manual registration.
+     */
+    public function listAvailablePlugins(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+
+        if (!$request->hasRole('admin')) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        try {
+            $available = $this->pluginAdministration->listAvailableForRegistration();
+            Response::make()->json(['available' => $available]);
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins
+     * Manually registers the first instance of a plugin discovered on disk.
+     * Body: { "plugin_name": string, "slug"?: string, "name"?: string, "description"?: string, "fields"?: array, "target_entity"?: string }
+     */
+    public function registerPlugin(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+
+        if (!$request->hasRole('admin')) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        $body = $request->allBody();
+        $pluginName = (string) ($body['plugin_name'] ?? '');
+
+        if ($pluginName === '') {
+            Response::make()->unprocessable(self::MSG_PLUGIN_NAME_REQUIRED, ['plugin_name' => self::MSG_PLUGIN_NAME_REQUIRED]);
+            return;
+        }
+
+        try {
+            $overrides = array_intersect_key($body, array_flip(['slug', 'name', 'description', 'fields', 'target_entity']));
+            $plugin = $this->pluginAdministration->registerNew($pluginName, $overrides);
+            Response::make()->json(['plugin' => $this->flattenPlugin($plugin)]);
+        } catch (InvalidArgumentException | DomainException $e) {
+            Response::make()->unprocessable($e->getMessage());
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
     }
 
@@ -91,7 +149,7 @@ class PluginManagerController
             $plugin = $status === 'active'
                 ? $this->pluginAdministration->activate($slug)
                 : $this->pluginAdministration->deactivate($slug);
-            Response::make()->json($plugin);
+            Response::make()->json($this->flattenPlugin($plugin));
         } catch (InvalidArgumentException $e) {
             Response::make()->unprocessable($e->getMessage(), ['status' => $e->getMessage()]);
         } catch (OutOfBoundsException) {
@@ -99,6 +157,35 @@ class PluginManagerController
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
+    }
+
+    /**
+     * Flat wire-shape for a plugin row — the same keys listPlugins() (SQL
+     * aliasing) and getPluginConfig()/savePluginConfig() (PluginConfigService::
+     * buildConfigResponse()) already return. registerPlugin() and
+     * updatePluginStatus() return PluginAdministrationService's raw row
+     * instead (manifest_json nested, not flattened into name/plugin_type/
+     * version/description) — without this, the frontend caller only ever
+     * sees an empty plugin_type/name for the plugin it just registered or
+     * (de)activated.
+     *
+     * @param array<string, mixed> $plugin
+     * @return array<string, mixed>
+     */
+    private function flattenPlugin(array $plugin): array
+    {
+        $manifest = is_array($plugin['manifest_json'] ?? null) ? $plugin['manifest_json'] : [];
+
+        return [
+            'slug' => (string) ($plugin['slug'] ?? ''),
+            'name' => (string) ($manifest['label'] ?? ''),
+            'description' => (string) ($manifest['description'] ?? ''),
+            'plugin_type' => (string) ($manifest['type'] ?? ''),
+            'status' => (string) ($plugin['status'] ?? ''),
+            'version' => (string) ($manifest['version'] ?? ''),
+            'installed_at' => $plugin['installed_at'] ?? null,
+            'updated_at' => $plugin['updated_at'] ?? null,
+        ];
     }
 
     private function extractStatus(Request $request): string
@@ -275,6 +362,35 @@ class PluginManagerController
             Response::make()->unprocessable($e->getMessage());
         } catch (Exception $e) {
             Response::make()->serverError(self::MSG_PLUGIN_CONFIG_FAILED . ' ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /api/v1/plugins/{slug}
+     * Deletes a plugin instance and all its associated data.
+     */
+    public function deletePlugin(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$request->hasRole('admin')) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $this->pluginAdministration->deletePlugin($slug);
+            Response::make()->json(['deleted' => true, 'slug' => $slug]);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
         }
     }
 

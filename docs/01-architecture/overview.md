@@ -38,7 +38,7 @@ Xestify usa arquitectura micro-kernel local-first:
 - Toda entidad vive como metadata + data
 - Toda extension se registra por hook
 - Toda actualizacion de plugin debe ser reversible
-- **`plugins` es la unica fuente de verdad para el catalogo de entidades** — `plugin_type = 'entity'` sustituye a la antigua tabla `system_entities` (eliminada en Release B)
+- **`plugins` es la unica fuente de verdad para el catalogo de entidades** — `manifest_json->>'type' = 'entity'` sustituye a la antigua tabla `system_entities` (eliminada en Release B)
 
 ## Flujo base
 
@@ -46,7 +46,7 @@ Xestify usa arquitectura micro-kernel local-first:
 2. Frontend solicita schema al backend
 3. Frontend renderiza vista dinamica
 4. Backend valida payload segun schema
-5. Backend persiste en entity_data y dispara hooks
+5. Backend persiste en `plugin_entity_data` y dispara hooks
 
 ## Pipeline HTTP protegido
 
@@ -63,14 +63,19 @@ token y adjunta `Request::user()`, y el controller recibe esa misma request.
 
 Todo tipo de entidad es un plugin de tipo `entity` instalado en la tabla `plugins`.
 No existe tabla separada de catálogo: el filtro
-`WHERE plugin_type = 'entity' AND status = 'active'`
+`WHERE manifest_json->>'type' = 'entity' AND status = 'active'`
 sobre la tabla `plugins` reemplaza completamente a la antigua `system_entities` (eliminada en Release B).
+
+La tabla `plugins` no tiene columnas propias `plugin_type`/`name`/`version`/
+`description`/`schema_version` (STORY 10.3 §2bis): son `id, slug, status,
+manifest_json, schema_json, installed_at, updated_at`, y `manifest_json` refleja
+el `manifest.json` real del plugin en disco.
 
 **Consulta ejemplo:**
 ```sql
-SELECT slug, name AS label, schema_json, schema_version
+SELECT slug, manifest_json->>'label' AS label, schema_json
 FROM plugins
-WHERE plugin_type = 'entity' AND status = 'active' AND schema_json IS NOT NULL;
+WHERE manifest_json->>'type' = 'entity' AND status = 'active' AND schema_json IS NOT NULL;
 ```
 
 Esta decision elimina la duplicacion de datos y hace que el catalogo de

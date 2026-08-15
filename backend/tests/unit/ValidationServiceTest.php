@@ -30,7 +30,7 @@ TestSuite::run('validate returns valid result for valid payload', function () us
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'minLength' => 2, 'maxLength' => 100],
             'age' => ['type' => 'number', 'required' => true, 'min' => 18, 'max' => 99],
-            'email' => ['type' => 'email', 'required' => true],
+            'email' => ['type' => 'mail', 'required' => true],
             'isActive' => ['type' => 'boolean', 'required' => true],
             'birthDate' => ['type' => 'date', 'required' => false],
             'status' => ['type' => 'select', 'required' => true, 'options' => ['draft', 'published']],
@@ -111,12 +111,12 @@ TestSuite::run('validate supports text fields', function () use ($service): void
 TestSuite::run('validate reports invalid email', function () use ($service): void {
     $schema = [
         'fields' => [
-            'email' => ['type' => 'email', 'required' => true],
+            'email' => ['type' => 'mail', 'required' => true],
         ],
     ];
 
     $result = $service->validate(['email' => 'invalid_mail'], $schema);
-    $error = findValidationError($result->errors(), 'email', 'invalid_email');
+    $error = findValidationError($result->errors(), 'email', 'invalid_mail');
 
     assertEquals('Invalid email', $error['message'] ?? null);
 });

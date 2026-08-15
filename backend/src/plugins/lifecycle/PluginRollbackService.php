@@ -10,12 +10,14 @@ use PDO;
 use Throwable;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
+use Xestify\repositories\PluginWriteRepository;
 
 final class PluginRollbackService
 {
     public function __construct(
         private PDO $pdo,
         private PluginRepository $pluginRepository,
+        private PluginWriteRepository $pluginWriteRepository,
         private PluginUpdateHistoryRepository $historyRepository,
         private PluginLifecycleInvoker $lifecycleInvoker
     ) {
@@ -41,7 +43,8 @@ final class PluginRollbackService
                 throw new OutOfBoundsException("Plugin '{$slug}' is not installed.");
             }
 
-            $fromVersion = (string) ($current['version'] ?? '');
+            $pluginName = (string) ($current['manifest_json']['name'] ?? '');
+            $fromVersion = (string) ($current['manifest_json']['version'] ?? '');
             $snapshot = $this->historyRepository->lockLatestSnapshotForRollback($slug, $fromVersion);
             if ($snapshot === null) {
                 throw new DomainException(
@@ -49,7 +52,7 @@ final class PluginRollbackService
                 );
             }
 
-            $toVersion = (string) ($snapshot['version'] ?? '');
+            $toVersion = (string) ($snapshot['manifest_json']['version'] ?? '');
             $context = [
                 'slug' => $slug,
                 'from_version' => $fromVersion,
@@ -58,12 +61,12 @@ final class PluginRollbackService
                 'snapshot' => $snapshot,
             ];
 
-            $this->lifecycleInvoker->onRollback($slug, $context);
+            $this->lifecycleInvoker->onRollback($pluginName, $context);
 
-            $plugin = $this->pluginRepository->restoreFromSnapshot((string) $current['id'], $snapshot);
+            $plugin = $this->pluginWriteRepository->restoreFromSnapshot((string) $current['id'], $snapshot);
 
             if ((string) ($plugin['status'] ?? '') === 'active') {
-                $this->lifecycleInvoker->onActivate($slug);
+                $this->lifecycleInvoker->onActivate($pluginName);
             }
 
             $this->pdo->commit();

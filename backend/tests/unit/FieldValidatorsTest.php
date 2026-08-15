@@ -9,8 +9,9 @@ require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 
 use Xestify\validation\validators\BooleanFieldValidator;
 use Xestify\validation\validators\DateFieldValidator;
-use Xestify\validation\validators\EmailFieldValidator;
+use Xestify\validation\validators\MailFieldValidator;
 use Xestify\validation\validators\NumberFieldValidator;
+use Xestify\validation\validators\PhoneFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
@@ -69,11 +70,27 @@ TestSuite::run('TimestampFieldValidator rejects strings that are not a real time
     assertEquals('invalid_type', $validator->validate('creation_stamp', '', [])[0]->code());
 });
 
-TestSuite::run('EmailFieldValidator validates email format', function (): void {
-    $validator = new EmailFieldValidator();
+TestSuite::run('MailFieldValidator validates email format', function (): void {
+    $validator = new MailFieldValidator();
 
     assertEquals([], $validator->validate('email', 'ana@example.com', []));
-    assertEquals('invalid_email', $validator->validate('email', 'invalid_mail', [])[0]->code());
+    assertEquals('invalid_mail', $validator->validate('email', 'invalid_mail', [])[0]->code());
+});
+
+TestSuite::run('PhoneFieldValidator accepts generic international formats', function (): void {
+    $validator = new PhoneFieldValidator();
+
+    assertEquals([], $validator->validate('phone', '612345678', []));
+    assertEquals([], $validator->validate('phone', '+34 612 345 678', []));
+    assertEquals([], $validator->validate('phone', '(034) 612-345-678', []));
+});
+
+TestSuite::run('PhoneFieldValidator rejects invalid characters and implausible digit counts', function (): void {
+    $validator = new PhoneFieldValidator();
+
+    assertEquals('invalid_phone', $validator->validate('phone', 'not-a-phone', [])[0]->code());
+    assertEquals('invalid_phone', $validator->validate('phone', '123', [])[0]->code());
+    assertEquals('invalid_phone', $validator->validate('phone', str_repeat('1', 16), [])[0]->code());
 });
 
 TestSuite::run('UuidFieldValidator validates UUID v4 format and rejects malformed values', function (): void {

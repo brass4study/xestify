@@ -37,7 +37,7 @@ TestSuite::run('read() throws PluginException when manifest.json is missing', fu
 });
 
 TestSuite::run('read() throws PluginException when manifest has invalid JSON', function (): void {
-    $root = createPluginFixture(['slug' => 'bad_json'], false, true);
+    $root = createPluginFixture(['name' => 'bad_json'], false, true);
 
     try {
         $reader = new PluginManifestReader($root);
@@ -57,8 +57,8 @@ TestSuite::run('read() throws PluginException when manifest has invalid JSON', f
 
 TestSuite::run('read() validates required fields and type', function (): void {
     $root = createPluginFixture([
-        'slug' => 'bad_type',
-        'name' => 'Bad Type',
+        'name' => 'bad_type',
+        'label' => 'Bad Type',
         'version' => MANIFEST_VERSION,
         'type' => 'unknown',
         'core_version' => MANIFEST_VERSION,
@@ -82,8 +82,8 @@ TestSuite::run('read() validates required fields and type', function (): void {
 
 TestSuite::run('read() returns manifest when structure is valid', function (): void {
     $manifest = [
-        'slug' => 'valid_manifest',
-        'name' => 'Valid Manifest',
+        'name' => 'valid_manifest',
+        'label' => 'Valid Manifest',
         'version' => MANIFEST_VERSION,
         'type' => 'entity',
         'core_version' => MANIFEST_VERSION,
@@ -93,7 +93,7 @@ TestSuite::run('read() returns manifest when structure is valid', function (): v
     try {
         $reader = new PluginManifestReader($root);
         $loaded = $reader->read('valid_manifest');
-        assertEquals('valid_manifest', $loaded['slug'] ?? null, 'slug should match');
+        assertEquals('valid_manifest', $loaded['name'] ?? null, 'name should match');
     } finally {
         removePluginFixture($root);
     }

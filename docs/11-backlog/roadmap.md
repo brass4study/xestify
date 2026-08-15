@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-15
-> **Estado del proyecto:** **STORY 10.2 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.3`
+> **Última actualización:** 2026-08-16
+> **Estado del proyecto:** **STORY 10.3 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.4`
 
 ---
 
@@ -40,7 +40,10 @@ El corte funcional vigente del producto queda fijado en:
 - `EPIC 9` cerrada
 - `STORY 10.1` completada (mejoras en la sección de login)
 - `STORY 10.2` completada (renombrar plugin `clients` a `persons`)
-- siguiente foco funcional: `STORY 10.3` (desacoplar `plugin_name` de `slug`)
+- `STORY 10.3` completada (desacoplar `plugin_name` de `slug`, identidad editable,
+  consolidación de `plugins` en `manifest_json`, alta manual, borrado en
+  cascada, relaciones editables y tab de relación inversa)
+- siguiente foco funcional: `STORY 10.4` (plugin de demostración `orders`)
 
 ### Funcionalidades nucleares (Core)
 
@@ -103,8 +106,8 @@ Estas decisiones están cerradas y la implementación futura debe respetarlas:
 | Frontend | Vanilla JS modular + Tailwind generado localmente | Sin bundler; CSS servido como asset estático |
 | Runtime web | Apache+PHP same-origin | Frontend, API y assets bajo un único origen |
 | Base path frontend | Dinámico | Soporte para raíz `/` o subruta `/xestify/` |
-| Catálogo de entidades | `plugins` (`plugin_type='entity'`) | No reintroducir `system_entities` |
-| Schema vivo | `plugins.schema_json` | No usar `entity_metadata` como fuente activa |
+| Catálogo de entidades | `plugins` (`manifest_json->>'type'='entity'`) | No reintroducir `system_entities` |
+| Schema vivo | `plugins.schema_json` (estructural) + `plugins.manifest_json` (identidad, STORY 10.3 §2bis) | No usar `entity_metadata` como fuente activa; `plugins` no tiene columnas propias `plugin_type`/`name`/`version`/`description`/`schema_version` |
 | Updates de plugins | Explícitos | `sync` no consume updates; `update` sí los aplica |
 | Boot de runtime | Ligero | Sin autodiscovery de plugins en cada request |
 | Operación local | Apache+PHP + PostgreSQL | Docker/Nginx no son requisito base |
@@ -145,7 +148,7 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | ✅ Completada | STORY 9.1 a 9.9 cerradas |
-| 10 | Login, Persons y Plugins de Demostración | 🔄 En progreso | STORY 10.1 (login pulido) cerrada; pendiente rename persons, plugin_name/slug, plugins demo |
+| 10 | Login, Persons y Plugins de Demostración | 🔄 En progreso | STORY 10.1 (login pulido), 10.2 (rename persons) y 10.3 (plugin_name/slug, manifest_json, altas/borrado/relaciones) cerradas; pendiente 10.4-10.6 (plugins demo) |
 | 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
@@ -333,20 +336,20 @@ uso óptico.
 **Estado real**
 - ✅ Story 10.1 implementada: identidad visual (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio
 - ✅ Story 10.2 implementada: plugin `clients` renombrado a `persons` (carpeta, namespace, manifest/schema, tests y datos existentes en BD), generalizando el modelo sin ampliar sus campos
-- siguiente punto: Story 10.3 (desacoplar `plugin_name` de `slug`, descripción editable con i18n)
+- ✅ Story 10.3 implementada: `plugin_name` (identidad técnica fija) desacoplado de `slug` (editable); consolidación de `plugins`/`plugin_update_history` en una columna `manifest_json` viva, con eliminación de `schema_version` (residual, sin reemplazo); más 4 ampliaciones acordadas con el usuario durante la sesión — alta manual de plugin (activo por defecto), borrado en cascada, grid "Relaciones" editable (primer uso funcional real del bloque `relations`) y tab automática de relación inversa en `EntityEdit`
+- siguiente punto: Story 10.4 (plugin de demostración `orders`, primer consumidor real de `relations`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
 - rename `clients` → `persons`
-- desacoplar `plugin_name` (identidad fija) de `slug` (editable)
-- plugin de configuración con descripción editable e i18n
+- desacoplar `plugin_name` (identidad fija) de `slug` (editable); `description` editable sin patrón i18n (texto plano, STORY A1.1 queda fuera de alcance)
+- alta manual, borrado en cascada, relaciones editables y tab de relación inversa en `PluginConfig`/`EntityEdit`
 - plugins de demostración: `orders`, `invoices`, `optometry`, `contact-lenses`
 - datos de ejemplo para los plugins de demostración
 
 **Dependencias**
 - Fase 1
 - Fase 8
-- Fase A1 (STORY A1.1, patrón i18n editable)
 
 ### Fase 11 - Cierre Formal y Exhaustivo del MVP
 
@@ -486,8 +489,8 @@ Y deja fuera, por ahora (post-MVP):
 | 6 | ✅ Completada | MUST |
 | 7 | ✅ Completada | MUST |
 | 8 | ✅ Completada | MUST |
-| 9 | 🔄 En progreso | SHOULD |
-| 10 | ⏭ Pendiente | MUST |
+| 9 | ✅ Completada | SHOULD |
+| 10 | 🔄 En progreso | MUST |
 | 11 | ⏭ Pendiente | MUST |
 | A1 | ⏭ Pendiente | POST-MVP |
 | A2 | ⏭ Pendiente | POST-MVP |
@@ -590,8 +593,9 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de login — y `STORY 10.2` — rename `clients` → `persons` — cerradas)
-   - desacoplar `plugin_name` de `slug` con descripción editable e i18n (`STORY 10.3`)
+1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de
+   login —, `STORY 10.2` — rename `clients` → `persons` — y `STORY 10.3` —
+   `plugin_name`/`slug`, `manifest_json`, altas/borrado/relaciones — cerradas)
    - plugins de demostración de entidad y extensión (`STORY 10.4`-`10.5`)
    - datos de ejemplo para los plugins de demostración (`STORY 10.6`)
 

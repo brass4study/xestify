@@ -44,8 +44,8 @@ final class Lifecycle implements PluginLifecycleInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Lifecycle Plugin',
+        'name' => $slug,
+        'label' => 'Lifecycle Plugin',
         'version' => LIFECYCLE_VERSION,
         'type' => 'entity',
         'core_version' => LIFECYCLE_VERSION,
@@ -87,8 +87,8 @@ final class Lifecycle implements PluginLifecycleUpdateInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Lifecycle Update Plugin',
+        'name' => $slug,
+        'label' => 'Lifecycle Update Plugin',
         'version' => LIFECYCLE_VERSION,
         'type' => 'entity',
         'core_version' => LIFECYCLE_VERSION,
@@ -122,8 +122,8 @@ final class Lifecycle implements PluginLifecycleUpdateInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Lifecycle Rollback Plugin',
+        'name' => $slug,
+        'label' => 'Lifecycle Rollback Plugin',
         'version' => LIFECYCLE_VERSION,
         'type' => 'entity',
         'core_version' => LIFECYCLE_VERSION,

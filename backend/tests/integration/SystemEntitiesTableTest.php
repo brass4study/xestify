@@ -76,7 +76,7 @@ TestSuite::run('system_entities table does not exist after migration 010', funct
 TestSuite::run('plugins table has entity-type rows as catalog', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
-        "SELECT COUNT(*) AS cnt FROM plugins WHERE plugin_type = 'entity'"
+        "SELECT COUNT(*) AS cnt FROM plugins WHERE manifest_json->>'type' = 'entity'"
     );
     assertTrue($stmt !== false, MSG_QUERY_EXECUTE);
     $row = $stmt->fetch();
@@ -86,8 +86,8 @@ TestSuite::run('plugins table has entity-type rows as catalog', function (): voi
 TestSuite::run('plugins entity rows have required fields', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
-        "SELECT slug, name, plugin_type, status FROM plugins
-         WHERE plugin_type = 'entity' AND status = 'active' LIMIT 1"
+        "SELECT slug, manifest_json->>'label' AS name, manifest_json->>'type' AS plugin_type, status FROM plugins
+         WHERE manifest_json->>'type' = 'entity' AND status = 'active' LIMIT 1"
     );
     assertTrue($stmt !== false, MSG_QUERY_EXECUTE);
     $row = $stmt->fetch();

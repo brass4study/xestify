@@ -216,7 +216,7 @@ export class Login {
 		const emailField = component.create('formField', {
 			label: 'Email',
 			name: 'email',
-			input: component.create('inputEmail', { name: 'email', placeholder: 'tu@email.com' }),
+			input: component.create('inputMail', { name: 'email', placeholder: 'tu@email.com' }),
 		});
 		const emailInput = emailField.querySelector('input');
 		if (emailInput instanceof HTMLInputElement) {

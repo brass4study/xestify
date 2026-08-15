@@ -33,17 +33,18 @@ function createPluginFixture(
     ?string $hooksSource = null
 ): string {
     $root = sys_get_temp_dir() . '/xestify_plugin_test_' . bin2hex(random_bytes(4));
-    $slug = is_string($manifest['slug'] ?? null) ? $manifest['slug'] : 'test_plugin';
+    $slug = is_string($manifest['name'] ?? null) ? $manifest['name'] : 'test_plugin';
     $pluginDir = $root . '/' . $slug;
 
     mkdir($pluginDir, 0777, true);
+
+    $manifest['label'] ??= $slug;
 
     $jsonContent = $invalidJson ? '{bad json' : (string) json_encode($manifest, JSON_PRETTY_PRINT);
     file_put_contents($pluginDir . '/manifest.json', $jsonContent);
 
     if (($manifest['type'] ?? '') === 'entity' && !$invalidJson) {
         $schema ??= [
-            'entity' => $slug,
             'version' => $manifest['version'] ?? '1.0.0',
             'identities' => [
                 'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
@@ -92,11 +93,30 @@ function removePluginFixture(string $root): void
     rmdir($root);
 }
 
-function cleanupPluginRecord(PDO $pdo, string $slug): void
+/**
+ * Cleans up a plugin fixture row and its update-history snapshots.
+ *
+ * Accepts the plugin_name (stable identity, = fixture folder name). If the
+ * fixture's slug was renamed mid-test (STORY 10.3 rename cascade tests),
+ * this also cleans up history rows left under the renamed slug, since
+ * plugin_update_history.slug tracks the live slug, not plugin_name.
+ */
+function cleanupPluginRecord(PDO $pdo, string $pluginName): void
 {
-    $history = $pdo->prepare('DELETE FROM plugin_update_history WHERE slug = :slug');
-    $history->execute([':slug' => $slug]);
+    $currentSlugStmt = $pdo->prepare("SELECT slug FROM plugins WHERE manifest_json->>'name' = :plugin_name");
+    $currentSlugStmt->execute([':plugin_name' => $pluginName]);
+    $currentSlug = $currentSlugStmt->fetchColumn();
 
-    $stmt = $pdo->prepare('DELETE FROM plugins WHERE slug = :slug');
-    $stmt->execute([':slug' => $slug]);
+    $slugsToClean = [$pluginName];
+    if (is_string($currentSlug) && $currentSlug !== '' && $currentSlug !== $pluginName) {
+        $slugsToClean[] = $currentSlug;
+    }
+
+    foreach ($slugsToClean as $slug) {
+        $history = $pdo->prepare('DELETE FROM plugin_update_history WHERE slug = :slug');
+        $history->execute([':slug' => $slug]);
+    }
+
+    $stmt = $pdo->prepare("DELETE FROM plugins WHERE manifest_json->>'name' = :plugin_name");
+    $stmt->execute([':plugin_name' => $pluginName]);
 }

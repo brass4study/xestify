@@ -698,6 +698,9 @@ export class AppController {
       onConfigure: (plugin) => {
         void this.router.navigate(PluginRouteController.toPluginConfigPage(plugin.slug), { updateHash: true });
       },
+      onAdd: () => {
+        void this.router.navigate(PluginRouteController.toNewPluginConfigPage(), { updateHash: true });
+      },
     });
     await pluginManager.init();
   }
@@ -898,6 +901,9 @@ export class AppController {
       onCancel: async () => {
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
+      onNavigateToRecord: async (sourceSlug, sourceRecordId) => {
+        await this.router.navigate(entityRecordPage(sourceSlug, sourceRecordId), { updateHash: true });
+      },
     });
     this.currentEntityEdit = entityEdit;
     this.currentEntityRoute = { slug, recordId };
@@ -935,12 +941,58 @@ export class AppController {
     ).pageHeader ?? {};
     const page = new PluginConfig(this.contentContainer, {
       slug,
+      mode: PluginRouteController.isInsertMode(slug) ? 'create' : 'edit',
       api: this.dashboardApi,
       shellLayout: this.shellLayout,
       title: pageHeader.title,
       description: pageHeader.subtitle,
       onBack: () => {
         void this.router.navigate('plugins', { updateHash: true });
+      },
+      onCreated: async (newPlugin) => {
+        void this.router.navigate('plugins', { updateHash: true });
+        UiResilienceService.showNotification({
+          type: 'success',
+          title: t('ui.success', 'Éxito'),
+          message: `Plugin "${newPlugin?.name || newPlugin?.slug || ''}" registrado correctamente.`,
+        });
+
+        if (String(newPlugin?.plugin_type ?? '') === 'entity') {
+          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
+          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
+            this.currentNavbar.setEntities(entitiesForNav);
+          }
+        }
+      },
+      onDeleted: async (deletedPlugin) => {
+        void this.router.navigate('plugins', { updateHash: true });
+        UiResilienceService.showNotification({
+          type: 'success',
+          title: t('ui.success', 'Éxito'),
+          message: `Plugin "${deletedPlugin?.name || deletedPlugin?.slug || ''}" borrado correctamente.`,
+        });
+
+        if (String(deletedPlugin?.plugin_type ?? '') === 'entity') {
+          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
+          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
+            this.currentNavbar.setEntities(entitiesForNav);
+          }
+        }
+      },
+      onIdentityChanged: async (oldSlug, updatedPlugin) => {
+        const newSlug = String(updatedPlugin?.slug ?? oldSlug);
+        const newPage = PluginRouteController.toPluginConfigPage(newSlug);
+        await this.router.navigate(newPage, { updateHash: true, notify: false });
+        const template = this.buildTemplateDefinition(newPage);
+        PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+          .setBreadcrumbs(template.breadcrumbs ?? []);
+
+        if (String(updatedPlugin?.plugin_type ?? '') === 'entity') {
+          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
+          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
+            this.currentNavbar.setEntities(entitiesForNav);
+          }
+        }
       },
     });
 
@@ -1076,7 +1128,7 @@ export class AppController {
     const banner = component.create('div')
       .setData('role', 'page-notification')
       .setData('type', type)
-      .setClassName(`mx-5 flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ${toneClasses}`);
+      .setClassName(`flex items-start justify-between gap-3 rounded-md px-4 py-3 text-sm ${toneClasses}`);
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
 
@@ -1257,17 +1309,27 @@ export class AppController {
     }
 
     const slug = PluginRouteController.getPluginSlugFromPage(page);
+    const isInsert = PluginRouteController.isInsertMode(slug);
+    let breadcrumbLabel = 'Nuevo plugin';
+    if (!isInsert) {
+      breadcrumbLabel = slug === '' ? 'Configuración' : `Configuración: ${slug}`;
+    }
     return {
       template: 'plugin-management',
       breadcrumbs: this.makeBreadcrumbItems([
         { label: 'Sistema' },
         { label: 'Plugins', href: '#/plugins' },
-        { label: slug === '' ? 'Configuración' : `Configuración: ${slug}`, active: true },
+        { label: breadcrumbLabel, active: true },
       ]),
-      pageHeader: {
-        title: 'Configuración de plugin',
-        subtitle: 'Ajusta opciones específicas del plugin activo.',
-      }
+      pageHeader: isInsert
+        ? {
+            title: 'Añadir plugin',
+            subtitle: 'Registra una nueva instancia de un plugin disponible en disco.',
+          }
+        : {
+            title: 'Configuración de plugin',
+            subtitle: 'Ajusta opciones específicas del plugin activo.',
+          }
     };
   }
 

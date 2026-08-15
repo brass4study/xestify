@@ -27,6 +27,60 @@ try {
 const ROLLBACK_SLUG_PARAM = ':slug';
 const ROLLBACK_V1 = '1.0.0';
 const ROLLBACK_V2 = '2.0.0';
+const ROLLBACK_PLUGIN_LABEL = 'Rollback Plugin';
+
+/**
+ * @param array<string, mixed> $manifestOverrides
+ * @param array<string, mixed>|null $schema
+ */
+function insertRollbackTestPlugin(PDO $pdo, string $slug, array $manifestOverrides, string $status, ?array $schema): void
+{
+    $manifest = array_merge([
+        'name' => $slug,
+        'label' => $slug,
+        'version' => ROLLBACK_V1,
+        'type' => 'entity',
+        'core_version' => ROLLBACK_V1,
+        'description' => '',
+    ], $manifestOverrides);
+
+    $pdo->prepare(
+        'INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb), CAST(:schema AS jsonb))'
+    )->execute([
+        ':slug' => $slug,
+        ':status' => $status,
+        ':manifest' => json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':schema' => $schema === null ? null : json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+}
+
+/**
+ * @param array<string, mixed> $manifestOverrides
+ * @param array<string, mixed>|null $schema
+ */
+function insertRollbackSnapshot(PDO $pdo, string $slug, array $manifestOverrides, string $status, ?array $schema, string $targetVersion): void
+{
+    $manifest = array_merge([
+        'name' => $slug,
+        'label' => $slug,
+        'version' => ROLLBACK_V1,
+        'type' => 'entity',
+        'core_version' => ROLLBACK_V1,
+        'description' => '',
+    ], $manifestOverrides);
+
+    $pdo->prepare(
+        'INSERT INTO plugin_update_history (slug, status, manifest_json, schema_json, target_version)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb), CAST(:schema AS jsonb), :target)'
+    )->execute([
+        ':slug' => $slug,
+        ':status' => $status,
+        ':manifest' => json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':schema' => $schema === null ? null : json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':target' => $targetVersion,
+    ]);
+}
 
 echo str_repeat('-', 40) . "\n";
 
@@ -34,8 +88,6 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
     $slug = 'test_rollback_ok_' . bin2hex(random_bytes(3));
 
     $currentSchema = [
-        'entity' => $slug,
-        'version' => ROLLBACK_V2,
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
             'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
@@ -45,8 +97,6 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
     ];
 
     $snapshotSchema = [
-        'entity' => $slug,
-        'version' => ROLLBACK_V1,
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
         ],
@@ -54,27 +104,8 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
         'relations' => [],
     ];
 
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Rollback Plugin', 'entity', :version, 'active', 5, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => ROLLBACK_V2,
-        ':schema' => json_encode($currentSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-    ]);
-
-    $pdo->prepare(
-        "INSERT INTO plugin_update_history (
-            slug, name, plugin_type, version, status, schema_version, schema_json, target_version
-         ) VALUES (
-            :slug, 'Rollback Plugin', 'entity', :version, 'active', 2, CAST(:schema AS jsonb), :target
-         )"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => ROLLBACK_V1,
-        ':schema' => json_encode($snapshotSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ':target' => ROLLBACK_V2,
-    ]);
+    insertRollbackTestPlugin($pdo, $slug, ['label' => ROLLBACK_PLUGIN_LABEL, 'version' => ROLLBACK_V2], 'active', $currentSchema);
+    insertRollbackSnapshot($pdo, $slug, ['label' => ROLLBACK_PLUGIN_LABEL, 'version' => ROLLBACK_V1], 'active', $snapshotSchema, ROLLBACK_V2);
 
     $lifecycle = <<<PHP
 <?php
@@ -92,8 +123,8 @@ final class Lifecycle implements PluginLifecycleUpdateInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Rollback Plugin',
+        'name' => $slug,
+        'label' => ROLLBACK_PLUGIN_LABEL,
         'version' => ROLLBACK_V2,
         'type' => 'entity',
         'core_version' => ROLLBACK_V1,
@@ -108,14 +139,13 @@ PHP;
         assertEquals(ROLLBACK_V1, $result['rollback']['to_version'], 'Rollback should report snapshot version as target');
         assertEquals(ROLLBACK_V1, $GLOBALS['rollback_to_version'] ?? null, 'onRollback should receive target version');
 
-        $stmt = $pdo->prepare('SELECT version, status, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version, status, schema_json FROM plugins WHERE slug = :slug");
         $stmt->execute([ROLLBACK_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
         assertEquals(ROLLBACK_V1, (string) ($row['version'] ?? ''), 'Version should be restored from snapshot');
         assertEquals('active', (string) ($row['status'] ?? ''), 'Status should be restored from snapshot');
-        assertEquals('2', (string) ($row['schema_version'] ?? ''), 'schema_version should be restored from snapshot');
         assertTrue(!isset($decoded['fields']['email']), 'schema_json should be restored from snapshot');
     } finally {
         cleanupPluginRecord($pdo, $slug);
@@ -126,21 +156,12 @@ PHP;
 TestSuite::run('rollback() fails when no snapshot matches installed version', function () use ($pdo): void {
     $slug = 'test_rollback_missing_' . bin2hex(random_bytes(3));
 
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Rollback Missing', 'entity', :version, 'inactive', 3, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => ROLLBACK_V2,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'version' => ROLLBACK_V2,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertRollbackTestPlugin($pdo, $slug, ['label' => 'Rollback Missing', 'version' => ROLLBACK_V2], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     try {
@@ -154,12 +175,11 @@ TestSuite::run('rollback() fails when no snapshot matches installed version', fu
 
         assertTrue($threw, 'Rollback should fail when there is no snapshot for the installed version');
 
-        $stmt = $pdo->prepare('SELECT version, schema_version FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version FROM plugins WHERE slug = :slug");
         $stmt->execute([ROLLBACK_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertEquals(ROLLBACK_V2, (string) ($row['version'] ?? ''), 'Version must remain unchanged without snapshot');
-        assertEquals('3', (string) ($row['schema_version'] ?? ''), 'schema_version must remain unchanged without snapshot');
     } finally {
         cleanupPluginRecord($pdo, $slug);
     }
@@ -168,4 +188,3 @@ TestSuite::run('rollback() fails when no snapshot matches installed version', fu
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();
 exit(TestSuite::exitCode());
-

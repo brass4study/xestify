@@ -57,15 +57,17 @@ final class ExtensionPluginContentService
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed> schema_json fields plus target_entity, merged
+     *   in from manifest_json (STORY 10.3 §2bis — target_entity lives there, not
+     *   in schema_json), so callers keep reading $schema['target_entity'] as before.
      */
     private function loadExtensionSchema(string $pluginSlug): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT schema_json
+            "SELECT schema_json, manifest_json
                FROM plugins
               WHERE slug = :slug
-                AND plugin_type = 'extension'
+                AND manifest_json->>'type' = 'extension'
               LIMIT 1"
         );
         $stmt->execute([':slug' => $pluginSlug]);
@@ -74,9 +76,15 @@ final class ExtensionPluginContentService
             return [];
         }
 
-        $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
+        $decodedSchema = json_decode((string) ($row['schema_json'] ?? ''), true);
+        $schema = is_array($decodedSchema) ? $decodedSchema : [];
 
-        return is_array($decoded) ? $decoded : [];
+        $decodedManifest = json_decode((string) ($row['manifest_json'] ?? ''), true);
+        if (is_array($decodedManifest) && isset($decodedManifest['target_entity'])) {
+            $schema['target_entity'] = $decodedManifest['target_entity'];
+        }
+
+        return $schema;
     }
 
     /**

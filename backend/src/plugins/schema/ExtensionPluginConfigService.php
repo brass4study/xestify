@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Xestify\plugins\schema;
 
 use InvalidArgumentException;
-use OutOfBoundsException;
 use Xestify\repositories\PluginRepository;
 
 final class ExtensionPluginConfigService
@@ -17,11 +16,18 @@ final class ExtensionPluginConfigService
     }
 
     /**
+     * Computes the next schema (fields only — target_entity lives in
+     * manifest_json, not schema_json, STORY 10.3 §2bis) and the resolved
+     * target_entity. Does not persist: the caller
+     * (PluginAdministrationService::saveConfig()) writes both in a single
+     * PluginRepository::updateExtensionConfig() call, since they touch two
+     * different JSONB columns of the same row.
+     *
      * @param array<string, mixed> $schema
      * @param array<string, mixed> $payload
-     * @return array<string, mixed>
+     * @return array{schema: array<string, mixed>, target_entity: string}
      */
-    public function saveConfig(string $slug, array $schema, array $payload): array
+    public function saveConfig(array $schema, string $currentTargetEntity, array $payload): array
     {
         if (!isset($payload['fields']) || !is_array($payload['fields'])) {
             throw new InvalidArgumentException('fields must be an array.');
@@ -31,21 +37,18 @@ final class ExtensionPluginConfigService
         $nextSchema = $schema;
         $nextSchema['fields'] = $this->buildNextFields($schema, $rows);
         $nextSchema['ui_field_order'] = array_keys($nextSchema['fields']);
-        $nextSchema['target_entity'] = $this->resolveTargetEntity($payload, $schema);
 
-        $updated = $this->pluginRepository->updateSchemaConfig($slug, $nextSchema);
-        if ($updated === null) {
-            throw new OutOfBoundsException("Plugin '{$slug}' was not found.");
-        }
-
-        return $updated;
+        return [
+            'schema' => $nextSchema,
+            'target_entity' => $this->resolveTargetEntity($payload, $currentTargetEntity),
+        ];
     }
 
     /**
      * @param array<string, mixed> $schema
     * @return array{target_entity: string, fields: array<int, array<string, mixed>>}
      */
-    public function buildConfigPayload(array $schema): array
+    public function buildConfigPayload(array $schema, string $targetEntity): array
     {
         $rowsByKey = [];
         $fieldDefinitions = isset($schema['fields']) && is_array($schema['fields'])
@@ -80,7 +83,7 @@ final class ExtensionPluginConfigService
             ];
         }
 
-        $targetEntity = trim((string) ($schema['target_entity'] ?? '*'));
+        $targetEntity = trim($targetEntity);
         if ($targetEntity === '') {
             $targetEntity = '*';
         }
@@ -165,11 +168,10 @@ final class ExtensionPluginConfigService
 
     /**
      * @param array<string, mixed> $payload
-     * @param array<string, mixed> $schema
      */
-    private function resolveTargetEntity(array $payload, array $schema): string
+    private function resolveTargetEntity(array $payload, string $currentTargetEntity): string
     {
-        $targetEntity = trim((string) ($payload['target_entity'] ?? ($schema['target_entity'] ?? '*')));
+        $targetEntity = trim((string) ($payload['target_entity'] ?? ($currentTargetEntity !== '' ? $currentTargetEntity : '*')));
         if ($targetEntity === '') {
             throw new InvalidArgumentException('target_entity is required.');
         }

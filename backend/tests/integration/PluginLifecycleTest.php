@@ -43,8 +43,8 @@ final class Lifecycle implements PluginLifecycleInterface {
 PHP;
 
 $root = createPluginFixture([
-    'slug' => $slug,
-    'name' => 'Test Lifecycle Plugin',
+    'name' => $slug,
+    'label' => 'Test Lifecycle Plugin',
     'version' => '1.0.0',
     'type' => 'entity',
     'core_version' => '1.0.0',

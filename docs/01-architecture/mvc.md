@@ -10,7 +10,9 @@ Aplicar MVC en backend PHP y frontend JS sin acoplar la UI del negocio al servid
 
 Representa datos core y metadata.
 
-- SystemEntity — facade de lectura sobre `plugins WHERE plugin_type='entity'` (no usa system_entities)
+- El catálogo de entidades se lee directamente de `plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`
+  (`manifest_json` reemplaza a las antiguas columnas `plugin_type`/`plugin_name`/`version` — STORY 10.3 §2bis). No existe un
+  modelo `SystemEntity` (fue eliminado por completo, no queda como facade) ni la tabla `system_entities`.
 - EntityMetadata
 - EntityData
 - PluginRegistry
@@ -27,8 +29,11 @@ Responsabilidades:
 
 Expone endpoints API y orquesta servicios.
 
-- EntityController
-- PluginController
+- EntityController — expone además `ReverseRelationTabResolver` (STORY 10.3 §9):
+  `GET /entities/{slug}/tabs` mezcla las tabs registradas por plugins con las tabs
+  automáticas de "relación inversa" cuando otra entidad declara una relación
+  `belongs_to` hacia esta.
+- PluginManagerController
 - AuthController
 - UpdateController
 

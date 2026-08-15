@@ -133,11 +133,12 @@
         ['users', '#/users'],
         [userDetailPage('user-7'), '#/users/user-7'],
         [entityPage('persons'), '#/entity/persons'],
-        [entityCreatePage('persons'), '#/entity/persons/new'],
+        [entityCreatePage('persons'), '#/entity/persons/#new'],
         [entityRecordPage('persons', 'record-9'), '#/entity/persons/record-9'],
         [entityTabPage('persons', 'record-9', 'comments'), '#/entity/persons/record-9/comments'],
         ['plugins', '#/plugins'],
         [pluginConfigPage('comments'), '#/plugins/comments'],
+        [pluginConfigPage('#new'), '#/plugins/#new'],
         ['login', '#/login'],
       ];
 
@@ -321,7 +322,7 @@
       });
 
       const mixedNavbar = new Navbar(shell.getTarget('shell-mixed-bar-nav'), {
-        entities: [{ slug: 'persons', label: 'Clientes' }],
+        entities: [{ slug: 'persons', label: 'Personas' }],
         currentPage: 'entity:persons',
         userContainer: shell.getTarget('shell-mixed-bar-config-user'),
         linksContainer: shell.getTarget('shell-menu-nav'),

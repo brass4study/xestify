@@ -1179,3 +1179,85 @@
 - **Decisión manual:** El usuario pidió explícitamente pausar tras cada bloque del plan para revisar y stagear cambios antes de continuar, en vez de ejecutar la story de una sola vez.
 - **Decisión manual:** El usuario detectó la clave técnica en español `id_cliente` (mezclada en un test real, no solo en documentación) y especificó directamente el nombre de reemplazo (`id_person`), sin dejarlo a interpretación de la IA.
 - **Decisión manual:** Ante la duda planteada por el usuario sobre si el diseño de STORY 10.3 debería absorber la gestión de `schema_json.entity`, se decidió dejarlo hablado sin tocar el backlog todavía, para no ampliar el alcance de esta story.
+
+---
+
+### STORY 10.3: Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json`
+
+- **Fecha:** 2026-08-15 a 2026-08-16
+- **Estimado sin IA:** 30h (AC original de desacoplo `plugin_name`/`slug` con
+  cascada transaccional ~10h, más 4 ampliaciones de alcance sucesivas — refactor
+  de esquema `manifest_json`, alta manual, borrado en cascada, grid de
+  relaciones y tab de relación inversa — cada una con su propio diseño,
+  implementación y tests, ~5h cada una)
+- **Tiempo real con IA:** Sesión larga de varios bloques de trabajo continuo
+  (no medida con precisión por bloque)
+- **Aceleración:** No calculable con datos fiables
+- **Qué hizo IA:**
+  - Implementó el AC original: identidad técnica fija `plugin_name`, `slug`
+    editable con cascada transaccional (`plugin_entity_data`, `plugin_extension_data`,
+    `plugin_update_history`, `target_entity` de otros plugins), edición de
+    `name`/`description` en `PluginConfig`.
+  - Propuso y, tras 4 preguntas dirigidas de `AskUserQuestion` confirmadas por
+    el usuario, ejecutó un refactor mayor no previsto en el AC: consolidar
+    `plugin_name`/`plugin_type`/`version`/`name`/`description` de `plugins` en
+    una columna `manifest_json JSONB` viva, y eliminar `schema_version` (residual,
+    sin consumidores reales) de `plugins` y `plugin_update_history`. Reescribió
+    ~15 ficheros con SQL literal repetido siguiendo el patrón ya usado en la
+    sesión: cambios de producción primero, correr la suite completa para
+    obtener fallos concretos, arreglar el fixture de mayor apalancamiento
+    primero.
+  - Diagnosticó y corrigió una coupling de orden de tests oculta: al añadir la
+    limpieza de filas huérfanas de `plugins` que dejaban tests anteriores, un
+    test de `AppWiringTest.php` dejó de pasar porque dependía silenciosamente
+    de una fila que otro test dejaba atrás — se corrigió haciéndolo autónomo.
+  - Implementó, tras confirmación explícita del usuario en cada fork de
+    diseño (dos divisiones de clase por límite de método de SonarQube, decisión
+    de routing `#new` con su matiz explicado, campos editables en el alta vs.
+    solo-lectura), las 4 ampliaciones de alcance: alta manual de plugin (§6),
+    borrado en cascada (§7), grid "Relaciones" editable (§8) y tab de relación
+    inversa (§9).
+  - Corrigió, a petición del usuario a mitad de sesión, un bug real de
+    sincronización de estado en `PluginConfig.js` (acciones de fila descartaban
+    ediciones sin guardar) — y aplicó el mismo fix, no pedido explícitamente
+    pero de la misma clase de defecto, a los casos de error al guardar.
+  - Al cerrar la sesión, implementó a petición del usuario que el alta manual
+    active el plugin por defecto, y durante la propia verificación (no al
+    pedirlo el usuario) encontró y corrigió dos bugs reales adicionales que
+    ese cambio expuso: `POST /plugins`/`PUT /plugins/{slug}/status` devolvían
+    la fila cruda sin aplanar (rompiendo silenciosamente nombre/tipo tras esas
+    acciones), y `PluginManager.js` parcheaba la fila en memoria en vez de
+    recargar, perdiendo el flag `can_rollback`.
+  - Cuando el usuario pidió analizar los huecos documentales dejados por la
+    sesión, lanzó 3 agentes `Explore` en paralelo (arquitectura/API, guías de
+    plugins/entidades, proceso/backlog) que auditaron 13 ficheros de
+    documentación contra el código real, verificó manualmente los 2 hallazgos
+    más graves antes de presentarlos, y corrigió los 13 ficheros tras
+    confirmación del alcance con el usuario.
+- **Iteraciones:** 30+ (repartidas en: AC original; 4 preguntas dirigidas para
+  el refactor `manifest_json`; ~15 ficheros de test reescritos uno a uno tras
+  el refactor; varias rondas de hallazgos de SonarQube corregidos según se
+  screenshoteaban; 2 divisiones de clase confirmadas explícitamente; corrección
+  de rumbo del sentinel de ruta `_new`→`#new`; bug de sincronización de estado
+  reportado por el usuario; decisión de activación por defecto con 2 bugs
+  encontrados durante su propia verificación; auditoría y corrección de huecos
+  documentales)
+- **Decisión manual:** El usuario corrigió dos veces seguidas una explicación
+  técnica sobre por qué se usó `_new` como sentinel de ruta en vez de `new`,
+  hasta que se demostró con un caso de Node en vivo — la IA mantuvo su
+  posición con evidencia concreta en vez de ceder sin verificar.
+- **Decisión manual:** El usuario disputó dos veces un fix de SonarQube sobre
+  un setter con arrow function sin llaves, pidiendo verificación con `git diff`
+  primero y luego con una demostración en vivo de que un arrow de bloque
+  siempre devuelve `undefined` — la IA sostuvo el fix ya aplicado con evidencia
+  en ambos casos.
+- **Decisión manual:** Ante cada fork de diseño con impacto arquitectónico
+  (dividir una clase, forma exacta del sentinel de ruta, si los campos del
+  alta manual debían ser editables y guardables o solo de lectura, alcance
+  del pase de documentación), la IA preguntó explícitamente antes de decidir,
+  en vez de asumir alcance por su cuenta — patrón consistente durante toda la
+  sesión.
+- **Decisión manual:** El usuario limitó explícitamente el activado automático
+  por defecto al alta manual, dejando la sincronización masiva desde disco sin
+  cambios (sigue registrando `inactive`) — para no activar en bloque plugins
+  descubiertos sin revisión previa del admin.

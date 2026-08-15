@@ -13,6 +13,7 @@ export class PluginManager {
 	#container;
 	#api;
 	#onConfigure;
+	#onAdd;
 	#plugins = [];
 	#updatesBySlug = {};
 	#feedbackMessage = null;
@@ -24,13 +25,14 @@ export class PluginManager {
 	/**
 	 * @param {HTMLElement|string} container
 	 * @param {Object|undefined} api
-	 * @param {{shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onConfigure?: Function}} options
+	 * @param {{shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onConfigure?: Function, onAdd?: Function}} options
 	 */
 	constructor(container, api = undefined, options = {}) {
 		const resolved = this.resolveContainer(container);
 		this.#container = resolved;
 		this.#api = api ?? new Api();
 		this.#onConfigure = typeof options.onConfigure === 'function' ? options.onConfigure : () => {};
+		this.#onAdd = typeof options.onAdd === 'function' ? options.onAdd : () => {};
 		this.#shellLayout = options.shellLayout ?? null;
 		this.#title = typeof options.title === 'string' ? options.title : 'Gestión de plugins';
 		this.#description = typeof options.description === 'string'
@@ -87,11 +89,12 @@ export class PluginManager {
 
 	#render() {
 		const syncButton = this.#createSyncButton();
+		const addButton = this.#createAddButton();
 
 		const layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
 			.setTitle(this.#title)
 			.setDescription(this.#description)
-			.setHeaderToolbar(syncButton)
+			.setHeaderToolbar([syncButton, addButton])
 			.build();
 		const contentHost = layout.getContentTarget();
 		layout.setNotification(null);
@@ -111,6 +114,19 @@ export class PluginManager {
 			},
 		});
 		return syncButton;
+	}
+
+	#createAddButton() {
+		return component.create('button', {
+			label: t('plugins.add', 'Añadir plugin'),
+			variant: 'secondary',
+			size: 'md',
+			dataRole: 'plugin-add',
+			dataAction: 'add',
+			onClick: () => {
+				this.#onAdd();
+			},
+		});
 	}
 
 	#appendFeedback(layout) {
@@ -309,22 +325,17 @@ export class PluginManager {
 		UiResilienceService.setButtonPending(button, newStatus === 'active' ? `${t('plugins.activate', 'Activar')}...` : `${t('plugins.deactivate', 'Desactivar')}...`);
 
 		this.#api.put(`/plugins/${plugin.slug}/status`, { status: newStatus })
-			.then((response) => {
+			.then(async (response) => {
 				if (response?.ok === false) {
 					throw new Error(response.error?.message ?? 'No se pudo actualizar el estado');
 				}
-				const updated = response?.data ?? response;
 
-				const index = this.#plugins.findIndex((p) => p.slug === plugin.slug);
-				if (index !== -1) {
-					this.#plugins[index] = updated;
-				}
 				UiResilienceService.showNotification({
 					type: 'success',
 					title: t('ui.success', 'Éxito'),
 					message: `Plugin "${plugin.name || plugin.slug}" ${newStatus === 'active' ? 'activado' : 'desactivado'} correctamente.`,
 				});
-				this.#render();
+				await this.#refreshData();
 			})
 			.catch((error) => {
 				UiResilienceService.clearButtonPending(button, newStatus === 'active' ? t('plugins.activate', 'Activar') : t('plugins.deactivate', 'Desactivar'));

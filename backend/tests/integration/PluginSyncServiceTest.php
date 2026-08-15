@@ -29,14 +29,46 @@ const SYNC_SEMVER_1_0 = '1.0.0';
 const SYNC_SEMVER_2_0 = '2.0.0';
 const MSG_PLUGIN_MUST_EXIST_AFTER_SYNC = 'Plugin must exist after sync';
 const SCHEMA_JSON_SUFFIX = '/schema.json';
+const SELECT_SCHEMA_JSON_BY_SLUG_SQL = 'SELECT schema_json FROM plugins WHERE slug = :slug';
+
+/**
+ * Seeds a plugins row directly with the new manifest_json shape (STORY 10.3
+ * §2bis) — used by tests that need to seed a pre-existing installed row
+ * before syncAll() runs against it.
+ *
+ * @param array<string, mixed> $manifestOverrides merged over a minimal default manifest
+ * @param array<string, mixed>|null $schema
+ */
+function insertSyncTestPlugin(PDO $pdo, string $slug, array $manifestOverrides, string $status, ?array $schema): void
+{
+    $manifest = array_merge([
+        'name' => $slug,
+        'label' => $slug,
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+        'description' => '',
+    ], $manifestOverrides);
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb), CAST(:schema AS jsonb))'
+    );
+    $stmt->execute([
+        ':slug' => $slug,
+        ':status' => $status,
+        ':manifest' => json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':schema' => $schema === null ? null : json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+}
 
 echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('syncAll() registers new plugin and returns summary', function () use ($pdo): void {
     $slug = 'test_sync_new_' . bin2hex(random_bytes(3));
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Sync New',
+        'name' => $slug,
+        'label' => 'Sync New',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SYNC_SEMVER_1_0,
@@ -49,9 +81,9 @@ TestSuite::run('syncAll() registers new plugin and returns summary', function ()
 
         assertEquals(1, $result['summary']['discovered'], 'Should discover one plugin');
         assertEquals(1, $result['summary']['registered'], 'Should register one plugin');
-        assertEquals('registered', $result['plugins'][$slug]['result'], 'Plugin should be registered');
+        assertEquals('registered', $result['plugins'][$slug][0]['result'], 'Plugin should be registered');
 
-        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version, schema_json FROM plugins WHERE slug = :slug");
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -67,8 +99,8 @@ TestSuite::run('syncAll() registers new plugin and returns summary', function ()
 TestSuite::run('syncAll() rolls back plugin registration when onInstall fails', function () use ($pdo): void {
     $slug = 'test_sync_install_fail_' . bin2hex(random_bytes(3));
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Install Fails',
+        'name' => $slug,
+        'label' => 'Install Fails',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SYNC_SEMVER_1_0,
@@ -94,7 +126,7 @@ PHP;
         $result = $service->syncAll();
 
         assertEquals(1, $result['summary']['errors'], 'onInstall failure should be reported as sync error');
-        assertEquals('error', $result['plugins'][$slug]['result'], 'Plugin result should be error');
+        assertEquals('error', $result['plugins'][$slug][0]['result'], 'Plugin result should be error');
 
         $stmt = $pdo->prepare('SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug');
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
@@ -110,34 +142,24 @@ PHP;
     }
 });
 
-TestSuite::run('syncAll() preserves installed runtime for existing outdated plugin', function () use ($pdo): void {
+TestSuite::run('syncAll() never overwrites admin-owned name once installed (STORY 10.3)', function () use ($pdo): void {
     $slug = 'test_sync_old_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, :name, 'entity', '1.0.0', 'inactive', 4, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':name' => 'Old Name',
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Old Label'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertSyncTestPlugin($pdo, $slug, ['label' => 'Old Name'], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Old Label'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'New Name',
+        'name' => $slug,
+        'label' => 'New Name',
         'version' => SYNC_SEMVER_2_0,
         'type' => 'entity',
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => SYNC_SEMVER_2_0,
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'label' => 'New Label'],
             'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
@@ -151,16 +173,22 @@ TestSuite::run('syncAll() preserves installed runtime for existing outdated plug
         $service = buildPluginSyncService($root, $pdo);
         $result = $service->syncAll();
 
-        assertEquals('outdated', $result['plugins'][$slug]['result'], 'Plugin should be reported as outdated');
+        assertEquals('outdated', $result['plugins'][$slug][0]['result'], 'Plugin should be reported as outdated');
 
-        $stmt = $pdo->prepare('SELECT name, version, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(
+            "SELECT manifest_json->>'label' AS name, manifest_json->>'version' AS version, schema_json
+             FROM plugins WHERE slug = :slug"
+        );
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertTrue($row !== false, 'Plugin must still exist after sync');
-        assertEquals('New Name', (string) $row['name'], 'Safe metadata refresh should update name');
+        assertEquals(
+            'Old Name',
+            (string) $row['name'],
+            'name is admin-owned after install; sync must never overwrite it from the manifest (STORY 10.3)'
+        );
         assertEquals(SYNC_SEMVER_1_0, (string) $row['version'], 'Installed version must be preserved');
-        assertEquals('4', (string) $row['schema_version'], 'schema_version must be preserved');
 
         $decoded = json_decode((string) $row['schema_json'], true);
         assertEquals('Old Label', (string) ($decoded['fields']['name']['label'] ?? ''), 'Schema must not be consumed');
@@ -178,24 +206,16 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged entity 
             'name' => ['type' => 'string', 'required' => true],
         ],
     ];
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Corrupt Plugin', 'entity', '1.0.0', 'inactive', 26, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode($corruptSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-    ]);
+    insertSyncTestPlugin($pdo, $slug, ['label' => 'Corrupt Plugin'], 'inactive', $corruptSchema);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Corrupt Plugin',
+        'name' => $slug,
+        'label' => 'Corrupt Plugin',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => SYNC_SEMVER_1_0,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -215,14 +235,13 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged entity 
         $result = $service->syncAll();
 
         assertEquals(1, $result['summary']['errors'], 'Corrupt installed schema should be reported as error');
-        assertEquals('error', $result['plugins'][$slug]['result'], 'Plugin result should be error');
+        assertEquals('error', $result['plugins'][$slug][0]['result'], 'Plugin result should be error');
 
-        $stmt = $pdo->prepare('SELECT schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_SCHEMA_JSON_BY_SLUG_SQL);
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
-        assertEquals('26', (string) ($row['schema_version'] ?? ''), 'sync must not repair schema_version implicitly');
         assertTrue(!isset($decoded['fields']['email']), 'sync must not repair schema_json implicitly');
     } finally {
         cleanupPluginRecord($pdo, $slug);
@@ -232,34 +251,25 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged entity 
 
 TestSuite::run('syncAll() reports corrupt installed schema for unchanged extension plugin', function () use ($pdo): void {
     $slug = 'test_sync_ext_corrupt_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Corrupt Extension', 'extension', :version, 'inactive', 3, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => SYNC_SEMVER_1_0,
-        ':schema' => json_encode([
-            'plugin' => $slug,
-            'version' => SYNC_SEMVER_1_0,
-            'target_entity' => '*',
-            'fields' => [
-                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
-            ],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertSyncTestPlugin($pdo, $slug, [
+        'label' => 'Corrupt Extension',
+        'type' => 'extension',
+        'target_entity' => '*',
+    ], 'inactive', [
+        'fields' => [
+            'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+        ],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Corrupt Extension',
+        'name' => $slug,
+        'label' => 'Corrupt Extension',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'extension',
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $root = createPluginFixture($manifest);
     file_put_contents($root . '/' . $slug . SCHEMA_JSON_SUFFIX, (string) json_encode([
-        'plugin' => $slug,
-        'version' => SYNC_SEMVER_1_0,
-        'target_entity' => '*',
         'fields' => [
             'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
             'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
@@ -271,12 +281,7 @@ TestSuite::run('syncAll() reports corrupt installed schema for unchanged extensi
         $result = $service->syncAll();
 
         assertEquals(1, $result['summary']['errors'], 'Corrupt installed extension schema should be reported as error (04.02)');
-        assertEquals('error', $result['plugins'][$slug]['result'], 'Extension result should be error');
-
-        $stmt = $pdo->prepare('SELECT schema_version FROM plugins WHERE slug = :slug');
-        $stmt->execute([SYNC_SLUG_PARAM => $slug]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        assertEquals('3', (string) ($row['schema_version'] ?? ''), 'sync must not repair schema_version implicitly');
+        assertEquals('error', $result['plugins'][$slug][0]['result'], 'Extension result should be error');
     } finally {
         cleanupPluginRecord($pdo, $slug);
         removePluginFixture($root);
@@ -292,8 +297,6 @@ TestSuite::run('syncAll() does not report corruption for a configured plugin wit
     // gets reported as schema corruption.
     $slug = 'test_sync_configured_' . bin2hex(random_bytes(3));
     $installedSchema = [
-        'entity' => $slug,
-        'version' => SYNC_SEMVER_1_0,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -306,25 +309,16 @@ TestSuite::run('syncAll() does not report corruption for a configured plugin wit
         ],
         'relations' => [],
     ];
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Configured Plugin', 'entity', :version, 'active', 2, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => SYNC_SEMVER_1_0,
-        ':schema' => json_encode($installedSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-    ]);
+    insertSyncTestPlugin($pdo, $slug, ['label' => 'Configured Plugin'], 'active', $installedSchema);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Configured Plugin',
+        'name' => $slug,
+        'label' => 'Configured Plugin',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'entity',
         'core_version' => SYNC_SEMVER_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => SYNC_SEMVER_1_0,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -343,7 +337,7 @@ TestSuite::run('syncAll() does not report corruption for a configured plugin wit
         $result = $service->syncAll();
 
         assertEquals(0, $result['summary']['errors'], 'A configured plugin with an inactive suggested field must not be reported as corrupt');
-        assertEquals('unchanged', $result['plugins'][$slug]['result'], 'Plugin should sync as unchanged, not error');
+        assertEquals('unchanged', $result['plugins'][$slug][0]['result'], 'Plugin should sync as unchanged, not error');
     } finally {
         cleanupPluginRecord($pdo, $slug);
         removePluginFixture($root);
@@ -359,8 +353,8 @@ TestSuite::run('syncAll() reports invalid manifest without aborting batch', func
     $goodDir = $root . '/' . $goodSlug;
     mkdir($goodDir, 0777, true);
     file_put_contents($goodDir . '/manifest.json', (string) json_encode([
-        'slug' => $goodSlug,
-        'name' => 'Good',
+        'name' => $goodSlug,
+        'label' => 'Good',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'extension',
         'core_version' => SYNC_SEMVER_1_0,
@@ -377,8 +371,8 @@ TestSuite::run('syncAll() reports invalid manifest without aborting batch', func
         assertEquals(2, $result['summary']['discovered'], 'Should discover both plugin directories');
         assertEquals(1, $result['summary']['registered'], 'Should register the valid plugin');
         assertEquals(1, $result['summary']['errors'], 'Should report one sync error');
-        assertEquals('registered', $result['plugins'][$goodSlug]['result'], 'Valid plugin should be registered');
-        assertEquals('error', $result['plugins'][$badSlug]['result'], 'Invalid plugin should be reported as error');
+        assertEquals('registered', $result['plugins'][$goodSlug][0]['result'], 'Valid plugin should be registered');
+        assertEquals('error', $result['plugins'][$badSlug][0]['result'], 'Invalid plugin should be reported as error');
     } finally {
         cleanupPluginRecord($pdo, $goodSlug);
         cleanupPluginRecord($pdo, $badSlug);
@@ -389,24 +383,22 @@ TestSuite::run('syncAll() reports invalid manifest without aborting batch', func
 TestSuite::run('syncAll() persists extension schema on first registration when schema.json exists', function () use ($pdo): void {
     $slug = 'test_sync_ext_schema_' . bin2hex(random_bytes(3));
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Extension With Schema',
+        'name' => $slug,
+        'label' => 'Extension With Schema',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'extension',
         'core_version' => SYNC_SEMVER_1_0,
+        'target_entity' => '*',
     ];
     $root = createPluginFixture($manifest);
     $schemaPath = $root . '/' . $slug . SCHEMA_JSON_SUFFIX;
     file_put_contents(
         $schemaPath,
         (string) json_encode([
-            'plugin' => $slug,
-            'version' => SYNC_SEMVER_1_0,
             'fields' => [
                 'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
                 'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
             ],
-            'target_entity' => '*',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     );
 
@@ -414,9 +406,9 @@ TestSuite::run('syncAll() persists extension schema on first registration when s
         $service = buildPluginSyncService($root, $pdo);
         $result = $service->syncAll();
 
-        assertEquals('registered', $result['plugins'][$slug]['result'], 'Extension should be registered');
+        assertEquals('registered', $result['plugins'][$slug][0]['result'], 'Extension should be registered');
 
-        $stmt = $pdo->prepare('SELECT schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_SCHEMA_JSON_BY_SLUG_SQL);
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -432,32 +424,28 @@ TestSuite::run('syncAll() persists extension schema on first registration when s
 
 TestSuite::run('syncAll() backfills missing extension schema_json from disk schema', function () use ($pdo): void {
     $slug = 'test_sync_ext_backfill_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, :name, 'extension', '1.0.0', 'inactive', 1, NULL)"
-    )->execute([
-        ':slug' => $slug,
-        ':name' => 'Backfill Extension',
-    ]);
+    insertSyncTestPlugin($pdo, $slug, [
+        'label' => 'Backfill Extension',
+        'type' => 'extension',
+        'target_entity' => '*',
+    ], 'inactive', null);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Backfill Extension',
+        'name' => $slug,
+        'label' => 'Backfill Extension',
         'version' => SYNC_SEMVER_1_0,
         'type' => 'extension',
         'core_version' => SYNC_SEMVER_1_0,
+        'target_entity' => '*',
     ];
     $root = createPluginFixture($manifest);
     $schemaPath = $root . '/' . $slug . SCHEMA_JSON_SUFFIX;
     file_put_contents(
         $schemaPath,
         (string) json_encode([
-            'plugin' => $slug,
-            'version' => SYNC_SEMVER_1_0,
             'fields' => [
                 'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
             ],
-            'target_entity' => '*',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     );
 
@@ -465,18 +453,123 @@ TestSuite::run('syncAll() backfills missing extension schema_json from disk sche
         $service = buildPluginSyncService($root, $pdo);
         $result = $service->syncAll();
 
-        assertEquals('unchanged', $result['plugins'][$slug]['result'], 'Extension should remain unchanged');
+        assertEquals('unchanged', $result['plugins'][$slug][0]['result'], 'Extension should remain unchanged');
 
-        $stmt = $pdo->prepare('SELECT schema_json, schema_version FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_SCHEMA_JSON_BY_SLUG_SQL);
         $stmt->execute([SYNC_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertTrue($row !== false, MSG_PLUGIN_MUST_EXIST_AFTER_SYNC);
         $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
         assertTrue(is_array($decoded), 'Missing schema_json should be backfilled');
-        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'Backfill should preserve schema_version');
     } finally {
         cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() processes every instance independently when a plugin_name has multiple rows', function () use ($pdo): void {
+    $pluginName = 'test_sync_multi_' . bin2hex(random_bytes(3));
+    $slugA = $pluginName . '_a';
+    $slugB = $pluginName . '_b';
+
+    foreach ([$slugA, $slugB] as $slug) {
+        insertSyncTestPlugin($pdo, $slug, ['name' => $pluginName, 'label' => 'Multi Instance ' . $slug], 'inactive', [
+            'fields' => [
+                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+            ],
+            'custom_fields' => [],
+            'relations' => [],
+        ]);
+    }
+
+    $manifest = [
+        'name' => $pluginName,
+        'label' => 'Multi Instance Plugin',
+        'version' => SYNC_SEMVER_2_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    $schema = [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $root = createPluginFixture($manifest, false, false, $schema);
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        $instanceResults = $result['plugins'][$pluginName] ?? [];
+        assertEquals(2, count($instanceResults), 'Both instances of the same plugin_name must be processed');
+
+        $bySlug = [];
+        foreach ($instanceResults as $instanceResult) {
+            $bySlug[$instanceResult['slug']] = $instanceResult;
+        }
+
+        assertEquals('outdated', $bySlug[$slugA]['result'] ?? null, 'Instance A should be reported as outdated');
+        assertEquals('outdated', $bySlug[$slugB]['result'] ?? null, 'Instance B should be reported as outdated');
+        assertEquals(2, $result['summary']['outdated'], 'Summary must count both outdated instances');
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) AS cnt FROM plugins WHERE manifest_json->>'name' = :plugin_name");
+        $countStmt->execute([':plugin_name' => $pluginName]);
+        $countRow = $countStmt->fetch(PDO::FETCH_ASSOC);
+        assertEquals(
+            '2',
+            (string) ($countRow['cnt'] ?? '0'),
+            'Sync must not create a third instance nor delete existing ones'
+        );
+    } finally {
+        cleanupPluginRecord($pdo, $pluginName);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() recognizes a renamed instance by plugin_name and does not create a duplicate row (STORY 10.3)', function () use ($pdo): void {
+    $pluginName = 'test_sync_rename_' . bin2hex(random_bytes(3));
+    $renamedSlug = $pluginName . '_renamed';
+
+    insertSyncTestPlugin($pdo, $renamedSlug, ['name' => $pluginName, 'label' => 'Renamed Sync Plugin'], 'inactive', [
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ]);
+
+    $manifest = [
+        'name' => $pluginName,
+        'label' => 'Renamed Sync Plugin',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ];
+    // No explicit schema: createPluginFixture()'s default entity schema
+    // matches the shape inserted above exactly (same identities/fields).
+    $root = createPluginFixture($manifest);
+
+    try {
+        $service = buildPluginSyncService($root, $pdo);
+        $result = $service->syncAll();
+
+        $instanceResults = $result['plugins'][$pluginName] ?? [];
+        assertEquals(1, count($instanceResults), 'Only the renamed instance should be reported, not a new one');
+        assertEquals($renamedSlug, $instanceResults[0]['slug'] ?? null, 'Sync must report the current (renamed) slug');
+        assertEquals('unchanged', $instanceResults[0]['result'] ?? null, 'A matching version must resolve to unchanged, not registered');
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) AS cnt FROM plugins WHERE manifest_json->>'name' = :plugin_name");
+        $countStmt->execute([':plugin_name' => $pluginName]);
+        $countRow = $countStmt->fetch(PDO::FETCH_ASSOC);
+        assertEquals('1', (string) ($countRow['cnt'] ?? '0'), 'Sync after a rename must not create a duplicate row for the same plugin_name');
+    } finally {
+        cleanupPluginRecord($pdo, $pluginName);
         removePluginFixture($root);
     }
 });

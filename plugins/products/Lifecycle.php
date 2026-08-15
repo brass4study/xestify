@@ -4,26 +4,21 @@ declare(strict_types=1);
 
 namespace Xestify\plugins\products;
 
-use PDO;
 use Xestify\plugins\contracts\PluginLifecycleInterface;
-
-require_once __DIR__ . '/Installer.php';
 
 /**
  * Lifecycle handler for the products plugin.
  *
- * onInstall() -> runs the Installer to register the entity and seed its schema.
+ * onInstall() -> no action needed: PluginSyncService::installFromManifest()
+ * already registers the plugin row and seeds schema_json from schema.json
+ * before this runs.
  * onActivate() / onDeactivate() -> no action needed for this plugin.
  */
 final class Lifecycle implements PluginLifecycleInterface
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
-
     public function onInstall(): void
     {
-        (new Installer($this->pdo))->install();
+        // No install-time setup needed: see class docblock.
     }
 
     public function onActivate(): void
@@ -36,4 +31,3 @@ final class Lifecycle implements PluginLifecycleInterface
         // No action required for products on deactivate
     }
 }
-

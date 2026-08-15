@@ -60,6 +60,8 @@ $router->delete(ROUTE_PLUGIN_ITEM, fn(array $params, Request $request) => $conta
 
 // Plugin manager endpoints
 $router->get('/api/v1/plugins', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->listPlugins($params, $request));
+$router->get('/api/v1/plugins/available', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->listAvailablePlugins($params, $request));
+$router->post('/api/v1/plugins', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->registerPlugin($params, $request));
 $router->post('/api/v1/plugins/sync', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->syncPlugins($params, $request));
 $router->get('/api/v1/plugins/updates', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->listPluginUpdates($params, $request));
 $router->post('/api/v1/plugins/{slug}/update', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->updatePlugin($params, $request));
@@ -67,3 +69,4 @@ $router->post('/api/v1/plugins/{slug}/rollback', fn(array $params, Request $requ
 $router->put('/api/v1/plugins/{slug}/status', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->updatePluginStatus($params, $request));
 $router->get('/api/v1/plugins/{slug}/config', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->getPluginConfig($params, $request));
 $router->put('/api/v1/plugins/{slug}/config', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->updatePluginConfig($params, $request));
+$router->delete('/api/v1/plugins/{slug}', fn(array $params, Request $request) => $container->get(PluginManagerController::class)->deletePlugin($params, $request));

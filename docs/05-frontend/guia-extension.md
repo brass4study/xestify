@@ -59,9 +59,24 @@ transversales, ver [arquitectura.md](arquitectura.md).
 
 ## Puntos de integración de plugins en UI
 
-Los plugins de tipo `extension` (a diferencia de los de tipo `entity`, que
-aportan un catálogo completo) añaden una pestaña y un panel propio dentro de
-`EntityEdit` para una entidad destino (`target_entity` en su manifest).
+`GET /entities/{slug}/tabs` puede devolver tabs de **dos orígenes distintos** —
+esta sección solo cubre el primero:
+
+1. **Tabs aportadas por un plugin `extension`** (a diferencia de los plugins
+   `entity`, que aportan un catálogo completo): añaden una pestaña y un panel
+   propio dentro de `EntityEdit` para una entidad destino (`target_entity` en su
+   manifest). Es el flujo que describe el resto de esta sección.
+2. **Tabs de "relación inversa" (STORY 10.3 §9)**, `{type: "relation"}`: las
+   genera automáticamente el **núcleo** (`ReverseRelationTabResolver` en
+   backend) cuando otra entidad activa declara una relación `belongs_to` hacia
+   la entidad actual (grid "Relaciones" de `PluginConfig`, STORY 10.3 §8). **No
+   tienen `plugin.js` propio, no pasan por `PluginPanelRegistry` y `EntityEdit`
+   las excluye explícitamente del import dinámico** (`#loadPluginModules`
+   filtra `tab.type !== 'relation'`) — construye directamente un
+   `RelatedRecordsPanel` genérico (`views/modules/RelatedRecordsPanel.js`), que
+   sí respeta el mismo contrato `{element, flush}` para reusar el mecanismo de
+   montaje de `EntityEdit`, pero se instancia a mano, no se registra. Ver
+   `docs/01-architecture/plugins.md` para el detalle backend.
 
 Contrato de panel obligatorio, expuesto por la clase que registra el plugin:
 
@@ -78,9 +93,12 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
    `docs/04-plugins/`) devolviendo `{ id, label, endpoint }` por cada tab que
    aporta para la entidad activa.
 2. **Frontend — carga**: `EntityEdit` pide `GET /entities/{slug}/tabs`,
-   importa dinámicamente `plugins/{id}/plugin.js` para cada tab recibido
-   (`#loadPluginModules`) y construye el panel con
-   `PluginPanelRegistry.build(tab.id, { endpoint, recordId, api })`.
+   importa dinámicamente `plugins/{plugin_name}/plugin.js` para cada tab de
+   plugin recibida (`#loadPluginModules`, usa `tab.plugin_name`, la identidad
+   técnica fija del plugin — no `tab.id`, que solo identifica la tab en la UI y
+   no es válido como ruta de módulo si el mismo plugin tiene varias instancias
+   activas) y construye el panel con
+   `PluginPanelRegistry.build(tab.plugin_name ?? tab.id, { endpoint, recordId, api })`.
 3. **Frontend — autorregistro**: `plugin.js` importa
    `PluginPanelRegistry` desde `models/PluginPanelModel.js` y se registra a
    sí mismo al cargarse:
@@ -118,6 +136,7 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
 - [ ] Spec E2E si la página participa en un flujo de usuario relevante
 
 **Voy a añadir un plugin de extensión con UI propia:**
+(no aplica a tabs de relación inversa — esas las genera el núcleo, sin `plugin.js`, ver arriba)
 - [ ] Backend: hook `registerTabs` devuelve `{ id, label, endpoint }`
 - [ ] `plugins/{slug}/plugin.js` exporta una clase con el contrato `{ element, flush }`
 - [ ] Autorregistro con `PluginPanelRegistry.register(slug, Clase)` al final del módulo

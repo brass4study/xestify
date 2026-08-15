@@ -14,7 +14,7 @@ use Xestify\plugins\contracts\AbstractUniqueFieldHook;
  */
 final class Hooks extends AbstractUniqueFieldHook
 {
-    protected function entitySlug(): string
+    protected function pluginName(): string
     {
         return 'products';
     }

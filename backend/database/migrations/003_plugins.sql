@@ -1,27 +1,40 @@
-﻿-- Migration: 003_plugins.sql
+-- Migration: 003_plugins.sql
 -- Registry of all plugins installed in the system.
 -- Stores lifecycle metadata and optional schema definition.
--- plugin_type: 'entity' | 'extension'
--- status:      'active' | 'inactive' | 'error'
+-- status: 'active' | 'inactive' | 'error'
+-- manifest_json: mirrors the plugin's manifest.json on disk — {name, label,
+--   label_singular, version, type, core_version, target_entity, description}.
+--   Live, not a frozen install-time snapshot:
+--   - name/version/type/core_version/label_singular always mirror the
+--     manifest on disk, refreshed on every update() (never admin-editable).
+--   - label/description/target_entity are admin-editable via PluginConfig
+--     (PluginIdentityService::updateIdentity() / ExtensionPluginConfigService);
+--     update() preserves them (merge, never overwrite).
+--   manifest_json->>'name' is the fixed technical identity (= plugin folder
+--   name / PHP namespace), used by PluginClassLoader/PluginHookRegistrar/
+--   PluginLifecycleInvoker to load classes. Not unique: the same folder can
+--   be registered as multiple independent instances (each with its own
+--   unique slug/data), e.g. two "persons" rows with different slugs.
+-- slug: editable navigation/URL identifier (STORY 10.3), unique.
 -- Idempotent: safe to run multiple times (CREATE TABLE IF NOT EXISTS).
--- STORY 2.4
+-- STORY 2.4, STORY 10.3
 
 CREATE TABLE IF NOT EXISTS plugins (
     id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     slug           VARCHAR(100) NOT NULL,
-    name           VARCHAR(255) NOT NULL DEFAULT '',
-    plugin_type    VARCHAR(20)  NOT NULL,
-    version        VARCHAR(20)  NOT NULL,
     status         VARCHAR(20)  NOT NULL DEFAULT 'inactive',
-    schema_version INTEGER      NOT NULL DEFAULT 1,
+    manifest_json  JSONB        NOT NULL,
     schema_json    JSONB        NULL,
     installed_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT plugins_slug_unique   UNIQUE (slug),
-    CONSTRAINT plugins_type_check    CHECK  (plugin_type IN ('entity', 'extension')),
+    CONSTRAINT plugins_type_check    CHECK  (manifest_json->>'type' IN ('entity', 'extension')),
     CONSTRAINT plugins_status_check  CHECK  (status IN ('active', 'inactive', 'error'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_plugins_type_status
-    ON plugins (plugin_type, status);
+    ON plugins ((manifest_json->>'type'), status);
+
+CREATE INDEX IF NOT EXISTS idx_plugins_plugin_name
+    ON plugins ((manifest_json->>'name'));

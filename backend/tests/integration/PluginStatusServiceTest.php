@@ -29,6 +29,28 @@ const STATUS_PLUGIN_NAME = 'Status Plugin';
 const STATUS_PLUGIN_VERSION = '1.0.0';
 const STATUS_PLUGIN_SCHEMA = '{"fields":{"name":{"type":"string","required":true}}}';
 
+function insertStatusTestPlugin(PDO $pdo, string $slug, string $status): void
+{
+    $manifest = json_encode([
+        'name' => $slug,
+        'label' => STATUS_PLUGIN_NAME,
+        'version' => STATUS_PLUGIN_VERSION,
+        'type' => 'entity',
+        'core_version' => STATUS_PLUGIN_VERSION,
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $pdo->prepare(
+        'INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb), CAST(:schema AS jsonb))'
+    )->execute([
+        ':slug' => $slug,
+        ':status' => $status,
+        ':manifest' => $manifest,
+        ':schema' => STATUS_PLUGIN_SCHEMA,
+    ]);
+}
+
 echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('activate() updates plugin status to active', function () use ($pdo): void {
@@ -47,19 +69,13 @@ final class Lifecycle implements PluginLifecycleInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => STATUS_PLUGIN_NAME,
+        'name' => $slug,
+        'label' => STATUS_PLUGIN_NAME,
         'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
         'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => STATUS_PLUGIN_SCHEMA,
-    ]);
+    insertStatusTestPlugin($pdo, $slug, 'inactive');
 
     try {
         $GLOBALS['status_activate'] = 0;
@@ -94,19 +110,13 @@ final class Lifecycle implements PluginLifecycleInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => STATUS_PLUGIN_NAME,
+        'name' => $slug,
+        'label' => STATUS_PLUGIN_NAME,
         'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
         'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'active', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => STATUS_PLUGIN_SCHEMA,
-    ]);
+    insertStatusTestPlugin($pdo, $slug, 'active');
 
     try {
         $GLOBALS['status_deactivate'] = 0;
@@ -142,19 +152,13 @@ final class Lifecycle implements PluginLifecycleInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => STATUS_PLUGIN_NAME,
+        'name' => $slug,
+        'label' => STATUS_PLUGIN_NAME,
         'version' => STATUS_PLUGIN_VERSION,
         'type' => 'entity',
         'core_version' => STATUS_PLUGIN_VERSION,
     ], false, false, null, $lifecycle);
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Status Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => STATUS_PLUGIN_SCHEMA,
-    ]);
+    insertStatusTestPlugin($pdo, $slug, 'inactive');
 
     try {
         $service = buildPluginStatusService($root, $pdo);

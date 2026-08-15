@@ -8,7 +8,7 @@ use Xestify\exceptions\PluginException;
 
 final class PluginManifestReader
 {
-    private const REQUIRED_FIELDS = ['slug', 'name', 'version', 'type', 'core_version'];
+    private const REQUIRED_FIELDS = ['name', 'label', 'version', 'type', 'core_version'];
     private const VALID_TYPES = ['entity', 'extension'];
 
     public function __construct(private string $pluginsDir)

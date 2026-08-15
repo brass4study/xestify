@@ -12,25 +12,25 @@ final class PluginLifecycleInvoker
     {
     }
 
-    public function onInstall(string $slug): void
+    public function onInstall(string $pluginName): void
     {
-        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        $lifecycle = $this->classLoader->instantiateLifecycle($pluginName);
         if ($lifecycle !== null) {
             $lifecycle->onInstall();
         }
     }
 
-    public function onActivate(string $slug): void
+    public function onActivate(string $pluginName): void
     {
-        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        $lifecycle = $this->classLoader->instantiateLifecycle($pluginName);
         if ($lifecycle !== null) {
             $lifecycle->onActivate();
         }
     }
 
-    public function onDeactivate(string $slug): void
+    public function onDeactivate(string $pluginName): void
     {
-        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        $lifecycle = $this->classLoader->instantiateLifecycle($pluginName);
         if ($lifecycle !== null) {
             $lifecycle->onDeactivate();
         }
@@ -39,9 +39,9 @@ final class PluginLifecycleInvoker
     /**
      * @param array<string, mixed> $context
      */
-    public function onUpdate(string $slug, array $context): void
+    public function onUpdate(string $pluginName, array $context): void
     {
-        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        $lifecycle = $this->classLoader->instantiateLifecycle($pluginName);
         if ($lifecycle instanceof PluginLifecycleUpdateInterface) {
             $lifecycle->onUpdate($context);
         }
@@ -50,9 +50,9 @@ final class PluginLifecycleInvoker
     /**
      * @param array<string, mixed> $context
      */
-    public function onRollback(string $slug, array $context): void
+    public function onRollback(string $pluginName, array $context): void
     {
-        $lifecycle = $this->classLoader->instantiateLifecycle($slug);
+        $lifecycle = $this->classLoader->instantiateLifecycle($pluginName);
         if ($lifecycle instanceof PluginLifecycleUpdateInterface) {
             $lifecycle->onRollback($context);
         }

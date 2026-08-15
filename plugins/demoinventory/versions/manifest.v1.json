@@ -1,6 +1,7 @@
 {
-  "slug": "demoinventory",
-  "name": "Demo Inventory",
+  "name": "demoinventory",
+  "label": "Items",
+  "label_singular": "Item",
   "version": "1.0.0",
   "type": "entity",
   "core_version": "1.0.0",

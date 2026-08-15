@@ -15,6 +15,7 @@ use Xestify\plugins\schema\PluginSchemaMergeService;
 use Xestify\plugins\schema\PluginTypeGuard;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
+use Xestify\repositories\PluginWriteRepository;
 
 final class PluginUpdateService
 {
@@ -22,6 +23,7 @@ final class PluginUpdateService
         private PDO $pdo,
         private PluginSourceService $pluginSource,
         private PluginRepository $pluginRepository,
+        private PluginWriteRepository $pluginWriteRepository,
         private PluginUpdateHistoryRepository $historyRepository,
         private PluginSchemaCodec $schemaCodec,
         private PluginSchemaMergeService $schemaMergeService,
@@ -52,10 +54,11 @@ final class PluginUpdateService
                 throw new OutOfBoundsException("Plugin '{$slug}' is not installed.");
             }
 
-            $manifest = $this->pluginSource->readValidatedManifest($slug);
+            $pluginName = (string) ($current['manifest_json']['name'] ?? '');
+            $manifest = $this->pluginSource->readValidatedManifest($pluginName);
             $this->typeGuard->assertTypeUnchanged($current, $manifest);
 
-            $fromVersion = (string) $current['version'];
+            $fromVersion = (string) ($current['manifest_json']['version'] ?? '');
             $toVersion = (string) $manifest['version'];
             if (version_compare($toVersion, $fromVersion, '<=')) {
                 throw new DomainException("Plugin '{$slug}' has no newer version available on disk.");
@@ -88,12 +91,12 @@ final class PluginUpdateService
                 'target_schema' => $targetSchema,
                 'merged_schema' => $mergedSchema,
             ];
-            $this->lifecycleInvoker->onUpdate($slug, $context);
+            $this->lifecycleInvoker->onUpdate($pluginName, $context);
 
-            $plugin = $this->pluginRepository->persistUpdate($current, $manifest, $mergedSchema, $schemaChanged);
+            $plugin = $this->pluginWriteRepository->persistUpdate($current, $manifest, $mergedSchema, $schemaChanged);
 
             if ((string) ($current['status'] ?? '') === 'active') {
-                $this->lifecycleInvoker->onActivate($slug);
+                $this->lifecycleInvoker->onActivate($pluginName);
             }
 
             $this->pdo->commit();

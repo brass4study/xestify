@@ -99,14 +99,22 @@ function buildService(): EntityService
 
 function seedSchema(): void
 {
+    $manifest = json_encode([
+        'name' => TEST_ENTITY_SLUG,
+        'label' => TEST_ENTITY_SLUG,
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     Database::connection()->prepare(
-        "INSERT INTO plugins (slug, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'entity', '1.0.0', 'inactive', 1, :schema)
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'inactive', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
          ON CONFLICT (slug) DO UPDATE
          SET schema_json = EXCLUDED.schema_json,
-             schema_version = EXCLUDED.schema_version,
              updated_at = NOW()"
-    )->execute([':slug' => TEST_ENTITY_SLUG, ':schema' => TEST_SCHEMA_JSON]);
+    )->execute([':slug' => TEST_ENTITY_SLUG, ':manifest' => $manifest, ':schema' => TEST_SCHEMA_JSON]);
 }
 
 function cleanTestData(): void
@@ -363,6 +371,14 @@ TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fa
         $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => $markerSlug]);
     }
 });
+
+// ---------------------------------------------------------------------------
+// Final cleanup — cleanTestData() only clears plugin_entity_data / nulls
+// schema_json between tests; the registry row itself must be removed once,
+// here, or it lingers in the plugins listing forever.
+// ---------------------------------------------------------------------------
+
+Database::connection()->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => TEST_ENTITY_SLUG]);
 
 // ---------------------------------------------------------------------------
 // Summary

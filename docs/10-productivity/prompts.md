@@ -1281,3 +1281,139 @@ implementar hacer esos cambios con "plugin_name" y "slug"
 **Iteraciones:** 15+ (exploración en paralelo, 4 rondas de `AskUserQuestion` de alcance, 2 rondas adicionales sobre la migración `007`, ejecución en 17 bloques con confirmación explícita, corrección de `id_cliente`, hallazgo y fix de `schema_json.entity`, discusión de arquitectura de STORY 10.3, verificación final).
 **Lección:** Seguir el patrón de migración citado como referencia (`007_users_add_is_seed.sql`) sin cuestionarlo habría perpetuado un diseño frágil (columna estructural mezclada con backfill puntual) en la nueva migración de esta story; preguntar "por qué existe así" antes de copiar el patrón evitó heredar el problema. Además, un rename de columnas en BD no toca el contenido de columnas JSONB que dupliquen esa información (`schema_json.entity`) — cualquier rename de slug futuro (STORY 10.3) necesita decidir explícitamente qué pasa con ese campo.
 **Estado final:** STORY 10.2 implementada y verificada — backend 56/56 archivos, 10 tests de integración frontend afectados en verde (comprobación headless de apoyo, pendiente confirmación visual del usuario en navegador integrado), 12/12 specs E2E Playwright contra el runtime real — sin ningún rastro funcional de `clients` en backend, frontend, BD ni documentación viva; EPIC 10 en progreso, siguiente foco STORY 10.3.
+
+### STORY 10.3 — Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json`
+
+**Prompt de duda de diseño (routing del alta manual de plugin):**
+```
+Tengo una duda, si para añadir una entidad nueva usas la url #/entity/clients/new
+por que para añadir un plugin has usado #/plugins/_new. No entiendo por que has
+tomado la deciosin de usar '_new' en vez de 'new'.
+¿Puedes explicarme por que has llegado a esa decicion?
+```
+**Resultado:** Tras explicar la razón original (`new` es un slug sintácticamente
+válido y podría colisionar), el usuario propuso `'#new'` para ambos casos; se
+confirmó que tanto `_new` como `#new` son sentinels seguros (`SLUG_PATTERN`
+exige empezar por letra minúscula) y se adoptó `#new`. Esto expuso un bug real:
+`encodeURIComponent()` escapaba el `#` a `%23` en la ruta de plugin (parámetro
+normal) pero no en la de entidad (literal de plantilla) — corregido con un
+bypass específico en `resolvePluginsHash()`.
+
+**Corrección de UI del alta manual:**
+```
+Hay correcciones que hacer en la pagina de plugin nuevo(/#/plugins/#new)
+-Cuando se entra, el campo de Tipo debe estar en blanco. Una opcion que no debe
+aparecer en las "options" del dropdown.
+-Los campos 'Slug', 'Nombre' y 'Descripcion' deben aparecer ocultos y mostarse
+solo cuando se escoge un tipo
+-El campo 'Descripcion' debe sembrarse con el valor de manifest.json->>description
+-Deben aparecer las secciones 'Relación de extensión' y 'Campos' segun el tipo
+escogido
+```
+**Resultado:** Placeholder real (no una opción falsa en la lista) para el
+selector de tipo, gating de identidad/secciones por `hasTypeChosen`, siembra de
+descripción desde el manifest. Pregunta de seguimiento sobre si "Campos"/
+"Relación de extensión" debían ser editables o solo de lectura en el alta —
+`AskUserQuestion` confirmó editables y guardables ya en la creación.
+
+**Disputa técnica sobre un hallazgo de SonarQube:**
+```
+No has cambiado los setter, sigue dando el error en sonarqube
+```
+seguido de:
+```
+No, el hallazgos es real, como estas usando una funcion arrow(=>) sin corchetes,
+si ese metodo (this.setSelecteValue) devuelve un valor hace un return
+inerentemente. Por eso sonaqube lo detecta como un valor de retorno
+```
+**Resultado:** El usuario insistió dos veces en que el fix no se había aplicado
+o era incorrecto. Se verificó primero con `git diff` (el cambio sí estaba en
+disco) y después con una demostración en vivo con Node de que un arrow de
+bloque (`set: (value) => { ... }`) siempre devuelve `undefined` independiente de
+lo que devuelva la llamada interna — el hallazgo original (arrow de expresión
+sin llaves) ya estaba corregido; se sostuvo la posición con evidencia concreta
+en ambas rondas en vez de ceder o repetir el cambio sin verificar.
+
+**Reporte de bug de sincronización de estado:**
+```
+En PluginConfig, cuando se hace click en 'Añadir' resetea las opciones(inputs)
+del resto de registros de campos, deshaciendo todas las ediciones que el
+usuario haya hecho. Tambien resetea los valores de los fields 'Slug', 'Nombre'
+y 'Descripcion'
+Lo mismo pasa cuando haces click en las acciones 'Subir', 'Bajar' o 'Borrar' de
+cualquier registro de campo.
+```
+**Resultado:** Causa raíz: los handlers de esas acciones llamaban a `render()`
+(reconstruye todo el formulario desde `#state`) sin volcar antes el DOM actual a
+`#state`. Se implementó `syncStateFromDom()`, invocado antes de cualquier
+mutación de estado que dispare un re-render — y se aplicó también, no pedido
+explícitamente pero de la misma clase de defecto, a los dos casos de error al
+guardar que tenían el mismo problema. Verificado con 2 tests de regresión
+nuevos en el runner real (no solo aserciones aisladas).
+
+**Reporte de bug de activación por defecto:**
+```
+Cuando añado un plugin nuevo, aparece desactivado, deberia estar activado por
+defecto
+```
+**Resultado:** `AskUserQuestion` acotó el alcance: solo el alta manual se
+activa por defecto, la sincronización masiva desde disco sigue dejando
+`inactive` (para no activar en bloque plugins sin revisión previa del admin).
+Al verificar el fix en un runner real (no solo en el código), se encontraron
+dos bugs preexistentes de esta misma sesión que el cambio exponía:
+`POST /plugins`/`PUT /plugins/{slug}/status` devolvían la fila cruda sin
+aplanar, y `PluginManager.js` parcheaba la fila en memoria en vez de recargar
+tras activar/desactivar, perdiendo `can_rollback`. Ambos corregidos y cubiertos
+con tests nuevos antes de continuar.
+
+**Continuación de bloques del plan ampliado:**
+```
+Continua con el bloque 8
+```
+```
+Continua con el bloque 9
+```
+**Resultado:** §8 (grid "Relaciones" editable en `PluginConfig`, primera
+implementación funcional real del bloque `relations`) y §9 (tab de relación
+inversa en `EntityEdit`, capacidad de núcleo sin `plugin.js` propio)
+implementados con tests de integración con plugins fixture (nadie tenía
+`relations` declaradas todavía) y tests frontend con mocks estáticos de
+`GET /entities`/`GET .../tabs`/`GET .../records`.
+
+**Petición de auditoría de documentación (cierre de sesión):**
+```
+En esta sesion hemos hecho muchas refactorizaciones sobre la tabla plugins y
+como funciona. No he visto qeu estoy se haya visto reflejado en la
+documentacion. Analiza que huecos documentales pueden existir.
+```
+**Resultado:** 3 agentes `Explore` en paralelo auditaron 13 ficheros de
+documentación contra el código real. Dos hallazgos graves (semántica
+`name`/`label` invertida en la plantilla de plugin de entidad; plantilla de
+extensión con un ejemplo de manifest sin el campo `label` obligatorio, que
+rompería la carga si se copiara tal cual) se verificaron manualmente antes de
+presentarlos. `AskUserQuestion` confirmó corregir los 13 ficheros en la misma
+pasada, incluidos dos documentos aspiracionales (`versionado-esquemas.md`,
+sección `entity_metadata` de `postgresql-jsonb.md`) que describían un diseño
+que nunca llegó a implementarse tal cual.
+
+**Iteraciones:** 30+ (AC original; 4 rondas de `AskUserQuestion` para el
+refactor `manifest_json`; ~15 ficheros de test reescritos tras el refactor;
+varias rondas de hallazgos de SonarQube corregidos según se screenshoteaban,
+incluidas 2 divisiones de clase confirmadas explícitamente; corrección de rumbo
+del sentinel de ruta; bug de sincronización de estado; decisión de activación
+por defecto con 2 bugs adicionales encontrados durante su propia verificación;
+§8/§9; auditoría y corrección de 13 ficheros de documentación).
+**Lección:** Cuando el usuario reporta un bug puntual ("Añadir campo resetea
+ediciones"), vale la pena verificar si el mismo patrón de causa raíz aparece en
+otros sitios del mismo fichero (aquí: los casos de error al guardar) en vez de
+parchear solo el caso reportado literalmente — el usuario no tuvo que reportar
+el mismo bug dos veces. Al mismo tiempo, ampliar alcance sin que el usuario lo
+pida requiere el mismo criterio que decidir cualquier otro fork de diseño:
+verificar primero (aquí, con tests reales que fallaban) y comunicar qué se
+amplió y por qué, no asumir silenciosamente.
+**Estado final:** STORY 10.3 implementada y verificada con el alcance ampliado
+(AC original + §2bis/§6/§7/§8/§9) — backend `php backend/tests/run.php all`
+60/60 archivos en verde; runners frontend afectados en verde vía Playwright
+headless (pendiente confirmación visual del usuario en navegador integrado);
+13 ficheros de documentación auditados y corregidos contra el código real;
+EPIC 10 en progreso, siguiente foco STORY 10.4.

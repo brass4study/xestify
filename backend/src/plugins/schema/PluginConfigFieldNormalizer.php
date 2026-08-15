@@ -50,7 +50,7 @@ final class PluginConfigFieldNormalizer
             $type = 'string';
         }
 
-        $allowedTypes = ['string', 'text', 'number', 'boolean', 'date', 'timestamp', 'email', 'select', 'uuid'];
+        $allowedTypes = ['string', 'text', 'number', 'boolean', 'date', 'timestamp', 'mail', 'phone', 'select', 'uuid'];
         if (!in_array($type, $allowedTypes, true)) {
             throw new InvalidArgumentException("Unsupported field type '{$type}'.");
         }

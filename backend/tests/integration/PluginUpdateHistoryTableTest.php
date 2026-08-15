@@ -69,8 +69,12 @@ TestSuite::run('plugin_update_history has expected columns', function (): void {
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
 
-    foreach (['id', 'slug', 'name', 'plugin_type', 'version', 'status', 'schema_version', 'schema_json', 'target_version', 'created_at'] as $col) {
+    foreach (['id', 'slug', 'status', 'manifest_json', 'schema_json', 'target_version', 'created_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
+    }
+
+    foreach (['name', 'plugin_type', 'version', 'schema_version'] as $removedCol) {
+        assertTrue(!in_array($removedCol, $columns, true), "Column '{$removedCol}' must no longer exist (STORY 10.3 §2bis)");
     }
 });
 

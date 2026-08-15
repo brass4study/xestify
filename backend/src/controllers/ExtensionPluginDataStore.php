@@ -124,6 +124,70 @@ final class ExtensionPluginDataStore
     }
 
     /**
+     * Renames entity_slug across extension data attached to that entity's
+     * records (STORY 10.3 slug rename cascade) — applies when the ENTITY
+     * being renamed is targeted by other plugins' extension data. Part of
+     * PluginIdentityService's transaction — no transaction management here.
+     */
+    public function renameEntitySlug(string $oldSlug, string $newSlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugin_extension_data SET entity_slug = :new_slug WHERE entity_slug = :old_slug'
+        );
+        $stmt->execute([':new_slug' => $newSlug, ':old_slug' => $oldSlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Renames plugin_slug across an extension plugin's own data (STORY 10.3
+     * slug rename cascade) — applies when the EXTENSION plugin itself is
+     * renamed. Part of PluginIdentityService's transaction — no transaction
+     * management here.
+     */
+    public function renamePluginSlug(string $oldSlug, string $newSlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugin_extension_data SET plugin_slug = :new_slug WHERE plugin_slug = :old_slug'
+        );
+        $stmt->execute([':new_slug' => $newSlug, ':old_slug' => $oldSlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Physically deletes every extension-data row attached to an entity's
+     * records — used when the ENTITY plugin itself is deleted (STORY 10.3
+     * §7), so other plugins' extension data pointing at it doesn't become
+     * orphaned. Part of the caller's transaction — no transaction management
+     * here.
+     */
+    public function deleteByEntitySlug(string $entitySlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM plugin_extension_data WHERE entity_slug = :slug'
+        );
+        $stmt->execute([':slug' => $entitySlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Physically deletes an EXTENSION plugin's own data — used when that
+     * extension plugin itself is deleted (STORY 10.3 §7). Part of the
+     * caller's transaction — no transaction management here.
+     */
+    public function deleteByPluginSlug(string $pluginSlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM plugin_extension_data WHERE plugin_slug = :slug'
+        );
+        $stmt->execute([':slug' => $pluginSlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     private function encodeContent(array $data): string

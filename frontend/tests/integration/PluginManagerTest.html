@@ -299,20 +299,38 @@
 
   await test('re-renders after activation', async () => {
     const container = makeSandbox();
-    const api = new MockApi({
-      '/plugins': {
-        ok: true,
-        data: {
-          plugins: [
-            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
-          ],
-        },
+    // PluginManager re-fetches /plugins after a status change (same pattern
+    // as update/rollback) instead of splicing the PUT response into local
+    // state, so this mock tracks status server-side rather than returning a
+    // fixed GET response — it must reflect the PUT that happened before it.
+    let status = 'inactive';
+    const api = {
+      calls: [],
+      async get(url) {
+        this.calls.push({ method: 'GET', url });
+        if (url === '/plugins') {
+          return {
+            ok: true,
+            data: { plugins: [{ slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status }] },
+          };
+        }
+        if (url === '/plugins/updates') {
+          return { ok: true, data: { updates: [] } };
+        }
+        return { ok: false, error: { message: 'Not mocked' } };
       },
-      '/plugins/comments/status': {
-        ok: true,
-        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      async put(url, body) {
+        this.calls.push({ method: 'PUT', url, body });
+        if (url === '/plugins/comments/status') {
+          status = body.status;
+          return { ok: true, data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status } };
+        }
+        return { ok: false, error: { message: 'Not mocked' } };
       },
-    });
+      async post() {
+        return { ok: false, error: { message: 'Not mocked' } };
+      },
+    };
 
     const manager = new PluginManager(container, api);
     await manager.init();

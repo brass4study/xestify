@@ -12,26 +12,37 @@ plugins/<slug>/
   schema.json
   Hooks.php
   Lifecycle.php
-  Installer.php
   plugin.js
 ```
 
 Notas:
 - `manifest.json` es obligatorio.
 - `schema.json` es obligatorio para plugins `entity`.
-- `Hooks.php`, `Lifecycle.php`, `Installer.php` y `plugin.js` son opcionales segun necesidad.
+- `Hooks.php`, `Lifecycle.php` y `plugin.js` son opcionales segun necesidad.
 
 ## manifest.json base
 
 ```json
 {
-  "slug": "persons",
-  "name": "Clientes",
+  "name": "persons",
+  "label": "Personas",
+  "label_singular": "Persona",
   "version": "1.0.0",
   "type": "entity",
-  "core_version": "1.0.0"
+  "core_version": "1.0.0",
+  "description": "Entidad base de personas: nombre, apellidos y datos de contacto."
 }
 ```
+
+`name` es la identidad tecnica fija del plugin (= nombre de carpeta, igual al
+namespace PHP) y **nunca** se muestra ni se edita desde `PluginConfig` — se guarda
+tal cual en `manifest_json.name` (STORY 10.3 §2bis) y nunca cambia tras la
+instalacion. `label` es el nombre de negocio editable por instancia (p. ej. "Clientes"
+en vez de "Personas"): se instala con el valor de este manifest por defecto, pero el
+admin puede cambiarlo desde `PluginConfig` sin que un `syncAll()`/`update()`
+posterior lo sobrescriba. `label_singular` (solo en plugins `entity`) es fijo y
+siempre refleja este manifest — se usa para textos como "Crear cliente".
+`description` tambien es editable por instancia, igual que `label`.
 
 ## schema.json base
 El `schema.json` define el contrato fijo del plugin:
@@ -44,8 +55,6 @@ El `schema.json` define el contrato fijo del plugin:
 
 ```json
 {
-  "entity": "<slug>",
-  "version": "1.0.0",
   "identities": {
     "id": {
       "type": "uuid",
@@ -70,8 +79,6 @@ El `schema.json` define el contrato fijo del plugin:
 
 ```json
 {
-  "entity": "persons",
-  "version": "1.0.0",
   "identities": {
     "id": {
       "type": "uuid",
@@ -90,38 +97,36 @@ El `schema.json` define el contrato fijo del plugin:
       "type": "string",
       "required": true,
       "label": "Apellidos"
-    },
-    "email": {
-      "type": "email",
-      "required": true,
-      "label": "Email"
     }
   },
   "custom_fields": [
     {
+      "key": "mail",
+      "type": "mail",
+      "required": true,
+      "label": "Email"
+    },
+    {
       "key": "phone",
-      "type": "string",
+      "type": "phone",
       "required": false,
       "label": "Telefono"
     },
     {
-      "key": "creation_stamp",
-      "type": "timestamp",
+      "key": "address",
+      "type": "string",
       "required": false,
-      "default": "now",
-      "label": "Fecha de alta"
-    },
-    {
-      "key": "is_active",
-      "type": "boolean",
-      "required": false,
-      "default": true,
-      "label": "Activo"
+      "label": "Direccion"
     }
   ],
   "relations": []
 }
 ```
+
+Nota: `mail` y `phone` son los tipos dedicados con validacion de formato propia
+(`InputMail`/`InputPhone` en frontend, `MailFieldValidator`/`PhoneFieldValidator`
+en backend) — ver `plugins/persons/schema.json` para el contrato completo real,
+que incluye ademas DNI, ciudad, provincia, codigo postal y notas.
 
 Comportamiento esperado:
 - El admin ve `id` como identidad fija de sistema (no editable).
@@ -139,8 +144,6 @@ Ejemplo: un pedido puede estar enlazado a un cliente, pero tambien puede ser ano
 
 ```json
 {
-  "entity": "order",
-  "version": "1.0.0",
   "identities": {
     "id": {
       "type": "uuid",
@@ -189,34 +192,40 @@ Interpretacion de este ejemplo:
 
 ## Registro en base de datos
 
-Al instalarse, el plugin escribe en la tabla `plugins` (unica fuente de verdad del catalogo):
+Al instalarse, el plugin escribe en la tabla `plugins` (unica fuente de verdad del catalogo).
+Esto lo hace siempre `PluginSyncService::installFromManifest()` (invocado por
+"Sincronizar" o por el alta manual de plugin) — nunca lo escribas a mano ni desde
+`Lifecycle::onInstall()`. Registra la fila en `plugins` y siembra `schema_json` desde el
+`schema.json` del plugin antes de que se ejecute `onInstall()`. El `Lifecycle.php` de
+un plugin de entidad tipico no necesita hacer nada en `onInstall()` — ver
+`plugins/persons/Lifecycle.php` como ejemplo de no-op.
 
-```php
-// En Installer.php del plugin
-$pdo->prepare(
-    'INSERT INTO plugins (slug, name, plugin_type, version, status)
-     VALUES (:slug, :name, \'entity\', :version, \'active\')
-     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, status = \'active\''
-)->execute([':slug' => $slug, ':name' => $name, ':version' => $version]);
-```
-
-Alternativa recomendada: en vez de escribir el SQL a mano, `Installer.php` puede
-extender `AbstractEntityInstaller`
-(`backend/src/plugins/contracts/AbstractEntityInstaller.php`), que ya implementa
-`install()` (registro idempotente en `plugins` vía `INSERT ... ON CONFLICT` + siembra
-de `schema_json` desde el propio `schema.json` del plugin) — el plugin concreto solo
-declara 4 métodos abstractos: `entitySlug()`, `entityName()`, `schemaVersion()` y
-`schemaPath()`.
+`plugin_name` (= `manifest_json.name`, no una columna propia — STORY 10.3 §2bis) es
+la identidad tecnica fija del plugin (= nombre de carpeta, igual al namespace PHP) y
+nunca cambia tras la instalacion; `slug` es editable desde `PluginConfig`
+(STORY 10.3) y solo sirve para navegacion/URL. `plugin_name` no es unico: pueden
+coexistir varias filas con el mismo `plugin_name` y distinto `slug` (varias
+instancias del mismo plugin). En el alta inicial de una instancia, `slug` coincide
+con `plugin_name` salvo que se indique uno distinto explicitamente.
 
 **No escribir en `system_entities`** - esa tabla fue eliminada en Release B.
-Toda consulta al catalogo de entidades usa: `SELECT * FROM plugins WHERE plugin_type = 'entity' AND status = 'active'`.
+`plugins` ya no tiene una columna `plugin_type`: el tipo vive en `manifest_json`
+(STORY 10.3 §2bis). Toda consulta al catalogo de entidades usa:
+`SELECT * FROM plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`.
 
 ## Unicidad de un campo en Hooks.php
 
 Si el plugin necesita impedir valores duplicados en un campo (p. ej. `email` en
 `persons`, `sku` en `products`), `Hooks.php` puede extender `AbstractUniqueFieldHook`
 (`backend/src/plugins/contracts/AbstractUniqueFieldHook.php`) en vez de reimplementar
-la comprobación: declara `entitySlug()`, `fieldName()` y
+la comprobación: declara `pluginName()`, `fieldName()` y
 `duplicateMessage(string $value)`, y `register($dispatcher)` engancha automáticamente
 un hook `beforeSave` (prioridad 5) que rechaza duplicados entre registros activos de
 esa entidad.
+
+`pluginName()` debe devolver el `plugin_name` fijo del plugin (= nombre de carpeta),
+**nunca** el slug: `EntityService` ya enriquece el contexto de `beforeSave` con
+`plugin_name` (resuelto desde la fila real de `plugins`), así que la comprobación de
+unicidad sigue funcionando aunque el admin renombre el `slug` de la entidad desde
+`PluginConfig`, y se aplica de forma independiente a cada instancia si el mismo
+`plugin_name` llega a tener varias.

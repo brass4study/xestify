@@ -222,6 +222,11 @@ Transición a sesión local es reversible (cambio de ~300 líneas en backend y f
 **Alternativas consideradas:** Schema fijo por plugin, JSON Schema estándar
 **Fecha:** Mayo 1, 2026
 **Actualizado:** Mayo 2, 2026 — modelo `identities` + `fields` + `custom_fields` + `relations`
+**Actualizado:** Agosto 16, 2026 (STORY 10.3 §2bis) — ver DECISION 10 más abajo:
+`plugins.name`/`plugin_type`/`version`/`description` (identidad y metadata del
+plugin, no del schema funcional en sí) se consolidaron en `manifest_json`;
+`relations` (columna 4 de la tabla de este bloque) pasó de metadato declarado
+pero no funcional a bloque validado y editable de verdad desde `PluginConfig`.
 
 ### Modelo conceptual
 
@@ -588,3 +593,70 @@ selectores globales y layouts monolíticos dentro de `AppController`.
     layouts especializados y la plantilla Login.
 - El cierre de STORY 9.5 deja 17/17 runners HTML y 166/166 aserciones en verde.
 - El contrato detallado vive en `docs/05-frontend/layouts-guide.md`.
+
+---
+
+## DECISION 10: Identidad de `plugins` — columna `manifest_json` viva en vez de columnas separadas
+
+**Seleccionado:** consolidar `plugin_name`, `plugin_type`, `version`, `name` y
+`description` de la tabla `plugins` en una única columna `manifest_json JSONB`
+que refleja en vivo el `manifest.json` real del plugin en disco; eliminar
+`schema_version` sin reemplazo (de `plugins` y de `plugin_update_history`).
+**Alternativas descartadas:** mantener las columnas separadas ya existentes
+(el diseño con el que arrancó STORY 10.3); introducir una columna `plugin_name`
+adicional junto a las demás sin tocar el resto (diseño intermedio, descartado
+por dejar la misma información duplicada en dos sitios — la columna y el propio
+`manifest.json` en disco — con riesgo de divergencia entre ambas).
+**Fecha:** Agosto 16, 2026 (STORY 10.3 §2bis)
+
+### Contexto
+
+STORY 10.3 partía de un diseño con columnas propias (`plugin_name` fijo,
+`slug` editable, `name`/`description` editables). Al implementarlo se detectó
+que `plugins` había acumulado columnas que en realidad son propiedades directas
+del `manifest.json` del plugin (`plugin_name`, `plugin_type`, `version`, `name`)
+más una columna (`schema_version`) que resultó ser residual: no la leía el
+frontend en ningún sitio (confirmado por exploración exhaustiva de
+`PluginConfig.js`, `PluginManager.js`, `AppController.js`, `EntityList.js`), y
+su único rol real era un contador interno de auditoría sin consumidores.
+
+### Modelo elegido
+
+`manifest_json` es una columna **viva**, no una foto fija del install:
+- `name`, `version`, `type`, `core_version`, `label_singular` siempre reflejan
+  el `manifest.json` en disco — se refrescan en cada actualización explícita de
+  plugin. No editables por el admin.
+- `label`, `description`, `target_entity` (solo `extension`) son editables por
+  el admin desde `PluginConfig`; una actualización de plugin los preserva
+  (merge sobre el manifest nuevo, nunca overwrite).
+- `plugins.name` (editable, ej. "Clientes") mapea a `manifest_json.label`, **no**
+  a `manifest_json.name` — son valores distintos (`manifest_json.name` es la
+  identidad técnica fija = carpeta = namespace PHP, ej. "persons"). Distinción
+  cerrada explícitamente con el usuario tras una ambigüedad de redacción en el
+  plan original que los igualaba por error.
+- `schema_json` vuelve a ser puramente estructural (`identities`/`fields`/
+  `custom_fields`/`relations`/`plugin_suggested_custom_fields`/`ui_field_order`),
+  sin campos de identidad inyectados en el momento de codificar.
+
+### Implicaciones
+
+- Sin cambio en el contrato JSON público de la API: los controllers/servicios
+  siguen devolviendo las mismas claves planas (`name`, `plugin_type`, `version`,
+  `description`) que antes, solo que las computan leyendo `manifest_json` en vez
+  de columnas — confirmado sin consumidores de `schema_version` en producción.
+- `PluginRepository` se dividió en `PluginRepository` (lectura) +
+  `PluginWriteRepository` (escritura) — límite de método de SonarQube alcanzado
+  al añadir el helper de decodificación compartido.
+- Simplificaciones que este refactor habilitó: `withLabelSingular()`/
+  `withTargetEntity()` (inyección puntual en `schema_json` al codificar)
+  desaparecieron, ya no hacen falta.
+
+### Verificacion
+
+- `php backend/tests/run.php all` en verde (60/60 archivos tras el cierre de
+  STORY 10.3, incluidas las 4 ampliaciones de alcance posteriores §6-§9).
+- Migración aplicada contra la BD de dev preservando los valores admin-editados
+  reales (`label`/`description`) en vez de los valores por defecto del disco.
+- Smoke test manual sobre un plugin real: activar/desactivar/actualizar/
+  rollback, confirmando que `label`/`description` editados sobreviven a un
+  `syncAll()`/`update()` posterior.

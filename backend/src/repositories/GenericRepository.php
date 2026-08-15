@@ -28,6 +28,7 @@ class GenericRepository
     private const TABLE = 'plugin_entity_data';
     private const SELECT_ALL = 'SELECT * FROM ';
     private const SQL_UPDATE = 'UPDATE plugin_entity_data';
+    private const WHERE_ENTITY_SLUG = ' WHERE entity_slug = :slug';
 
     private PDO $pdo;
 
@@ -60,7 +61,7 @@ class GenericRepository
      */
     public function all(string $entitySlug, bool $includeDeleted = false): array
     {
-        $sql = self::SELECT_ALL . self::TABLE . ' WHERE entity_slug = :slug';
+        $sql = self::SELECT_ALL . self::TABLE . self::WHERE_ENTITY_SLUG;
         if (!$includeDeleted) {
             $sql .= ' AND deleted_at IS NULL';
         }
@@ -83,7 +84,7 @@ class GenericRepository
         string $direction,
         bool $includeDeleted = false
     ): array {
-        $where = ' WHERE entity_slug = :slug';
+        $where = self::WHERE_ENTITY_SLUG;
         if (!$includeDeleted) {
             $where .= ' AND deleted_at IS NULL';
         }
@@ -185,6 +186,61 @@ class GenericRepository
         if ($stmt->rowCount() === 0) {
             throw new RepositoryException('Record not found or already deleted: ' . $id);
         }
+    }
+
+    /**
+     * Renames entity_slug across all records of an entity (STORY 10.3 slug
+     * rename cascade). Part of PluginIdentityService's transaction — no
+     * transaction management here.
+     */
+    public function renameEntitySlug(string $oldSlug, string $newSlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            self::SQL_UPDATE . ' SET entity_slug = :new_slug WHERE entity_slug = :old_slug'
+        );
+        $this->execute($stmt, [':new_slug' => $newSlug, ':old_slug' => $oldSlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Physically deletes every record of an entity type — used when the
+     * owning entity plugin itself is deleted (STORY 10.3 §7), unlike
+     * delete(), which soft-deletes one record. Part of the caller's
+     * transaction — no transaction management here.
+     */
+    public function deleteByEntitySlug(string $entitySlug): int
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM ' . self::TABLE . self::WHERE_ENTITY_SLUG
+        );
+        $this->execute($stmt, [':slug' => $entitySlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Exact-match filter on a single content key — not the STORY A1.2
+     * free-text search, a narrow internal lookup used by the reverse
+     * relation tab (STORY 10.3 §9) to list records whose relation field
+     * points at a given target id. `:field` is bound as a plain string
+     * value to the `->>` operator (a normal binary operator, not an
+     * identifier), so this is fully parameterized — the caller still
+     * validates $field against the entity's declared fields/relations
+     * before calling this, to keep the endpoint scoped to known keys
+     * rather than an arbitrary key-probing tool.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function findByFieldValue(string $entitySlug, string $field, string $value): array
+    {
+        $stmt = $this->pdo->prepare(
+            self::SELECT_ALL . self::TABLE . self::WHERE_ENTITY_SLUG .
+            ' AND deleted_at IS NULL AND content->>:field = :value ORDER BY created_at ASC'
+        );
+        $this->execute($stmt, [':slug' => $entitySlug, ':field' => $field, ':value' => $value]);
+
+        return $stmt->fetchAll();
     }
 
     /**

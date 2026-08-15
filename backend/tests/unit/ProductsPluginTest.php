@@ -9,22 +9,17 @@ define('BACKEND_PATH', dirname(__DIR__, 2));
 define('BASE_PATH', dirname(BACKEND_PATH));
 
 require_once BACKEND_PATH . '/src/exceptions/HookException.php';
-require_once BACKEND_PATH . '/src/exceptions/PluginException.php';
 require_once BACKEND_PATH . '/src/core/HookDispatcher.php';
-require_once BACKEND_PATH . '/src/plugins/contracts/AbstractEntityInstaller.php';
 require_once BACKEND_PATH . '/src/plugins/contracts/AbstractUniqueFieldHook.php';
 
 // Explicitly require plugin files (not in autoload path)
 require_once BASE_PATH . '/plugins/products/Hooks.php';
-require_once BASE_PATH . '/plugins/products/Installer.php';
 
 require_once __DIR__ . '/helpers.php';
 
 use Xestify\plugins\products\Hooks;
-use Xestify\plugins\products\Installer;
 use Xestify\core\HookDispatcher;
 use Xestify\exceptions\HookException;
-use Xestify\exceptions\PluginException;
 
 // ---------------------------------------------------------------------------
 // Stubs
@@ -97,10 +92,10 @@ TestSuite::run('Plugin products - manifest.json existe', function (): void {
 TestSuite::run('Plugin products - manifest.json campos requeridos', function (): void {
     $data = json_decode((string) file_get_contents(PRODUCTS_PLUGIN_DIR . '/manifest.json'), true);
     assertTrue(is_array($data), 'manifest.json must be a JSON object');
-    foreach (['slug', 'name', 'version', 'type', 'core_version'] as $field) {
+    foreach (['name', 'label', 'version', 'type', 'core_version'] as $field) {
         assertTrue(isset($data[$field]) && $data[$field] !== '', "manifest.json missing field: {$field}");
     }
-    assertTrue($data['slug'] === 'products', 'slug must be products');
+    assertTrue($data['name'] === 'products', 'name must be products');
     assertTrue($data['type'] === 'entity', 'type must be entity');
 });
 
@@ -156,23 +151,23 @@ TestSuite::run('Plugin products - Hooks.php existe', function (): void {
     assertTrue(file_exists(PRODUCTS_PLUGIN_DIR . '/Hooks.php'), 'Hooks.php not found');
 });
 
-TestSuite::run('Hooks - slug no coincide no hace nada', function (): void {
+TestSuite::run('Hooks - plugin_name no coincide no hace nada', function (): void {
     $pdo   = new ProductsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'other_entity', 'data' => ['sku' => 'SKU-1']];
+    $ctx   = ['slug' => 'other_entity', 'plugin_name' => 'other_plugin', 'data' => ['sku' => 'SKU-1']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
 
     $result = $dispatcher->execute('beforeSave', $ctx);
     assertTrue($result['slug'] === 'other_entity', 'ctx should pass through unchanged');
-    assertTrue(count($pdo->executedSqls) === 0, 'no SQL should be executed for other entity');
+    assertTrue(count($pdo->executedSqls) === 0, 'no SQL should be executed for other plugin');
 });
 
 TestSuite::run('Hooks - sku vacío no ejecuta consulta', function (): void {
     $pdo   = new ProductsPdoStub();
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => '']];
+    $ctx   = ['slug' => 'products', 'plugin_name' => 'products', 'data' => ['name' => 'Test', 'sku' => '']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -186,7 +181,7 @@ TestSuite::run('Hooks - sku único permite guardar', function (): void {
     $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(0); // no duplicates
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-NEW']];
+    $ctx   = ['slug' => 'products', 'plugin_name' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-NEW']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -200,7 +195,7 @@ TestSuite::run('Hooks - sku duplicado lanza HookException', function (): void {
     $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(1); // duplicate found
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-DUP']];
+    $ctx   = ['slug' => 'products', 'plugin_name' => 'products', 'data' => ['name' => 'Test', 'sku' => 'SKU-DUP']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -219,7 +214,7 @@ TestSuite::run('Hooks - sku único en update excluye el propio registro', functi
     $pdo = new ProductsPdoStub();
     $pdo->setFetchColumnReturn(0);
     $hooks = new Hooks($pdo);
-    $ctx   = ['slug' => 'products', 'data' => ['id' => 'uuid-456', 'sku' => 'SKU-SAME']];
+    $ctx   = ['slug' => 'products', 'plugin_name' => 'products', 'data' => ['id' => 'uuid-456', 'sku' => 'SKU-SAME']];
 
     $dispatcher = new HookDispatcher();
     $hooks->register($dispatcher);
@@ -230,47 +225,27 @@ TestSuite::run('Hooks - sku único en update excluye el propio registro', functi
     assertTrue($executedParams[':id'] === 'uuid-456', 'id param value is correct');
 });
 
-TestSuite::run('Installer - instancia sin errores', function (): void {
-    $pdo       = new ProductsPdoStub();
-    $installer = new Installer($pdo);
-    assertTrue($installer instanceof Installer, 'Installer must instantiate correctly');
-});
+TestSuite::run('Hooks - sigue aplicando la unicidad si el slug fue renombrado (STORY 10.3)', function (): void {
+    $pdo = new ProductsPdoStub();
+    $pdo->setFetchColumnReturn(1); // duplicate found
+    $hooks = new Hooks($pdo);
+    // plugin_name still 'products' (fixed identity) even though slug was
+    // renamed away from the folder name via PluginConfig.
+    $ctx   = ['slug' => 'catalogo_b', 'plugin_name' => 'products', 'data' => ['sku' => 'SKU-DUP']];
 
-TestSuite::run('Installer - install() ejecuta operaciones solo sobre plugins', function (): void {
-    $pdo       = new ProductsPdoStub();
-    $installer = new Installer($pdo);
-    $installer->install();
+    $dispatcher = new HookDispatcher();
+    $hooks->register($dispatcher);
 
-    $sqls = implode(' ', $pdo->executedSqls);
-    assertTrue(!str_contains($sqls, 'system_entities'), 'must not depend on system_entities');
-    assertTrue(str_contains($sqls, 'plugins'), 'must UPDATE plugins');
-    assertTrue(count($pdo->executedSqls) === 2, 'must execute exactly 2 statements');
-});
+    $thrown = false;
+    try {
+        $dispatcher->execute('beforeSave', $ctx);
+    } catch (HookException) {
+        $thrown = true;
+    }
 
-TestSuite::run('Installer - install() pasa slug correcto', function (): void {
-    $pdo       = new ProductsPdoStub();
-    $installer = new Installer($pdo);
-    $installer->install();
-
-    $params = $pdo->executedParams[0] ?? [];
-    assertTrue(($params[':slug'] ?? '') === 'products', 'slug bound to "products"');
-});
-
-TestSuite::run('Installer - schema sembrado en plugins conserva contrato completo', function (): void {
-    $pdo       = new ProductsPdoStub();
-    $installer = new Installer($pdo);
-    $installer->install();
-
-    $params = $pdo->executedParams[1] ?? [];
-    $schemaJson = $params[':schema'] ?? null;
-    assertTrue(is_string($schemaJson) && $schemaJson !== '', 'installer must bind :schema as non-empty JSON string');
-
-    $decoded = json_decode($schemaJson, true);
-    assertTrue(is_array($decoded), 'seeded schema must be valid JSON object');
-    assertTrue(isset($decoded['fields']) && is_array($decoded['fields']), 'seeded schema must include fields');
-    assertTrue(isset($decoded['identities']) && is_array($decoded['identities']), 'seeded schema must include identities');
-    assertTrue(isset($decoded['custom_fields']) && is_array($decoded['custom_fields']), 'seeded schema must include custom_fields');
-    assertTrue(isset($decoded['relations']) && is_array($decoded['relations']), 'seeded schema must include relations');
+    assertTrue($thrown, 'Uniqueness must still be enforced after a slug rename');
+    $executedParams = $pdo->executedParams[0] ?? [];
+    assertTrue(($executedParams[':slug'] ?? '') === 'catalogo_b', 'query must use the live (renamed) slug');
 });
 
 // ---------------------------------------------------------------------------

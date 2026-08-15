@@ -25,7 +25,6 @@ final class InstalledPluginSchemaValidator
         $installed = $this->requireSchema($slug, $installedSchema, 'installed');
         $canonical = $this->requireSchema($slug, $canonicalSchema, 'canonical');
 
-        $this->assertEntityMatches($slug, $installed, $canonical);
         $this->assertAssociativeSectionsContainCanonical($slug, $installed, $canonical);
         $this->assertListSectionsContainCanonical($slug, $installed, $canonical);
     }
@@ -39,7 +38,6 @@ final class InstalledPluginSchemaValidator
         $installed = $this->requireSchema($slug, $installedSchema, 'installed');
         $target = $this->requireSchema($slug, $targetSchema, 'target');
 
-        $this->assertEntityMatches($slug, $installed, $target);
         $this->assertInstalledSectionsExist($slug, $installed, $target);
         $this->assertOverlappingAssociativeDefinitionsMatch($slug, $installed, $target);
         $this->assertOverlappingListDefinitionsMatch($slug, $installed, $target);
@@ -56,21 +54,6 @@ final class InstalledPluginSchemaValidator
         }
 
         return $schema;
-    }
-
-    /**
-     * @param array<string, mixed> $installed
-     * @param array<string, mixed> $expected
-     */
-    private function assertEntityMatches(string $slug, array $installed, array $expected): void
-    {
-        if (!isset($expected['entity'])) {
-            return;
-        }
-
-        if (($installed['entity'] ?? null) !== $expected['entity']) {
-            throw new DomainException("Plugin '{$slug}' has a corrupt installed schema: entity mismatch.");
-        }
     }
 
     /**

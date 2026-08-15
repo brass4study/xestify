@@ -12,7 +12,7 @@ require_once BASE_PATH . '/src/plugins/lifecycle/PluginClassLoader.php';
 use Xestify\plugins\lifecycle\PluginClassLoader;
 
 const CLASS_LOADER_TEST_MANIFEST_BASE = [
-    'name' => 'ClassLoader fixture',
+    'label' => 'ClassLoader fixture',
     'version' => '1.0.0',
     'type' => 'extension',
     'core_version' => '1.0.0',
@@ -31,7 +31,7 @@ TestSuite::run('instantiateLifecycle() injects PDO when the constructor declares
         . "}\n";
 
     $root = createPluginFixture(
-        ['slug' => $slug] + CLASS_LOADER_TEST_MANIFEST_BASE,
+        ['name' => $slug] + CLASS_LOADER_TEST_MANIFEST_BASE,
         false,
         false,
         null,
@@ -70,7 +70,7 @@ TestSuite::run(
         };
 
         $root = createPluginFixture(
-            ['slug' => $slug] + CLASS_LOADER_TEST_MANIFEST_BASE,
+            ['name' => $slug] + CLASS_LOADER_TEST_MANIFEST_BASE,
             true,
             false,
             null,

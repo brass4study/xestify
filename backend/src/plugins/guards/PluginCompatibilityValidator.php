@@ -17,7 +17,7 @@ final class PluginCompatibilityValidator
     {
         if (version_compare((string) $manifest['core_version'], self::CORE_VERSION, '>')) {
             throw new PluginException(
-                "Plugin '{$manifest['slug']}' requires core >= {$manifest['core_version']}, "
+                "Plugin '{$manifest['name']}' requires core >= {$manifest['core_version']}, "
                 . 'current core is ' . self::CORE_VERSION
             );
         }

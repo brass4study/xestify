@@ -7,7 +7,7 @@ namespace Xestify\validation\validators;
 use Xestify\validation\contracts\FieldValidatorInterface;
 use Xestify\validation\model\ValidationError;
 
-final class EmailFieldValidator implements FieldValidatorInterface
+final class MailFieldValidator implements FieldValidatorInterface
 {
     public function validate(string $fieldName, mixed $value, array $rules): array
     {
@@ -15,6 +15,6 @@ final class EmailFieldValidator implements FieldValidatorInterface
             return [];
         }
 
-        return [new ValidationError($fieldName, 'invalid_email', 'Invalid email')];
+        return [new ValidationError($fieldName, 'invalid_mail', 'Invalid email')];
     }
 }

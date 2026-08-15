@@ -10,6 +10,7 @@ import { UiResilienceService } from '../../services/UiResilienceService.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { DynamicForm } from '../modules/DynamicForm.js';
 import { DynamicTabs } from '../modules/DynamicTabs.js';
+import { RelatedRecordsPanel } from '../modules/RelatedRecordsPanel.js';
 import { component } from '../modules/ComponentFactory.js';
 
 export class EntityEdit {
@@ -28,6 +29,7 @@ export class EntityEdit {
 	#onCancel;
 	#onTabChange;
 	#onTabsReady;
+	#onNavigateToRecord;
 	#dynamicTabs = null;
 	#pluginPanels = [];
 	#renderToken = 0;
@@ -39,7 +41,7 @@ export class EntityEdit {
 	 * @param {HTMLElement|string} container
 	 * @param {string} slug
 	 * @param {Object} schema
-	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function, onTabsReady?: Function}} options
+	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function, onTabsReady?: Function, onNavigateToRecord?: Function}} options
 	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -57,6 +59,7 @@ export class EntityEdit {
 		this.#onCancel = typeof options.onCancel === 'function' ? options.onCancel : null;
 		this.#onTabChange = typeof options.onTabChange === 'function' ? options.onTabChange : null;
 		this.#onTabsReady = typeof options.onTabsReady === 'function' ? options.onTabsReady : null;
+		this.#onNavigateToRecord = typeof options.onNavigateToRecord === 'function' ? options.onNavigateToRecord : null;
 
 		this.#render(options.initialData ?? {});
 	}
@@ -197,11 +200,13 @@ export class EntityEdit {
 					content: () => dataPanelEl,
 				},
 				...rawTabs.map((tab) => {
-					const panel = PluginPanelRegistry.build(tab.id, {
-						endpoint: tab.endpoint ?? '',
-						recordId,
-						api,
-					});
+					const panel = tab.type === 'relation'
+						? this.#buildRelatedRecordsPanel(tab, recordId, api)
+						: PluginPanelRegistry.build(tab.plugin_name ?? tab.id, {
+							endpoint: tab.endpoint ?? '',
+							recordId,
+							api,
+						});
 					if (panel !== null) {
 						this.#pluginPanels.push(panel);
 					}
@@ -244,9 +249,29 @@ export class EntityEdit {
 	}
 
 	async #loadPluginModules(tabs) {
+		// Tabs of type 'relation' (STORY 10.3 §9) have no owning plugin.js —
+		// EntityEdit builds their panel directly via RelatedRecordsPanel, so
+		// they must not go through the dynamic plugin.js import below.
+		const pluginTabs = tabs.filter((tab) => tab.type !== 'relation');
 		await Promise.allSettled(
-			tabs.map((tab) => import(buildPluginModuleUrl(tab.id)))
+			// tab.plugin_name (fixed folder identity, STORY 10.3) resolves which
+			// plugin.js to import; tab.id is only unique-per-tab UI identity and,
+			// for multi-instance plugins, is not a valid module path on its own.
+			pluginTabs.map((tab) => import(buildPluginModuleUrl(tab.plugin_name ?? tab.id)))
 		);
+	}
+
+	#buildRelatedRecordsPanel(tab, recordId, api) {
+		const sourceEntity = String(tab.source_entity ?? '');
+		return new RelatedRecordsPanel({
+			sourceEntity,
+			key: String(tab.key ?? ''),
+			recordId,
+			api,
+			onRowClick: this.#onNavigateToRecord === null
+				? null
+				: (id) => this.#onNavigateToRecord(sourceEntity, id),
+		});
 	}
 
 	#buildFallbackPanel(label) {

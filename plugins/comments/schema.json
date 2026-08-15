@@ -1,7 +1,4 @@
 {
-    "plugin": "comments",
-    "version": "1.0.0",
-    "target_entity": "*",
     "fields": {
         "body": {
             "type": "text",

@@ -74,8 +74,8 @@
       if (url === '/entities') {
         return {
           data: [
-            { slug: 'persons', label: 'Clientes' },
-            { slug: 'orders', label: 'Pedidos' },
+            { slug: 'persons', label: 'Personas', identities: { id: { type: 'uuid', auto_generated: true, editable: false } } },
+            { slug: 'orders', label: 'Pedidos', identities: { id: { type: 'uuid', auto_generated: true, editable: false } } },
           ],
         };
       }
@@ -100,6 +100,7 @@
             },
             config: {
               fields: body.fields,
+              relations: body.relations,
             },
           },
         };
@@ -328,8 +329,8 @@
     assertTrue(targetSelect.getInput() instanceof HTMLSelectElement, 'target_entity debe envolver un select nativo');
 
     const allOption = targetSelect.querySelector('option[value="*"]');
-    assertTrue(allOption !== null, 'Debe incluir opcion Todos');
-    assertEquals(allOption.textContent.trim(), 'Todos', 'La opcion * debe mostrarse como Todos');
+    assertTrue(allOption !== null, 'Debe incluir opcion Todas');
+    assertEquals(allOption.textContent.trim(), 'Todas', 'La opcion * debe mostrarse como Todas');
 
     targetSelect.value = 'persons';
 
@@ -365,6 +366,139 @@
     const authorRow = container.querySelector('[data-row-index="1"]');
     const authorRequired = authorRow.querySelector('[data-name="required"]');
     assertTrue(authorRequired.disabled === true, 'Un campo base bloqueado debe seguir bloqueado');
+  });
+
+  await test('anadir campo conserva ediciones no guardadas de otras filas y de la identidad', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    container.querySelector('[data-name="identity-name"]').value = 'Personas (editado)';
+    container.querySelector('[data-row-index="1"] [data-name="label"]').value = 'Telefono editado';
+
+    container.querySelector('[data-action="add-field"]').click();
+
+    assertEquals(container.querySelector('[data-name="identity-name"]').value, 'Personas (editado)',
+      'Anadir campo no debe descartar la edicion de Nombre');
+    const rowsAfter = container.querySelectorAll('[data-role="plugin-config-table"] tbody tr');
+    assertEquals(rowsAfter.length, 4, 'Debe haber 4 filas tras anadir campo');
+    assertEquals(container.querySelector('[data-row-index="1"] [data-name="label"]').value, 'Telefono editado',
+      'Anadir campo no debe descartar la edicion de otras filas');
+  });
+
+  await test('subir, bajar y borrar fila conservan ediciones no guardadas de otras filas y de la identidad', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    container.querySelector('[data-name="identity-slug"]').value = 'personas-editado';
+    container.querySelector('[data-row-index="1"] [data-name="label"]').value = 'Telefono editado';
+
+    container.querySelector('[data-action="move-down"][data-row-index="0"]').click();
+
+    assertEquals(container.querySelector('[data-name="identity-slug"]').value, 'personas-editado',
+      'Subir/Bajar no debe descartar la edicion de Slug');
+    assertEquals(container.querySelector('[data-row-index="0"] [data-name="label"]').value, 'Telefono editado',
+      'Subir/Bajar no debe descartar la edicion de otra fila (la fila phone ahora esta en la posicion 0)');
+
+    container.querySelector('[data-action="remove-row"][data-row-index="2"]').click();
+
+    assertEquals(container.querySelector('[data-name="identity-slug"]').value, 'personas-editado',
+      'Borrar fila no debe descartar la edicion de Slug');
+    const rowsAfter = container.querySelectorAll('[data-role="plugin-config-table"] tbody tr');
+    assertEquals(rowsAfter.length, 2, 'Debe quedar solo 2 filas tras borrar la tercera');
+    assertEquals(container.querySelector('[data-row-index="0"] [data-name="label"]').value, 'Telefono editado',
+      'Borrar fila no debe descartar la edicion de otra fila');
+  });
+
+  await test('renderiza la seccion Relaciones para plugin entity con columnas esperadas, y no para extension', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    const headers = [...container.querySelectorAll('[data-role="plugin-config-relations-table"] thead th')].map((th) => th.textContent.trim());
+    assertEquals(headers.join('|'), 'Clave|Entidad destino|Campo destino|Etiqueta|Requerido|Acciones', 'Debe renderizar columnas de relaciones esperadas');
+
+    const extensionContainer = makeSandbox();
+    const extensionApi = new MockApi();
+    const extensionPage = new PluginConfig(extensionContainer, { slug: 'comments', api: extensionApi });
+    await extensionPage.init();
+
+    assertTrue(extensionContainer.querySelector('[data-role="plugin-config-relations-table"]') === null,
+      'Un plugin extension no debe mostrar la seccion Relaciones');
+  });
+
+  await test('permite anadir una relacion, elegir entidad y campo destino, y guardarla', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    container.querySelector('[data-action="add-relation"]').click();
+
+    const relationRow = container.querySelector('[data-role="plugin-config-relations-table"] tbody tr[data-row-index="0"]');
+    assertTrue(relationRow !== null, 'Debe crearse una fila de relacion');
+
+    relationRow.querySelector('[data-name="relation-key"]').value = 'id_order_owner';
+
+    const targetEntitySelect = relationRow.querySelector('[data-name="relation-target-entity"]');
+    targetEntitySelect.setSelectedValue('orders', true);
+
+    // Elegir entidad destino dispara un re-render completo (recalcula las
+    // opciones de campo destino a partir de las identities de esa entidad),
+    // asi que hay que volver a consultar el DOM tras el cambio.
+    const relationRowAfter = container.querySelector('[data-role="plugin-config-relations-table"] tbody tr[data-row-index="0"]');
+    assertEquals(relationRowAfter.querySelector('[data-name="relation-key"]').value, 'id_order_owner',
+      'El cambio de entidad destino no debe descartar la clave ya escrita');
+
+    const targetFieldOptions = [...relationRowAfter.querySelector('[data-name="relation-target-field"]').querySelectorAll('option')]
+      .map((opt) => opt.value)
+      .filter((value) => value !== '');
+    assertEquals(targetFieldOptions.join(','), 'id', 'Las opciones de campo destino deben venir de las identities de la entidad elegida');
+
+    relationRowAfter.querySelector('[data-name="relation-target-field"]').value = 'id';
+    relationRowAfter.querySelector('[data-name="relation-label"]').value = 'Pedido';
+    relationRowAfter.querySelector('[data-name="relation-required"]').checked = true;
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assertEquals(api.savedPayload.relations.length, 1, 'Debe enviar una relacion en el payload');
+    const relation = api.savedPayload.relations[0];
+    assertEquals(relation.key, 'id_order_owner', 'Debe enviar la clave de la relacion');
+    assertEquals(relation.target_entity, 'orders', 'Debe enviar la entidad destino');
+    assertEquals(relation.target_field, 'id', 'Debe enviar el campo destino');
+    assertEquals(relation.label, 'Pedido', 'Debe enviar la etiqueta');
+    assertTrue(relation.required === true, 'Debe enviar el flag requerido');
+  });
+
+  await test('anadir relacion conserva ediciones no guardadas de campos y de la identidad', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    container.querySelector('[data-name="identity-name"]').value = 'Personas (editado)';
+    container.querySelector('[data-row-index="1"] [data-name="label"]').value = 'Telefono editado';
+
+    container.querySelector('[data-action="add-relation"]').click();
+
+    assertEquals(container.querySelector('[data-name="identity-name"]').value, 'Personas (editado)',
+      'Anadir relacion no debe descartar la edicion de Nombre');
+    assertEquals(container.querySelector('[data-role="plugin-config-table"] [data-row-index="1"] [data-name="label"]').value, 'Telefono editado',
+      'Anadir relacion no debe descartar la edicion de un campo');
+
+    const relationRows = container.querySelectorAll('[data-role="plugin-config-relations-table"] tbody tr');
+    assertEquals(relationRows.length, 1, 'Debe haber 1 fila de relacion tras anadir');
   });
 
   log('────────────────────────────────────────────────────────────────────────');

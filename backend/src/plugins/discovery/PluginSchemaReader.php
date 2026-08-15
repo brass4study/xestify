@@ -21,7 +21,7 @@ final class PluginSchemaReader
     {
         $type = (string) ($manifest['type'] ?? '');
 
-        $slug = (string) $manifest['slug'];
+        $slug = (string) $manifest['name'];
         $path = $this->pluginsDir . '/' . $slug . '/schema.json';
 
         if (!file_exists($path)) {

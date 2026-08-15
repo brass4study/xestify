@@ -7,7 +7,8 @@
  * Verifies that a plugin registering a tab via the 'registerTabs' hook makes
  * it appear in the GET /api/v1/entities/{slug}/tabs API response.
  *
- * Does NOT require a live PostgreSQL connection (no DB calls in tabs()).
+ * Requires a live PostgreSQL connection: tabs() also merges in reverse
+ * relation tabs (STORY 10.3 §9), which queries the plugins table.
  *
  * Run:
  *   php backend/tests/integration/HookFilterApiTest.php
@@ -18,6 +19,7 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
+require_once BASE_PATH . '/tests/helpers/autoload.php';
 require_once BASE_PATH . '/src/exceptions/HookException.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
@@ -37,7 +39,10 @@ use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\discovery\PluginSchemaCodec;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\GenericRepository;
+use Xestify\repositories\PluginRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
 
@@ -58,15 +63,17 @@ if (file_exists($envFile)) {
 }
 
 // ---------------------------------------------------------------------------
-// DB connectivity probe (optional — tabs() doesn't need DB)
+// Connectivity probe
 // ---------------------------------------------------------------------------
 
-$dbAvailable = false;
 try {
     Database::connection();
-    $dbAvailable = true;
 } catch (DatabaseException) {
-    // tabs() endpoint does not query the DB, so tests proceed anyway
+    echo "[SKIP] PostgreSQL not reachable — all HookFilterApiTest cases skipped.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run migrations.\n";
+    echo str_repeat('-', 40) . "\n";
+    echo "Resultado: 0 passed, 0 failed (skipped)\n";
+    exit(0);
 }
 
 // ---------------------------------------------------------------------------
@@ -75,24 +82,7 @@ try {
 
 function buildTabsController(HookDispatcher $dispatcher): EntityController
 {
-    global $dbAvailable;
-    if ($dbAvailable) {
-        $pdo = Database::connection();
-        return new EntityController(
-            new EntityService(
-                new GenericRepository($pdo),
-                new ValidationService(),
-                $pdo
-            ),
-            $pdo,
-            $dispatcher
-        );
-    }
-
-    // Minimal stub PDO (tabs() doesn't call DB)
-    $pdo = new class extends \PDO {
-        public function __construct() { /* stub — no DB needed for tabs() */ }
-    };
+    $pdo = Database::connection();
 
     return new EntityController(
         new EntityService(
@@ -101,7 +91,8 @@ function buildTabsController(HookDispatcher $dispatcher): EntityController
             $pdo
         ),
         $pdo,
-        $dispatcher
+        $dispatcher,
+        new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
     );
 }
 

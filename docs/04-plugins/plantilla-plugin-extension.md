@@ -24,21 +24,29 @@ Notas:
 
 ```json
 {
-  "slug": "optometria",
-  "name": "Optometrias",
+  "name": "optometria",
+  "label": "Optometria",
   "version": "1.0.0",
   "type": "extension",
   "core_version": "1.0.0",
-  "target_entity": "persons"
+  "target_entity": "persons",
+  "description": "Añade una ficha de revisión optométrica a las personas."
 }
 ```
 
+`label` es **obligatorio** (`PluginManifestReader::REQUIRED_FIELDS`) — omitirlo hace
+que el plugin no se pueda leer. `name` es la identidad técnica fija (= carpeta) y
+`label` el nombre editable por instancia desde `PluginConfig`; ver
+`plantilla-plugin-entidad.md` para la explicación completa de esa diferencia
+(idéntica para plugins `entity` y `extension`).
+
 ## schema.json base
+
+Un plugin `extension` solo declara `fields` — no tiene `identities` ni `relations`
+propios (esos son conceptos de la entidad a la que se acopla, no de la extensión).
 
 ```json
 {
-  "plugin": "optometria",
-  "version": "1.0.0",
   "fields": {
     "fecha_revision": {"type": "date", "required": true, "label": "Fecha revision"},
     "ojo_izquierdo": {"type": "string", "required": false, "label": "Ojo izquierdo"},

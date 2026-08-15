@@ -4,7 +4,8 @@
  * EntityMetadataTableTest — Integration tests.
  *
  * Verifies that plugin_entity_metadata no longer exists (merged into plugins)
- * and that the plugins table has the schema_json and schema_version columns.
+ * and that the plugins table has the schema_json column (schema_version was
+ * removed in STORY 10.3 §2bis — residual, never consumed).
  * Requires a live PostgreSQL connection.
  *
  * Run:
@@ -83,7 +84,7 @@ TestSuite::run('plugins table has schema_json column', function (): void {
     assertTrue($row !== false, 'plugins.schema_json column must exist');
 });
 
-TestSuite::run('plugins table has schema_version column', function (): void {
+TestSuite::run('plugins table no longer has schema_version column (STORY 10.3 §2bis)', function (): void {
     $pdo  = Database::connection();
     $stmt = $pdo->query(
         "SELECT column_name FROM information_schema.columns
@@ -91,7 +92,7 @@ TestSuite::run('plugins table has schema_version column', function (): void {
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $row = $stmt->fetch();
-    assertTrue($row !== false, 'plugins.schema_version column must exist');
+    assertTrue($row === false, 'plugins.schema_version column must no longer exist — it was residual and never consumed');
 });
 
 TestSuite::run('plugins schema_json accepts null (extension plugins without schema)', function (): void {

@@ -29,6 +29,24 @@ try {
 
 const DEP_VALIDATOR_VERSION = '1.0.0';
 
+function insertDependencyTestPlugin(PDO $pdo, string $slug, string $label, ?string $pluginName = null): void
+{
+    $manifest = json_encode([
+        'name' => $pluginName ?? $slug,
+        'label' => $label,
+        'version' => DEP_VALIDATOR_VERSION,
+        'type' => 'extension',
+        'core_version' => DEP_VALIDATOR_VERSION,
+        'target_entity' => '*',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json)
+         VALUES (:slug, 'inactive', CAST(:manifest AS jsonb))"
+    )->execute([':slug' => $slug, ':manifest' => $manifest]);
+}
+
 echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('validate() accepts empty dependencies', function () use ($pdo): void {
@@ -55,10 +73,7 @@ TestSuite::run('validate() fails when dependency is missing', function () use ($
 
 TestSuite::run('validate() accepts installed dependency with enough version', function () use ($pdo): void {
     $slug = 'depok' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version)
-         VALUES (:slug, 'Dependency OK', 'extension', '1.0.0', 'inactive', 1)"
-    )->execute([':slug' => $slug]);
+    insertDependencyTestPlugin($pdo, $slug, 'Dependency OK');
 
     try {
         $validator = new PluginDependencyValidator(new PluginRepository($pdo, new PluginSchemaCodec()));
@@ -74,10 +89,7 @@ TestSuite::run('validate() accepts installed dependency with enough version', fu
 
 TestSuite::run('validate() fails when dependency version is too low', function () use ($pdo): void {
     $slug = 'deplow' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version)
-         VALUES (:slug, 'Dependency Low', 'extension', '1.0.0', 'inactive', 1)"
-    )->execute([':slug' => $slug]);
+    insertDependencyTestPlugin($pdo, $slug, 'Dependency Low');
 
     try {
         $validator = new PluginDependencyValidator(new PluginRepository($pdo, new PluginSchemaCodec()));
@@ -95,6 +107,23 @@ TestSuite::run('validate() fails when dependency version is too low', function (
         assertTrue($threw, 'Dependency version lower than required must fail');
     } finally {
         cleanupPluginRecord($pdo, $slug);
+    }
+});
+
+TestSuite::run('validate() keeps resolving a dependency by plugin_name after its slug was renamed (STORY 10.3)', function () use ($pdo): void {
+    $pluginName = 'depname' . bin2hex(random_bytes(3));
+    $renamedSlug = $pluginName . '_renamed';
+    insertDependencyTestPlugin($pdo, $renamedSlug, 'Dependency Renamed', $pluginName);
+
+    try {
+        $validator = new PluginDependencyValidator(new PluginRepository($pdo, new PluginSchemaCodec()));
+        $validator->validate([
+            'slug' => 'dep-parent',
+            'requires' => [['slug' => $pluginName, 'version' => DEP_VALIDATOR_VERSION]],
+        ]);
+        assertTrue(true, 'A renamed dependency must still resolve by its fixed plugin_name');
+    } finally {
+        cleanupPluginRecord($pdo, $pluginName);
     }
 });
 

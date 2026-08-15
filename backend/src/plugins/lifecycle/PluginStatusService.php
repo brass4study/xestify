@@ -7,13 +7,13 @@ namespace Xestify\plugins\lifecycle;
 use OutOfBoundsException;
 use PDO;
 use Throwable;
-use Xestify\repositories\PluginRepository;
+use Xestify\repositories\PluginWriteRepository;
 
 final class PluginStatusService
 {
     public function __construct(
         private PDO $pdo,
-        private PluginRepository $pluginRepository,
+        private PluginWriteRepository $pluginWriteRepository,
         private PluginLifecycleInvoker $lifecycleInvoker
     ) {
     }
@@ -26,12 +26,12 @@ final class PluginStatusService
         $this->pdo->beginTransaction();
 
         try {
-            $plugin = $this->pluginRepository->updateStatus($slug, 'active');
+            $plugin = $this->pluginWriteRepository->updateStatus($slug, 'active');
             if ($plugin === null) {
                 throw new OutOfBoundsException("Plugin '{$slug}' is not installed.");
             }
 
-            $this->lifecycleInvoker->onActivate($slug);
+            $this->lifecycleInvoker->onActivate((string) ($plugin['manifest_json']['name'] ?? ''));
 
             $this->pdo->commit();
 
@@ -53,12 +53,12 @@ final class PluginStatusService
         $this->pdo->beginTransaction();
 
         try {
-            $plugin = $this->pluginRepository->updateStatus($slug, 'inactive');
+            $plugin = $this->pluginWriteRepository->updateStatus($slug, 'inactive');
             if ($plugin === null) {
                 throw new OutOfBoundsException("Plugin '{$slug}' is not installed.");
             }
 
-            $this->lifecycleInvoker->onDeactivate($slug);
+            $this->lifecycleInvoker->onDeactivate((string) ($plugin['manifest_json']['name'] ?? ''));
 
             $this->pdo->commit();
 

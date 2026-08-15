@@ -27,25 +27,25 @@ final class PluginDependencyValidator
         foreach ($requires as $dependency) {
             if (!is_array($dependency) || !isset($dependency['slug']) || !is_string($dependency['slug'])) {
                 throw new PluginException(
-                    "Plugin '{$manifest['slug']}' has an invalid 'requires' entry in manifest.json"
+                    "Plugin '{$manifest['name']}' has an invalid 'requires' entry in manifest.json"
                 );
             }
 
-            $depSlug = $dependency['slug'];
+            $depPluginName = $dependency['slug'];
             $minVersion = isset($dependency['version']) && is_string($dependency['version'])
                 ? $dependency['version']
                 : '0.0.0';
 
-            $installedVersion = $this->pluginRepository->findInstalledVersion($depSlug);
+            $installedVersion = $this->pluginRepository->findInstalledVersion($depPluginName);
             if ($installedVersion === null) {
                 throw new PluginException(
-                    "Plugin '{$manifest['slug']}' requires plugin '{$depSlug}' which is not installed"
+                    "Plugin '{$manifest['name']}' requires plugin '{$depPluginName}' which is not installed"
                 );
             }
 
             if (version_compare($installedVersion, $minVersion, '<')) {
                 throw new PluginException(
-                    "Plugin '{$manifest['slug']}' requires plugin '{$depSlug}' >= {$minVersion}, "
+                    "Plugin '{$manifest['name']}' requires plugin '{$depPluginName}' >= {$minVersion}, "
                     . "installed version is {$installedVersion}"
                 );
             }

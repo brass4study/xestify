@@ -103,7 +103,7 @@
       const field = component.create('formField', { label: 'Email', input });
       const textArea = component.create('inputTextArea', { name: 'notes', placeholder: 'Notas' });
       const select = component.create('inputSelect', { name: 'status', options: [{ value: 'active', label: 'Activo' }] });
-      const email = component.create('inputEmail', { name: 'emailAddress' });
+      const email = component.create('inputMail', { name: 'emailAddress' });
       const password = component.create('inputPassword', { name: 'password' });
       const radio = component.create('inputRadio', { name: 'role', value: 'admin' });
       const check = component.create('inputCheck', { name: 'agree' });
@@ -308,7 +308,7 @@
       const originalBase = InputComponent.BASE_CLASSNAME;
       InputComponent.BASE_CLASSNAME = 'test-marker-base-class';
       try {
-        ['inputText', 'inputEmail', 'inputPassword', 'inputDate', 'inputTime', 'inputTextArea'].forEach((name) => {
+        ['inputText', 'inputMail', 'inputPhone', 'inputPassword', 'inputDate', 'inputTime', 'inputTextArea'].forEach((name) => {
           const el = component.create(name, { name: 'x' });
           assertEquals(el.className, 'test-marker-base-class', `${name} debe leer InputComponent.BASE_CLASSNAME en vez de un literal propio`);
         });

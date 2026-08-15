@@ -19,6 +19,7 @@ define('MSG_OK_FALSE',   'ok must be false');
 define('MSG_CODE_404',   'code must be 404');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
+require_once BASE_PATH . '/tests/helpers/autoload.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
 require_once BASE_PATH . '/src/exceptions/EntityServiceException.php';
@@ -38,7 +39,10 @@ use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\discovery\PluginSchemaCodec;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\GenericRepository;
+use Xestify\repositories\PluginRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
 
@@ -112,7 +116,8 @@ function buildController(): EntityController
             $pdo
         ),
         $pdo,
-        new HookDispatcher()
+        new HookDispatcher(),
+        new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
     );
 }
 
@@ -134,15 +139,23 @@ function callController(
 
 function seedCtrlSchema(string $slug = CTRL_ENTITY_SLUG, string $schemaJson = CTRL_SCHEMA_JSON): void
 {
+    $manifest = json_encode([
+        'name' => $slug,
+        'label' => 'Test Entity Ctrl',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     Database::connection()->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Test Entity Ctrl', 'entity', '1.0.0', 'inactive', 1, :schema)
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'inactive', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
          ON CONFLICT (slug) DO UPDATE
-         SET name = EXCLUDED.name,
+         SET manifest_json = EXCLUDED.manifest_json,
              schema_json = EXCLUDED.schema_json,
-             schema_version = EXCLUDED.schema_version,
              updated_at = NOW()"
-    )->execute([':slug' => $slug, ':schema' => $schemaJson]);
+    )->execute([':slug' => $slug, ':manifest' => $manifest, ':schema' => $schemaJson]);
 }
 
 function cleanCtrlData(string $slug = CTRL_ENTITY_SLUG): void
@@ -380,6 +393,16 @@ TestSuite::run('DELETE destroy soft-deletes record — show returns 404 afterwar
 
     cleanCtrlData();
 });
+
+// ---------------------------------------------------------------------------
+// Final cleanup — cleanCtrlData() only clears plugin_entity_data / nulls
+// schema_json between tests; the registry rows themselves must be removed
+// once, here, or they linger in the plugins listing forever.
+// ---------------------------------------------------------------------------
+
+$finalPdo = Database::connection();
+$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG]);
+$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG_IDENTITY]);
 
 // ---------------------------------------------------------------------------
 // Summary

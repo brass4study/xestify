@@ -6,8 +6,9 @@ namespace Xestify\validation;
 
 use Xestify\validation\validators\BooleanFieldValidator;
 use Xestify\validation\validators\DateFieldValidator;
-use Xestify\validation\validators\EmailFieldValidator;
+use Xestify\validation\validators\MailFieldValidator;
 use Xestify\validation\validators\NumberFieldValidator;
+use Xestify\validation\validators\PhoneFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
@@ -24,7 +25,8 @@ final class DefaultFieldValidatorRegistryFactory
             'boolean' => new BooleanFieldValidator(),
             'date' => new DateFieldValidator(),
             'timestamp' => new TimestampFieldValidator(),
-            'email' => new EmailFieldValidator(),
+            'mail' => new MailFieldValidator(),
+            'phone' => new PhoneFieldValidator(),
             'select' => new SelectFieldValidator(),
             'uuid' => new UuidFieldValidator(),
         ]);

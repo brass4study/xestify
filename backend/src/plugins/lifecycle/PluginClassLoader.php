@@ -21,11 +21,11 @@ final class PluginClassLoader
     /**
      * @return object|null
      */
-    public function instantiateHooks(string $slug): ?object
+    public function instantiateHooks(string $pluginName): ?object
     {
-        $this->requirePluginFile($slug, 'Hooks.php');
+        $this->requirePluginFile($pluginName, 'Hooks.php');
 
-        $class = self::PLUGIN_NAMESPACE_PREFIX . $slug . '\\Hooks';
+        $class = self::PLUGIN_NAMESPACE_PREFIX . $pluginName . '\\Hooks';
         if (!class_exists($class)) {
             return null;
         }
@@ -33,11 +33,11 @@ final class PluginClassLoader
         return $this->instantiateWithOptionalPdo($class);
     }
 
-    public function instantiateLifecycle(string $slug): ?PluginLifecycleInterface
+    public function instantiateLifecycle(string $pluginName): ?PluginLifecycleInterface
     {
-        $this->requirePluginFile($slug, 'Lifecycle.php');
+        $this->requirePluginFile($pluginName, 'Lifecycle.php');
 
-        $class = self::PLUGIN_NAMESPACE_PREFIX . $slug . '\\Lifecycle';
+        $class = self::PLUGIN_NAMESPACE_PREFIX . $pluginName . '\\Lifecycle';
         if (!class_exists($class)) {
             return null;
         }
@@ -45,9 +45,9 @@ final class PluginClassLoader
         return $this->instantiateWithOptionalPdo($class);
     }
 
-    private function requirePluginFile(string $slug, string $filename): void
+    private function requirePluginFile(string $pluginName, string $filename): void
     {
-        $path = $this->pluginsDir . '/' . $slug . '/' . $filename;
+        $path = $this->pluginsDir . '/' . $pluginName . '/' . $filename;
 
         if (file_exists($path)) {
             require_once $path;

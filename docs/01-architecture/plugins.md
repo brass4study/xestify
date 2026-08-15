@@ -2,14 +2,17 @@
 
 ## Tipos de plugin
 
-1. Plugin de entidad (`plugin_type = 'entity'`)
+1. Plugin de entidad (`type: 'entity'` en el manifest)
 - Define una entidad reusable con su schema.
-- Al instalarse, registra una fila en `plugins` con `name`, `slug`, `schema_json` y estado.
+- Al instalarse, registra una fila en `plugins` con `slug`, `status`, `manifest_json`
+  (refleja el `manifest.json` del plugin) y `schema_json` (refleja el `schema.json`).
+  No hay columnas `plugin_type`/`name`/`version`/`description` separadas
+  (STORY 10.3 §2bis) — todo eso vive dentro de `manifest_json`.
 - Es el catalogo de entidades del sistema.
 - No existe tabla separada `system_entities`.
 - Ejemplo: `persons`.
 
-2. Plugin de extension (`plugin_type = 'extension'`)
+2. Plugin de extension (`type: 'extension'` en el manifest)
 - Se acopla a una entidad existente mediante hooks.
 - Inyecta tabs, acciones o logica sin modificar el Core.
 - Persiste sus datos en `plugin_extension_data` (tabla generica JSONB).
@@ -24,13 +27,12 @@ plugins/<plugin_slug>/
   Hooks.php
   Lifecycle.php
   plugin.js
-  Installer.php
 ```
 
 Notas:
 - `manifest.json` es obligatorio.
 - `schema.json` es obligatorio para plugins `entity` y recomendado para `extension`.
-- `Hooks.php`, `Lifecycle.php`, `plugin.js` e `Installer.php` son opcionales segun cada plugin.
+- `Hooks.php`, `Lifecycle.php` y `plugin.js` son opcionales segun cada plugin.
 - La estructura es plana por plugin (sin carpetas `backend/` o `frontend/` dentro del plugin).
 
 ## Convenciones
@@ -45,27 +47,34 @@ Notas:
 **Catálogo y tests:**
 - Los tests de catálogo de entidades, validación y CRUD deben operar siempre sobre la tabla `plugins` y nunca sobre tablas legacy.
 - Los seeders y fixtures deben poblar la tabla `plugins` para entidades base.
-- El modelo `SystemEntity` fue eliminado o convertido en facade sobre `plugins` (según refactor).
+- El modelo `SystemEntity` fue eliminado por completo (no queda como facade ni en ninguna otra forma).
 
 ## manifest.json (minimo)
 
 ```json
 {
-  "slug": "persons",
-  "name": "Clientes",
+  "name": "persons",
+  "label": "Personas",
   "version": "1.0.0",
   "type": "entity",
   "core_version": "1.0.0"
 }
 ```
 
+`name` es la identidad técnica fija (= carpeta, nunca editable); `label` es el
+nombre de negocio, editable por instancia desde `PluginConfig`. No existe una
+clave `slug` en el manifest — `slug` es solo una columna de la tabla `plugins`,
+editable a nivel de aplicación. Ver `docs/04-plugins/plantilla-plugin-entidad.md`
+para el detalle completo.
+
 ## Descubrimiento y registro
 
 El subsistema de plugins descubre plugins leyendo
-`plugins/<slug>/manifest.json` y valida campos obligatorios:
+`plugins/<slug>/manifest.json` y valida campos obligatorios
+(`PluginManifestReader::REQUIRED_FIELDS`):
 
-- `slug`
 - `name`
+- `label`
 - `version`
 - `type`
 - `core_version`
@@ -76,14 +85,21 @@ activos en el `HookDispatcher`.
 ## Registro en base de datos
 
 `PluginSyncService` es la operacion explicita que registra plugins nuevos en la
-tabla `plugins` sin consumir updates pendientes de plugins ya instalados.
+tabla `plugins` sin consumir updates pendientes de plugins ya instalados (usada
+por "Sincronizar" en `PluginManager`). También existe el alta manual,
+plugin a plugin, desde `PluginManager`/`PluginConfig` (`POST /api/v1/plugins`,
+`PluginAdministrationService::registerNew()`) — a diferencia de la sincronización
+masiva (que deja el plugin `inactive`), el alta manual **activa el plugin
+automáticamente** justo después de insertarlo.
+
 Para plugins de tipo `entity`, `schema.json` es obligatorio y se persiste en
 `plugins.schema_json`; si falta o no contiene `fields`, la sincronizacion se
-rechaza.
+rechaza. `schema_json` es puramente estructural: `identities`/`fields`/
+`custom_fields`/`relations`/`plugin_suggested_custom_fields`/`ui_field_order`.
 
 Para plugins de tipo `entity`, el filtro:
 
-`plugins WHERE plugin_type = 'entity' AND status = 'active'`
+`plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`
 
 es el catalogo completo de entidades del sistema. No hay otra fuente.
 
@@ -92,10 +108,16 @@ El slug canonico de personas (clientes/distribuidores/oculistas) en el MVP es `p
 ## Integracion frontend de plugins
 
 - `EntityEdit` es agnostico a plugins concretos.
-- Flujo:
+- Flujo (tabs aportadas por un plugin, vía `registerTabs`):
   1. Obtiene tabs desde `/api/v1/entities/{slug}/tabs`.
   2. Importa dinamicamente `/plugins/{plugin_slug}/plugin.js`.
   3. Construye panel usando `PluginPanelRegistry`.
+- Excepción (STORY 10.3 §9): `/api/v1/entities/{slug}/tabs` también incluye tabs
+  `type: 'relation'`, generadas automáticamente por el núcleo
+  (`ReverseRelationTabResolver`) cuando otra entidad declara una relación
+  `belongs_to` hacia esta — no vienen de ningún `plugin.js` ni pasan por
+  `PluginPanelRegistry`; `EntityEdit` las detecta por `type` y construye
+  directamente un `RelatedRecordsPanel` genérico.
 
 Contrato de panel frontend:
 
@@ -130,8 +152,10 @@ estaticos del plugin.
 actualizacion explicita del plugin; no forma parte del contrato obligatorio de
 `PluginLifecycleInterface`.
 
-Hasta STORY 6.4, la extension `comments` se muestra dentro de `EntityEdit`.
-Una vista de detalle dedicada y la pagina PluginManager quedan para STORY 6.5+.
+La extension `comments` se muestra dentro de `EntityEdit`. La pagina
+`PluginManager` (listado/activar/desactivar/actualizar/revertir/alta manual/
+borrado de plugins) y `PluginConfig` (identidad, campos, relaciones) ya están
+implementadas — ver `docs/04-plugins/README.md`.
 
 ## Reglas
 
@@ -144,7 +168,7 @@ Una vista de detalle dedicada y la pagina PluginManager quedan para STORY 6.5+.
 
 ## Caso ejemplo
 
-- `persons` aporta CRUD base (registrado en `plugins` con `plugin_type='entity'`).
+- `persons` aporta CRUD base (registrado en `plugins` con `manifest_json->>'type' = 'entity'`).
 - `comments` registra tab en ficha de cliente via hook `registerTabs`.
 - `comments` usa frontend propio en `plugin.js`.
 - `comments` persiste sus datos en `plugin_extension_data` con `plugin_slug='comments'`.

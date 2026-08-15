@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Xestify\controllers;
 
+use InvalidArgumentException;
 use PDO;
 use Xestify\core\Request;
 use Xestify\core\RequestFactory;
@@ -14,6 +15,7 @@ use Xestify\exceptions\HookException;
 use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\services\EntityService;
 
 /**
@@ -35,6 +37,7 @@ class EntityController
         private EntityService $service,
         private PDO $pdo,
         private HookDispatcher $hookDispatcher,
+        private ReverseRelationTabResolver $reverseRelationTabResolver,
         private ?RequestFactory $requestFactory = null
     ) {
     }
@@ -51,28 +54,32 @@ class EntityController
         $request ??= $this->requestFactory()->fromGlobals($params);
 
         $stmt = $this->pdo->prepare(
-            'SELECT p.slug, p.name AS label, p.schema_json, p.schema_version
+            "SELECT p.slug, p.manifest_json, p.schema_json
              FROM plugins p
-             WHERE p.plugin_type = :plugin_type
+             WHERE p.manifest_json->>'type' = :plugin_type
                  AND p.status = :status
                  AND p.schema_json IS NOT NULL
-             ORDER BY p.name ASC'
+             ORDER BY p.manifest_json->>'label' ASC"
         );
         $stmt->execute([':plugin_type' => 'entity', ':status' => 'active']);
         $rows = $stmt->fetchAll();
 
         $entities = [];
         foreach ($rows as $row) {
+            $manifest = json_decode((string) ($row['manifest_json'] ?? '{}'), true);
+            $manifest = is_array($manifest) ? $manifest : [];
             $schemaConfig = $this->extractEntitySchemaConfig($row);
 
             $entities[] = [
                 'slug'           => $row['slug'],
-                'label'          => $row['label'],
-                'label_singular' => $schemaConfig['label_singular'],
-                'schema_version' => (int) ($row['schema_version'] ?? 1),
+                'label'          => (string) ($manifest['label'] ?? ''),
+                'label_singular' => isset($manifest['label_singular']) && is_string($manifest['label_singular'])
+                    ? $manifest['label_singular']
+                    : null,
                 'fields'         => $schemaConfig['fields'],
                 'custom_fields'  => $schemaConfig['custom_fields'],
                 'ui_field_order' => $schemaConfig['ui_field_order'],
+                'identities'     => $schemaConfig['identities'],
             ];
         }
 
@@ -81,7 +88,7 @@ class EntityController
 
     /**
      * @param array<string, mixed> $row
-     * @return array{label_singular: ?string, fields: array<mixed>, custom_fields: array<mixed>, ui_field_order: array<mixed>}
+     * @return array{fields: array<mixed>, custom_fields: array<mixed>, ui_field_order: array<mixed>, identities: array<mixed>}
      */
     private function extractEntitySchemaConfig(array $row): array
     {
@@ -91,17 +98,13 @@ class EntityController
         $fields = isset($schema['fields']) && is_array($schema['fields']) ? $schema['fields'] : [];
         $customFields = isset($schema['custom_fields']) && is_array($schema['custom_fields']) ? $schema['custom_fields'] : [];
         $uiFieldOrder = isset($schema['ui_field_order']) && is_array($schema['ui_field_order']) ? $schema['ui_field_order'] : [];
-
-        $singularLabel = null;
-        if (isset($schema['label_singular']) && is_string($schema['label_singular'])) {
-            $singularLabel = $schema['label_singular'];
-        }
+        $identities = isset($schema['identities']) && is_array($schema['identities']) ? $schema['identities'] : [];
 
         return [
-            'label_singular' => $singularLabel,
             'fields' => $fields,
             'custom_fields' => $customFields,
             'ui_field_order' => $uiFieldOrder,
+            'identities' => $identities,
         ];
     }
 
@@ -120,7 +123,7 @@ class EntityController
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT schema_json, schema_version FROM plugins
+            'SELECT schema_json FROM plugins
              WHERE slug = :slug
              LIMIT 1'
         );
@@ -136,7 +139,6 @@ class EntityController
 
         Response::make()->json([
             'entity_slug'    => $slug,
-            'schema_version' => (int) $row['schema_version'],
             'schema'         => is_array($decoded) ? $decoded : [],
         ]);
     }
@@ -152,6 +154,12 @@ class EntityController
 
         if ($slug === '') {
             Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            return;
+        }
+
+        $field = trim((string) $request->query('field', ''));
+        if ($field !== '') {
+            $this->indexByField($slug, $field, (string) $request->query('value', ''));
             return;
         }
 
@@ -174,6 +182,22 @@ class EntityController
             'sort' => $result['sort'],
             'direction' => strtolower($direction),
         ]);
+    }
+
+    /**
+     * Narrow, unpaginated filter used by the reverse relation tab (STORY
+     * 10.3 §9) — GET /entities/{slug}/records?field=...&value=....
+     */
+    private function indexByField(string $slug, string $field, string $value): void
+    {
+        try {
+            $records = $this->service->findRecordsByField($slug, $field, $value);
+        } catch (InvalidArgumentException $e) {
+            Response::make()->unprocessable($e->getMessage());
+            return;
+        }
+
+        Response::make()->json($records);
     }
 
     /**
@@ -305,7 +329,9 @@ class EntityController
             return;
         }
 
-        $tabs = $this->hookDispatcher->applyFilter('registerTabs', [], ['entity' => $slug]);
+        $pluginTabs = $this->hookDispatcher->applyFilter('registerTabs', [], ['entity' => $slug]);
+        $relationTabs = $this->reverseRelationTabResolver->resolve($slug);
+        $tabs = array_merge($pluginTabs, $relationTabs);
 
         Response::make()->json(['tabs' => $tabs, 'entity' => $slug]);
     }

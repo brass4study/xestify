@@ -67,6 +67,16 @@ body[data-ui-page-style="dark"] {
 	box-shadow: 0 0 0 1px rgb(30 121 255 / 0.35);
 }
 
+/* Los controles editables dentro de una tabla (p. ej. la tabla de "Campos" de
+   PluginConfig) deben verse igual que fuera de ella, solo menos altos. Para
+   <input>/<textarea> basta con la clase Tailwind py-1 del propio elemento,
+   pero el trigger de input-select ignora esa clase porque la regla de arriba
+   fija su padding con la misma especificidad — este selector más específico
+   es necesario para poder reducirlo en ese contexto. */
+[data-role="plugin-config-table"] [data-role="input-select-trigger"] {
+	padding: 0.25rem 0.75rem;
+}
+
 [data-role="password-visibility-toggle"]:focus,
 [data-role="password-visibility-toggle"]:focus-visible {
 	color: var(--x-brand-600) !important;

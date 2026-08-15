@@ -33,20 +33,8 @@ final class PluginSchemaMergeService
         $merged = $currentSchema ?? [];
         $diff = $this->emptyDiff();
 
-        if (isset($merged['entity'], $targetSchema['entity']) && $merged['entity'] !== $targetSchema['entity']) {
-            throw new DomainException("Plugin '{$slug}' update is not additive: entity identifier changed.");
-        }
-
-        if (!isset($merged['entity']) && isset($targetSchema['entity'])) {
-            $merged['entity'] = $targetSchema['entity'];
-        }
-
         if (isset($targetSchema['version']) && is_string($targetSchema['version'])) {
             $merged['version'] = $targetSchema['version'];
-        }
-
-        if (!isset($merged['label_singular']) && isset($targetSchema['label_singular'])) {
-            $merged['label_singular'] = $targetSchema['label_singular'];
         }
 
         $merged['identities'] = $this->mergeAssociativeSection(

@@ -412,17 +412,19 @@ Story completada. Archivos creados/modificados:
 |-------|-------------|--------|--------------|
 | 10.1 ✅ | Mejoras en la sección de login | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 229/229 assertions (21 runners); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.2 ✅ | Renombrar plugin `clients` a `persons` | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 10 runners afectados en verde (headless, pendiente confirmación visual del usuario en navegador integrado); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
+| 10.3 ✅ | Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json` | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 60/60 archivos; frontend `frontend/tests/integration/` runners afectados en verde vía Playwright headless (pendiente confirmación visual del usuario en navegador integrado) ✅ |
 
 **Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
 **Detalle de la story 10.2:** ver sesión completa más abajo (2026-08-15).
+**Detalle de la story 10.3:** ver sesión completa más abajo (2026-08-16).
 
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-15
+**Fecha:** 2026-08-16
 **EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
-**Próxima story:** STORY 10.3 - Desacoplar `plugin_name` de `slug` y descripción editable con i18n (EPIC 10)
+**Próxima story:** STORY 10.4 - Plugin de demostración `orders` (relación `belongs_to` hacia `persons`, EPIC 10)
 
 ---
 
@@ -1222,5 +1224,131 @@ implementación que ampliaron el alcance más allá del AC literal del backlog
   frontend, BD ni documentación viva.
 - Backlog alineado: STORY 10.2 queda implementada; el siguiente punto es
   STORY 10.3.
+
+---
+
+## Sesion 2026-08-16 - STORY 10.3 Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json`
+
+Story implementada y verificada, con el AC original completado y **cuatro
+ampliaciones de alcance sucesivas, todas acordadas explícitamente con el usuario
+antes de aplicarlas** (nunca desvíos silenciosos): alta manual de plugin (§6),
+borrado en cascada (§7), grid "Relaciones" editable (§8) y tab automática de
+relación inversa en `EntityEdit` (§9). Ningún commit se hizo durante la sesión —
+todo el trabajo quedó en el working tree, verificado con la suite completa en
+verde, a la espera del commit de cierre.
+
+**Decisiones tomadas en esta sesión:**
+- **AC original**: nueva identidad técnica fija `plugin_name` (= carpeta/namespace
+  PHP), desacoplada de `slug` (editable desde `PluginConfig`, solo navegación/URL).
+  `name`/`description` dejan de sincronizarse desde el manifest tras el primer
+  install — el admin los edita libremente sin que un `syncAll()`/`update()`
+  posterior los sobrescriba (excepto `rollback()`, que sigue restaurando desde el
+  snapshot histórico tal cual).
+- **Refactor mayor no previsto en el AC (§2bis)**: a mitad de sesión se detectó que
+  `plugins` había acumulado columnas (`plugin_name`, `plugin_type`, `version`,
+  `name`, `description`) que en realidad son propiedades del `manifest.json` del
+  plugin, más una columna (`schema_version`) residual sin consumidores reales (ni
+  siquiera el frontend la leía). Se consolidaron las cinco primeras en una columna
+  `manifest_json JSONB` **viva** (se actualiza cuando cambian sus campos, no es una
+  foto fija del install) que refleja literalmente el `manifest.json` en disco, y se
+  eliminó `schema_version` sin reemplazo (de `plugins` y de `plugin_update_history`).
+  Dentro de `manifest_json`: `name`/`version`/`type`/`core_version`/`label_singular`
+  siempre reflejan el disco (nunca editables); `label`/`description`/`target_entity`
+  (solo `extension`) son editables por el admin y se preservan en cada actualización
+  (merge, nunca overwrite). Importante: `plugins.name` (editable, ej. "Clientes")
+  mapea a `manifest_json.label`, **no** a `manifest_json.name` — son valores
+  distintos, confirmado explícitamente con el usuario tras una ambigüedad de
+  redacción en el plan original. `schema_json` volvió a ser puramente estructural.
+  Contrato JSON público sin cambios (confirmado por exploración exhaustiva del
+  frontend): solo cambió cómo se computan las respuestas, no su forma.
+- **§6 — Alta manual de plugin**: nuevo flujo en `PluginManager`/`PluginConfig`
+  (modo `create`) para registrar una instancia nueva plugin a plugin, con
+  selector de tipo en blanco (mecanismo de placeholder real, no una opción falsa
+  en la lista), identidad oculta hasta elegir tipo, y las secciones "Campos"/
+  "Relación de extensión" editables y guardables ya en el alta (decisión explícita
+  del usuario vía pregunta dirigida). Tras varias correcciones sobre la ruta
+  reservada (`_new` → finalmente `#new`, con un bug de `encodeURIComponent`
+  escapando `#` a `%23` corregido con un bypass específico), y **al cierre de la
+  sesión** se decidió que el alta manual activa el plugin automáticamente
+  (antes quedaba `inactive` igual que la sincronización masiva, que sigue sin
+  activar por defecto) — esto destapó un bug preexistente de esta misma sesión:
+  `POST /plugins` y `PUT /plugins/{slug}/status` devolvían la fila cruda con
+  `manifest_json` anidado en vez de aplanada, rompiendo silenciosamente el
+  nombre/tipo mostrado tras esas acciones; se corrigió con un `flattenPlugin()`
+  compartido en el controller, y `PluginManager.js` pasó a recargar la lista
+  completa tras activar/desactivar (mismo patrón que actualizar/revertir) en vez
+  de parchear la fila en memoria.
+- **§7 — Borrado de plugin**: permitido en cualquier estado (si está `active`,
+  desactiva primero y borra físicamente todo en la misma operación); cascada por
+  tipo (`entity` borra su `plugin_entity_data` y cualquier `plugin_extension_data`
+  que apuntara a él; `extension` borra solo el suyo), siempre borra
+  `plugin_update_history` y la fila de `plugins`.
+- **§8 — Grid "Relaciones"**: primera implementación funcional real del bloque
+  `relations` del schema (existía desde STORY 4.7 pero se ignoraba silenciosamente
+  al guardar). Decisiones cerradas: `type` de relación fijo a `belongs_to` (único
+  caso real contemplado); `target_field` restringido a las claves del bloque
+  `identities` de la entidad destino elegida. Se muestra tanto en edición como en
+  alta manual, siguiendo la misma consistencia ya decidida para "Campos".
+- **§9 — Tab de relación inversa en `EntityEdit`**: cuando una entidad B declara
+  una relación hacia A, la ficha de un registro de A muestra automáticamente una
+  tab con los registros de B que apuntan a él. No encaja en el contrato de
+  paneles de plugin (`PluginPanelRegistry` + `plugin.js` propio) porque no hay
+  ningún plugin "dueño" de esa tab — se implementó como capacidad nueva del
+  núcleo (`ReverseRelationTabResolver` en backend, `RelatedRecordsPanel.js`
+  genérico en frontend, instanciado directamente sin registrarse). Al pulsar un
+  registro listado, navega a su propio `EntityEdit`, igual que cualquier fila de
+  `EntityList`; sin botón de alta pre-rellenada por ahora.
+- **Bug de sincronización de estado en `PluginConfig.js`** (reportado por el
+  usuario a mitad de sesión, no relacionado con el AC): "Añadir campo"/"Subir"/
+  "Bajar"/"Borrar" en cualquier fila descartaban las ediciones sin guardar de
+  las demás filas y de los campos Slug/Nombre/Descripción, porque disparaban un
+  `render()` completo sin volcar antes el DOM actual a `this.#state`. Se corrigió
+  con `syncStateFromDom()`, invocado antes de cualquier mutación de estado que
+  dispare un re-render (incluidos los casos de error al guardar, mismo defecto).
+- Verificado y corregido de paso (hallazgos encontrados durante la propia
+  verificación en navegador, no del AC): `PluginConfig.js` pisaba las clases
+  `bg-white`/`border` que pone `FormLayout` en el panel (`setClassName` en vez de
+  `addClass`); un test esperaba el texto "Todos" donde el código (correctamente,
+  "entidad" es femenino) decía "Todas".
+
+**Cambios principales (no exhaustivo — ver diff completo del working tree):**
+- Backend: `003_plugins.sql`/`005_plugin_update_history.sql` reescritas a la
+  forma `manifest_json`/`schema_json`; `PluginRepository` dividido en
+  `PluginRepository` (lectura) + `PluginWriteRepository` (escritura, nueva);
+  nuevos `PluginIdentityService`, `PluginDeletionService`, `PluginConfigService`,
+  `ReverseRelationTabResolver`; `GenericRepository::deleteByEntitySlug()`/
+  `findByFieldValue()`; `EntityController` gana `ReverseRelationTabResolver` como
+  colaborador y el filtro `?field=&value=` en `/records`; eliminado código
+  huérfano `SystemEntity.php`/`SystemEntityTest.php` y `Installer.php` de los
+  plugins reales.
+- Frontend: `PluginConfig.js` con secciones "Identidad"/"Campos"/"Relación de
+  extensión"/"Relaciones" y modo `create`; `PluginManager.js` con botón "Añadir
+  plugin" y recarga tras activar/desactivar; `EntityEdit.js` distingue tabs de
+  relación de tabs de plugin; nuevo `RelatedRecordsPanel.js`.
+- ~20 ficheros de test backend reescritos/nuevos (`PluginIdentityServiceTest.php`,
+  `PluginDeletionServiceTest.php`, `PluginRegistrationServiceTest.php`,
+  `PluginRelationsConfigTest.php`, `ReverseRelationTest.php`, entre otros) y
+  varios runners frontend (`PluginConfigTest.html`, `PluginManagerTest.html`,
+  `EntityEditTest.html`) con casos nuevos para cada bloque.
+
+**Verificaciones finales:**
+- Backend: `php backend/tests/run.php all` → 60/60 archivos en verde.
+- Frontend: runners afectados (`PluginConfigTest.html`, `PluginManagerTest.html`,
+  `EntityEditTest.html`, `EntityListTest.html`, `NavbarTest.html`,
+  `FrontendArchitectureTest.html`) verificados vía Playwright headless sin
+  fallos ni errores de consola — pendiente confirmación visual del usuario en
+  el navegador integrado de VS Code, que sigue siendo la vía canónica.
+
+**Cierre verificado (2026-08-16):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: el contrato JSON público de `/plugins`/`/entities` no
+  cambió pese al refactor interno de almacenamiento (`manifest_json`); todos los
+  endpoints nuevos (§6/§7/§8/§9) tienen cobertura de test tanto de casos válidos
+  como de rechazo (slug duplicado, target_entity inactiva, target_field inválido,
+  campo/relación colisionando, plugin inexistente).
+- Backlog alineado: STORY 10.3 queda implementada con el alcance ampliado
+  (§2bis/§6/§7/§8/§9 incluidos, no solo el AC literal original); el siguiente
+  punto es STORY 10.4 (plugin de demostración `orders`, primer consumidor real
+  de `relations`).
 
 ---

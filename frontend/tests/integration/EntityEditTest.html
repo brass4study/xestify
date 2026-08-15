@@ -391,6 +391,106 @@
   });
 
   // ────────────────────────────────────────────────────────────────────────
+  // Reverse relation tab (STORY 10.3 §9)
+  // ────────────────────────────────────────────────────────────────────────
+
+  function mockRelationFetch(relatedRecords) {
+    return async (url) => {
+      const u = String(url);
+      if (u.includes('/entities/persons/tabs')) {
+        return {
+          status: 200,
+          json: async () => ({
+            ok: true,
+            data: {
+              tabs: [
+                { id: 'relation:orders:id_person', label: 'Pedidos', type: 'relation', source_entity: 'orders', key: 'id_person' },
+              ],
+            },
+          }),
+        };
+      }
+      if (u.includes('/entities/orders/records')) {
+        return { status: 200, json: async () => ({ ok: true, data: relatedRecords }) };
+      }
+      if (u.includes('/entities/orders/schema')) {
+        return {
+          status: 200,
+          json: async () => ({
+            ok: true,
+            data: { entity_slug: 'orders', schema: { fields: { title: { label: 'Titulo', type: 'string' } } } },
+          }),
+        };
+      }
+      return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+    };
+  }
+
+  await test('muestra un RelatedRecordsPanel para una tab de tipo relation, sin intentar importar un plugin.js', async () => {
+    const { host, shell, content } = makeShellSandbox();
+    globalThis.fetch = mockRelationFetch([
+      { id: 'rec-1', content: { title: 'Pedido 1' }, created_at: null, updated_at: null },
+    ]);
+
+    const page = new EntityEdit(content, 'persons', SCHEMA, { recordId: '42', shellLayout: shell });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    const relationTabButton = host.querySelector('[data-tab-id="relation:orders:id_person"]');
+    assertTrue(relationTabButton !== null, 'La tab de relacion inversa debe renderizarse');
+    assertTrue(relationTabButton.textContent.includes('Pedidos'), 'La tab debe mostrar la etiqueta de la relacion');
+
+    relationTabButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const panel = host.querySelector('[data-role="related-records-panel"]');
+    assertTrue(panel !== null, 'El panel de registros relacionados debe montarse al activar la tab');
+    assertTrue(panel.textContent.includes('Pedido 1'), 'El panel debe mostrar el registro relacionado devuelto por la API');
+  });
+
+  await test('el panel de relacion muestra un mensaje vacio cuando no hay registros relacionados', async () => {
+    const { host, shell, content } = makeShellSandbox();
+    globalThis.fetch = mockRelationFetch([]);
+
+    const page = new EntityEdit(content, 'persons', SCHEMA, { recordId: '42', shellLayout: shell });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    host.querySelector('[data-tab-id="relation:orders:id_person"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const panel = host.querySelector('[data-role="related-records-panel"]');
+    assertTrue(panel !== null, 'El panel debe montarse aunque no haya registros');
+    assertTrue(panel.textContent.includes('Sin registros relacionados'), 'Debe mostrar el mensaje de lista vacia');
+  });
+
+  await test('pulsar un registro relacionado llama a onNavigateToRecord con la entidad origen y el id', async () => {
+    const { host, shell, content } = makeShellSandbox();
+    globalThis.fetch = mockRelationFetch([
+      { id: 'rec-1', content: { title: 'Pedido 1' }, created_at: null, updated_at: null },
+    ]);
+
+    let navigatedTo = null;
+    const page = new EntityEdit(content, 'persons', SCHEMA, {
+      recordId: '42',
+      shellLayout: shell,
+      onNavigateToRecord: (sourceSlug, recordId) => {
+        navigatedTo = { sourceSlug, recordId };
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    host.querySelector('[data-tab-id="relation:orders:id_person"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const row = host.querySelector('[data-role="related-records-panel"] tbody tr');
+    assertTrue(row !== null, 'Debe renderizarse una fila para el registro relacionado');
+    row.click();
+
+    assertTrue(navigatedTo !== null, 'onNavigateToRecord debe haberse llamado');
+    assertEquals(navigatedTo.sourceSlug, 'orders', 'Debe navegar a la entidad origen de la relacion');
+    assertEquals(navigatedTo.recordId, 'rec-1', 'Debe navegar al id del registro pulsado');
+  });
+
+  // ────────────────────────────────────────────────────────────────────────
   // Summary
   // ────────────────────────────────────────────────────────────────────────
 

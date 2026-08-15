@@ -157,15 +157,26 @@ function ensureCommentsPluginActive(): void
 
 function seedParentRecord(): void
 {
+    $manifest = json_encode([
+        'name' => TEST_ENTITY,
+        'label' => 'Personas',
+        'label_singular' => 'Persona',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     Database::connection()->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Clientes', 'entity', '1.0.0', 'active', 1, CAST(:schema AS jsonb))
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
          ON CONFLICT (slug) DO UPDATE
-         SET name = EXCLUDED.name,
+         SET manifest_json = EXCLUDED.manifest_json,
              status = 'active',
              updated_at = NOW()"
     )->execute([
         ':slug' => TEST_ENTITY,
+        ':manifest' => $manifest,
         ':schema' => canonicalPersonsSchemaJson(),
     ]);
 
@@ -219,7 +230,17 @@ function canonicalPersonsSchemaJson(): string
     }
 
     $schema = json_decode($raw, true);
-    if (!is_array($schema) || !isset($schema['fields']['email'], $schema['identities']['id'])) {
+    $hasMailCustomField = false;
+    if (is_array($schema) && is_array($schema['custom_fields'] ?? null)) {
+        foreach ($schema['custom_fields'] as $customField) {
+            if (is_array($customField) && ($customField['key'] ?? null) === 'mail') {
+                $hasMailCustomField = true;
+                break;
+            }
+        }
+    }
+
+    if (!is_array($schema) || !isset($schema['fields']['name'], $schema['identities']['id']) || !$hasMailCustomField) {
         throw new ValidationException([
             ['field' => 'schema', 'code' => 'invalid_fixture', 'message' => 'persons schema fixture is invalid'],
         ]);
@@ -307,14 +328,14 @@ TestSuite::run('Comentarios tab appears in GET /entities/{slug}/tabs API respons
 });
 
 TestSuite::run('Comentarios tab does not appear for non-target entities', function (): void {
-    // comments ships with target_entity: '*' by design (schema.json) — this test needs
+    // comments ships with target_entity: '*' by design (manifest.json) — this test needs
     // it restricted to a single entity to have a genuine "non-target" case, so it must
     // set that itself instead of assuming BD state nobody else guarantees.
     $pdo = Database::connection();
     $setTargetEntity = static function (string $target) use ($pdo): void {
         $pdo->prepare(
             "UPDATE plugins
-                SET schema_json = jsonb_set(schema_json, '{target_entity}', to_jsonb(:target::text))
+                SET manifest_json = jsonb_set(manifest_json, '{target_entity}', to_jsonb(:target::text))
               WHERE slug = 'comments'"
         )->execute([':target' => $target]);
     };
@@ -350,6 +371,84 @@ TestSuite::run('Comentarios tab does not appear when plugin is inactive', functi
     assertFalse(in_array('comments', $ids, true), 'comments tab must not appear when plugin is inactive');
 
     ensureCommentsPluginActive();
+});
+
+TestSuite::run('Comentarios tab usa el slug vigente, no un literal fijo (STORY 10.3)', function (): void {
+    $pdo = Database::connection();
+    $renamedSlug = 'comments_renamed_test';
+
+    $pdo->prepare("UPDATE plugins SET slug = :new WHERE slug = 'comments'")
+        ->execute([':new' => $renamedSlug]);
+
+    try {
+        $dispatcher = new HookDispatcher();
+        $hooks      = new Hooks($pdo);
+        $hooks->register($dispatcher);
+
+        $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]);
+        $ids  = array_column($tabs, 'id');
+
+        assertTrue(in_array($renamedSlug, $ids, true), 'tab id must reflect the renamed slug');
+        assertFalse(in_array('comments', $ids, true), 'tab id must not use the stale literal slug');
+
+        $matching = array_values(array_filter($tabs, static fn(array $t): bool => $t['id'] === $renamedSlug));
+        $tab = $matching[0] ?? [];
+        assertEquals(
+            'comments',
+            $tab['plugin_name'] ?? null,
+            'tab must still expose the fixed plugin_name for module/panel resolution'
+        );
+        assertTrue(
+            str_contains((string) ($tab['endpoint'] ?? ''), '/plugins/' . $renamedSlug . '/'),
+            'endpoint must use the renamed slug, not the stale literal'
+        );
+    } finally {
+        $pdo->prepare("UPDATE plugins SET slug = 'comments' WHERE slug = :renamed")
+            ->execute([':renamed' => $renamedSlug]);
+    }
+});
+
+TestSuite::run('Cada instancia activa de comments contribuye su propia tab (STORY 10.3)', function (): void {
+    $pdo = Database::connection();
+    $secondSlug = 'comments_second_test';
+
+    $originalStmt = $pdo->prepare("SELECT schema_json FROM plugins WHERE slug = 'comments'");
+    $originalStmt->execute();
+    $originalRow = $originalStmt->fetch(PDO::FETCH_ASSOC);
+
+    $secondManifest = json_encode([
+        'name' => 'comments',
+        'label' => 'Comentarios (segunda instancia)',
+        'version' => '1.0.0',
+        'type' => 'extension',
+        'core_version' => '1.0.0',
+        'target_entity' => '*',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))"
+    )->execute([
+        ':slug' => $secondSlug,
+        ':manifest' => $secondManifest,
+        ':schema' => $originalRow['schema_json'] ?? '{}',
+    ]);
+
+    try {
+        $dispatcher = new HookDispatcher();
+        $hooks      = new Hooks($pdo);
+        $hooks->register($dispatcher);
+
+        $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]);
+        $ids  = array_column($tabs, 'id');
+
+        assertTrue(in_array('comments', $ids, true), 'first instance tab must still appear');
+        assertTrue(in_array($secondSlug, $ids, true), 'second instance tab must also appear');
+        assertEquals(2, count(array_unique($ids)), 'both instances must contribute distinct tab ids');
+    } finally {
+        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $secondSlug]);
+    }
 });
 
 TestSuite::run('GET comments returns empty array when no comments exist', function (): void {
@@ -653,6 +752,11 @@ TestSuite::run('GET with empty record id returns 404', function (): void {
     assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
     assertEquals(404, $result['error']['code'] ?? 0, 'code must be 404');
 });
+
+// seedParentRecord() upserts a synthetic 'persons' fixture row (TEST_ENTITY)
+// that is never the real installed persons/clients plugin — must be removed
+// once, here, or it lingers in the plugins listing forever.
+Database::connection()->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => TEST_ENTITY]);
 
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();

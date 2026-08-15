@@ -7,27 +7,43 @@ namespace Xestify\services;
 use DomainException;
 use InvalidArgumentException;
 use OutOfBoundsException;
+use PDO;
+use Throwable;
+use Xestify\plugins\discovery\PluginSourceService;
+use Xestify\plugins\lifecycle\PluginDeletionService;
+use Xestify\plugins\lifecycle\PluginIdentityService;
 use Xestify\plugins\lifecycle\PluginOutdatedService;
 use Xestify\plugins\lifecycle\PluginRollbackService;
 use Xestify\plugins\lifecycle\PluginStatusService;
 use Xestify\plugins\lifecycle\PluginSyncService;
 use Xestify\plugins\lifecycle\PluginUpdateService;
-use Xestify\plugins\schema\ExtensionPluginConfigService;
-use Xestify\plugins\schema\PluginConfigFieldNormalizer;
-use Xestify\plugins\schema\PluginSchemaFieldNormalizer;
+use Xestify\plugins\schema\PluginConfigService;
 use Xestify\repositories\PluginRepository;
 
+/**
+ * Orchestrates plugin administration actions (sync/update/rollback/activate/
+ * register/config). The fields/target_entity shape itself — validation,
+ * normalization, persistence — lives in PluginConfigService (STORY 10.3
+ * §2bis cleanup, split out to keep this class under the method-count
+ * threshold); this class locks rows, opens/closes transactions, and applies
+ * identity edits via PluginIdentityService.
+ */
 class PluginAdministrationService
 {
+    private const IDENTITY_PAYLOAD_KEYS = ['slug', 'name', 'description'];
+
     public function __construct(
+        private PDO $pdo,
         private PluginRepository $pluginRepository,
         private PluginSyncService $pluginSyncService,
         private PluginOutdatedService $pluginOutdatedService,
         private PluginUpdateService $pluginUpdateService,
         private PluginRollbackService $pluginRollbackService,
         private PluginStatusService $pluginStatusService,
-        private ExtensionPluginConfigService $extensionPluginConfigService,
-        private PluginConfigFieldNormalizer $fieldNormalizer
+        private PluginConfigService $pluginConfigService,
+        private PluginIdentityService $pluginIdentityService,
+        private PluginDeletionService $pluginDeletionService,
+        private PluginSourceService $pluginSourceService
     ) {
     }
 
@@ -37,6 +53,113 @@ class PluginAdministrationService
     public function listInstalled(): array
     {
         return $this->pluginRepository->listInstalled();
+    }
+
+    /**
+     * Disk plugin_name folders, each with its manifest-declared "label"
+     * (suggested value for "Nombre") and "name" (technical identifier,
+     * suggested value for "Slug") when registering a new instance (STORY
+     * 10.3). plugin_name is not unique: a folder never becomes "used up" by
+     * a previous registration, since a new instance (its own row, its own
+     * slug) can always be added alongside existing ones — e.g. two rows with
+     * plugin_name='persons' and slugs 'clients'/'distributors'. So every
+     * discovered folder is always a valid choice for a new manual
+     * registration, regardless of how many rows it already has.
+     *
+     * @return array<int, array{plugin_name: string, label: string, suggested_slug: string, description: string, plugin_type: string, config: array<string, mixed>}>
+     */
+    public function listAvailableForRegistration(): array
+    {
+        $available = [];
+        foreach ($this->pluginSourceService->discover() as $pluginName) {
+            $manifest = $this->pluginSourceService->readManifest($pluginName);
+            $available[] = [
+                'plugin_name' => $pluginName,
+                'label' => (string) ($manifest['label'] ?? $pluginName),
+                'suggested_slug' => (string) ($manifest['name'] ?? $pluginName),
+                'description' => (string) ($manifest['description'] ?? ''),
+                'plugin_type' => (string) ($manifest['type'] ?? ''),
+                'config' => $this->pluginConfigService->buildAvailablePluginPreview($manifest),
+            ];
+        }
+
+        return $available;
+    }
+
+    /**
+     * Registers a new instance of a plugin_name discovered on disk (STORY
+     * 10.3 manual registration) — plugin_name is not unique, so this can add
+     * another instance of an already-installed plugin_name too, as long as
+     * the resulting slug is free. The manifest's own slug (= plugin_name) is
+     * only usable for a first instance; any later instance needs an explicit
+     * $overrides['slug'], applied directly at insert time (not afterward via
+     * PluginIdentityService::updateIdentity(), which would collide on the
+     * manifest's default slug before ever reaching the override). Reuses
+     * PluginSyncService's shared install step (its own transaction, same as
+     * syncAll()'s automatic registration), then activates the new instance
+     * (its own transaction too, via PluginStatusService::activate() so
+     * onActivate() fires exactly as it would from the "Activar" button) —
+     * manual registration is a deliberate, reviewed action, so the plugin
+     * should be usable immediately, unlike syncAll()'s bulk auto-discovery,
+     * which still registers 'inactive' pending admin review. Optional
+     * identity/config overrides are applied afterward, together in a third
+     * transaction — PluginConfigService::applyConfigPayload() does not
+     * itself require the row to be active (unlike saveConfig()'s
+     * assertConfigurablePlugin()), it just happens to already be active by
+     * the time registerNew() reaches this step.
+     *
+     * @param array<string, mixed> $overrides optional slug/name/description/fields/target_entity
+     * @return array<string, mixed>
+     */
+    public function registerNew(string $pluginName, array $overrides): array
+    {
+        $availableNames = array_column($this->listAvailableForRegistration(), 'plugin_name');
+        if (!in_array($pluginName, $availableNames, true)) {
+            throw new InvalidArgumentException("Plugin '{$pluginName}' was not found on disk.");
+        }
+
+        $slugOverride = array_key_exists('slug', $overrides) ? trim((string) $overrides['slug']) : '';
+        if ($slugOverride !== '') {
+            $this->pluginIdentityService->assertValidSlug($slugOverride);
+            if ($this->pluginRepository->findBySlug($slugOverride) !== null) {
+                throw new InvalidArgumentException("El slug '{$slugOverride}' ya está en uso.");
+            }
+        }
+
+        $inserted = $this->pluginSyncService->installFromManifest(
+            $pluginName,
+            $slugOverride !== '' ? $slugOverride : null
+        );
+        $inserted = $this->pluginStatusService->activate((string) $inserted['slug']);
+
+        $needsIdentityUpdate = $this->payloadHasIdentityFields($overrides);
+        $needsConfigUpdate = array_key_exists('fields', $overrides);
+
+        if (!$needsIdentityUpdate && !$needsConfigUpdate) {
+            return $inserted;
+        }
+
+        $this->pdo->beginTransaction();
+
+        try {
+            if ($needsIdentityUpdate) {
+                $inserted = $this->pluginIdentityService->updateIdentity($inserted, $overrides);
+            }
+
+            if ($needsConfigUpdate) {
+                $inserted = $this->pluginConfigService->applyConfigPayload($inserted, $overrides);
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+
+        return $inserted;
     }
 
     /**
@@ -114,7 +237,7 @@ class PluginAdministrationService
 
         $this->assertConfigurablePlugin($plugin);
 
-        return $this->buildConfigResponse($plugin);
+        return $this->pluginConfigService->buildConfigResponse($plugin);
     }
 
     /**
@@ -123,123 +246,74 @@ class PluginAdministrationService
      */
     public function saveConfig(string $slug, array $payload): array
     {
-        $plugin = $this->pluginRepository->findBySlug($slug);
-        if ($plugin === null) {
-            throw new OutOfBoundsException("Plugin '{$slug}' was not found.");
-        }
+        $this->pdo->beginTransaction();
 
-        $this->assertConfigurablePlugin($plugin);
-
-        $currentSchema = $this->decodePluginSchema($plugin);
-        if (($plugin['plugin_type'] ?? '') === 'extension') {
-            $updated = $this->extensionPluginConfigService->saveConfig($slug, $currentSchema, $payload);
-
-            return $this->buildConfigResponse($updated);
-        }
-
-        if (!isset($payload['fields']) || !is_array($payload['fields'])) {
-            throw new InvalidArgumentException('fields must be an array.');
-        }
-
-        $baseFields = $this->baseFieldsFromSchema($currentSchema);
-        $baseByKey = [];
-        foreach ($baseFields as $field) {
-            $baseByKey[$field['key']] = $field;
-        }
-
-        $catalog = $this->suggestedCatalogFromSchema($currentSchema);
-        $catalogByKey = [];
-        foreach ($catalog as $field) {
-            $catalogByKey[$field['key']] = $field;
-        }
-
-        $fields = $this->fieldNormalizer->normalizePayloadRows($payload['fields']);
-        $compiled = $this->compileEntityConfigRows($fields, $baseByKey, $catalogByKey);
-
-        foreach ($baseFields as $base) {
-            if (!isset($compiled['seen_keys'][$base['key']])) {
-                throw new InvalidArgumentException("Base field '{$base['key']}' is missing from payload.");
+        try {
+            $plugin = $this->pluginRepository->lockBySlug($slug);
+            if ($plugin === null) {
+                throw new OutOfBoundsException("Plugin '{$slug}' was not found.");
             }
+
+            $this->assertConfigurablePlugin($plugin);
+
+            if ($this->payloadHasIdentityFields($payload)) {
+                $plugin = $this->pluginIdentityService->updateIdentity($plugin, $payload);
+            }
+
+            $updated = $this->pluginConfigService->applyConfigPayload($plugin, $payload);
+
+            $this->pdo->commit();
+
+            return $this->pluginConfigService->buildConfigResponse($updated);
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
         }
-
-        $nextSchema = $currentSchema;
-        $nextSchema['plugin_suggested_custom_fields'] = $compiled['suggested_catalog'];
-        $nextSchema['custom_fields'] = $compiled['active_custom_fields'];
-        $nextSchema['ui_field_order'] = $compiled['ui_order'];
-
-        $updated = $this->pluginRepository->updateSchemaConfig($slug, $nextSchema);
-        if ($updated === null) {
-            throw new OutOfBoundsException("Plugin '{$slug}' was not found.");
-        }
-
-        return $this->buildConfigResponse($updated);
     }
 
     /**
-     * @param array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool}> $rows
-     * @param array<string, array{key: string, type: string, required: bool, label: string}> $baseByKey
-     * @param array<string, array{key: string, type: string, required: bool, label: string}> $catalogByKey
-     * @return array{
-     *   seen_keys: array<string, bool>,
-     *   ui_order: array<int, string>,
-     *   suggested_catalog: array<int, array{key: string, type: string, label: string, required: bool, summaryView: bool, origin: string}>,
-     *   active_custom_fields: array<int, array{key: string, type: string, label: string, required: bool, summaryView: bool, origin: string}>
-     * }
+     * Deletes a plugin instance and all its associated data (STORY 10.3 §7).
+     * Allowed in any status — an active plugin is deactivated (onDeactivate())
+     * as part of the same operation, the admin does not need to deactivate
+     * manually first.
      */
-    private function compileEntityConfigRows(array $rows, array $baseByKey, array $catalogByKey): array
+    public function deletePlugin(string $slug): void
     {
-        $seenKeys = [];
-        $uiOrder = [];
-        $suggestedCatalog = [];
-        $activeCustomFields = [];
+        $this->pdo->beginTransaction();
 
-        foreach ($rows as $row) {
-            $key = $row['key'];
-            if (isset($seenKeys[$key])) {
-                throw new InvalidArgumentException("Duplicated field key '{$key}'.");
+        try {
+            $plugin = $this->pluginRepository->lockBySlug($slug);
+            if ($plugin === null) {
+                throw new OutOfBoundsException("Plugin '{$slug}' was not found.");
             }
 
-            $seenKeys[$key] = true;
-            $uiOrder[] = $key;
+            $this->pluginDeletionService->deletePlugin($plugin);
 
-            if (isset($baseByKey[$key])) {
-                $base = $baseByKey[$key];
-                $invalidBase = !$row['active'] || (
-                    $row['type'] !== $base['type']
-                    || $row['label'] !== $base['label']
-                    || $row['required'] !== $base['required']
-                );
-                if ($invalidBase) {
-                    throw new InvalidArgumentException("Base field '{$key}' cannot be edited or deactivated.");
-                }
-                continue;
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
             }
 
-            $isSuggested = isset($catalogByKey[$key]);
-            $candidate = [
-                'key' => $row['key'],
-                'type' => $row['type'],
-                'label' => $row['label'],
-                'required' => $row['required'],
-                'summaryView' => $row['summaryView'],
-                'origin' => $isSuggested ? 'suggested' : 'additional',
-            ];
+            throw $e;
+        }
+    }
 
-            if ($isSuggested) {
-                $suggestedCatalog[] = $candidate;
-            }
-
-            if ($row['active']) {
-                $activeCustomFields[] = $candidate;
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function payloadHasIdentityFields(array $payload): bool
+    {
+        foreach (self::IDENTITY_PAYLOAD_KEYS as $key) {
+            if (array_key_exists($key, $payload)) {
+                return true;
             }
         }
 
-        return [
-            'seen_keys' => $seenKeys,
-            'ui_order' => $uiOrder,
-            'suggested_catalog' => $suggestedCatalog,
-            'active_custom_fields' => $activeCustomFields,
-        ];
+        return false;
     }
 
     /**
@@ -247,7 +321,7 @@ class PluginAdministrationService
      */
     private function assertConfigurablePlugin(array $plugin): void
     {
-        $pluginType = (string) ($plugin['plugin_type'] ?? '');
+        $pluginType = (string) ($plugin['manifest_json']['type'] ?? '');
         if (!in_array($pluginType, ['entity', 'extension'], true)) {
             throw new DomainException('Only entity or extension plugins can be configured.');
         }
@@ -255,203 +329,5 @@ class PluginAdministrationService
         if (($plugin['status'] ?? null) !== 'active') {
             throw new DomainException('Only active plugins can be configured.');
         }
-    }
-
-    /**
-     * @param array<string, mixed> $pluginRow
-     * @return array<string, mixed>
-     */
-    private function decodePluginSchema(array $pluginRow): array
-    {
-        $isExtension = (string) ($pluginRow['plugin_type'] ?? '') === 'extension';
-        $decoded = json_decode((string) ($pluginRow['schema_json'] ?? ''), true);
-        if (!is_array($decoded)) {
-            if ($isExtension) {
-                return [
-                    'fields' => [],
-                    'target_entity' => '*',
-                ];
-            }
-            throw new InvalidArgumentException('Plugin schema is invalid.');
-        }
-
-        $normalizedFields = PluginSchemaFieldNormalizer::normalize($decoded['fields'] ?? null);
-        if ($normalizedFields === null) {
-            if ($isExtension) {
-                $decoded['fields'] = [];
-                if (!isset($decoded['target_entity']) || !is_string($decoded['target_entity'])) {
-                    $decoded['target_entity'] = '*';
-                }
-                return $decoded;
-            }
-            throw new InvalidArgumentException('Plugin schema fields are invalid.');
-        }
-
-        $decoded['fields'] = $normalizedFields;
-
-        if ($isExtension && (!isset($decoded['target_entity']) || !is_string($decoded['target_entity']))) {
-            $decoded['target_entity'] = '*';
-        }
-
-        return $decoded;
-    }
-
-    /**
-     * @param array<string, mixed> $plugin
-    * @return array{plugin: array<string, mixed>, config: array<string, mixed>}
-     */
-    private function buildConfigResponse(array $plugin): array
-    {
-        $schema = $this->decodePluginSchema($plugin);
-        $pluginType = (string) ($plugin['plugin_type'] ?? '');
-
-        if ($pluginType === 'extension') {
-            $configPayload = $this->extensionPluginConfigService->buildConfigPayload($schema);
-        } else {
-            $configPayload = $this->buildEntityConfigPayload($schema);
-        }
-
-        return [
-            'plugin' => [
-                'slug' => (string) ($plugin['slug'] ?? ''),
-                'name' => (string) ($plugin['name'] ?? ''),
-                'plugin_type' => (string) ($plugin['plugin_type'] ?? ''),
-                'status' => (string) ($plugin['status'] ?? ''),
-                'version' => (string) ($plugin['version'] ?? ''),
-                'schema_version' => (int) ($plugin['schema_version'] ?? 1),
-            ],
-            'config' => $configPayload,
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $schema
-    * @return array{fields: array<int, array<string, mixed>>}
-     */
-    private function buildEntityConfigPayload(array $schema): array
-    {
-        $baseFields = $this->baseFieldsFromSchema($schema);
-        $suggested = $this->suggestedCatalogFromSchema($schema);
-        $activeCustom = [];
-        if (isset($schema['custom_fields']) && is_array($schema['custom_fields'])) {
-            foreach ($schema['custom_fields'] as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-
-                $normalized = $this->fieldNormalizer->normalizeFieldDefinition($entry);
-                $normalized['origin'] = (string) ($entry['origin'] ?? 'suggested');
-                $activeCustom[] = $normalized;
-            }
-        }
-
-        $activeByKey = [];
-        foreach ($activeCustom as $field) {
-            $activeByKey[$field['key']] = $field;
-        }
-
-        $rowsByKey = [];
-        foreach ($baseFields as $field) {
-            $rowsByKey[$field['key']] = [
-                'active' => true,
-                'key' => $field['key'],
-                'type' => $field['type'],
-                'label' => $field['label'],
-                'required' => $field['required'],
-                'summaryView' => $field['summaryView'],
-                'locked' => true,
-                'source' => 'base',
-            ];
-        }
-
-        foreach ($suggested as $field) {
-            $key = $field['key'];
-            $activeField = $activeByKey[$key] ?? null;
-            $rowsByKey[$key] = [
-                'active' => $activeField !== null,
-                'key' => $key,
-                'type' => (string) ($activeField['type'] ?? $field['type']),
-                'label' => (string) ($activeField['label'] ?? $field['label']),
-                'required' => (bool) ($activeField['required'] ?? $field['required']),
-                'summaryView' => (bool) ($activeField['summaryView'] ?? $field['summaryView']),
-                'locked' => false,
-                'source' => 'suggested',
-            ];
-        }
-
-        foreach ($activeCustom as $field) {
-            $key = $field['key'];
-            if (isset($rowsByKey[$key])) {
-                continue;
-            }
-
-            $rowsByKey[$key] = [
-                'active' => true,
-                'key' => $key,
-                'type' => $field['type'],
-                'label' => $field['label'],
-                'required' => $field['required'],
-                'summaryView' => $field['summaryView'],
-                'locked' => false,
-                'source' => 'additional',
-            ];
-        }
-
-        return ['fields' => $this->fieldNormalizer->orderedRows($rowsByKey, $schema)];
-    }
-
-    /**
-     * @param array<string, mixed> $schema
-     * @return array<int, array{key: string, type: string, required: bool, label: string, summaryView: bool}>
-     */
-    private function baseFieldsFromSchema(array $schema): array
-    {
-        $base = [];
-        foreach ($schema['fields'] as $key => $definition) {
-            if (!is_string($key) || !is_array($definition)) {
-                continue;
-            }
-
-            $base[] = $this->fieldNormalizer->normalizeFieldDefinition([
-                'key' => $key,
-                'type' => $definition['type'] ?? 'string',
-                'required' => $definition['required'] ?? false,
-                'label' => $definition['label'] ?? $key,
-                'summaryView' => $definition['summaryView'] ?? true,
-            ]);
-        }
-
-        return $base;
-    }
-
-    /**
-     * @param array<string, mixed> $schema
-     * @return array<int, array{key: string, type: string, required: bool, label: string}>
-     */
-    private function suggestedCatalogFromSchema(array $schema): array
-    {
-        $catalogSource = [];
-        if (isset($schema['plugin_suggested_custom_fields']) && is_array($schema['plugin_suggested_custom_fields'])) {
-            $catalogSource = $schema['plugin_suggested_custom_fields'];
-        } elseif (isset($schema['custom_fields']) && is_array($schema['custom_fields'])) {
-            $catalogSource = $schema['custom_fields'];
-        }
-
-        $catalog = [];
-        foreach ($catalogSource as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-
-            $origin = (string) ($entry['origin'] ?? 'suggested');
-            if ($origin === 'additional') {
-                continue;
-            }
-
-            $field = $this->fieldNormalizer->normalizeFieldDefinition($entry);
-            $catalog[$field['key']] = $field;
-        }
-
-        return array_values($catalog);
     }
 }

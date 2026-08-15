@@ -1,7 +1,4 @@
 {
-  "entity": "demoinventory",
-  "label_singular": "item",
-  "version": "2.0.0",
   "identities": {
     "id": {
       "type": "uuid",

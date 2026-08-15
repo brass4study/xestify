@@ -66,7 +66,9 @@ final class TestPluginAdministrationService extends PluginAdministrationService
         private ?Throwable $updateError = null,
         private ?array $rollbackResult = null,
         private ?Throwable $rollbackError = null,
-        private ?Throwable $statusError = null
+        private ?Throwable $statusError = null,
+        private ?array $registerResult = null,
+        private ?Throwable $registerError = null
     ) {
         // Parent dependencies are intentionally bypassed in this test double.
     }
@@ -122,6 +124,13 @@ final class TestPluginAdministrationService extends PluginAdministrationService
         ];
     }
 
+    /**
+     * Returns the manifest_json-nested shape PluginWriteRepository::decodeRow()
+     * produces in production (STORY 10.3 §2bis) — not the flat fixture shape
+     * $this->plugins stores, which mimics listInstalled()'s SQL-aliased
+     * projection instead. Exercises PluginManagerController::flattenPlugin()
+     * re-flattening it back for the response.
+     */
     public function setStatus(string $slug, string $status): array
     {
         if ($this->statusError !== null) {
@@ -131,11 +140,49 @@ final class TestPluginAdministrationService extends PluginAdministrationService
         foreach ($this->plugins as &$plugin) {
             if ($plugin['slug'] === $slug) {
                 $plugin['status'] = $status;
-                return $plugin;
+
+                return [
+                    'slug' => $plugin['slug'],
+                    'status' => $status,
+                    'manifest_json' => [
+                        'name' => $plugin['slug'],
+                        'label' => $plugin['name'],
+                        'type' => $plugin['plugin_type'],
+                        'version' => $plugin['version'],
+                        'description' => $plugin['description'] ?? '',
+                    ],
+                    'installed_at' => $plugin['installed_at'] ?? null,
+                    'updated_at' => $plugin['updated_at'] ?? null,
+                ];
             }
         }
 
         throw new OutOfBoundsException('missing');
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    public function registerNew(string $pluginName, array $overrides): array
+    {
+        if ($this->registerError !== null) {
+            throw $this->registerError;
+        }
+
+        return $this->registerResult ?? [
+            'slug' => $pluginName,
+            'status' => 'active',
+            'manifest_json' => [
+                'name' => $pluginName,
+                'label' => (string) ($overrides['name'] ?? $pluginName),
+                'type' => 'entity',
+                'version' => SEMVER_1_0,
+                'description' => (string) ($overrides['description'] ?? ''),
+            ],
+            'installed_at' => '2026-01-03T00:00:00+00:00',
+            'updated_at' => '2026-01-03T00:00:00+00:00',
+        ];
     }
 
     /**
@@ -385,6 +432,38 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/status activates plugin', function ()
     $response = json_decode($output, true);
     assertTrue($response['ok'] === true, 'Should succeed');
     assertEquals('active', $response['data']['status'] ?? null, 'Plugin status should be active');
+    assertEquals('Comments', $response['data']['name'] ?? null, 'Response must flatten manifest_json.label back into name');
+    assertEquals('extension', $response['data']['plugin_type'] ?? null, 'Response must flatten manifest_json.type back into plugin_type');
+});
+
+TestSuite::run('POST /api/v1/plugins registers a new plugin and returns it already active', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(pluginListFixture()));
+    $request = new TestRequest('{"plugin_name":"orders"}');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->registerPlugin([], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Should succeed');
+    assertEquals('active', $response['data']['plugin']['status'] ?? null, 'A newly registered plugin must come back active');
+    assertEquals('orders', $response['data']['plugin']['name'] ?? null, 'Response must flatten manifest_json.label back into name');
+    assertEquals('entity', $response['data']['plugin']['plugin_type'] ?? null, 'Response must flatten manifest_json.type back into plugin_type');
+});
+
+TestSuite::run('POST /api/v1/plugins requires plugin_name', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(pluginListFixture()));
+    $request = new TestRequest('{}');
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->registerPlugin([], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Should fail without plugin_name');
+    assertEquals(422, $response['error']['code'] ?? null, ASSERT_ERR_422);
 });
 
 TestSuite::run('GET /api/v1/plugins rejects non-admin user', function (): void {
@@ -438,10 +517,12 @@ TestSuite::run('POST /api/v1/plugins/sync returns sync summary for admin', funct
             ],
             'plugins' => [
                 'persons' => [
-                    'slug' => 'persons',
-                    'result' => 'outdated',
-                    'installed_version' => SEMVER_1_0,
-                    'available_version' => SEMVER_2_0,
+                    [
+                        'slug' => 'persons',
+                        'result' => 'outdated',
+                        'installed_version' => SEMVER_1_0,
+                        'available_version' => SEMVER_2_0,
+                    ],
                 ],
             ],
         ]
@@ -456,7 +537,11 @@ TestSuite::run('POST /api/v1/plugins/sync returns sync summary for admin', funct
     $response = json_decode($output, true);
     assertTrue($response['ok'] === true, 'Sync should succeed for admin');
     assertEquals(2, $response['data']['summary']['discovered'] ?? null, 'Summary should include discovered count');
-    assertEquals('outdated', $response['data']['plugins']['persons']['result'] ?? null, 'persons should be outdated');
+    assertEquals(
+        'outdated',
+        $response['data']['plugins']['persons'][0]['result'] ?? null,
+        'persons first instance should be outdated'
+    );
 });
 
 TestSuite::run('POST /api/v1/plugins/{slug}/update returns update result for admin', function (): void {

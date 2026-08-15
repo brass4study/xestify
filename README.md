@@ -6,8 +6,8 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 9 cerrada; EPIC 10 en progreso con STORY 10.2 incluida y STORY 10.3 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
-- **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`plugin_type = 'entity'`)
+- **Corte funcional:** EPIC 9 cerrada; EPIC 10 en progreso con STORY 10.3 incluida y STORY 10.4 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
+- **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos, validación server-side y usuarios seed protegidos frente a edición/borrado/autoservicio
 - **Frontend:** SPA MVC con shell persistente, layouts reutilizables, routing hash bidireccional, feedback global, base de i18n, theming visual persistido por cliente y suite E2E Playwright contra el runtime real
@@ -157,7 +157,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 10.2 incluida** (EPIC 9 cerrada, EPIC 10 en progreso):
+MVP implementado hasta **STORY 10.3 incluida** (EPIC 9 cerrada, EPIC 10 en progreso):
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -165,7 +165,7 @@ MVP implementado hasta **STORY 10.2 incluida** (EPIC 9 cerrada, EPIC 10 en progr
 - Plugin `persons` como entidad base canónica (clientes/distribuidores/oculistas).
 - Plugin `comments` como extensión con tab "Comentarios" y datos en `plugin_extension_data`.
 - PluginManager, detección de actualizaciones disponibles y flujo explícito de sync/update desde servicios especializados del subsistema de plugins.
-- Página de configuración de plugins activos con campos configurables, schema versionado y soporte de `target_entity` para plugins `extension`.
+- Página de configuración de plugins activos con identidad editable (slug/nombre/descripción), campos configurables, grid de relaciones `belongs_to` editable y soporte de `target_entity` para plugins `extension`.
 - Gestión de perfil propio y administración de usuarios con rutas hash `#/profile`, `#/users` y `#/users/:id`.
 - Base visual frontend consolidada: tablas unificadas vía `DynamicTable`, tabs alineadas con patrón Ant Design y hoja Tailwind generada localmente sin CDN runtime.
 - Frontend organizado bajo MVC estricto, con `ShellLayout` persistente para páginas autenticadas y `PageLayout`, `ListLayout` y `FormLayout` como plantillas reutilizables.
@@ -175,9 +175,10 @@ MVP implementado hasta **STORY 10.2 incluida** (EPIC 9 cerrada, EPIC 10 en progr
 - Suite de tests reorganizada en `frontend/tests/integration/` (componente/integración con `fetch` mockeado) y `frontend/tests/e2e/` (Playwright contra el runtime real Apache+PHP+Postgres) (STORY 9.9).
 - Login rediseñado: identidad visual propia (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio (STORY 10.1).
 - Plugin `clients` renombrado a `persons` (carpeta, namespace PHP, manifest/schema y datos existentes), generalizando el modelo a clientes/distribuidores/oculistas sin ampliar sus campos (STORY 10.2).
-- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia y login.
+- `plugin_name` (identidad técnica fija = carpeta) desacoplado de `slug` (editable); tabla `plugins` consolidada en una columna `manifest_json` viva que refleja el manifest.json real en disco, eliminando columnas redundantes y `schema_version` (residual); alta manual de plugin (activo por defecto), borrado en cascada, grid de relaciones `belongs_to` editable y tab automática de relación inversa en `EntityEdit` (STORY 10.3).
+- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia, login y plugins.
 
-Pendiente tras STORY 10.2: desacoplar `plugin_name` de `slug` (STORY 10.3), plugins de demostración de entidad/extensión con datos de ejemplo de un caso óptico (STORY 10.4-10.6), y el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
+Pendiente tras STORY 10.3: plugins de demostración de entidad/extensión con datos de ejemplo de un caso óptico, primer uso real de las relaciones `belongs_to` (STORY 10.4-10.6), y el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
 
 Operaciones manuales de setup:
 

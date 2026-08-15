@@ -45,7 +45,7 @@
     const container = makeSandbox();
     mockFetchWithMap({
       '/entities': [
-        { slug: 'persons', label: 'Clientes' },
+        { slug: 'persons', label: 'Personas' },
         { slug: 'order', label: 'Pedidos' },
       ],
     });
@@ -61,7 +61,7 @@
 
   await test('init stores entities in SessionModel', async () => {
     const container = makeSandbox();
-    const entities = [{ slug: 'persons', label: 'Clientes' }];
+    const entities = [{ slug: 'persons', label: 'Personas' }];
     mockFetchWithMap({ '/entities': entities });
 
     const page = new EntityList(container);
@@ -84,13 +84,13 @@
   await test('loadEntity renders records section with table', async () => {
     const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
-      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Name' }] }],
+      '/entities': [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Name' }] }],
       '/entities/persons/records': [{ name: 'ACME' }, { name: 'Beta Corp' }],
     });
 
     const page = new EntityList(content, {
       shellLayout: shell,
-      title: 'Clientes',
+      title: 'Personas',
       description: 'Explora registros y accede a acciones contextuales.',
     });
     await page.init();
@@ -102,7 +102,7 @@
 
     const heading = shell.getTarget('shell-header').querySelector('[data-role="page-title"]');
     assertTrue(heading !== null, 'Should render section heading');
-    assertEquals(heading.textContent, 'Clientes', 'Debe conservar el título canónico de la ruta');
+    assertEquals(heading.textContent, 'Personas', 'Debe conservar el título canónico de la ruta');
     const description = shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]');
     assertEquals(description.textContent, 'Explora registros y accede a acciones contextuales.', 'Debe conservar la descripción canónica de la ruta');
 
@@ -119,7 +119,7 @@
     const { host, shell, content } = makeShellSandbox();
 
     mockFetchWithMap({
-      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [] }],
+      '/entities': [{ slug: 'persons', label: 'Personas', fields: [] }],
       '/entities/persons/records': [{ name: 'ACME' }],
     });
 
@@ -145,7 +145,7 @@
       async get(url) {
         calls.push(url);
         if (url === '/entities') {
-          return { data: [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+          return { data: [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }] };
         }
         return {
           data: [{ id: String(calls.length), content: { name: 'Cliente paginado' } }],
@@ -181,7 +181,7 @@
         async get(url) {
           calls.push(url);
           if (url === '/entities') {
-            return { data: [{ slug: 'persons', label: 'Clientes', fields: [{ name: 'name', label: 'Nombre' }] }] };
+            return { data: [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }] };
           }
           return { data: [], meta: { page: 1, page_size: 50, total: 0, total_pages: 1 } };
         },
@@ -199,7 +199,7 @@
   await test('"Crear nuevo registro" button calls onCreateNew callback', async () => {
     const { shell, content } = makeShellSandbox();
     mockFetchWithMap({
-      '/entities': [{ slug: 'persons', label: 'Clientes', fields: [] }],
+      '/entities': [{ slug: 'persons', label: 'Personas', fields: [] }],
       '/entities/persons/records': [],
     });
 

@@ -29,37 +29,57 @@ const UPDATE_VERSION_1_0 = '1.0.0';
 const UPDATE_VERSION_1_1 = '1.1.0';
 const UPDATE_VERSION_2_0 = '2.0.0';
 const MSG_VERSION_SHOULD_BE_UPDATED = 'Version should be updated';
+const SELECT_VERSION_SCHEMA_BY_SLUG_SQL = "SELECT manifest_json->>'version' AS version, schema_json FROM plugins WHERE slug = :slug";
+
+/**
+ * Seeds a plugins row with the new manifest_json shape (STORY 10.3 §2bis).
+ *
+ * @param array<string, mixed> $manifestOverrides merged over a minimal default manifest
+ * @param array<string, mixed>|null $schema
+ */
+function insertUpdateTestPlugin(PDO $pdo, string $slug, array $manifestOverrides, string $status, ?array $schema): void
+{
+    $manifest = array_merge([
+        'name' => $slug,
+        'label' => $slug,
+        'version' => UPDATE_VERSION_1_0,
+        'type' => 'entity',
+        'core_version' => UPDATE_VERSION_1_0,
+        'description' => '',
+    ], $manifestOverrides);
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, :status, CAST(:manifest AS jsonb), CAST(:schema AS jsonb))'
+    );
+    $stmt->execute([
+        ':slug' => $slug,
+        ':status' => $status,
+        ':manifest' => json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':schema' => $schema === null ? null : json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+}
 
 echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('update() upgrades plugin version without schema changes and stores snapshot', function () use ($pdo): void {
     $slug = 'test_update_ver_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Versioned Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'version' => UPDATE_VERSION_1_0,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Versioned Plugin'], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Versioned Plugin',
+        'name' => $slug,
+        'label' => 'Versioned Plugin',
         'version' => UPDATE_VERSION_2_0,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_2_0,
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
         ],
@@ -76,12 +96,11 @@ TestSuite::run('update() upgrades plugin version without schema changes and stor
         assertEquals(UPDATE_VERSION_2_0, $result['update']['to_version'], 'Should report new version');
         assertTrue($result['update']['schema_changed'] === false, 'Schema should remain unchanged');
 
-        $stmt = $pdo->prepare('SELECT version, schema_version FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version FROM plugins WHERE slug = :slug");
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertEquals(UPDATE_VERSION_2_0, (string) ($row['version'] ?? ''), 'Installed version should be upgraded');
-        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'schema_version should not change');
 
         $history = $pdo->prepare(
             'SELECT COUNT(*) AS cnt FROM plugin_update_history WHERE slug = :slug AND target_version = :target'
@@ -95,37 +114,27 @@ TestSuite::run('update() upgrades plugin version without schema changes and stor
     }
 });
 
-TestSuite::run('update() merges additive schema changes and increments schema version', function () use ($pdo): void {
+TestSuite::run('update() merges additive schema changes', function () use ($pdo): void {
     $slug = 'test_update_schema_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Schema Plugin', 'entity', '1.0.0', 'inactive', 2, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'version' => UPDATE_VERSION_1_0,
-            'identities' => [
-                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
-            ],
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Schema Plugin'], 'inactive', [
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Schema Plugin',
+        'name' => $slug,
+        'label' => 'Schema Plugin',
         'version' => UPDATE_VERSION_1_1,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_1_1,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -151,13 +160,12 @@ TestSuite::run('update() merges additive schema changes and increments schema ve
             'phone custom field added'
         );
 
-        $stmt = $pdo->prepare('SELECT version, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_VERSION_SCHEMA_BY_SLUG_SQL);
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
         assertEquals(UPDATE_VERSION_1_1, (string) ($row['version'] ?? ''), MSG_VERSION_SHOULD_BE_UPDATED);
-        assertEquals('3', (string) ($row['schema_version'] ?? ''), 'schema_version should increment');
         assertTrue(isset($decoded['fields']['email']), 'New field should be merged into live schema');
     } finally {
         cleanupPluginRecord($pdo, $slug);
@@ -167,33 +175,25 @@ TestSuite::run('update() merges additive schema changes and increments schema ve
 
 TestSuite::run('update() merges additive schema changes for extension plugins', function () use ($pdo): void {
     $slug = 'test_update_ext_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Extension Plugin', 'extension', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'plugin' => $slug,
-            'version' => UPDATE_VERSION_1_0,
-            'target_entity' => '*',
-            'fields' => [
-                'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
-            ],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, [
+        'label' => 'Extension Plugin',
+        'type' => 'extension',
+        'target_entity' => '*',
+    ], 'inactive', [
+        'fields' => [
+            'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+        ],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Extension Plugin',
+        'name' => $slug,
+        'label' => 'Extension Plugin',
         'version' => UPDATE_VERSION_1_1,
         'type' => 'extension',
         'core_version' => UPDATE_VERSION_1_0,
     ];
     $root = createPluginFixture($manifest);
     file_put_contents($root . '/' . $slug . '/schema.json', (string) json_encode([
-        'plugin' => $slug,
-        'version' => UPDATE_VERSION_1_1,
-        'target_entity' => '*',
         'fields' => [
             'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
             'stamp' => ['type' => 'timestamp', 'required' => false, 'label' => 'Stamp', 'auto_generated' => true],
@@ -210,7 +210,7 @@ TestSuite::run('update() merges additive schema changes for extension plugins', 
             'stamp field should be reported as added'
         );
 
-        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_VERSION_SCHEMA_BY_SLUG_SQL);
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
@@ -232,40 +232,30 @@ TestSuite::run('update() applies an update after the plugin was configured, with
     // "phone" activated with an edited label), and the real design catalog
     // moved to plugin_suggested_custom_fields.
     $slug = 'test_update_configured_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Configured Plugin', 'entity', '1.0.0', 'inactive', 2, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'version' => UPDATE_VERSION_1_0,
-            'identities' => [
-                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
-            ],
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [
-                ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Mobile phone'],
-            ],
-            'plugin_suggested_custom_fields' => [
-                ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
-            ],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Configured Plugin'], 'inactive', [
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Mobile phone'],
+        ],
+        'plugin_suggested_custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone'],
+        ],
+        'relations' => [],
     ]);
 
     $manifest = [
-        'slug' => $slug,
-        'name' => 'Configured Plugin',
+        'name' => $slug,
+        'label' => 'Configured Plugin',
         'version' => UPDATE_VERSION_1_1,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
     ];
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_1_1,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -284,13 +274,13 @@ TestSuite::run('update() applies an update after the plugin was configured, with
         $service = buildPluginUpdateService($root, $pdo);
         $result = $service->update($slug);
 
-        assertTrue($result['update']['schema_changed'] === true, 'A new suggested field should still bump schema_version');
+        assertTrue($result['update']['schema_changed'] === true, 'A new suggested field should still be reported in the diff');
         assertTrue(
             in_array('stock', $result['update']['diff']['custom_fields']['added'], true),
             'diff should report stock as added to the catalog'
         );
 
-        $stmt = $pdo->prepare('SELECT version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_VERSION_SCHEMA_BY_SLUG_SQL);
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
@@ -318,25 +308,17 @@ TestSuite::run('update() applies an update after the plugin was configured, with
 
 TestSuite::run('update() fails when disk version is not greater', function () use ($pdo): void {
     $slug = 'test_update_same_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Same Version', 'entity', :version, 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':version' => UPDATE_VERSION_1_0,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Same Version'], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Same Version',
+        'name' => $slug,
+        'label' => 'Same Version',
         'version' => UPDATE_VERSION_1_0,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
@@ -360,24 +342,15 @@ TestSuite::run('update() fails when disk version is not greater', function () us
 
 TestSuite::run('update() fails on non-additive schema change', function () use ($pdo): void {
     $slug = 'test_update_break_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Breaking Plugin', 'entity', '1.0.0', 'inactive', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Breaking Plugin'], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_1_1,
         'fields' => [
             'name' => ['type' => 'text', 'required' => true, 'label' => 'Name'],
         ],
@@ -385,8 +358,8 @@ TestSuite::run('update() fails on non-additive schema change', function () use (
         'relations' => [],
     ];
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Breaking Plugin',
+        'name' => $slug,
+        'label' => 'Breaking Plugin',
         'version' => UPDATE_VERSION_1_1,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
@@ -410,21 +383,13 @@ TestSuite::run('update() fails on non-additive schema change', function () use (
 
 TestSuite::run('update() fails when installed schema is corrupt', function () use ($pdo): void {
     $slug = 'test_update_corrupt_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Corrupt Installed', 'entity', '1.0.0', 'inactive', 26, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true],
-            ],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Corrupt Installed'], 'inactive', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true],
+        ],
     ]);
 
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_1_1,
         'identities' => [
             'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
         ],
@@ -438,8 +403,8 @@ TestSuite::run('update() fails when installed schema is corrupt', function () us
         'relations' => [],
     ];
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Corrupt Installed',
+        'name' => $slug,
+        'label' => 'Corrupt Installed',
         'version' => UPDATE_VERSION_1_1,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
@@ -456,13 +421,12 @@ TestSuite::run('update() fails when installed schema is corrupt', function () us
 
         assertTrue($threw, 'Update should fail when installed schema is corrupt');
 
-        $stmt = $pdo->prepare('SELECT version, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare(SELECT_VERSION_SCHEMA_BY_SLUG_SQL);
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
         assertEquals(UPDATE_VERSION_1_0, (string) ($row['version'] ?? ''), 'Version must remain unchanged');
-        assertEquals('26', (string) ($row['schema_version'] ?? ''), 'schema_version must remain unchanged');
         assertTrue(!isset($decoded['fields']['email']), 'Corrupt schema must not be repaired by update');
     } finally {
         cleanupPluginRecord($pdo, $slug);
@@ -472,24 +436,15 @@ TestSuite::run('update() fails when installed schema is corrupt', function () us
 
 TestSuite::run('update() rolls back plugin and snapshot when onUpdate fails', function () use ($pdo): void {
     $slug = 'test_update_rollback_' . bin2hex(random_bytes(3));
-    $pdo->prepare(
-        "INSERT INTO plugins (slug, name, plugin_type, version, status, schema_version, schema_json)
-         VALUES (:slug, 'Rollback Plugin', 'entity', '1.0.0', 'active', 1, CAST(:schema AS jsonb))"
-    )->execute([
-        ':slug' => $slug,
-        ':schema' => json_encode([
-            'entity' => $slug,
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    insertUpdateTestPlugin($pdo, $slug, ['label' => 'Rollback Plugin'], 'active', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
     ]);
 
     $schema = [
-        'entity' => $slug,
-        'version' => UPDATE_VERSION_2_0,
         'fields' => [
             'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
             'email' => ['type' => 'email', 'required' => false, 'label' => 'Email'],
@@ -516,8 +471,8 @@ final class Lifecycle implements PluginLifecycleUpdateInterface {
 }
 PHP;
     $root = createPluginFixture([
-        'slug' => $slug,
-        'name' => 'Rollback Plugin',
+        'name' => $slug,
+        'label' => 'Rollback Plugin',
         'version' => UPDATE_VERSION_2_0,
         'type' => 'entity',
         'core_version' => UPDATE_VERSION_1_0,
@@ -534,14 +489,13 @@ PHP;
 
         assertTrue($threw, 'Update should bubble lifecycle failure');
 
-        $stmt = $pdo->prepare('SELECT version, status, schema_version, schema_json FROM plugins WHERE slug = :slug');
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version, status, schema_json FROM plugins WHERE slug = :slug");
         $stmt->execute([UPDATE_SLUG_PARAM => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
         assertEquals(UPDATE_VERSION_1_0, (string) ($row['version'] ?? ''), 'Version must roll back');
         assertEquals('active', (string) ($row['status'] ?? ''), 'Status must roll back');
-        assertEquals('1', (string) ($row['schema_version'] ?? ''), 'schema_version must roll back');
         assertTrue(!isset($decoded['fields']['email']), 'Merged schema must not persist after rollback');
 
         $history = $pdo->prepare('SELECT COUNT(*) AS cnt FROM plugin_update_history WHERE slug = :slug');
@@ -550,6 +504,70 @@ PHP;
         assertEquals('0', (string) ($historyRow['cnt'] ?? '0'), 'Snapshot insert must roll back');
     } finally {
         cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('update() reads the disk manifest and invokes lifecycle by plugin_name after a rename (STORY 10.3)', function () use ($pdo): void {
+    $pluginName = 'test_update_rename_' . bin2hex(random_bytes(3));
+    $renamedSlug = $pluginName . '_renamed';
+
+    insertUpdateTestPlugin($pdo, $renamedSlug, ['name' => $pluginName, 'label' => 'Renamed Update Plugin'], 'active', [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ]);
+
+    $lifecycle = <<<PHP
+<?php
+declare(strict_types=1);
+namespace Xestify\plugins\\{$pluginName};
+use PDO;
+use Xestify\plugins\contracts\PluginLifecycleUpdateInterface;
+final class Lifecycle implements PluginLifecycleUpdateInterface {
+    public function __construct(private PDO \$pdo) {}
+    public function onInstall(): void {}
+    public function onActivate(): void { \$GLOBALS['rename_update_activated'] = true; }
+    public function onDeactivate(): void {}
+    public function onUpdate(array \$context): void { \$GLOBALS['rename_update_seen'] = \$context['to_version'] ?? null; }
+    public function onRollback(array \$context): void {}
+}
+PHP;
+    $root = createPluginFixture([
+        'name' => $pluginName,
+        'label' => 'Renamed Update Plugin',
+        'version' => UPDATE_VERSION_2_0,
+        'type' => 'entity',
+        'core_version' => UPDATE_VERSION_1_0,
+    ], false, false, [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ], $lifecycle);
+
+    try {
+        $GLOBALS['rename_update_seen'] = null;
+        $GLOBALS['rename_update_activated'] = false;
+
+        $service = buildPluginUpdateService($root, $pdo);
+        $result = $service->update($renamedSlug);
+
+        assertEquals(UPDATE_VERSION_2_0, $result['update']['to_version'], 'Should report the disk version resolved by plugin_name');
+        assertEquals(UPDATE_VERSION_2_0, $GLOBALS['rename_update_seen'] ?? null, 'Lifecycle.php on disk (found via plugin_name) must receive onUpdate');
+        assertTrue($GLOBALS['rename_update_activated'] === true, 'onActivate must fire for an already-active renamed plugin');
+
+        $stmt = $pdo->prepare("SELECT slug, manifest_json->>'version' AS version FROM plugins WHERE manifest_json->>'name' = :plugin_name");
+        $stmt->execute([':plugin_name' => $pluginName]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertEquals($renamedSlug, (string) ($row['slug'] ?? ''), 'slug must remain the renamed value, unrelated to the disk folder name');
+        assertEquals(UPDATE_VERSION_2_0, (string) ($row['version'] ?? ''), 'Installed version should be upgraded');
+    } finally {
+        cleanupPluginRecord($pdo, $pluginName);
         removePluginFixture($root);
     }
 });

@@ -16,4 +16,12 @@ export const PluginRouteController = {
   toPluginConfigPage(slug) {
     return pluginConfigPage(slug);
   },
+
+  toNewPluginConfigPage() {
+    return pluginConfigPage('#new');
+  },
+
+  isInsertMode(slug) {
+    return slug === '#new';
+  },
 };

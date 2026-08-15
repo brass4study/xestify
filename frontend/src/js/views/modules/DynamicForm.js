@@ -217,8 +217,16 @@ export class DynamicForm {
 			return textarea.setId(this.fieldId(field.name));
 		}
 
-		if (type === 'email') {
-			const input = component.create('inputEmail', {
+		if (type === 'mail') {
+			const input = component.create('inputMail', {
+				name: field.name,
+				value: field.default ?? '',
+			});
+			return input.setId(this.fieldId(field.name));
+		}
+
+		if (type === 'phone') {
+			const input = component.create('inputPhone', {
 				name: field.name,
 				value: field.default ?? '',
 			});
@@ -315,12 +323,16 @@ export class DynamicForm {
 	}
 
 	isStringLikeType(type) {
-		return ['string', 'text', 'email', 'date', 'timestamp', 'select'].includes(type);
+		return ['string', 'text', 'mail', 'phone', 'date', 'timestamp', 'select'].includes(type);
 	}
 
 	validateStringLike(field, value, errors) {
-		if (field.type === 'email' && !this.isValidEmail(value)) {
+		if (field.type === 'mail' && !this.isValidEmail(value)) {
 			errors.push('Must be a valid email');
+		}
+
+		if (field.type === 'phone' && !this.isValidPhone(value)) {
+			errors.push('Must be a valid phone number');
 		}
 
 		if (field.type === 'date') {
@@ -384,5 +396,17 @@ export class DynamicForm {
 		}
 
 		return domain.includes('.');
+	}
+
+	// Generic international phone format: digits, spaces, '+', '-' and
+	// parentheses only, with a plausible digit count (6-15, matching the
+	// ITU-T E.164 maximum). Mirrors PhoneFieldValidator on the backend.
+	isValidPhone(value) {
+		if (typeof value !== 'string' || !/^[+\d\s\-()]+$/.test(value)) {
+			return false;
+		}
+
+		const digitCount = value.replace(/\D/g, '').length;
+		return digitCount >= 6 && digitCount <= 15;
 	}
 }

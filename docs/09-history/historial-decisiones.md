@@ -402,3 +402,62 @@ El invariante "toda entidad es un plugin" es mas limpio y facil de razonar.
 - Release B (limpieza): `DROP TABLE IF EXISTS system_entities`, actualizar tests finales.
 
 **Resultado:** 7 archivos PHP modificados, 10 migraciones idempotentes, 0 tests en rojo.
+
+---
+
+## DECISION 7: Identidad de `plugins` — `manifest_json` viva en vez de columnas separadas
+
+**Fecha resuelta:** Agosto 16, 2026 (STORY 10.3 §2bis)
+
+### Contexto
+
+STORY 10.3 arrancó con un diseño de columnas separadas: `plugin_name` (fijo,
+nuevo) + `slug` (editable, ya existente) + `name`/`description` (editables,
+`name` ya existente). Al implementarlo se detectó que esas columnas — junto con
+`plugin_type` y `version`, ya existentes — eran en realidad datos que ya vivían
+en el `manifest.json` real del plugin en disco, y que `schema_version` (también
+ya existente en `plugins` y en `plugin_update_history`) era residual: ningún
+sitio del frontend en producción la leía, y su único rol real era un contador
+interno de auditoría sin consumidores.
+
+### Opciones consideradas
+
+#### Opcion A: Mantener las columnas separadas (diseño de arranque de la story)
+**Pros:** cambio incremental, no toca lo ya construido en el resto de la story.
+**Contras:** mantiene 6 columnas que duplican datos que ya existen en el
+`manifest.json` en disco; cada actualización de plugin debe sincronizar
+columnas y disco por separado; `schema_version` queda sin resolver como deuda
+conocida en vez de eliminarse.
+
+#### Opcion B: Añadir `manifest_json` solo para los campos nuevos, dejar el resto de columnas igual
+**Pros:** cambio mínimo, menor superficie de riesgo inmediato.
+**Contras:** dos fuentes de verdad coexistiendo a la vez (columnas propias Y
+`manifest_json`), inconsistente y confuso para el resto del código, no resuelve
+el problema de fondo — solo lo traslada.
+
+#### Opcion C: Consolidar todo en `manifest_json` JSONB vivo, eliminar columnas y `schema_version`
+**Pros:** una sola fuente de verdad; `manifest_json` refleja literalmente el
+`manifest.json` real en disco; elimina `schema_version` sin reemplazo (sin
+consumidores reales, confirmado por exploración); simplifica métodos existentes
+(`withLabelSingular()`/`withTargetEntity()` dejan de hacer falta).
+**Contras:** reescritura de ~15 archivos con SQL literal repetido sobre las
+columnas viejas; requiere una fusión explícita cuidadosa al aplicar
+actualizaciones de plugin, para no perder ediciones del admin (`label`/
+`description`/`target_entity`) al refrescar los campos que sí deben reflejar
+el disco.
+
+### Seleccion: Opcion C
+
+**Razon principal:** el mismo criterio que en DECISION 6 (unificación del
+catálogo de entidades en `plugins`) — la duplicación de datos que ya existen en
+disco dentro de columnas propias de BD era un defecto de diseño heredado del
+arranque de la story, no una feature a preservar, y corregirlo de raíz salía
+más barato que seguir arrastrándolo.
+
+**Resultado:** ~15 archivos backend reescritos (repositorios, servicios de
+ciclo de vida, controllers), `PluginRepository` dividido en `PluginRepository`
+(lectura) + `PluginWriteRepository` (escritura) por límite de método de
+SonarQube, 60/60 archivos de test en verde tras el cierre completo de
+STORY 10.3 (incluidas las 4 ampliaciones de alcance §6-§9 decididas
+posteriormente en la misma sesión), contrato JSON público de la API sin
+cambios.

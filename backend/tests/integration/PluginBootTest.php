@@ -15,6 +15,7 @@ use Xestify\core\HookDispatcher;
 use Xestify\plugins\lifecycle\PluginClassLoader;
 use Xestify\plugins\lifecycle\PluginHookRegistrar;
 use Xestify\repositories\PluginRepository;
+use Xestify\repositories\PluginWriteRepository;
 use Xestify\plugins\discovery\PluginSchemaCodec;
 use Xestify\plugins\schema\InstalledPluginSchemaValidator;
 use Xestify\plugins\lifecycle\PluginSyncService;
@@ -54,6 +55,7 @@ function buildBootSyncService(\PDO $pdo): PluginSyncService
         $pdo,
         $source,
         $repository,
+        new PluginWriteRepository($pdo, new PluginSchemaCodec()),
         new PluginLifecycleInvoker(new PluginClassLoader(PLUGINS_PATH, $pdo)),
         new PluginSchemaCodec(),
         new InstalledPluginSchemaValidator()
@@ -64,7 +66,7 @@ function buildBootStatusService(\PDO $pdo): PluginStatusService
 {
     return new PluginStatusService(
         $pdo,
-        new PluginRepository($pdo, new PluginSchemaCodec()),
+        new PluginWriteRepository($pdo, new PluginSchemaCodec()),
         new PluginLifecycleInvoker(new PluginClassLoader(PLUGINS_PATH, $pdo))
     );
 }

@@ -4,51 +4,61 @@
 
 Permitir evolucion de campos por plugin sin romper registros existentes.
 
-## Conceptos
+## Estado real (no hay versionado de schema por-campo)
 
-- schema_version: version declarada en metadata
-- migration_step: unidad de cambio incremental
-- compatibility_mode: lectura de versiones antiguas
+No existe un mecanismo de `schema_version` ni una tabla `plugin_migrations`: nunca
+se implementaron tal cual, y la columna `schema_version` que sí llegó a existir en
+`plugins`/`plugin_update_history` fue eliminada por completo (STORY 10.3 §2bis) por
+ser residual — no la leía el frontend en ningún sitio y su único rol real era un
+contador interno sin consumidores.
 
-## Reglas
+Lo que existe hoy es una actualización **de plugin completo**, no de campos
+individuales versionados:
 
-1. Nunca borrar campos en caliente sin migracion
-2. Cambios incompatibles requieren version major
-3. Cada update de plugin debe traer plan de migracion
-4. Se mantiene historial de schema_json por version
+- `manifest_json.version` (semver, p. ej. `1.2.0`) siempre refleja el
+  `manifest.json` real en disco del plugin — comparado con `version_compare()` para
+  decidir si hay una versión nueva disponible (`PluginUpdateService::update()`).
+- `schema_json` se fusiona **aditivamente**: `PluginSchemaMergeService::mergeAdditively()`
+  añade los campos nuevos del `schema.json` de disco sin tocar los campos ya
+  existentes en la fila instalada. No hay pasos de migración de datos ni scripts
+  declarados por el plugin.
+- Antes de aplicar la actualización, `InstalledPluginSchemaValidator::assertCanApplyUpdate()`
+  comprueba que los campos ya instalados (canónicos) siguen presentes en el schema
+  nuevo — si el plugin nuevo elimina o cambia un campo existente, la actualización
+  se rechaza.
+- Antes de escribir nada, se guarda una foto completa de la fila actual
+  (`manifest_json`/`schema_json`/`status`/`target_version`) en
+  `plugin_update_history` (`PluginUpdateHistoryRepository::insertSnapshot()`).
 
-## Estrategia de migracion
+## Rollback
 
-1. Descargar plugin nuevo en staging local
-2. Validar compatibilidad con Core
-3. Ejecutar pre-check sobre entity_data
-4. Aplicar migraciones (estructura logica y datos)
-5. Marcar schema_version vigente
-6. Habilitar plugin actualizado
+El rollback no restaura una "versión de schema" concreta por campo: restaura la
+**última foto completa** guardada en `plugin_update_history` para ese `slug`
+(`PluginRollbackService::rollback()` + `PluginWriteRepository::restoreFromSnapshot()`),
+sobrescribiendo `manifest_json`/`schema_json`/`status` con los de esa foto. No hay
+tabla `plugin_migrations` ni ejecución de pasos de migración inversos — es una
+restauración de snapshot, no una migración con estado intermedio.
 
-## Tabla sugerida: plugin_migrations
+## Compatibilidad de datos existentes
 
-- id (uuid)
-- plugin_slug (text)
-- from_version (text)
-- to_version (text)
-- status (text)
-- executed_at (timestamp)
-- log (text)
-
-## Politica de rollback
-
-- Si falla una migracion: desactivar version nueva
-- Restaurar version previa del plugin
-- Restaurar snapshot de metadata
-- Si aplica, restaurar backup transaccional de datos
+Como la fusión de schema es solo aditiva (nunca se borran ni retipan campos ya
+instalados sin rechazar la actualización), los registros existentes en
+`plugin_entity_data`/`plugin_extension_data` siguen siendo válidos tal cual tras
+una actualización — un campo nuevo simplemente no está presente en el `content`
+JSONB de los registros antiguos hasta que se edite ese registro.
 
 ## Ejemplo de cambio compatible
 
-- Se agrega campo opcional "notas" tipo string
-- No se requiere reescritura masiva de registros
+- Se agrega un campo opcional `notes` de tipo `string` al `schema.json` del plugin.
+- No se requiere reescritura masiva de registros: los registros existentes
+  simplemente no tienen esa clave en `content` hasta que se editen.
 
-## Ejemplo de cambio incompatible
+## Ejemplo de cambio incompatible (rechazado)
 
-- Campo "graduacion" pasa de string a objeto complejo
-- Requiere script de transformacion de contenido JSONB
+- Un campo existente como `email` desaparece del `schema.json` nuevo, o cambia de
+  tipo (`string` → objeto complejo).
+- `InstalledPluginSchemaValidator::assertCanApplyUpdate()` rechaza la actualización
+  porque el campo canónico ya instalado no está presente (o no coincide) en el
+  schema nuevo — no existe hoy un mecanismo de transformación automática de
+  contenido JSONB para este caso; requeriría una intervención manual fuera de este
+  flujo.

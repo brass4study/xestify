@@ -12,5 +12,6 @@ Consulta estos documentos para entender cómo se modelan, almacenan y evoluciona
 ---
 
 **Catálogo de entidades:**
-El sistema obtiene el listado de entidades funcionales exclusivamente desde la tabla `plugins` filtrando por `plugin_type = 'entity'` y `status = 'active'`.
+El sistema obtiene el listado de entidades funcionales exclusivamente desde la tabla `plugins` filtrando por `manifest_json->>'type' = 'entity'` y `status = 'active'`
+(`plugins` no tiene una columna `plugin_type` propia — vive dentro de `manifest_json`, STORY 10.3 §2bis).
 No existe ya la tabla `system_entities` ni coexistencia de catálogos. Toda la lógica de alta, consulta y validación de entidades se basa en los plugins instalados y activos.

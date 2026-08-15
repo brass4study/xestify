@@ -38,6 +38,18 @@ export class InputSelectComponent extends InputComponent {
 			nativeSelect.required = true;
 		}
 
+		if (typeof options.placeholder === 'string' && options.placeholder !== '') {
+			// Blank initial state: a value="" <option> the native <select> lands
+			// on by default (no explicit .value set below), shown as the empty
+			// trigger label. Deliberately not added to the custom panel/rows
+			// list, so it never appears among the selectable "options" once the
+			// admin has picked a real one.
+			const placeholderOption = document.createElement('option');
+			placeholderOption.value = '';
+			placeholderOption.textContent = options.placeholder;
+			nativeSelect.appendChild(placeholderOption);
+		}
+
 		normalizedOptions.forEach(({ value, label }) => {
 			const optionEl = document.createElement('option');
 			optionEl.value = value;
@@ -120,12 +132,12 @@ export class InputSelectComponent extends InputComponent {
 			value: {
 				configurable: true,
 				get: () => this._selectInput.value,
-				set: (value) => this.setSelectedValue(value),
+				set: (value) => { this.setSelectedValue(value); },
 			},
 			disabled: {
 				configurable: true,
 				get: () => this._selectDisabled,
-				set: (disabled) => this.setDisabled(disabled),
+				set: (disabled) => { this.setDisabled(disabled); },
 			},
 		});
 
@@ -281,7 +293,7 @@ export class InputSelectComponent extends InputComponent {
 		const rows = this._optionRows();
 		const currentValue = this._selectInput.value;
 		const selectedIndex = rows.findIndex((row) => row.dataset.value === currentValue);
-		this._highlightOption(selectedIndex >= 0 ? selectedIndex : 0);
+		this._highlightOption(Math.max(selectedIndex, 0));
 
 		document.addEventListener('click', this._onDocumentClick);
 		document.addEventListener('keydown', this._onDocumentKeyDown);

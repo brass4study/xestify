@@ -30,8 +30,8 @@ use Xestify\validation\schema\SchemaFieldExtractor;
 final class EntityService
 {
     private const SCHEMA_QUERY =
-        'SELECT schema_json FROM plugins
-         WHERE slug = :slug';
+        "SELECT manifest_json->>'name' AS plugin_name, schema_json FROM plugins
+         WHERE slug = :slug";
 
     public function __construct(
         private GenericRepository $repository,
@@ -53,8 +53,8 @@ final class EntityService
      */
     public function createRecord(string $entitySlug, array $data, ?string $ownerId = null): array
     {
-        $schema = $this->fetchCurrentSchema($entitySlug);
-        $result = $this->validator->validate($data, $schema);
+        $plugin = $this->fetchCurrentPluginRow($entitySlug);
+        $result = $this->validator->validate($data, $plugin['schema']);
 
         if (!$result->isValid()) {
             throw new ValidationException($result->errors());
@@ -63,7 +63,7 @@ final class EntityService
         $this->pdo->beginTransaction();
 
         try {
-            $context = $this->dispatchBefore('beforeSave', $entitySlug, $data);
+            $context = $this->dispatchBefore('beforeSave', $entitySlug, $plugin['plugin_name'], $data);
             $record  = $this->repository->create($entitySlug, $context['data'], $ownerId);
             $this->dispatchAfter('afterSave', $entitySlug, $record);
 
@@ -91,8 +91,8 @@ final class EntityService
      */
     public function updateRecord(string $id, string $entitySlug, array $data): array
     {
-        $schema = $this->fetchCurrentSchema($entitySlug);
-        $result = $this->validator->validate($data, $schema, false);
+        $plugin = $this->fetchCurrentPluginRow($entitySlug);
+        $result = $this->validator->validate($data, $plugin['schema'], false);
 
         if (!$result->isValid()) {
             throw new ValidationException($result->errors());
@@ -101,7 +101,7 @@ final class EntityService
         $this->pdo->beginTransaction();
 
         try {
-            $context = $this->dispatchBefore('beforeSave', $entitySlug, $data, $id);
+            $context = $this->dispatchBefore('beforeSave', $entitySlug, $plugin['plugin_name'], $data, $id);
             $record  = $this->repository->update($id, $context['data']);
             $this->dispatchAfter('afterSave', $entitySlug, $record);
 
@@ -157,7 +157,7 @@ final class EntityService
         string $sort,
         string $direction
     ): array {
-        $schema = $this->fetchCurrentSchema($entitySlug);
+        $schema = $this->fetchCurrentPluginRow($entitySlug)['schema'];
         $allowedSorts = array_merge(['id', 'created_at', 'updated_at'], $this->sortableSchemaFields($schema));
         $resolvedSort = in_array($sort, $allowedSorts, true) ? $sort : 'created_at';
         $result = $this->repository->paginate(
@@ -169,6 +169,46 @@ final class EntityService
         );
         $result['sort'] = $resolvedSort;
         return $result;
+    }
+
+    /**
+     * Exact-match lookup on a single content key (STORY 10.3 §9 — feeds the
+     * reverse relation tab in EntityEdit). $field must be a declared field/
+     * custom_field/editable-identity or a relations[] key of this entity's
+     * own schema — same scoping rule already applied to `sort` in
+     * listRecordsPage(), so this endpoint cannot be used to probe arbitrary
+     * content keys.
+     *
+     * @return array<int, array<string, mixed>>
+     * @throws \InvalidArgumentException when $field is not a known key
+     */
+    public function findRecordsByField(string $entitySlug, string $field, string $value): array
+    {
+        $schema = $this->fetchCurrentPluginRow($entitySlug)['schema'];
+        if (!in_array($field, $this->knownContentKeys($schema), true)) {
+            throw new \InvalidArgumentException("Unknown field '{$field}' for entity: {$entitySlug}");
+        }
+
+        return $this->repository->findByFieldValue($entitySlug, $field, $value);
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<int, string>
+     */
+    private function knownContentKeys(array $schema): array
+    {
+        $keys = array_keys($this->fieldExtractor->extract($schema));
+
+        if (isset($schema['relations']) && is_array($schema['relations'])) {
+            foreach ($schema['relations'] as $relation) {
+                if (is_array($relation) && is_string($relation['key'] ?? null)) {
+                    $keys[] = $relation['key'];
+                }
+            }
+        }
+
+        return $keys;
     }
 
     /**
@@ -191,12 +231,20 @@ final class EntityService
     // -------------------------------------------------------------------------
 
     /**
-     * Fetch and decode the latest schema_json for an entity slug.
+     * Fetch the current plugin_name and decoded schema_json for an entity
+     * slug in one query. `slug` stays unique and is how this lookup finds
+     * exactly one row; `plugin_name` (the fixed technical identity, STORY
+     * 10.3) is NOT unique — several rows/slugs can share it (e.g. two
+     * `persons` instances, slugs `clients` and `distributors`) — and is
+     * threaded into the beforeSave/afterSave hook context so hook
+     * implementations can recognize "an entity backed by my code" by plugin
+     * identity, which stays stable across renames and across instances,
+     * instead of hardcoding one specific slug.
      *
-     * @return array<string, mixed>
+     * @return array{plugin_name: string, schema: array<string, mixed>}
      * @throws EntityServiceException
      */
-    private function fetchCurrentSchema(string $entitySlug): array
+    private function fetchCurrentPluginRow(string $entitySlug): array
     {
         try {
             $stmt = $this->pdo->prepare(self::SCHEMA_QUERY);
@@ -216,7 +264,10 @@ final class EntityService
 
         $decoded = json_decode((string) $row['schema_json'], true);
 
-        return is_array($decoded) ? $decoded : [];
+        return [
+            'plugin_name' => (string) ($row['plugin_name'] ?? ''),
+            'schema' => is_array($decoded) ? $decoded : [],
+        ];
     }
 
     /**
@@ -227,9 +278,14 @@ final class EntityService
      * @param  array<string, mixed> $data
      * @return array<string, mixed>
      */
-    private function dispatchBefore(string $hook, string $entitySlug, array $data, ?string $recordId = null): array
-    {
-        $context = ['slug' => $entitySlug, 'data' => $data];
+    private function dispatchBefore(
+        string $hook,
+        string $entitySlug,
+        string $pluginName,
+        array $data,
+        ?string $recordId = null
+    ): array {
+        $context = ['slug' => $entitySlug, 'plugin_name' => $pluginName, 'data' => $data];
 
         if ($recordId !== null) {
             $context['id'] = $recordId;

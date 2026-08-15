@@ -1,6 +1,6 @@
 {
-    "slug": "comments",
-    "name": "Comentarios",
+    "name": "comments",
+    "label": "Comentarios",
     "version": "1.0.0",
     "type": "extension",
     "core_version": "1.0.0",

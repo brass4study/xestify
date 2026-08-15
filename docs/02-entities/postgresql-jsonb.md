@@ -14,52 +14,50 @@ Catalogo unificado de plugins instalados. Incluye tanto plugins de tipo `entity`
 **Esta tabla es la unica fuente de verdad para el catalogo de entidades.**
 La antigua tabla `system_entities` fue eliminada en Release B (migracion `010_drop_system_entities.sql`).
 
-Columnas principales:
+Columnas reales (`backend/database/migrations/003_plugins.sql`, STORY 10.3 §2bis
+— no hay columnas propias `plugin_type`/`name`/`version`/`description`/
+`schema_version`, todo eso vive dentro de `manifest_json`):
 
 - id (uuid)
-- slug (text unique) — identificador del plugin/entidad
-- name (text) — nombre legible (ej. "Clientes")
-- plugin_type (text) — 'entity' | 'extension'
-- version (text)
+- slug (text unique) — identificador editable de navegacion/URL
 - status (text) — 'active' | 'inactive' | 'error'
-- schema_json (jsonb) — schema vivo del plugin (para tipo entity)
-- schema_version (text)
+- manifest_json (jsonb, not null) — refleja el `manifest.json` del plugin en disco:
+  `{name, label, label_singular, version, type, core_version, target_entity,
+  description}`. Columna viva, no una foto fija del install:
+  `name`/`version`/`type`/`core_version`/`label_singular` siempre reflejan el
+  manifest en disco (se refrescan en cada actualizacion, nunca editables);
+  `label`/`description`/`target_entity` (solo `extension`) son editables por el
+  admin desde `PluginConfig` y se preservan en cada actualizacion (merge, nunca
+  overwrite). `manifest_json->>'name'` es la identidad tecnica fija del plugin
+  (= carpeta / namespace PHP), no unica: el mismo folder puede tener varias
+  instancias, cada una con su propio `slug`.
+- schema_json (jsonb, nullable) — puramente estructural: `identities`/`fields`/
+  `custom_fields`/`relations`/`plugin_suggested_custom_fields`/`ui_field_order`.
 - installed_at (timestamp)
 - updated_at (timestamp)
 
 Indices:
-- `idx_plugins_type_status` en (plugin_type, status)
+- `idx_plugins_type_status` en `(manifest_json->>'type', status)`
+- `idx_plugins_plugin_name` en `(manifest_json->>'name')`
 - UNIQUE en slug
 
 Para listar entidades activas:
 
 ```sql
-SELECT slug, name, schema_json, schema_version
+SELECT slug, manifest_json->>'label' AS label, schema_json
 FROM plugins
-WHERE plugin_type = 'entity' AND status = 'active' AND schema_json IS NOT NULL
-ORDER BY name ASC;
+WHERE manifest_json->>'type' = 'entity' AND status = 'active' AND schema_json IS NOT NULL
+ORDER BY manifest_json->>'label' ASC;
 ```
 
-## entity_metadata
-
-Definicion de campos por entidad y version.
-
-- id (uuid)
-- entity_slug (text)
-- schema_version (text)
-- schema_json (jsonb)
-- created_at (timestamp)
-
-`schema_json` guarda el schema vivo usado en runtime por validacion/persistencia.
-Actualmente mantiene la estructura de `fields` para compatibilidad con la constraint SQL.
-
-El contrato completo del plugin (`schema.json`) se define con:
-- `identities` (identidad tecnica del sistema)
+El contrato completo de `schema_json` para un plugin `entity` se define con:
+- `identities` (identidad tecnica del sistema, p. ej. `id`)
 - `fields` (campos funcionales obligatorios)
 - `custom_fields` (sugerencias opcionales para frontend)
-- `relations` (metadatos de relaciones opcionales)
+- `relations` (relaciones `belongs_to` hacia otras entidades — STORY 10.3 §8,
+  primera implementacion funcional real de este bloque)
 
-## entity_data
+## plugin_entity_data
 
 Registros de negocio.
 
@@ -82,21 +80,25 @@ Tabla generica para datos de plugins tipo extension.
 - content (jsonb)
 - created_at (timestamp)
 
-## Indices recomendados
+## Indices reales
 
-- idx_entity_data_entity_slug en entity_data(entity_slug)
-- idx_entity_data_owner_id en entity_data(owner_id)
-- idx_entity_data_content_gin en entity_data using gin(content)
-- idx_metadata_entity_version en entity_metadata(entity_slug, schema_version)
+- `idx_plugin_entity_data_slug` en `plugin_entity_data(entity_slug)`
+- `idx_plugin_entity_data_owner` en `plugin_entity_data(owner_id)`
+- `idx_plugin_entity_data_content_gin` en `plugin_entity_data using gin(content)`
+- `idx_plugin_extension_data_record` en
+  `plugin_extension_data(plugin_slug, entity_slug, record_id)`
 
 ## Ejemplo content JSONB
 
+Las claves tecnicas de `content` van siempre en ingles (ver `AGENTS.md`, sección
+"Schemas y datos"):
+
 ```json
 {
-  "nombre": "Ana Ruiz",
-  "telefono": "600000001",
-  "email": "ana@demo.local",
-  "activo": true
+  "name": "Ana Ruiz",
+  "phone": "600000001",
+  "mail": "ana@demo.local",
+  "is_active": true
 }
 ```
 
@@ -106,15 +108,15 @@ Registros por entidad:
 
 ```sql
 select id, content
-from entity_data
-where entity_slug = 'client' and deleted_at is null;
+from plugin_entity_data
+where entity_slug = 'persons' and deleted_at is null;
 ```
 
 Filtro por campo JSONB:
 
 ```sql
 select id, content
-from entity_data
-where entity_slug = 'client'
-  and content->>'telefono' = '600000001';
+from plugin_entity_data
+where entity_slug = 'persons'
+  and content->>'phone' = '600000001';
 ```

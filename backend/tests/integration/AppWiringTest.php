@@ -142,39 +142,68 @@ TestSuite::run('protected entity route accepts valid token', function (): void {
 });
 
 TestSuite::run('boot wiring injects active hooks into EntityService', function (): void {
+    // Self-contained fixture (entity_slug 'persons') rather than relying on
+    // the real installed persons plugin's slug (which may be renamed, e.g.
+    // 'clients') or on another test file's leftover row — every test file
+    // must be runnable standalone and clean up fully after itself.
     $pdo = Database::connection();
-    $pdo->prepare("UPDATE plugins SET status = 'active' WHERE slug = 'persons'")->execute();
+    $manifest = json_encode([
+        'name' => 'persons',
+        'label' => 'Persons Wiring Fixture',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $schema = json_encode([
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Nombre'],
+            'surnames' => ['type' => 'string', 'required' => true, 'label' => 'Apellidos'],
+        ],
+        'custom_fields' => [
+            ['key' => 'mail', 'type' => 'mail', 'required' => true, 'label' => 'Email'],
+        ],
+        'relations' => [],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES ('persons', 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
+         ON CONFLICT (slug) DO UPDATE
+         SET status = 'active', manifest_json = EXCLUDED.manifest_json, schema_json = EXCLUDED.schema_json, updated_at = NOW()"
+    )->execute([':manifest' => $manifest, ':schema' => $schema]);
 
-    $container = new Container();
-    buildAppRouter($container);
-
-    $email = 'duplicate-' . bin2hex(random_bytes(4)) . '@test.local';
-    $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'persons' AND content->>'email' = :email")
-        ->execute([':email' => $email]);
-
-    /** @var EntityService $service */
-    $service = $container->get(EntityService::class);
-    $service->createRecord('persons', [
-        'name' => 'Ana Uno',
-        'surnames' => 'Prueba Uno',
-        'email' => $email,
-    ]);
-
-    $threw = false;
     try {
-        $service->createRecord('persons', [
-            'name' => 'Ana Dos',
-            'surnames' => 'Prueba Dos',
-            'email' => $email,
-        ]);
-    } catch (HookException) {
-        $threw = true;
-    } finally {
-        $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'persons' AND content->>'email' = :email")
-            ->execute([':email' => $email]);
-    }
+        $container = new Container();
+        buildAppRouter($container);
 
-    assertTrue($threw, 'duplicate email must be blocked by the persons beforeSave hook');
+        $mail = 'duplicate-' . bin2hex(random_bytes(4)) . '@test.local';
+
+        /** @var EntityService $service */
+        $service = $container->get(EntityService::class);
+        $service->createRecord('persons', [
+            'name' => 'Ana Uno',
+            'surnames' => 'Prueba Uno',
+            'mail' => $mail,
+        ]);
+
+        $threw = false;
+        try {
+            $service->createRecord('persons', [
+                'name' => 'Ana Dos',
+                'surnames' => 'Prueba Dos',
+                'mail' => $mail,
+            ]);
+        } catch (HookException) {
+            $threw = true;
+        } finally {
+            $pdo->prepare("DELETE FROM plugin_entity_data WHERE entity_slug = 'persons' AND content->>'mail' = :mail")
+                ->execute([':mail' => $mail]);
+        }
+
+        assertTrue($threw, 'duplicate email must be blocked by the persons beforeSave hook');
+    } finally {
+        $pdo->prepare("DELETE FROM plugins WHERE slug = 'persons'")->execute();
+    }
 });
 
 TestSuite::run('boot wiring resolves PluginAdministrationService and its dependencies', function (): void {

@@ -1,7 +1,4 @@
 {
-    "entity": "products",
-    "label_singular": "producto",
-    "version": "1.0.0",
     "identities": {
         "id": {
             "type": "uuid",

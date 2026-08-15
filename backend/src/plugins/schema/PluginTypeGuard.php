@@ -21,9 +21,10 @@ final class PluginTypeGuard
      */
     public function assertTypeUnchanged(array $installed, array $manifest): void
     {
-        if ((string) $installed['plugin_type'] !== (string) $manifest['type']) {
+        $installedType = (string) ($installed['manifest_json']['type'] ?? '');
+        if ($installedType !== (string) $manifest['type']) {
             throw new DomainException(
-                "Plugin '{$manifest['slug']}' cannot change type from '{$installed['plugin_type']}'"
+                "Plugin '{$manifest['name']}' cannot change type from '{$installedType}'"
                 . " to '{$manifest['type']}'."
             );
         }

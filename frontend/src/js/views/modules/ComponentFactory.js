@@ -8,11 +8,12 @@ import { FormComponent } from '../components/Form.js';
 import { FormFieldComponent } from '../components/FormField.js';
 import { InputCheckComponent } from '../components/InputCheck.js';
 import { InputDateComponent } from '../components/InputDate.js';
-import { InputEmailComponent } from '../components/InputEmail.js';
 import { InputFileComponent } from '../components/InputFile.js';
 import { InputHiddenComponent } from '../components/InputHidden.js';
+import { InputMailComponent } from '../components/InputMail.js';
 import { InputNumberComponent } from '../components/InputNumber.js';
 import { InputPasswordComponent } from '../components/InputPassword.js';
+import { InputPhoneComponent } from '../components/InputPhone.js';
 import { InputRadioComponent } from '../components/InputRadio.js';
 import { InputSelectComponent } from '../components/InputSelect.js';
 import { InputTextComponent } from '../components/InputText.js';
@@ -82,7 +83,7 @@ const componentDefinitions = [
 		'Campo de hora'),
 	defineComponent('inputNumber', InputNumberComponent, 'input', 'dataEntry',
 		'Campo numérico'),
-	defineComponent('inputEmail', InputEmailComponent, 'input', 'dataEntry',
+	defineComponent('inputMail', InputMailComponent, 'input', 'dataEntry',
 		'Campo de email'),
 	defineComponent('inputFile', InputFileComponent, 'input', 'dataEntry',
 		'Selector de archivo'),
@@ -90,6 +91,8 @@ const componentDefinitions = [
 		'Campo de valor oculto'),
 	defineComponent('inputPassword', InputPasswordComponent, 'input', 'dataEntry',
 		'Campo de contraseña'),
+	defineComponent('inputPhone', InputPhoneComponent, 'input', 'dataEntry',
+		'Campo de teléfono'),
 	defineComponent('inputRadio', InputRadioComponent, 'input', 'dataEntry',
 		'Opción tipo radio'),
 	defineComponent('inputCheck', InputCheckComponent, 'input', 'dataEntry',

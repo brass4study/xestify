@@ -1,6 +1,7 @@
 {
-    "slug": "persons",
-    "name": "Clientes",
+    "name": "persons",
+    "label": "Personas",
+    "label_singular": "Persona",
     "version": "1.0.0",
     "type": "entity",
     "core_version": "1.0.0",

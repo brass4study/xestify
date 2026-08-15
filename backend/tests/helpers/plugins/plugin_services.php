@@ -17,13 +17,27 @@ use Xestify\plugins\discovery\PluginManifestReader;
 use Xestify\plugins\discovery\PluginSchemaCodec;
 use Xestify\plugins\discovery\PluginSchemaReader;
 use Xestify\plugins\discovery\PluginSourceService;
+use Xestify\plugins\lifecycle\PluginDeletionService;
+use Xestify\plugins\lifecycle\PluginIdentityService;
 use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
+use Xestify\plugins\schema\ExtensionPluginConfigService;
+use Xestify\plugins\schema\PluginConfigFieldNormalizer;
+use Xestify\plugins\schema\PluginConfigService;
+use Xestify\controllers\ExtensionPluginDataStore;
+use Xestify\repositories\GenericRepository;
 use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
+use Xestify\repositories\PluginWriteRepository;
+use Xestify\services\PluginAdministrationService;
 
 function buildPluginRepository(\PDO $pdo): PluginRepository
 {
     return new PluginRepository($pdo, new PluginSchemaCodec());
+}
+
+function buildPluginWriteRepository(\PDO $pdo): PluginWriteRepository
+{
+    return new PluginWriteRepository($pdo, new PluginSchemaCodec());
 }
 
 function buildPluginSourceService(string $root, \PDO $pdo): PluginSourceService
@@ -50,6 +64,7 @@ function buildPluginSyncService(string $root, \PDO $pdo): PluginSyncService
         $pdo,
         buildPluginSourceService($root, $pdo),
         buildPluginRepository($pdo),
+        buildPluginWriteRepository($pdo),
         buildPluginLifecycleInvoker($root, $pdo),
         new PluginSchemaCodec(),
         new InstalledPluginSchemaValidator()
@@ -62,7 +77,8 @@ function buildPluginUpdateService(string $root, \PDO $pdo): PluginUpdateService
         $pdo,
         buildPluginSourceService($root, $pdo),
         buildPluginRepository($pdo),
-        new PluginUpdateHistoryRepository($pdo),
+        buildPluginWriteRepository($pdo),
+        new PluginUpdateHistoryRepository($pdo, new PluginSchemaCodec()),
         new PluginSchemaCodec(),
         new PluginSchemaMergeService(),
         buildPluginLifecycleInvoker($root, $pdo),
@@ -75,7 +91,8 @@ function buildPluginRollbackService(string $root, \PDO $pdo): PluginRollbackServ
     return new PluginRollbackService(
         $pdo,
         buildPluginRepository($pdo),
-        new PluginUpdateHistoryRepository($pdo),
+        buildPluginWriteRepository($pdo),
+        new PluginUpdateHistoryRepository($pdo, new PluginSchemaCodec()),
         buildPluginLifecycleInvoker($root, $pdo)
     );
 }
@@ -92,7 +109,59 @@ function buildPluginStatusService(string $root, \PDO $pdo): PluginStatusService
 {
     return new PluginStatusService(
         $pdo,
-        buildPluginRepository($pdo),
+        buildPluginWriteRepository($pdo),
         buildPluginLifecycleInvoker($root, $pdo)
+    );
+}
+
+function buildPluginIdentityService(\PDO $pdo): PluginIdentityService
+{
+    return new PluginIdentityService(
+        buildPluginRepository($pdo),
+        buildPluginWriteRepository($pdo),
+        new GenericRepository($pdo),
+        new ExtensionPluginDataStore($pdo),
+        new PluginUpdateHistoryRepository($pdo, new PluginSchemaCodec())
+    );
+}
+
+function buildPluginConfigService(string $root, \PDO $pdo): PluginConfigService
+{
+    $fieldNormalizer = new PluginConfigFieldNormalizer();
+
+    return new PluginConfigService(
+        buildPluginWriteRepository($pdo),
+        new ExtensionPluginConfigService(buildPluginRepository($pdo), $fieldNormalizer),
+        $fieldNormalizer,
+        buildPluginSourceService($root, $pdo),
+        buildPluginRepository($pdo)
+    );
+}
+
+function buildPluginDeletionService(string $root, \PDO $pdo): PluginDeletionService
+{
+    return new PluginDeletionService(
+        buildPluginWriteRepository($pdo),
+        new GenericRepository($pdo),
+        new ExtensionPluginDataStore($pdo),
+        new PluginUpdateHistoryRepository($pdo, new PluginSchemaCodec()),
+        buildPluginLifecycleInvoker($root, $pdo)
+    );
+}
+
+function buildPluginAdministrationService(string $root, \PDO $pdo): PluginAdministrationService
+{
+    return new PluginAdministrationService(
+        $pdo,
+        buildPluginRepository($pdo),
+        buildPluginSyncService($root, $pdo),
+        buildPluginOutdatedService($root, $pdo),
+        buildPluginUpdateService($root, $pdo),
+        buildPluginRollbackService($root, $pdo),
+        buildPluginStatusService($root, $pdo),
+        buildPluginConfigService($root, $pdo),
+        buildPluginIdentityService($pdo),
+        buildPluginDeletionService($root, $pdo),
+        buildPluginSourceService($root, $pdo)
     );
 }

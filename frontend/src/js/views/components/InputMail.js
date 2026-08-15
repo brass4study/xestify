@@ -1,6 +1,6 @@
 import { InputComponent } from './BaseComponent.js';
 
-export class InputEmailComponent extends InputComponent {
+export class InputMailComponent extends InputComponent {
   initialize(options = {}) {
     super.initialize(options);
     this.setType('email');

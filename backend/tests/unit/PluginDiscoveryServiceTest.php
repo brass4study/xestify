@@ -19,8 +19,8 @@ TestSuite::run('discover() returns empty array when plugins dir does not exist',
 
 TestSuite::run('discover() returns plugin slug when manifest exists', function (): void {
     $manifest = [
-        'slug' => 'test_disc',
-        'name' => 'Test',
+        'name' => 'test_disc',
+        'label' => 'Test',
         'version' => '1.0.0',
         'type' => 'entity',
         'core_version' => '1.0.0',

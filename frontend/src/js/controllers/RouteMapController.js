@@ -7,7 +7,7 @@ export const HASH_ROUTE_MAP = Object.freeze({
   plugins: '#/plugins',
   pluginConfig: '#/plugins/:slug',
   entityList: '#/entity/:slug',
-  entityCreate: '#/entity/:slug/new',
+  entityCreate: '#/entity/:slug/#new',
   entityDetail: '#/entity/:slug/:id',
   entityTab: '#/entity/:slug/:id/:tab',
 });
@@ -176,7 +176,20 @@ function resolveUsersHash(page) {
 
 function resolvePluginsHash(page) {
   const parsed = parsePluginConfigPage(page);
-  return parsed === null ? null : fillRouteTemplate(HASH_ROUTE_MAP.pluginConfig, parsed.slug);
+  if (parsed === null) {
+    return null;
+  }
+
+  // '#new' is the reserved insert-mode sentinel (never a real plugin slug —
+  // it fails PluginIdentityService's slug format check), substituted here
+  // without encodeURIComponent so it stays literal in the URL, matching how
+  // the entity create route ('#/entity/:slug/#new') displays it unescaped
+  // rather than percent-encoded as '%23new'.
+  if (parsed.slug === '#new') {
+    return HASH_ROUTE_MAP.pluginConfig.replace(':slug', '#new');
+  }
+
+  return fillRouteTemplate(HASH_ROUTE_MAP.pluginConfig, parsed.slug);
 }
 
 function resolveEntityHash(page) {
@@ -259,7 +272,7 @@ function resolveEntityPage(parts) {
     return `entity:${slug}`;
   }
 
-  if (parts.length === 3 && parts[2] === 'new') {
+  if (parts.length === 3 && parts[2] === '#new') {
     return `entity-create:${slug}`;
   }
 

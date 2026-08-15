@@ -26,7 +26,9 @@ use Xestify\plugins\discovery\PluginSourceService;
 use Xestify\plugins\guards\PluginCompatibilityValidator;
 use Xestify\plugins\guards\PluginDependencyValidator;
 use Xestify\plugins\lifecycle\PluginClassLoader;
+use Xestify\plugins\lifecycle\PluginDeletionService;
 use Xestify\plugins\lifecycle\PluginHookRegistrar;
+use Xestify\plugins\lifecycle\PluginIdentityService;
 use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
 use Xestify\plugins\lifecycle\PluginOutdatedService;
 use Xestify\plugins\lifecycle\PluginRollbackService;
@@ -36,10 +38,13 @@ use Xestify\plugins\lifecycle\PluginUpdateService;
 use Xestify\plugins\schema\ExtensionPluginConfigService;
 use Xestify\plugins\schema\InstalledPluginSchemaValidator;
 use Xestify\plugins\schema\PluginConfigFieldNormalizer;
+use Xestify\plugins\schema\PluginConfigService;
 use Xestify\plugins\schema\PluginSchemaMergeService;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\ConfigurationRepository;
 use Xestify\repositories\GenericRepository;
 use Xestify\repositories\PluginRepository;
+use Xestify\repositories\PluginWriteRepository;
 use Xestify\repositories\PluginUpdateHistoryRepository;
 use Xestify\repositories\UserRepository;
 use Xestify\services\EntityService;
@@ -54,8 +59,9 @@ use Xestify\validation\schema\SchemaFieldExtractor;
 use Xestify\validation\support\ValidationRules;
 use Xestify\validation\validators\BooleanFieldValidator;
 use Xestify\validation\validators\DateFieldValidator;
-use Xestify\validation\validators\EmailFieldValidator;
+use Xestify\validation\validators\MailFieldValidator;
 use Xestify\validation\validators\NumberFieldValidator;
+use Xestify\validation\validators\PhoneFieldValidator;
 use Xestify\validation\validators\SelectFieldValidator;
 use Xestify\validation\validators\StringFieldValidator;
 use Xestify\validation\validators\TimestampFieldValidator;
@@ -102,7 +108,8 @@ if (!function_exists('xestifyRegisterEntityServices')) {
             'boolean' => new BooleanFieldValidator(),
             'date' => new DateFieldValidator(),
             'timestamp' => new TimestampFieldValidator(),
-            'email' => new EmailFieldValidator(),
+            'mail' => new MailFieldValidator(),
+            'phone' => new PhoneFieldValidator(),
             'select' => new SelectFieldValidator(),
             'uuid' => new UuidFieldValidator(),
         ]));
@@ -142,8 +149,13 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(Database::class),
             $container->get(PluginSchemaCodec::class)
         ));
+        $container->singleton(PluginWriteRepository::class, fn() => new PluginWriteRepository(
+            $container->get(Database::class),
+            $container->get(PluginSchemaCodec::class)
+        ));
         $container->singleton(PluginUpdateHistoryRepository::class, fn() => new PluginUpdateHistoryRepository(
-            $container->get(Database::class)
+            $container->get(Database::class),
+            $container->get(PluginSchemaCodec::class)
         ));
         $container->singleton(PluginDiscoveryService::class, fn() => new PluginDiscoveryService($pluginsDir));
         $container->singleton(PluginManifestReader::class, fn() => new PluginManifestReader($pluginsDir));
@@ -176,6 +188,7 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(Database::class),
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class),
             $container->get(PluginLifecycleInvoker::class),
             $container->get(PluginSchemaCodec::class),
             $container->get(InstalledPluginSchemaValidator::class)
@@ -184,6 +197,7 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(Database::class),
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class),
             $container->get(PluginUpdateHistoryRepository::class),
             $container->get(PluginSchemaCodec::class),
             $container->get(PluginSchemaMergeService::class),
@@ -193,12 +207,13 @@ if (!function_exists('xestifyRegisterPluginServices')) {
         $container->singleton(PluginRollbackService::class, fn() => new PluginRollbackService(
             $container->get(Database::class),
             $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class),
             $container->get(PluginUpdateHistoryRepository::class),
             $container->get(PluginLifecycleInvoker::class)
         ));
         $container->singleton(PluginStatusService::class, fn() => new PluginStatusService(
             $container->get(Database::class),
-            $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class),
             $container->get(PluginLifecycleInvoker::class)
         ));
         $container->singleton(PluginOutdatedService::class, fn() => new PluginOutdatedService(
@@ -210,15 +225,39 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginRepository::class),
             $container->get(PluginConfigFieldNormalizer::class)
         ));
+        $container->singleton(PluginConfigService::class, fn() => new PluginConfigService(
+            $container->get(PluginWriteRepository::class),
+            $container->get(ExtensionPluginConfigService::class),
+            $container->get(PluginConfigFieldNormalizer::class),
+            $container->get(PluginSourceService::class),
+            $container->get(PluginRepository::class)
+        ));
+        $container->singleton(PluginIdentityService::class, fn() => new PluginIdentityService(
+            $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class),
+            $container->get(GenericRepository::class),
+            $container->get(ExtensionPluginDataStore::class),
+            $container->get(PluginUpdateHistoryRepository::class)
+        ));
+        $container->singleton(PluginDeletionService::class, fn() => new PluginDeletionService(
+            $container->get(PluginWriteRepository::class),
+            $container->get(GenericRepository::class),
+            $container->get(ExtensionPluginDataStore::class),
+            $container->get(PluginUpdateHistoryRepository::class),
+            $container->get(PluginLifecycleInvoker::class)
+        ));
         $container->singleton(PluginAdministrationService::class, fn() => new PluginAdministrationService(
+            $container->get(Database::class),
             $container->get(PluginRepository::class),
             $container->get(PluginSyncService::class),
             $container->get(PluginOutdatedService::class),
             $container->get(PluginUpdateService::class),
             $container->get(PluginRollbackService::class),
             $container->get(PluginStatusService::class),
-            $container->get(ExtensionPluginConfigService::class),
-            $container->get(PluginConfigFieldNormalizer::class)
+            $container->get(PluginConfigService::class),
+            $container->get(PluginIdentityService::class),
+            $container->get(PluginDeletionService::class),
+            $container->get(PluginSourceService::class)
         ));
     }
 }
@@ -244,10 +283,15 @@ if (!function_exists('xestifyRegisterControllers')) {
             $container->get(RequestFactory::class)
         ));
 
+        $container->singleton(ReverseRelationTabResolver::class, fn() => new ReverseRelationTabResolver(
+            $container->get(PluginRepository::class)
+        ));
+
         $container->singleton(EntityController::class, fn() => new EntityController(
             $container->get(EntityService::class),
             $container->get(Database::class),
             $container->get(HookDispatcher::class),
+            $container->get(ReverseRelationTabResolver::class),
             $container->get(RequestFactory::class)
         ));
 

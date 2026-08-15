@@ -1178,20 +1178,63 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 - **Dependencias:** Ninguna (plugin ya existente desde EPIC 3)
 - **Blockers:** Ninguno
 
-### STORY 10.3: Desacoplar `plugin_name` de `slug` y descripción editable con i18n
-- **Points:** 8
+### STORY 10.3: Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json`
+- **Estado:** ✅ Implementada
+- **Points:** 8 (AC original) — el alcance real entregado creció con 4 ampliaciones
+  acordadas explícitamente con el usuario durante la sesión (§6-§9 más abajo),
+  muy por encima de la estimación inicial
 - **Priority:** MUST
 - **Type:** Fullstack
-- **Criteria:**
-  - ✅ Nueva columna `plugin_name` en tabla `plugins`: identidad fija = nombre de carpeta/namespace PHP, usada por `PluginClassLoader`/`PluginDiscoveryService` para determinar tipo y construcción del plugin (sustituye el uso actual del slug)
-  - ✅ Nueva columna `description` en tabla `plugins`
-  - ✅ `slug` pasa a ser editable desde `PluginConfig`, usado solo para navegación/URL (`RouteMapController`) y como clave visible de datos
-  - ✅ Al renombrar el `slug` desde `PluginConfig`, se actualiza en cascada `plugin_entity_data.entity_slug` y `plugin_extension_data.entity_slug`/`plugin_slug` de forma transaccional
-  - ✅ La navegación (`#/entity/:slug`, `#/plugins/:slug`) sigue funcionando por `slug`, no por `plugin_name`
-  - ✅ Edición de `name` y `description` del plugin añadida a `PluginConfig`
-  - ✅ Tests de regresión que confirman que renombrar un slug no rompe la carga del plugin (que sigue dependiendo de `plugin_name`, no del slug)
-- **IA Usage:** Diseño de la separación `plugin_name`/`slug` + migración de columnas + wiring de `PluginConfig` + integración con el patrón i18n de A1.1
-- **Dependencias:** STORY A1.1 (patrón i18n editable), STORY 7.3 (`PluginConfig`)
+- **Criteria (AC original):**
+  - ✅ Identidad técnica fija = nombre de carpeta/namespace PHP (`plugin_name`),
+    usada por `PluginClassLoader`/`PluginDiscoveryService`/`PluginHookRegistrar`/
+    `PluginLifecycleInvoker` para determinar tipo y construcción del plugin
+    (sustituye el uso anterior del slug). No es columna propia: vive dentro de
+    `manifest_json.name` (ver "Refactor añadido" más abajo)
+  - ✅ `description` editable por instancia, sin patrón i18n (texto plano — STORY
+    A1.1 queda fuera del alcance, decisión cerrada con el usuario)
+  - ✅ `slug` editable desde `PluginConfig`, usado solo para navegación/URL
+    (`RouteMapController`) y como clave visible de datos
+  - ✅ Al renombrar el `slug` desde `PluginConfig`, se actualiza en cascada
+    (transaccional) `plugin_entity_data.entity_slug`,
+    `plugin_extension_data.entity_slug`/`plugin_slug`, `plugin_update_history.slug`
+    y el `target_entity` de otros plugins `extension` que apuntaran al slug viejo
+  - ✅ La navegación (`#/entity/:slug`, `#/plugins/:slug`) sigue funcionando por
+    `slug`, no por `plugin_name`
+  - ✅ Edición de `name` (mapea a `manifest_json.label`) y `description` del
+    plugin añadida a `PluginConfig`
+  - ✅ Tests de regresión que confirman que renombrar un slug no rompe la carga
+    del plugin (que sigue dependiendo de `plugin_name`, no del slug)
+- **Refactor añadido durante la sesión (§2bis, no en el AC original)**:
+  consolidación de las columnas `plugin_name`/`plugin_type`/`version`/`name`/
+  `description` de `plugins` en una única columna `manifest_json JSONB` viva que
+  refleja el `manifest.json` real en disco, y eliminación de la columna
+  `schema_version` sin reemplazo (de `plugins` y de `plugin_update_history`) por
+  ser residual y sin consumidores reales. Contrato JSON público de la API sin
+  cambios (verificado exhaustivamente). Ver entrada de sesión
+  2026-08-16 en `docs/10-productivity/sesion.md` y nueva decisión en
+  `docs/09-history/decisiones-tecnicas.md`.
+- **§6 — Alta manual de plugin (ampliación acordada con el usuario)**: nuevo
+  flujo en `PluginManager`/`PluginConfig` (modo `create`) para registrar una
+  instancia nueva plugin a plugin, con "Campos"/"Relación de extensión"
+  editables y guardables ya en el alta; el plugin se activa automáticamente al
+  registrarse (decisión de cierre de sesión).
+- **§7 — Borrado de plugin (ampliación acordada con el usuario)**: borrado
+  físico en cascada de todos los datos asociados desde `PluginConfig`, permitido
+  en cualquier estado (desactiva primero si está activo).
+- **§8 — Grid "Relaciones" editable en `PluginConfig` (ampliación acordada con
+  el usuario)**: primera implementación funcional real del bloque `relations`
+  del schema (declarado desde STORY 4.7, ignorado silenciosamente hasta ahora).
+- **§9 — Tab de relación inversa en `EntityEdit` (ampliación acordada con el
+  usuario)**: cuando otra entidad declara una relación hacia la entidad vista,
+  aparece automáticamente una tab con sus registros relacionados — capacidad de
+  núcleo, no de plugin.
+- **IA Usage:** Diseño de la separación `plugin_name`/`slug` + consolidación en
+  `manifest_json` (4 preguntas dirigidas al usuario) + alta manual/borrado en
+  cascada/grid de relaciones/tab de relación inversa + fix de sincronización de
+  estado en `PluginConfig.js` reportado por el usuario + ~20 ficheros de test
+  backend nuevos/reescritos
+- **Dependencias:** STORY 7.3 (`PluginConfig`)
 - **Blockers:** Ninguno
 
 ### STORY 10.4: Plugins de demostración — entidades

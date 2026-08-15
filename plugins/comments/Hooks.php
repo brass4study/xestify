@@ -10,8 +10,17 @@ use Xestify\core\HookDispatcher;
 /**
  * Hooks for the comments plugin.
  *
- * Registers a registerTabs filter hook that injects a "Comentarios"
- * tab only for entities allowed by the plugin configuration stored in DB.
+ * Registers a registerTabs filter hook that injects a "Comentarios" tab for
+ * every ACTIVE instance of this plugin (plugin_name='comments') whose own
+ * target_entity configuration allows the entity currently being viewed.
+ *
+ * plugin_name is not unique (STORY 10.3): several independent `comments`
+ * instances can be active at once (different slug, different target_entity
+ * each), so this queries by plugin_name and contributes one tab per matching
+ * instance, keyed by that instance's own (unique) slug — never a hardcoded
+ * literal, which would silently stop matching the moment an admin renames
+ * this plugin's slug, or would only ever reflect one arbitrary instance
+ * once a second one exists.
  */
 final class Hooks
 {
@@ -29,14 +38,18 @@ final class Hooks
             function (array $tabs, array $args): array {
                 $entity = trim((string) ($args['entity'] ?? ''));
                 $tabList = $tabs;
-                $shouldAddTab = $entity !== '' && $this->isEntityAllowed($entity);
 
-                if ($shouldAddTab) {
+                if ($entity === '') {
+                    return $tabList;
+                }
+
+                foreach ($this->allowedInstances($entity) as $slug) {
                     $tabList[] = [
-                        'id'       => 'comments',
-                        'label'    => 'Comentarios',
-                        'icon'     => 'fa-comments',
-                        'endpoint' => '/plugins/comments/' . $entity . '/{id}',
+                        'id'          => $slug,
+                        'label'       => 'Comentarios',
+                        'icon'        => 'fa-comments',
+                        'endpoint'    => '/plugins/' . $slug . '/' . $entity . '/{id}',
+                        'plugin_name' => 'comments',
                     ];
                 }
 
@@ -46,33 +59,41 @@ final class Hooks
         );
     }
 
-    private function isEntityAllowed(string $entity): bool
+    /**
+     * @return list<string> slugs of active `comments` instances whose
+     *   target_entity configuration allows $entity
+     */
+    private function allowedInstances(string $entity): array
     {
         if ($this->pdo === null) {
-            return true;
+            return [];
         }
 
         $stmt = $this->pdo->prepare(
-            "SELECT status, schema_json
+            "SELECT slug, manifest_json
                FROM plugins
-              WHERE slug = :slug
-                AND plugin_type = 'extension'
-              LIMIT 1"
+              WHERE manifest_json->>'name' = 'comments'
+                AND manifest_json->>'type' = 'extension'
+                AND status = 'active'"
         );
-        $stmt->execute([':slug' => 'comments']);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $isAllowed = false;
-        if ($row !== false && (string) ($row['status'] ?? '') === 'active') {
-            $decoded = json_decode((string) ($row['schema_json'] ?? ''), true);
-            if (!is_array($decoded)) {
-                $isAllowed = true;
-            } else {
-                $target = trim((string) ($decoded['target_entity'] ?? '*'));
-                $isAllowed = $target === '' || $target === '*' || $target === $entity;
+        $allowed = [];
+        foreach ($rows as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+
+            $decoded = json_decode((string) ($row['manifest_json'] ?? ''), true);
+            $target = is_array($decoded) ? trim((string) ($decoded['target_entity'] ?? '*')) : '*';
+
+            if ($target === '' || $target === '*' || $target === $entity) {
+                $allowed[] = $slug;
             }
         }
 
-        return $isAllowed;
+        return $allowed;
     }
 }

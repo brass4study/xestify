@@ -146,22 +146,6 @@ TestSuite::run('mergeAdditively() adds a new suggested field to the catalog, not
     );
 });
 
-TestSuite::run('mergeAdditively() fails when entity identifier changes', function () use ($service): void {
-    $threw = false;
-
-    try {
-        $service->mergeAdditively(
-            'persons',
-            ['entity' => 'persons', 'fields' => [], 'custom_fields' => [], 'relations' => []],
-            ['entity' => 'contacts', 'fields' => [], 'custom_fields' => [], 'relations' => []]
-        );
-    } catch (DomainException) {
-        $threw = true;
-    }
-
-    assertTrue($threw, 'Changing entity identifier must fail');
-});
-
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();
 exit(TestSuite::exitCode());

@@ -80,8 +80,12 @@ TestSuite::run('plugins has expected columns', function (): void {
     );
     assertTrue($stmt !== false, QUERY_EXECUTE_MSG);
     $columns = array_column($stmt->fetchAll(), 'column_name');
-    foreach (['id', 'slug', 'name', 'plugin_type', 'version', 'status', 'schema_version', 'schema_json', 'installed_at', 'updated_at'] as $col) {
+    foreach (['id', 'slug', 'status', 'manifest_json', 'schema_json', 'installed_at', 'updated_at'] as $col) {
         assertTrue(in_array($col, $columns, true), "Column '{$col}' must exist");
+    }
+
+    foreach (['name', 'plugin_type', 'plugin_name', 'version', 'description', 'schema_version'] as $removedCol) {
+        assertTrue(!in_array($removedCol, $columns, true), "Column '{$removedCol}' must no longer exist (STORY 10.3 §2bis)");
     }
 });
 
@@ -117,7 +121,7 @@ TestSuite::run('plugins slug has unique constraint', function (): void {
     assertTrue((int) ($row['cnt'] ?? 0) >= 1, 'slug must have a UNIQUE constraint');
 });
 
-TestSuite::run('plugins plugin_type has CHECK constraint (entity|extension)', function (): void {
+TestSuite::run('plugins manifest_json->>type has CHECK constraint (entity|extension)', function (): void {
     $pdo = Database::connection();
     $stmt = $pdo->query(
         "SELECT COUNT(*) AS cnt

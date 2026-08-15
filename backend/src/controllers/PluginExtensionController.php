@@ -411,7 +411,7 @@ class PluginExtensionController
         $stmt = $this->pdo->prepare(
             "SELECT 1 FROM plugins
               WHERE slug = :slug
-                AND plugin_type = 'extension'
+                AND manifest_json->>'type' = 'extension'
                 AND status = 'active'
               LIMIT 1"
         );
