@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>EntityRecordModelTest - Xestify Frontend</title>
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<h2>EntityRecordModelTest</h2>
+<pre id="output"></pre>
+
+<script type="module">
+  import { recordSummaryLabel } from '../../js/models/EntityRecordModel.js';
+  import { initTestRunner, separator, test, assertEquals, finishTestRunner } from '../js/helpers.js';
+
+  initTestRunner('output');
+
+  const SCHEMA = {
+    fields: {
+      name: { type: 'string', label: 'Nombre' },
+    },
+    custom_fields: [
+      { key: 'surnames', type: 'string', label: 'Apellidos', summaryView: true },
+      { key: 'phone', type: 'string', label: 'Telefono', summaryView: false },
+    ],
+  };
+
+  separator();
+
+  await test('concatena fields antes que custom_fields, respetando el orden de declaracion', async () => {
+    const label = recordSummaryLabel(SCHEMA, { name: 'Juan', surnames: 'Perez', phone: '555' }, 'fallback-id');
+    assertEquals(label, 'Juan Perez', 'Debe unir name y surnames con espacio, en ese orden, excluyendo phone');
+  });
+
+  await test('un campo sin summaryView explicito cuenta por defecto (true implicito)', async () => {
+    const schema = {
+      fields: { name: { type: 'string', label: 'Nombre' } },
+      custom_fields: [],
+    };
+    const label = recordSummaryLabel(schema, { name: 'Ana' }, 'fallback-id');
+    assertEquals(label, 'Ana', 'Un campo de fields sin summaryView debe incluirse');
+  });
+
+  await test('summaryView === false excluye el campo aunque tenga valor', async () => {
+    const label = recordSummaryLabel(SCHEMA, { name: 'Juan', surnames: 'Perez', phone: '555-1234' }, 'fallback-id');
+    assertEquals(label.includes('555'), false, 'El valor de phone (summaryView: false) no debe aparecer en el resumen');
+  });
+
+  await test('cae al fallbackId cuando no hay ningun valor de resumen', async () => {
+    const label = recordSummaryLabel(SCHEMA, {}, 'fallback-id');
+    assertEquals(label, 'fallback-id', 'Sin contenido, debe devolver el fallbackId');
+  });
+
+  await test('cae al fallbackId cuando los valores de resumen estan vacios tras el trim', async () => {
+    const label = recordSummaryLabel(SCHEMA, { name: '   ', surnames: '' }, 'fallback-id');
+    assertEquals(label, 'fallback-id', 'Valores en blanco no deben contar como contenido');
+  });
+
+  await test('ignora valores no escalares (objetos/arrays anidados)', async () => {
+    const label = recordSummaryLabel(SCHEMA, { name: { nested: true }, surnames: 'Perez' }, 'fallback-id');
+    assertEquals(label, 'Perez', 'Un valor objeto debe descartarse, dejando solo el resto de campos escalares');
+  });
+
+  await test('funciona con schema/content vacios sin lanzar error', async () => {
+    const label = recordSummaryLabel({}, {}, 'abc-123');
+    assertEquals(label, 'abc-123', 'Schema y content vacios deben caer al fallbackId sin excepciones');
+  });
+
+  finishTestRunner('output');
+</script>
+</body>
+</html>

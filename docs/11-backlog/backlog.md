@@ -1246,6 +1246,7 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
   - ✅ Plugin de entidad `purchases` (compras): relación `belongs_to` → `clients` (segundo uso real del bloque `relations` del schema, hasta ahora sin uso), campos: fecha de la compra, estado (pendiente/en proceso/entregado/cancelado), importe total, notas
   - ✅ Ambos `orders` y `purchases` surgen de un plugin comun, siguendo el patrón de `plugins/persons/` (manifest, schema, Installer, Lifecycle, Hooks) y usan `slug` como identidad
   - ✅ Plugin de entidad `invoices` (facturas): relación `belongs_to` → `orders`, campos: número de factura, fecha de emisión, importe, estado de pago (pendiente/pagada)
+  - ✅ Plugin de entidad `basic` (basico): un plugin basico solamente con el campo `name`. Base para contruir en el futuro entidades basicas. Por ejemplo: Categorias, Familias, Ubicaciones, etc...
 - **IA Usage:** Generación de manifest/schema/Installer/Lifecycle siguiendo el patrón existente + primeros casos reales de uso de `relations`
 - **Dependencias:** STORY 10.2 (`persons`), STORY 10.3 (`plugin_name`)
 - **Blockers:** Ninguno

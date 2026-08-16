@@ -56,6 +56,15 @@ export class PluginConfig {
 		return typeof candidate === 'string' ? candidate : fallback;
 	}
 
+	resolveDescriptionText() {
+		if (this.#mode !== 'edit') {
+			return this.#description;
+		}
+
+		const label = String(this.#state?.plugin?.name ?? '').trim();
+		return label === '' ? this.#description : `Ajusta opciones específicas del plugin: ${label}`;
+	}
+
 	async init() {
 		if (this.#mode === 'create') {
 			try {
@@ -148,7 +157,7 @@ export class PluginConfig {
 			shell: this.#shellLayout,
 		})
 			.setTitle(this.#title)
-			.setDescription(this.#description)
+			.setDescription(this.resolveDescriptionText())
 			.build();
 		layout.setNotification(null);
 		const backButton = component.create('button', {
@@ -1031,7 +1040,7 @@ export class PluginConfig {
 		this.#container.replaceChildren();
 		const layout = FormLayout.create(this.#container, { shell: this.#shellLayout })
 			.setTitle(this.#title)
-			.setDescription(this.#description)
+			.setDescription(this.resolveDescriptionText())
 			.build();
 		const banner = component.create('alert', {
 			type: 'error',

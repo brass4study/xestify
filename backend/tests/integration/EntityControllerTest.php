@@ -92,6 +92,31 @@ const CTRL_SCHEMA_JSON = <<<'JSON'
 }
 JSON;
 
+const CTRL_ENTITY_SLUG_DESCRIBED = 'test_entity_ctrl_described';
+
+function seedCtrlDescribedSchema(string $description): void
+{
+    $manifest = json_encode([
+        'name' => CTRL_ENTITY_SLUG_DESCRIBED,
+        'label' => 'Test Entity Ctrl Described',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => $description,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    Database::connection()->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
+         ON CONFLICT (slug) DO UPDATE
+         SET status = 'active', manifest_json = EXCLUDED.manifest_json, schema_json = EXCLUDED.schema_json, updated_at = NOW()"
+    )->execute([
+        ':slug' => CTRL_ENTITY_SLUG_DESCRIBED,
+        ':manifest' => $manifest,
+        ':schema' => CTRL_SCHEMA_JSON,
+    ]);
+}
+
 const CTRL_ENTITY_SLUG_IDENTITY = 'test_entity_ctrl_identity';
 
 const CTRL_SCHEMA_WITH_IDENTITY_JSON = <<<'JSON'
@@ -287,6 +312,30 @@ TestSuite::run('GET schema returns 404 for unknown entity', function (): void {
 
     assertTrue(!($result['ok'] ?? true), MSG_OK_FALSE);
     assertTrue(($result['error']['code'] ?? 0) === 404, MSG_CODE_404);
+});
+
+TestSuite::run('GET /entities (listEntities) exposes manifest.description', function (): void {
+    seedCtrlDescribedSchema('Entidad base de clientes: nombre, email, telefono y estado activo.');
+    $ctrl = buildController();
+
+    $result = callController($ctrl, 'listEntities', []);
+
+    assertTrue($result['ok'] ?? false, MSG_OK_TRUE);
+    $entities = is_array($result['data'] ?? null) ? $result['data'] : [];
+    $match = null;
+    foreach ($entities as $entity) {
+        if (($entity['slug'] ?? '') === CTRL_ENTITY_SLUG_DESCRIBED) {
+            $match = $entity;
+            break;
+        }
+    }
+
+    assertTrue($match !== null, 'described entity must appear in listEntities()');
+    assertEquals(
+        'Entidad base de clientes: nombre, email, telefono y estado activo.',
+        $match['description'] ?? null,
+        'description must travel from manifest_json.description'
+    );
 });
 
 TestSuite::run('POST create returns 201 and record for valid data', function (): void {
@@ -521,6 +570,7 @@ TestSuite::run('DELETE destroy returns 422 when another entity has a dependent r
 $finalPdo = Database::connection();
 $finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG]);
 $finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG_IDENTITY]);
+$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG_DESCRIBED]);
 
 // ---------------------------------------------------------------------------
 // Summary

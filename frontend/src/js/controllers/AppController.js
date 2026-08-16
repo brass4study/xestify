@@ -17,6 +17,8 @@ import { NotificationModel } from '../models/NotificationModel.js';
 import { SessionModel } from '../models/SessionModel.js';
 import { applyUiPreferencesToDocument, getUiPreferences, setUiPreferences, subscribeUi } from '../models/ThemeModel.js';
 import { t } from '../models/I18nModel.js';
+import { displayName } from '../models/UserModel.js';
+import { recordSummaryLabel } from '../models/EntityRecordModel.js';
 import { UiResilienceService } from '../services/UiResilienceService.js';
 import { PageLayout } from '../views/layout/PageLayout.js';
 import { ShellLayout } from '../views/layout/ShellLayout.js';
@@ -779,7 +781,12 @@ export class AppController {
       ? currentUser.id
       : null;
 
-    const pageHeader = this.buildTemplateDefinition(userDetailPage(userId)).pageHeader ?? {};
+    const userName = selectedUser !== null ? displayName(selectedUser) : null;
+    const template = this.buildTemplateDefinition(userDetailPage(userId), { userName });
+    const pageHeader = template.pageHeader ?? {};
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setBreadcrumbs(template.breadcrumbs ?? []);
+
     return new UserConfig(this.contentContainer, {
       mode: 'admin',
       user: selectedUser,
@@ -875,11 +882,16 @@ export class AppController {
       dataForForm = recordData;
     }
 
+    const recordSummary = recordId === null ? null : recordSummaryLabel(schema, dataForForm, recordId);
+
     this.contentContainer.replaceChildren();
     const pageToken = recordId === null
       ? entityCreatePage(slug)
       : entityRecordPage(slug, recordId);
-    const pageHeader = this.buildTemplateDefinition(pageToken).pageHeader ?? {};
+    const template = this.buildTemplateDefinition(pageToken, { recordSummary });
+    const pageHeader = template.pageHeader ?? {};
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setBreadcrumbs(template.breadcrumbs ?? []);
 
     const entityEdit = new EntityEdit(this.contentContainer, slug, schema, {
       api: this.dashboardApi,
@@ -891,9 +903,9 @@ export class AppController {
         : async (tabId) => {
           const page = entityTabPage(slug, recordId, tabId);
           await this.router.navigate(page, { updateHash: true, notify: false });
-          const template = this.buildTemplateDefinition(page);
+          const tabTemplate = this.buildTemplateDefinition(page, { recordSummary });
           PageLayout.create(this.contentContainer, { shell: this.shellLayout })
-            .setBreadcrumbs(template.breadcrumbs ?? []);
+            .setBreadcrumbs(tabTemplate.breadcrumbs ?? []);
         },
       onTabsReady: (tabs) => {
         this.entityTabsBySlug.set(slug, tabs);
@@ -903,9 +915,9 @@ export class AppController {
           return;
         }
         const page = getPageFromHash(window.location.hash, '');
-        const template = this.buildTemplateDefinition(page);
+        const tabsReadyTemplate = this.buildTemplateDefinition(page, { recordSummary });
         PageLayout.create(this.contentContainer, { shell: this.shellLayout })
-          .setBreadcrumbs(template.breadcrumbs ?? []);
+          .setBreadcrumbs(tabsReadyTemplate.breadcrumbs ?? []);
       },
       shellLayout: this.shellLayout,
       title: pageHeader.title,
@@ -1271,7 +1283,7 @@ export class AppController {
     return 'border-slate-200 bg-white text-slate-800';
   }
 
-  buildTemplateDefinition(page) {
+  buildTemplateDefinition(page, context = {}) {
     if (typeof page !== 'string') {
       return {
         template: 'home',
@@ -1288,7 +1300,7 @@ export class AppController {
     ];
 
     for (const resolver of resolvers) {
-      const resolved = resolver(page);
+      const resolved = resolver(page, context);
       if (resolved !== null) {
         return resolved;
       }
@@ -1341,7 +1353,7 @@ export class AppController {
     };
   }
 
-  resolveUsersTemplate(page) {
+  resolveUsersTemplate(page, context = {}) {
     if (page === 'users') {
       return {
         template: 'list',
@@ -1361,16 +1373,21 @@ export class AppController {
     }
 
     const userId = page.slice('users:'.length);
+    const userName = typeof context.userName === 'string' && context.userName.trim() !== ''
+      ? context.userName.trim()
+      : null;
     return {
       template: 'detail',
       breadcrumbs: this.makeBreadcrumbItems([
         { label: 'Sistema' },
         { label: 'Usuarios', href: '#/users' },
-        { label: userId === '' ? 'Detalle' : `Usuario ${userId}`, active: true },
+        { label: userName !== null ? `Usuario ${userName}` : (userId === '' ? 'Detalle' : `Usuario ${userId}`), active: true },
       ]),
       pageHeader: {
         title: 'Detalle de usuario',
-        subtitle: 'Consulta o edita la ficha del usuario seleccionado.',
+        subtitle: userName !== null
+          ? `Consulta o edita la ficha del usuario: ${userName}`
+          : 'Consulta o edita la ficha del usuario seleccionado.',
       },
     };
   }
@@ -1414,7 +1431,7 @@ export class AppController {
     };
   }
 
-  resolveEntityRecordTemplate(page) {
+  resolveEntityRecordTemplate(page, context = {}) {
     const isRecordPage = page.startsWith('entity-record:');
     const isTabPage = page.startsWith('entity-tab:');
     if (!isRecordPage && !isTabPage) {
@@ -1428,11 +1445,18 @@ export class AppController {
       return null;
     }
 
+    const recordSummary = typeof context.recordSummary === 'string' && context.recordSummary.trim() !== ''
+      ? context.recordSummary.trim()
+      : null;
+
     const label = this.resolveEntityLabel(entityData.slug);
     const breadcrumbs = [
       { label: 'Operaciones' },
       { label, href: `#/entity/${encodeURIComponent(entityData.slug)}` },
-      { label: `Registro ${entityData.recordId}`, active: !isTabPage },
+      {
+        label: recordSummary !== null ? `Registro de ${recordSummary}` : `Registro ${entityData.recordId}`,
+        active: !isTabPage,
+      },
     ];
     if (isTabPage) {
       breadcrumbs.push({ label: this.resolveEntityTabLabel(entityData.slug, entityData.tabId), active: true });
@@ -1443,7 +1467,9 @@ export class AppController {
       breadcrumbs: this.makeBreadcrumbItems(breadcrumbs),
       pageHeader: {
         title: `Detalle de ${label}`,
-        subtitle: 'Edita datos y extensiones del registro seleccionado.',
+        subtitle: recordSummary !== null
+          ? `Edita datos y extensiones del registro: ${recordSummary}`
+          : 'Edita datos y extensiones del registro seleccionado.',
       }
     };
   }

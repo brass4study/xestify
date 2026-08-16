@@ -120,9 +120,10 @@ export class EntityList {
 	 * @param {object|undefined} meta
 	 */
 	#renderRecords(records, schema, slug, meta = undefined) {
+		const manifestDescription = this.#entityDescriptionForSlug(slug);
 		this.#layout = ListLayout.create(this.#container, { shell: this.#shellLayout })
 			.setTitle(this.#title ?? this.#entityLabelForSlug(slug))
-			.setDescription(this.#description ?? this.#createLabelForSlug(slug))
+			.setDescription(manifestDescription !== '' ? manifestDescription : (this.#description ?? this.#createLabelForSlug(slug)))
 			.setHeaderToolbar(this.#createRecordButton(slug))
 			.build();
 		const layout = this.#layout;
@@ -252,6 +253,17 @@ export class EntityList {
 		}
 
 		return slug;
+	}
+
+	#entityDescriptionForSlug(slug) {
+		const entities = SessionModel.getEntities();
+		const found = entities.find((e) => e.slug === slug);
+
+		if (found !== undefined && typeof found.description === 'string' && found.description.trim() !== '') {
+			return found.description.trim();
+		}
+
+		return '';
 	}
 
 	#createLabelForSlug(slug) {

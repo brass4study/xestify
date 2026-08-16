@@ -80,6 +80,23 @@
         };
       }
 
+      if (url === '/plugins/available') {
+        return {
+          data: {
+            available: [
+              {
+                plugin_name: 'persons',
+                plugin_type: 'entity',
+                label: 'Personas',
+                suggested_slug: 'persons',
+                description: 'Entidad de personas',
+                config: { fields: [], relations: [], target_entity: '*' },
+              },
+            ],
+          },
+        };
+      }
+
       throw new Error('GET not mocked');
     }
 
@@ -92,7 +109,7 @@
           data: {
             plugin: {
               slug: 'persons',
-              name: 'Persons',
+              name: typeof body.name === 'string' && body.name !== '' ? body.name : 'Persons',
               plugin_type: 'entity',
               status: 'active',
               version: '1.0.0',
@@ -203,7 +220,7 @@
     await page.init();
 
     assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-title"]').textContent, 'Configuración de plugin', 'El título debe estar en español');
-    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent, 'Ajusta las opciones específicas del plugin activo.', 'La descripción debe estar en español');
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent, 'Ajusta opciones específicas del plugin: Persons', 'La descripción debe incluir la etiqueta del plugin (manifest label)');
     assertTrue(shell.getTarget('shell-main-notifications').querySelector('[data-role="plugin-config-error"]') === null,
       'No debe mostrar error al registrar acciones externas al panel');
     const toolbar = shell.getTarget('shell-header').querySelector('[data-role="page-header-toolbar"]');
@@ -499,6 +516,42 @@
 
     const relationRows = container.querySelectorAll('[data-role="plugin-config-relations-table"] tbody tr');
     assertEquals(relationRows.length, 1, 'Debe haber 1 fila de relacion tras anadir');
+  });
+
+  await test('modo create mantiene la descripcion generica incluso tras elegir un tipo de plugin', async () => {
+    const { shell, content } = makeShellSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(content, { mode: 'create', api, shellLayout: shell });
+    await page.init();
+
+    const genericDescription = 'Ajusta las opciones específicas del plugin activo.';
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent,
+      genericDescription, 'La descripcion de alta debe ser la generica de creacion antes de elegir tipo');
+
+    page.applyTypeSelection('persons');
+
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent,
+      genericDescription, 'Elegir un tipo en modo create no debe activar el texto de descripcion de modo edit');
+  });
+
+  await test('modo edit actualiza la descripcion tras renombrar y guardar sin salir de la pagina', async () => {
+    const { shell, content } = makeShellSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(content, { slug: 'persons', api, shellLayout: shell });
+    await page.init();
+
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent,
+      'Ajusta opciones específicas del plugin: Persons', 'La descripcion inicial debe reflejar el nombre cargado');
+
+    content.querySelector('[data-name="identity-name"]').value = 'Personas renombradas';
+    shell.getTarget('shell-main-actions').querySelector('[data-action="save"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assertEquals(shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]').textContent,
+      'Ajusta opciones específicas del plugin: Personas renombradas',
+      'La descripcion debe reflejar el nombre recien guardado sin salir de la pagina');
   });
 
   log('────────────────────────────────────────────────────────────────────────');

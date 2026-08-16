@@ -74,6 +74,7 @@ class EntityController
             $entities[] = [
                 'slug'           => $row['slug'],
                 'label'          => (string) ($manifest['label'] ?? ''),
+                'description'    => (string) ($manifest['description'] ?? ''),
                 'label_singular' => isset($manifest['label_singular']) && is_string($manifest['label_singular'])
                     ? $manifest['label_singular']
                     : null,

@@ -115,6 +115,31 @@
     assertTrue(table !== null, 'DynamicTable should render a <table>');
   });
 
+  await test('loadEntity uses manifest.description over the generic subtitle when present', async () => {
+    const { shell, content } = makeShellSandbox();
+    mockFetchWithMap({
+      '/entities': [{
+        slug: 'persons',
+        label: 'Personas',
+        description: 'Entidad base de clientes: nombre, email, telefono y estado activo.',
+        fields: [{ name: 'name', label: 'Name' }],
+      }],
+      '/entities/persons/records': [{ name: 'ACME' }],
+    });
+
+    const page = new EntityList(content, {
+      shellLayout: shell,
+      title: 'Personas',
+      description: 'Explora registros y accede a acciones contextuales.',
+    });
+    await page.init();
+    await page.loadEntity('persons');
+
+    const description = shell.getTarget('shell-header').querySelector('[data-role="page-header-description"]');
+    assertEquals(description.textContent, 'Entidad base de clientes: nombre, email, telefono y estado activo.',
+      'Debe usar manifest.description en vez de la descripcion generica cuando no esta vacia');
+  });
+
   await test('loadEntity in shell mode mounts toolbar in shell header and does not create a local page-header', async () => {
     const { host, shell, content } = makeShellSandbox();
 
