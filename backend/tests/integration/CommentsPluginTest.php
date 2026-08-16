@@ -451,6 +451,83 @@ TestSuite::run('Cada instancia activa de comments contribuye su propia tab (STOR
     }
 });
 
+TestSuite::run('registerTabs priority reflects plugins.sort_order (Subir/Bajar moves the tab)', function (): void {
+    $pdo = Database::connection();
+    $originalSortOrder = (int) $pdo->query("SELECT sort_order FROM plugins WHERE slug = 'comments'")->fetchColumn();
+
+    $probeHook = function (array $tabs): array {
+        $tabs[] = ['id' => 'probe', 'label' => 'Probe'];
+        return $tabs;
+    };
+
+    try {
+        $pdo->prepare("UPDATE plugins SET sort_order = 100 WHERE slug = 'comments'")->execute();
+
+        $dispatcher = new HookDispatcher();
+        $dispatcher->register('registerTabs', $probeHook, priority: 10);
+        (new Hooks($pdo))->register($dispatcher);
+
+        $ids = array_column($dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]), 'id');
+        assertEquals(['probe', 'comments'], $ids, 'a high sort_order must keep comments after the priority-10 probe');
+
+        $pdo->prepare("UPDATE plugins SET sort_order = 1 WHERE slug = 'comments'")->execute();
+
+        $dispatcher = new HookDispatcher();
+        $dispatcher->register('registerTabs', $probeHook, priority: 10);
+        (new Hooks($pdo))->register($dispatcher);
+
+        $ids = array_column($dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]), 'id');
+        assertEquals(['comments', 'probe'], $ids, 'a low sort_order must move comments before the priority-10 probe');
+    } finally {
+        $pdo->prepare('UPDATE plugins SET sort_order = :v WHERE slug = \'comments\'')->execute([':v' => $originalSortOrder]);
+    }
+});
+
+TestSuite::run('multiple active instances contribute tabs ordered by their own sort_order', function (): void {
+    $pdo = Database::connection();
+    $secondSlug = 'comments_second_test';
+
+    $originalStmt = $pdo->prepare("SELECT schema_json, sort_order FROM plugins WHERE slug = 'comments'");
+    $originalStmt->execute();
+    $originalRow = $originalStmt->fetch(PDO::FETCH_ASSOC);
+    $originalSortOrder = (int) ($originalRow['sort_order'] ?? 0);
+
+    $secondManifest = json_encode([
+        'name' => 'comments',
+        'label' => 'Comentarios (segunda instancia)',
+        'version' => '1.0.0',
+        'type' => 'extension',
+        'core_version' => '1.0.0',
+        'target_entity' => '*',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json, sort_order)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb), :sort_order)"
+    )->execute([
+        ':slug' => $secondSlug,
+        ':manifest' => $secondManifest,
+        ':schema' => $originalRow['schema_json'] ?? '{}',
+        ':sort_order' => $originalSortOrder - 1,
+    ]);
+
+    try {
+        $dispatcher = new HookDispatcher();
+        (new Hooks($pdo))->register($dispatcher);
+
+        $ids = array_column($dispatcher->applyFilter('registerTabs', [], ['entity' => TEST_ENTITY]), 'id');
+        $positions = array_flip($ids);
+
+        assertTrue(
+            $positions[$secondSlug] < $positions['comments'],
+            'the instance with the lower sort_order must contribute its tab first'
+        );
+    } finally {
+        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $secondSlug]);
+    }
+});
+
 TestSuite::run('GET comments returns empty array when no comments exist', function (): void {
     cleanComments();
     $ctrl   = new PluginExtensionController(Database::connection());

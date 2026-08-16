@@ -19,7 +19,7 @@ use Xestify\plugins\discovery\PluginSchemaCodec;
 final class PluginWriteRepository
 {
     private const SELECT_COLUMNS = '
-        id, slug, status, manifest_json, schema_json, installed_at, updated_at
+        id, slug, status, manifest_json, schema_json, sort_order, installed_at, updated_at
     ';
 
     /** manifest_json keys an admin can edit after install — update() must
@@ -54,8 +54,9 @@ final class PluginWriteRepository
         $schemaJson = $this->schemaCodec->encode($schema, $slug);
 
         $stmt = $this->pdo->prepare(
-            'INSERT INTO plugins (slug, status, manifest_json, schema_json)
-             VALUES (:slug, :status, CAST(:manifest_json AS jsonb), CAST(:schema AS jsonb))
+            'INSERT INTO plugins (slug, status, manifest_json, schema_json, sort_order)
+             VALUES (:slug, :status, CAST(:manifest_json AS jsonb), CAST(:schema AS jsonb),
+                     COALESCE((SELECT MAX(sort_order) FROM plugins), 0) + 1)
              RETURNING ' . self::SELECT_COLUMNS
         );
         $stmt->execute([
@@ -177,6 +178,18 @@ final class PluginWriteRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row === false ? null : $this->decodeRow($row);
+    }
+
+    public function updateSortOrder(string $slug, int $sortOrder): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE plugins SET sort_order = :sort_order, updated_at = NOW()
+             WHERE slug = :slug'
+        );
+        $stmt->execute([
+            ':sort_order' => $sortOrder,
+            ':slug' => $slug,
+        ]);
     }
 
     /**

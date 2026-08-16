@@ -28,6 +28,8 @@ use Xestify\services\PluginAdministrationService;
  *   PUT    /api/v1/plugins/{slug}/status
  *   GET    /api/v1/plugins/{slug}/config
  *   PUT    /api/v1/plugins/{slug}/config
+ *   POST   /api/v1/plugins/{slug}/move-up
+ *   POST   /api/v1/plugins/{slug}/move-down
  *   DELETE /api/v1/plugins/{slug}
  */
 class PluginManagerController
@@ -152,6 +154,66 @@ class PluginManagerController
             Response::make()->json($this->flattenPlugin($plugin));
         } catch (InvalidArgumentException $e) {
             Response::make()->unprocessable($e->getMessage(), ['status' => $e->getMessage()]);
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins/{slug}/move-up
+     * Swaps this plugin's display order with its predecessor. No-op when
+     * already first.
+     */
+    public function movePluginUp(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$request->hasRole('admin')) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $plugin = $this->pluginAdministration->moveUp($slug);
+            Response::make()->json($this->flattenPlugin($plugin));
+        } catch (OutOfBoundsException) {
+            Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
+        } catch (Exception $e) {
+            Response::make()->serverError(self::MSG_ERROR_PREFIX . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /api/v1/plugins/{slug}/move-down
+     * Swaps this plugin's display order with its successor. No-op when
+     * already last.
+     */
+    public function movePluginDown(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if (!$request->hasRole('admin')) {
+            Response::make()->forbidden(self::MSG_ADMIN_REQUIRED);
+            return;
+        }
+
+        if ($slug === '') {
+            Response::make()->unprocessable(self::MSG_SLUG_REQUIRED, ['slug' => self::MSG_SLUG_REQUIRED]);
+            return;
+        }
+
+        try {
+            $plugin = $this->pluginAdministration->moveDown($slug);
+            Response::make()->json($this->flattenPlugin($plugin));
         } catch (OutOfBoundsException) {
             Response::make()->notFound(self::MSG_PLUGIN_NOT_FOUND);
         } catch (Exception $e) {

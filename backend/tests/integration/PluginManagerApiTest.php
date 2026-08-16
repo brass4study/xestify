@@ -13,6 +13,8 @@ declare(strict_types=1);
  * - PUT  /api/v1/plugins/{slug}/status
  * - GET  /api/v1/plugins/{slug}/config
  * - PUT  /api/v1/plugins/{slug}/config
+ * - POST /api/v1/plugins/{slug}/move-up
+ * - POST /api/v1/plugins/{slug}/move-down
  */
 
 define('BASE_PATH', dirname(__DIR__, 2));
@@ -68,7 +70,8 @@ final class TestPluginAdministrationService extends PluginAdministrationService
         private ?Throwable $rollbackError = null,
         private ?Throwable $statusError = null,
         private ?array $registerResult = null,
-        private ?Throwable $registerError = null
+        private ?Throwable $registerError = null,
+        private ?Throwable $moveError = null
     ) {
         // Parent dependencies are intentionally bypassed in this test double.
     }
@@ -199,6 +202,64 @@ final class TestPluginAdministrationService extends PluginAdministrationService
     public function deactivate(string $slug): array
     {
         return $this->setStatus($slug, 'inactive');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function moveUp(string $slug): array
+    {
+        return $this->move($slug, -1);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function moveDown(string $slug): array
+    {
+        return $this->move($slug, 1);
+    }
+
+    /**
+     * Mirrors PluginOrderService::move() against the flat $plugins fixture:
+     * swaps the matching row with its neighbor at $index + $direction (a
+     * no-op when already at that end of the list) and returns the same
+     * manifest_json-nested shape setStatus() returns.
+     */
+    private function move(string $slug, int $direction): array
+    {
+        if ($this->moveError !== null) {
+            throw $this->moveError;
+        }
+
+        foreach ($this->plugins as $index => $plugin) {
+            if ($plugin['slug'] !== $slug) {
+                continue;
+            }
+
+            $targetIndex = $index + $direction;
+            if ($targetIndex >= 0 && $targetIndex < count($this->plugins)) {
+                $swap = $this->plugins[$targetIndex];
+                $this->plugins[$targetIndex] = $plugin;
+                $this->plugins[$index] = $swap;
+            }
+
+            return [
+                'slug' => $plugin['slug'],
+                'status' => $plugin['status'],
+                'manifest_json' => [
+                    'name' => $plugin['slug'],
+                    'label' => $plugin['name'],
+                    'type' => $plugin['plugin_type'],
+                    'version' => $plugin['version'],
+                    'description' => $plugin['description'] ?? '',
+                ],
+                'installed_at' => $plugin['installed_at'] ?? null,
+                'updated_at' => $plugin['updated_at'] ?? null,
+            ];
+        }
+
+        throw new OutOfBoundsException('missing');
     }
 
     /**
@@ -434,6 +495,75 @@ TestSuite::run('PUT /api/v1/plugins/{slug}/status activates plugin', function ()
     assertEquals('active', $response['data']['status'] ?? null, 'Plugin status should be active');
     assertEquals('Comments', $response['data']['name'] ?? null, 'Response must flatten manifest_json.label back into name');
     assertEquals('extension', $response['data']['plugin_type'] ?? null, 'Response must flatten manifest_json.type back into plugin_type');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/move-down swaps order with the next plugin', function (): void {
+    $service = new TestPluginAdministrationService(pluginListFixture());
+    $controller = new PluginManagerController($service);
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->movePluginDown(['slug' => 'persons'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Move down should succeed');
+    assertEquals('persons', $response['data']['slug'] ?? null, 'Response should be the moved plugin');
+
+    $listOutput = testController(function () use ($controller, $request): void {
+        $controller->listPlugins([], $request);
+    });
+    $listResponse = json_decode($listOutput, true);
+    assertEquals('comments', $listResponse['data']['plugins'][0]['slug'] ?? null, 'comments should now be first after the swap');
+    assertEquals('persons', $listResponse['data']['plugins'][1]['slug'] ?? null, 'persons should now be second after the swap');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/move-up is a no-op for the first plugin', function (): void {
+    $service = new TestPluginAdministrationService(pluginListFixture());
+    $controller = new PluginManagerController($service);
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->movePluginUp(['slug' => 'persons'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === true, 'Move up should still succeed (no-op) at the boundary');
+
+    $listOutput = testController(function () use ($controller, $request): void {
+        $controller->listPlugins([], $request);
+    });
+    $listResponse = json_decode($listOutput, true);
+    assertEquals('persons', $listResponse['data']['plugins'][0]['slug'] ?? null, 'Order should be unchanged');
+    assertEquals('comments', $listResponse['data']['plugins'][1]['slug'] ?? null, 'Order should be unchanged');
+});
+
+TestSuite::run('POST /api/v1/plugins/{slug}/move-up returns 404 when plugin is not installed', function (): void {
+    $controller = new PluginManagerController(new TestPluginAdministrationService(
+        pluginListFixture(),
+        [],
+        ['summary' => [], 'plugins' => []],
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        new OutOfBoundsException('missing')
+    ));
+    $request = new TestRequest();
+    $request->setUser(['roles' => ['admin']]);
+
+    $output = testController(function () use ($controller, $request): void {
+        $controller->movePluginUp(['slug' => 'missing'], $request);
+    });
+
+    $response = json_decode($output, true);
+    assertTrue($response['ok'] === false, 'Move up for a missing plugin should fail');
+    assertEquals(404, $response['error']['code'] ?? null, 'Error code should be 404');
 });
 
 TestSuite::run('POST /api/v1/plugins registers a new plugin and returns it already active', function (): void {

@@ -97,7 +97,7 @@
 
   log('────────────────────────────────────────────────────────────────────────\n');
 
-  await test('renders list of plugins', async () => {
+  await test('renders plugins split into Entidades and Extensiones sections', async () => {
     const container = makeSandbox();
     const api = new MockApi({
       '/plugins': {
@@ -114,12 +114,20 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const rows = container.querySelectorAll('[data-role="plugin-row"]');
-    assertEquals(rows.length, 2, 'Should render 2 rows');
-    assertEquals(rows[0].dataset.slug, 'persons', 'First row slug');
-    assertEquals(rows[1].dataset.slug, 'comments', 'Second row slug');
-    const headers = [...container.querySelectorAll('thead th')].map((header) => header.textContent.trim());
-    assertEquals(headers.join('|'), 'Nombre|Tipo|Versión|Estado|Acciones', 'Las columnas deben estar en español');
+    const entitySection = container.querySelector('[data-role="plugin-section-entities"]');
+    const extensionSection = container.querySelector('[data-role="plugin-section-extensions"]');
+    assertTrue(entitySection !== null, 'Entities section should render');
+    assertTrue(extensionSection !== null, 'Extensions section should render');
+
+    const entityRows = entitySection.querySelectorAll('[data-role="plugin-row"]');
+    const extensionRows = extensionSection.querySelectorAll('[data-role="plugin-row"]');
+    assertEquals(entityRows.length, 1, 'Entities section should render 1 row');
+    assertEquals(extensionRows.length, 1, 'Extensions section should render 1 row');
+    assertEquals(entityRows[0].dataset.slug, 'persons', 'Entity row slug');
+    assertEquals(extensionRows[0].dataset.slug, 'comments', 'Extension row slug');
+
+    const entityHeaders = [...entitySection.querySelectorAll('thead th')].map((header) => header.textContent.trim());
+    assertEquals(entityHeaders.join('|'), 'Nombre|Versión|Estado|Acciones', 'Las columnas deben estar en español, sin columna Tipo');
   });
 
   await test('renders empty state when no plugins', async () => {
@@ -138,7 +146,7 @@
     assertTrue(empty !== null, 'Empty state should be displayed');
   });
 
-  await test('shows correct plugin type badges', async () => {
+  await test('shows section headings for Entidades and Extensiones', async () => {
     const container = makeSandbox();
     const api = new MockApi({
       '/plugins': {
@@ -155,10 +163,45 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const badges = container.querySelectorAll('[data-role="plugin-type-badge"]');
-    assertEquals(badges.length, 2, 'Should have 2 type badges');
-    assertTrue(badges[0].textContent.includes('entidad'), 'La primera insignia debe indicar entidad');
-    assertTrue(badges[1].textContent.includes('extensión'), 'La segunda insignia debe indicar extensión');
+    const entitySection = container.querySelector('[data-role="plugin-section-entities"]');
+    const extensionSection = container.querySelector('[data-role="plugin-section-extensions"]');
+
+    const entityToolbar = entitySection.querySelector('[data-role="table-toolbar"]');
+    const extensionToolbar = extensionSection.querySelector('[data-role="table-toolbar"]');
+    assertTrue(entityToolbar !== null, 'Entity table toolbar should render');
+    assertTrue(extensionToolbar !== null, 'Extension table toolbar should render');
+
+    const entityHeading = entityToolbar.querySelector('h3');
+    const extensionHeading = extensionToolbar.querySelector('h3');
+    assertTrue(entityHeading !== null, 'Entity heading should live inside the table toolbar');
+    assertTrue(extensionHeading !== null, 'Extension heading should live inside the table toolbar');
+    assertTrue(entityHeading.textContent.includes('Entidades'), 'Entity section heading should say Entidades');
+    assertTrue(extensionHeading.textContent.includes('Extensiones'), 'Extension section heading should say Extensiones');
+
+    const refreshButton = entityToolbar.querySelector('[data-role="table-refresh"]');
+    const headingPosition = entityHeading.compareDocumentPosition(refreshButton);
+    assertTrue((headingPosition & Node.DOCUMENT_POSITION_FOLLOWING) !== 0, 'Heading must come before the toolbar buttons (to their left)');
+  });
+
+  await test('shows an empty message for a section with no plugins of that type', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const extensionEmpty = container.querySelector('[data-role="plugin-section-extensions-empty"]');
+    assertTrue(extensionEmpty !== null, 'Extensions section should show an empty message when there are no extension plugins');
+    assertTrue(container.querySelector('[data-role="plugin-table-extensions"]') === null, 'No extensions table should render when there are none');
   });
 
   await test('shows activate button for inactive plugins', async () => {
@@ -532,7 +575,7 @@
 
     const actions = [...container.querySelectorAll('[data-role="plugin-row"] [data-role="plugin-action"]')]
       .map((button) => button.dataset.action);
-    assertEquals(actions.join(','), 'deactivate,configure,update,rollback', 'Optional plugin actions should follow Configure');
+    assertEquals(actions.join(','), 'deactivate,configure,update,rollback,move-up,move-down', 'Optional plugin actions should follow Configure, move actions come last');
   });
 
   await test('shows rollback button only when can_rollback is true', async () => {
@@ -727,6 +770,91 @@
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     assertTrue(!api.calls.some((c) => c.method === 'DELETE'), 'Delete endpoint should not be called when cancelled');
+  });
+
+  await test('disables move-up/move-down at the boundaries of each section independently', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'orders', name: 'Orders', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+            { slug: 'notes', name: 'Notes', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const personsRow = container.querySelector('tr[data-slug="persons"]');
+    const ordersRow = container.querySelector('tr[data-slug="orders"]');
+    const commentsRow = container.querySelector('tr[data-slug="comments"]');
+    const notesRow = container.querySelector('tr[data-slug="notes"]');
+
+    assertTrue(personsRow.querySelector('[data-action="move-up"]').disabled === true, 'First entity move-up should be disabled');
+    assertTrue(personsRow.querySelector('[data-action="move-down"]').disabled === false, 'First entity move-down should be enabled');
+    assertTrue(ordersRow.querySelector('[data-action="move-up"]').disabled === false, 'Last entity move-up should be enabled');
+    assertTrue(ordersRow.querySelector('[data-action="move-down"]').disabled === true, 'Last entity move-down should be disabled');
+
+    assertTrue(commentsRow.querySelector('[data-action="move-up"]').disabled === true, 'First extension move-up should be disabled');
+    assertTrue(commentsRow.querySelector('[data-action="move-down"]').disabled === false, 'First extension move-down should be enabled');
+    assertTrue(notesRow.querySelector('[data-action="move-up"]').disabled === false, 'Last extension move-up should be enabled');
+    assertTrue(notesRow.querySelector('[data-action="move-down"]').disabled === true, 'Last extension move-down should be disabled');
+  });
+
+  await test('calls POST /plugins/{slug}/move-down when move down clicked', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'orders', name: 'Orders', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+      '/plugins/persons/move-down': { ok: true, data: { slug: 'persons', status: 'active' } },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const moveDownBtn = container.querySelector('tr[data-slug="persons"] [data-action="move-down"]');
+    moveDownBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/persons/move-down'), 'move-down endpoint should be called');
+  });
+
+  await test('calls POST /plugins/{slug}/move-up when move up clicked', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+            { slug: 'notes', name: 'Notes', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+          ],
+        },
+      },
+      '/plugins/notes/move-up': { ok: true, data: { slug: 'notes', status: 'active' } },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const moveUpBtn = container.querySelector('tr[data-slug="notes"] [data-action="move-up"]');
+    moveUpBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/notes/move-up'), 'move-up endpoint should be called');
   });
 
   await test('calls onConfigure callback when configure button is clicked', async () => {

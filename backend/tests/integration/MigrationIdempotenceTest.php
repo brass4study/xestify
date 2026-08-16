@@ -115,6 +115,19 @@ TestSuite::run('all migration tables exist after running 001-006', function (): 
     }
 });
 
+TestSuite::run('plugins.sort_order column exists', function (): void {
+    $pdo = Database::connection();
+
+    $stmt = $pdo->query(
+        "SELECT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'plugins' AND column_name = 'sort_order'
+        ) AS exists"
+    );
+    $row = $stmt->fetch();
+    assertTrue($row !== false && $row['exists'] === true, 'Column plugins.sort_order must exist');
+});
+
 TestSuite::run('re-running all migrations does not cause errors', function (): void {
     $migrations = [
         '001_users.sql',

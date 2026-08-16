@@ -60,7 +60,7 @@ class EntityController
              WHERE p.manifest_json->>'type' = :plugin_type
                  AND p.status = :status
                  AND p.schema_json IS NOT NULL
-             ORDER BY p.manifest_json->>'label' ASC"
+             ORDER BY p.sort_order ASC, p.manifest_json->>'label' ASC"
         );
         $stmt->execute([':plugin_type' => 'entity', ':status' => 'active']);
         $rows = $stmt->fetchAll();

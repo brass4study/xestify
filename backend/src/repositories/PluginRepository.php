@@ -15,7 +15,7 @@ use Xestify\plugins\discovery\PluginSchemaCodec;
 final class PluginRepository
 {
     private const SELECT_COLUMNS = '
-        id, slug, status, manifest_json, schema_json, installed_at, updated_at
+        id, slug, status, manifest_json, schema_json, sort_order, installed_at, updated_at
     ';
     private const SELECT_ROW = 'SELECT ' . self::SELECT_COLUMNS;
 
@@ -44,7 +44,7 @@ final class PluginRepository
                           AND h.target_version = p.manifest_json->>'version'
                     ) AS can_rollback
              FROM plugins p
-             ORDER BY p.slug ASC"
+             ORDER BY p.sort_order ASC, p.slug ASC"
         );
         if ($stmt === false) {
             return [];
@@ -166,6 +166,39 @@ final class PluginRepository
              FOR UPDATE'
         );
         $stmt->execute([':slug' => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $this->decodeRow($row);
+    }
+
+    /**
+     * Locks and returns the row immediately adjacent to ($sortOrder, $slug)
+     * among plugins of the same $pluginType (display order, entity and
+     * extension order are independent concerns — entity order drives the
+     * nav menu, extension order drives tab priority — so a plugin never
+     * swaps sort_order with one of the other type), same tie-break as
+     * listInstalled(): sort_order ASC, slug ASC. $direction < 0 looks
+     * backward (the "move up" neighbor), $direction > 0 looks forward (the
+     * "move down" neighbor). Returns null when $slug is already at that end
+     * of its type's list (nothing to swap with).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockNeighborBySortOrder(int $sortOrder, string $slug, int $direction, string $pluginType): ?array
+    {
+        $comparator = $direction < 0 ? '<' : '>';
+        $orderDirection = $direction < 0 ? 'DESC' : 'ASC';
+
+        $stmt = $this->pdo->prepare(
+            self::SELECT_ROW . "
+             FROM plugins
+             WHERE manifest_json->>'type' = :plugin_type
+               AND (sort_order, slug) {$comparator} (:sort_order, :slug)
+             ORDER BY sort_order {$orderDirection}, slug {$orderDirection}
+             LIMIT 1
+             FOR UPDATE"
+        );
+        $stmt->execute([':plugin_type' => $pluginType, ':sort_order' => $sortOrder, ':slug' => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row === false ? null : $this->decodeRow($row);

@@ -11,6 +11,7 @@ export class DynamicTable {
 	#extraColumnsStart = [];
 	#extraColumnsEnd = [];
 	#rowDecorator = null;
+	#toolbarStart = null;
 	#showPagination = true;
 	#wrapperClassName = null;
 	#tableClassName = null;
@@ -74,6 +75,7 @@ export class DynamicTable {
 		this.#extraColumnsEnd = extraColumns.filter((column) => column.position === 'end');
 		extraColumns.forEach((column) => this.#visibleColumns.add(column.key));
 		this.#rowDecorator = typeof options.rowDecorator === 'function' ? options.rowDecorator : null;
+		this.#toolbarStart = options.toolbarStart instanceof HTMLElement ? options.toolbarStart : null;
 		this.#showPagination = options.showPagination !== false;
 		this.#wrapperClassName = typeof options.wrapperClassName === 'string' && options.wrapperClassName !== '' ? options.wrapperClassName : null;
 		this.#tableClassName = typeof options.tableClassName === 'string' && options.tableClassName !== '' ? options.tableClassName : null;
@@ -267,12 +269,21 @@ export class DynamicTable {
 	}
 
 	buildToolbar() {
+		const justify = this.#toolbarStart !== null ? 'justify-between' : 'justify-end';
 		const toolbar = component.create('div', {
-			className: 'flex min-h-12 items-center justify-end gap-1 border-b border-slate-100 px-3 py-2',
+			className: `flex min-h-12 items-center ${justify} gap-3 border-b border-slate-100 px-3 py-2`,
 		}).setData('role', 'table-toolbar');
-		this.#createToolbarButton('Refrescar', 'fa-arrows-rotate', 'table-refresh', () => this.refresh()).setParent(toolbar);
-		this.#buildDensityMenu().setParent(toolbar);
-		this.#buildSettingsMenu().setParent(toolbar);
+
+		if (this.#toolbarStart !== null) {
+			this.#toolbarStart.setParent(toolbar);
+		}
+
+		const buttons = component.create('div', { className: 'flex shrink-0 items-center gap-1' });
+		this.#createToolbarButton('Refrescar', 'fa-arrows-rotate', 'table-refresh', () => this.refresh()).setParent(buttons);
+		this.#buildDensityMenu().setParent(buttons);
+		this.#buildSettingsMenu().setParent(buttons);
+		buttons.setParent(toolbar);
+
 		return toolbar;
 	}
 

@@ -58,6 +58,7 @@ export class ListLayout extends PageLayout {
       onQueryChange: options.onQueryChange,
       extraColumns: options.extraColumns,
       rowDecorator: options.rowDecorator,
+      toolbarStart: options.toolbarStart,
       wrapperClassName: options.wrapperClassName ?? 'overflow-x-auto',
       tableClassName: options.tableClassName ?? 'w-full min-w-[680px] border-separate border-spacing-0 text-left',
       tableDataRole: options.tableDataRole,

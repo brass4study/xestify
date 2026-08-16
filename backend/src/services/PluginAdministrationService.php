@@ -12,6 +12,7 @@ use Throwable;
 use Xestify\plugins\discovery\PluginSourceService;
 use Xestify\plugins\lifecycle\PluginDeletionService;
 use Xestify\plugins\lifecycle\PluginIdentityService;
+use Xestify\plugins\lifecycle\PluginOrderService;
 use Xestify\plugins\lifecycle\PluginOutdatedService;
 use Xestify\plugins\lifecycle\PluginRollbackService;
 use Xestify\plugins\lifecycle\PluginStatusService;
@@ -43,7 +44,8 @@ class PluginAdministrationService
         private PluginConfigService $pluginConfigService,
         private PluginIdentityService $pluginIdentityService,
         private PluginDeletionService $pluginDeletionService,
-        private PluginSourceService $pluginSourceService
+        private PluginSourceService $pluginSourceService,
+        private PluginOrderService $pluginOrderService
     ) {
     }
 
@@ -223,6 +225,22 @@ class PluginAdministrationService
     public function deactivate(string $slug): array
     {
         return $this->pluginStatusService->deactivate($slug);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function moveUp(string $slug): array
+    {
+        return $this->pluginOrderService->moveUp($slug);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function moveDown(string $slug): array
+    {
+        return $this->pluginOrderService->moveDown($slug);
     }
 
     /**

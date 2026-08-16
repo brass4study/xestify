@@ -155,11 +155,51 @@ export class PluginManager {
 			return;
 		}
 
-		const tableHost = layout.createTableHost();
+		this.#renderPluginSection(layout, content, {
+			type: 'entity',
+			role: 'entities',
+			title: t('plugins.section.entities', 'Entidades'),
+			description: t('plugins.section.entities.description', 'El orden determina en qué posición aparecen en el menú de navegación.'),
+			emptyMessage: t('plugins.section.entities.empty', 'No hay plugins de entidad instalados.'),
+		});
 
-		const rows = this.#plugins.map((plugin) => ({
+		this.#renderPluginSection(layout, content, {
+			type: 'extension',
+			role: 'extensions',
+			title: t('plugins.section.extensions', 'Extensiones'),
+			description: t('plugins.section.extensions.description', 'El orden determina en qué posición aparecen sus pestañas dentro de cada entidad.'),
+			emptyMessage: t('plugins.section.extensions.empty', 'No hay plugins de extensión instalados.'),
+		});
+	}
+
+	#renderPluginSection(layout, content, { type, role, title, description, emptyMessage }) {
+		const plugins = this.#plugins.filter((plugin) => plugin.plugin_type === type);
+
+		const section = component.create('div')
+			.setClassName('mb-4')
+			.setData('role', `plugin-section-${role}`)
+			.setParent(content);
+
+		if (plugins.length === 0) {
+			this.#buildSectionHeader(title, description).setParent(section);
+			component.create('p', {
+				className: 'text-sm text-slate-400 italic',
+				text: emptyMessage,
+			})
+				.setData('role', `plugin-section-${role}-empty`)
+				.setParent(section);
+			return;
+		}
+
+		const tableHost = component.create('div')
+			.setClassName('list-table-host')
+			.setData('role', `plugin-table-host-${role}`)
+			.setParent(section);
+
+		const rows = plugins.map((plugin, index) => ({
 			__plugin: plugin,
 			__update: this.#updatesBySlug[String(plugin.slug)] ?? null,
+			__index: index,
 			name: String(plugin.name || plugin.slug || ''),
 		}));
 
@@ -172,13 +212,9 @@ export class PluginManager {
 		layout.createTable(rows, schema, {
 			container: tableHost,
 			onRefresh: () => this.#refreshData(),
+			tableDataRole: `plugin-table-${role}`,
+			toolbarStart: this.#buildSectionHeader(title, description),
 			extraColumns: [
-				{
-					key: 'type',
-					label: 'Tipo',
-					sortValue: (row) => row.__plugin?.plugin_type,
-					renderCell: (row) => this.#renderTypeBadge(row.__plugin),
-				},
 				{
 					key: 'version',
 					label: 'Versión',
@@ -194,7 +230,7 @@ export class PluginManager {
 				{
 					key: 'actions',
 					label: 'Acciones',
-					renderCell: (row) => this.#renderActionsCell(row.__plugin, row.__update),
+					renderCell: (row) => this.#renderActionsCell(row.__plugin, row.__update, row.__index, plugins.length),
 				},
 			],
 			rowDecorator: (tr, row) => {
@@ -209,20 +245,19 @@ export class PluginManager {
 				}
 			},
 		});
-
-		const renderedTable = tableHost.querySelector('table');
-		if (renderedTable instanceof HTMLTableElement) {
-			renderedTable.dataset.role = 'plugin-table';
-		}
 	}
 
-	#renderTypeBadge(plugin) {
-		const badge = component.create('span');
-		const isEntity = plugin.plugin_type === 'entity';
-		return badge
-			.setClassName(`${isEntity ? 'bg-sky-100 text-sky-700' : 'bg-fuchsia-100 text-fuchsia-700'} inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`)
-			.setData('role', 'plugin-type-badge')
-			.setText(isEntity ? t('plugins.type.entity', 'entidad') : t('plugins.type.extension', 'extensión'));
+	#buildSectionHeader(title, description) {
+		const header = component.create('div').setClassName('flex flex-col');
+		component.create('h3', {
+			className: 'text-sm font-semibold text-slate-900',
+			text: title,
+		}).setParent(header);
+		component.create('p', {
+			className: 'text-xs text-slate-500',
+			text: description,
+		}).setParent(header);
+		return header;
 	}
 
 	#renderVersionCell(plugin, updateInfo) {
@@ -250,7 +285,7 @@ export class PluginManager {
 			.setText(isActive ? t('plugins.status.active', 'Activo') : t('plugins.status.inactive', 'Inactivo'));
 	}
 
-	#renderActionsCell(plugin, updateInfo) {
+	#renderActionsCell(plugin, updateInfo, index, total) {
 		const actions = component.create('div').setClassName('flex flex-wrap gap-1.5');
 
 		const isActive = plugin.status === 'active';
@@ -279,10 +314,13 @@ export class PluginManager {
 			this.#pluginActionButton(t('plugins.delete', 'Borrar'), 'fa-trash', 'red', 'delete', plugin).setParent(actions);
 		}
 
+		this.#pluginActionButton(t('plugins.moveUp', 'Subir'), 'fa-arrow-up', 'slate', 'move-up', plugin, index === 0).setParent(actions);
+		this.#pluginActionButton(t('plugins.moveDown', 'Bajar'), 'fa-arrow-down', 'slate', 'move-down', plugin, index === total - 1).setParent(actions);
+
 		return actions;
 	}
 
-	#pluginActionButton(label, icon, tone, action, plugin) {
+	#pluginActionButton(label, icon, tone, action, plugin, disabled = false) {
 		const button = DynamicTable.buildActionButton({
 			label,
 			icon,
@@ -290,7 +328,7 @@ export class PluginManager {
 			dataRole: 'plugin-action',
 			dataAction: action,
 			onClick: () => this.#handlePluginAction(action, plugin, button),
-			disabled: false,
+			disabled,
 		});
 
 		button.dataset.slug = String(plugin.slug ?? '');
@@ -315,6 +353,11 @@ export class PluginManager {
 
 		if (action === 'delete') {
 			this.#handleDelete(plugin, button);
+			return;
+		}
+
+		if (action === 'move-up' || action === 'move-down') {
+			this.#handleMove(action, plugin, button);
 			return;
 		}
 
@@ -477,6 +520,23 @@ export class PluginManager {
 			this.renderError(`No se pudo borrar el plugin: ${error.message}`);
 		} finally {
 			UiResilienceService.clearButtonPending(button, 'Borrar');
+		}
+	}
+
+	async #handleMove(action, plugin, button) {
+		this.#feedbackMessage = null;
+		this.#feedbackType = null;
+		UiResilienceService.setButtonPending(button, `${t('plugins.moving', 'Reordenando')}...`);
+
+		try {
+			const endpoint = action === 'move-up' ? 'move-up' : 'move-down';
+			await this.#api.post(`/plugins/${plugin.slug}/${endpoint}`, {});
+			await this.#refreshData();
+			this.#onPluginsChanged(plugin);
+		} catch (error) {
+			this.renderError(`No se pudo reordenar el plugin: ${error.message}`);
+		} finally {
+			UiResilienceService.clearButtonPending(button, action === 'move-up' ? t('plugins.moveUp', 'Subir') : t('plugins.moveDown', 'Bajar'));
 		}
 	}
 

@@ -531,17 +531,10 @@ export class PluginConfig {
 
 	moveRelationRow(index, delta) {
 		this.syncStateFromDom();
-		const rows = this.#state.config.relations;
-		const target = index + delta;
-		if (target < 0 || target >= rows.length) {
-			return;
+		if (this.moveArrayRow(this.#state.config.relations, index, delta)) {
+			this.clearNotice();
+			this.render();
 		}
-
-		const tmp = rows[index];
-		rows[index] = rows[target];
-		rows[target] = tmp;
-		this.clearNotice();
-		this.render();
 	}
 
 	createEmptyRelation() {
@@ -932,17 +925,22 @@ export class PluginConfig {
 
 	moveRow(index, delta) {
 		this.syncStateFromDom();
-		const rows = this.#state.config.fields;
+		if (this.moveArrayRow(this.#state.config.fields, index, delta)) {
+			this.clearNotice();
+			this.render();
+		}
+	}
+
+	moveArrayRow(rows, index, delta) {
 		const target = index + delta;
 		if (target < 0 || target >= rows.length) {
-			return;
+			return false;
 		}
 
 		const tmp = rows[index];
 		rows[index] = rows[target];
 		rows[target] = tmp;
-		this.clearNotice();
-		this.render();
+		return true;
 	}
 
 	async saveFromDom(wrapper) {

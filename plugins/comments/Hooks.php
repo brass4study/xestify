@@ -24,6 +24,11 @@ use Xestify\core\HookDispatcher;
  */
 final class Hooks
 {
+    /** Used when there is no PDO (never happens at real runtime — see
+     * PluginClassLoader::instantiateWithOptionalPdo()) or no active instance
+     * yet to read a sort_order from. */
+    private const DEFAULT_PRIORITY = 50;
+
     public function __construct(private ?PDO $pdo = null)
     {
     }
@@ -55,13 +60,43 @@ final class Hooks
 
                 return $tabList;
             },
-            priority: 50
+            priority: $this->resolvePriority()
         );
     }
 
     /**
+     * Anchors this plugin's tab priority relative to OTHER extension plugins'
+     * hooks: the lowest plugins.sort_order among this plugin's own active
+     * instances, so the "Subir"/"Bajar" actions in PluginManager actually
+     * move where its tab lands among other plugins' tabs — instead of the
+     * fixed literal this used to be. Falls back to DEFAULT_PRIORITY when
+     * there is no PDO or no active instance (nothing would register a tab
+     * anyway in that case).
+     */
+    private function resolvePriority(): int
+    {
+        if ($this->pdo === null) {
+            return self::DEFAULT_PRIORITY;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT MIN(sort_order) AS min_sort_order
+               FROM plugins
+              WHERE manifest_json->>'name' = 'comments'
+                AND manifest_json->>'type' = 'extension'
+                AND status = 'active'"
+        );
+        $stmt->execute();
+        $value = $stmt->fetchColumn();
+
+        return $value !== false && $value !== null ? (int) $value : self::DEFAULT_PRIORITY;
+    }
+
+    /**
      * @return list<string> slugs of active `comments` instances whose
-     *   target_entity configuration allows $entity
+     *   target_entity configuration allows $entity, ordered by their own
+     *   sort_order (Subir/Bajar) so admin-configured order also applies
+     *   between several active instances of this same plugin.
      */
     private function allowedInstances(string $entity): array
     {
@@ -74,7 +109,8 @@ final class Hooks
                FROM plugins
               WHERE manifest_json->>'name' = 'comments'
                 AND manifest_json->>'type' = 'extension'
-                AND status = 'active'"
+                AND status = 'active'
+              ORDER BY sort_order ASC, slug ASC"
         );
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

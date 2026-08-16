@@ -30,6 +30,7 @@ use Xestify\plugins\lifecycle\PluginDeletionService;
 use Xestify\plugins\lifecycle\PluginHookRegistrar;
 use Xestify\plugins\lifecycle\PluginIdentityService;
 use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
+use Xestify\plugins\lifecycle\PluginOrderService;
 use Xestify\plugins\lifecycle\PluginOutdatedService;
 use Xestify\plugins\lifecycle\PluginRollbackService;
 use Xestify\plugins\lifecycle\PluginStatusService;
@@ -222,6 +223,11 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginSourceService::class),
             $container->get(PluginRepository::class)
         ));
+        $container->singleton(PluginOrderService::class, fn() => new PluginOrderService(
+            $container->get(Database::class),
+            $container->get(PluginRepository::class),
+            $container->get(PluginWriteRepository::class)
+        ));
         $container->singleton(PluginConfigFieldNormalizer::class, fn() => new PluginConfigFieldNormalizer());
         $container->singleton(ExtensionPluginConfigService::class, fn() => new ExtensionPluginConfigService(
             $container->get(PluginRepository::class),
@@ -259,7 +265,8 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginConfigService::class),
             $container->get(PluginIdentityService::class),
             $container->get(PluginDeletionService::class),
-            $container->get(PluginSourceService::class)
+            $container->get(PluginSourceService::class),
+            $container->get(PluginOrderService::class)
         ));
     }
 }

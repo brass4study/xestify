@@ -69,6 +69,24 @@ plugin quien decide qué hooks registra y con qué prioridad. Activar/desactivar
 completo (`plugins.status`) es la única palanca real; no existe activación/desactivación
 de un hook individual.
 
+No existe ninguna interfaz formal para `Hooks::register()` (es pura convención), y
+`registerActiveHooks()` invoca a `register($dispatcher)` de forma polimórfica sobre
+cualquier plugin activo — cambiar esa firma afectaría a todos los plugins, no solo a los
+que usan `registerTabs`/`registerActions`. Por eso, un plugin `extension` que quiera que
+su prioridad sea configurable desde `PluginManager` (acciones Subir/Bajar sobre
+`plugins.sort_order`) no cambia el contrato: se autoconsulta su propio `sort_order` a
+través del `PDO` opcional que `PluginClassLoader` ya le inyecta por constructor, y lo
+pasa como `priority` al registrar. `plugins/comments/Hooks.php` (`resolvePriority()`) es
+la referencia de este patrón — usa el mínimo `sort_order` entre sus propias instancias
+activas, ya que `plugin_name` no es único y una sola llamada a `register()` cubre todas
+las instancias activas de ese plugin técnico.
+
+(Nota histórica: hubo un intento anterior de resolver esto con una tabla `plugin_hooks`
+dedicada — `slug`, `hook_name`, `priority`, `enabled` — pero `PluginHookRegistrar` nunca
+llegó a leerla y se eliminó como infraestructura muerta. El patrón de autoconsulta vía
+`sort_order` evita esa complejidad: no añade tablas ni cambia el contrato de
+`register()`.)
+
 ## Buenas practicas
 
 - Hooks idempotentes cuando sea posible

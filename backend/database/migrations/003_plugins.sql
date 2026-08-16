@@ -16,6 +16,9 @@
 --   be registered as multiple independent instances (each with its own
 --   unique slug/data), e.g. two "persons" rows with different slugs.
 -- slug: editable navigation/URL identifier (STORY 10.3), unique.
+-- sort_order: manual display order (Subir/Bajar actions in PluginManager),
+--   drives both the plugin table order and the navigation menu order for
+--   entities.
 -- Idempotent: safe to run multiple times (CREATE TABLE IF NOT EXISTS).
 -- STORY 2.4, STORY 10.3
 
@@ -25,6 +28,7 @@ CREATE TABLE IF NOT EXISTS plugins (
     status         VARCHAR(20)  NOT NULL DEFAULT 'inactive',
     manifest_json  JSONB        NOT NULL,
     schema_json    JSONB        NULL,
+    sort_order     INTEGER      NOT NULL DEFAULT 0,
     installed_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 

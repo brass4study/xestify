@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Xestify\plugins\lifecycle\PluginOrderService;
 use Xestify\plugins\lifecycle\PluginOutdatedService;
 use Xestify\plugins\lifecycle\PluginRollbackService;
 use Xestify\plugins\schema\InstalledPluginSchemaValidator;
@@ -114,6 +115,15 @@ function buildPluginStatusService(string $root, \PDO $pdo): PluginStatusService
     );
 }
 
+function buildPluginOrderService(\PDO $pdo): PluginOrderService
+{
+    return new PluginOrderService(
+        $pdo,
+        buildPluginRepository($pdo),
+        buildPluginWriteRepository($pdo)
+    );
+}
+
 function buildPluginIdentityService(\PDO $pdo): PluginIdentityService
 {
     return new PluginIdentityService(
@@ -162,6 +172,7 @@ function buildPluginAdministrationService(string $root, \PDO $pdo): PluginAdmini
         buildPluginConfigService($root, $pdo),
         buildPluginIdentityService($pdo),
         buildPluginDeletionService($root, $pdo),
-        buildPluginSourceService($root, $pdo)
+        buildPluginSourceService($root, $pdo),
+        buildPluginOrderService($pdo)
     );
 }

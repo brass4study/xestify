@@ -1308,8 +1308,7 @@ export class AppController {
         pageHeader: {
           title: 'Gestión de plugins',
           subtitle: 'Sincroniza, activa y configura plugins del sistema.',
-        },
-        footerText: 'Zona de extensiones preparada para sync, update y rollback.',
+        }
       };
     }
 
