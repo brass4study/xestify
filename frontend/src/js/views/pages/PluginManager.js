@@ -289,6 +289,9 @@ export class PluginManager {
 	#renderActionsCell(plugin, updateInfo, index, total) {
 		const actions = component.create('div').setClassName('flex flex-nowrap gap-1.5');
 
+		this.#pluginActionButton(t('plugins.moveUp', 'Subir'), 'fa-arrow-up', 'slate', 'move-up', plugin, index === 0).setParent(actions);
+		this.#pluginActionButton(t('plugins.moveDown', 'Bajar'), 'fa-arrow-down', 'slate', 'move-down', plugin, index === total - 1).setParent(actions);
+
 		const isActive = plugin.status === 'active';
 		this.#pluginActionButton(
 			isActive ? t('plugins.deactivate', 'Desactivar') : t('plugins.activate', 'Activar'),
@@ -314,9 +317,6 @@ export class PluginManager {
 		if (!isActive) {
 			this.#pluginActionButton(t('plugins.delete', 'Borrar'), 'fa-trash', 'red', 'delete', plugin).setParent(actions);
 		}
-
-		this.#pluginActionButton(t('plugins.moveUp', 'Subir'), 'fa-arrow-up', 'slate', 'move-up', plugin, index === 0).setParent(actions);
-		this.#pluginActionButton(t('plugins.moveDown', 'Bajar'), 'fa-arrow-down', 'slate', 'move-down', plugin, index === total - 1).setParent(actions);
 
 		return actions;
 	}

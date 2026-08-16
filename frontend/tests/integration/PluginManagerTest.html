@@ -220,7 +220,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="activate"]');
     assertTrue(btn !== null, 'Action button should exist');
     assertEquals(btn.dataset.action, 'activate', 'Button action should be activate');
     assertTrue(btn.textContent.includes('Activar'), 'El botón debe indicar Activar');
@@ -242,7 +242,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="deactivate"]');
     assertEquals(btn.dataset.action, 'deactivate', 'Button action should be deactivate');
     assertTrue(btn.textContent.includes('Desactivar'), 'El botón debe indicar Desactivar');
   });
@@ -267,7 +267,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="activate"]');
     btn.click();
 
     // Wait for async operation
@@ -301,7 +301,7 @@
     });
     await manager.init();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="activate"]');
     btn.click();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -336,7 +336,7 @@
     assertTrue(densityOption !== null, 'Density option should exist');
     densityOption.click();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="activate"]');
     assertTrue(btn !== null, 'Action button should still exist after the density change');
     btn.click();
 
@@ -370,7 +370,7 @@
     const manager = new PluginManager(content, api, { shellLayout: shell });
     await manager.init();
 
-    const btn = content.querySelector('[data-role="plugin-action"]');
+    const btn = content.querySelector('[data-action="activate"]');
     btn.click();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -416,7 +416,7 @@
     const manager = new PluginManager(container, api);
     await manager.init();
 
-    const btn = container.querySelector('[data-role="plugin-action"]');
+    const btn = container.querySelector('[data-action="activate"]');
     btn.click();
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -549,7 +549,7 @@
     assertTrue(updateBtn !== null, 'Update button should be visible');
   });
 
-  await test('shows configure before update and rollback actions', async () => {
+  await test('shows move actions before configure, update and rollback actions', async () => {
     const container = makeSandbox();
     const api = new MockApi({
       '/plugins': {
@@ -575,7 +575,7 @@
 
     const actions = [...container.querySelectorAll('[data-role="plugin-row"] [data-role="plugin-action"]')]
       .map((button) => button.dataset.action);
-    assertEquals(actions.join(','), 'deactivate,configure,update,rollback,move-up,move-down', 'Optional plugin actions should follow Configure, move actions come last');
+    assertEquals(actions.join(','), 'move-up,move-down,deactivate,configure,update,rollback', 'Move actions should always come first, followed by Configure and the rest');
   });
 
   await test('shows rollback button only when can_rollback is true', async () => {
