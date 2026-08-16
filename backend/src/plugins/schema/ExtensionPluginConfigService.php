@@ -65,6 +65,7 @@ final class ExtensionPluginConfigService
                 'type' => $definition['type'] ?? 'string',
                 'required' => $definition['required'] ?? false,
                 'label' => $definition['label'] ?? $key,
+                'options' => $definition['options'] ?? null,
             ]);
             $source = isset($definition['origin']) && is_string($definition['origin'])
                 ? $definition['origin']
@@ -81,6 +82,9 @@ final class ExtensionPluginConfigService
                 'locked' => !$editable,
                 'source' => $source,
             ];
+            if (isset($normalized['options'])) {
+                $rowsByKey[$key]['options'] = $normalized['options'];
+            }
         }
 
         $targetEntity = trim($targetEntity);
@@ -150,13 +154,17 @@ final class ExtensionPluginConfigService
             'summaryView' => $row['summaryView'],
         ];
 
+        if ($row['type'] === 'select' && isset($row['options'])) {
+            $nextField['options'] = $row['options'];
+        }
+
         if ($existingDefinition === null) {
             $nextField['origin'] = 'additional';
             return $nextField;
         }
 
         foreach ($existingDefinition as $metaKey => $metaValue) {
-            if (in_array($metaKey, ['type', 'required', 'label'], true)) {
+            if (in_array($metaKey, ['type', 'required', 'label', 'options'], true)) {
                 continue;
             }
 

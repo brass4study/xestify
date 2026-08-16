@@ -247,6 +247,10 @@ final class PluginConfigService
                 'locked' => false,
                 'source' => 'suggested',
             ];
+            $rowOptions = $activeField['options'] ?? $field['options'] ?? null;
+            if ($rowOptions !== null) {
+                $rowsByKey[$key]['options'] = $rowOptions;
+            }
         }
 
         foreach ($activeCustom as $field) {
@@ -265,6 +269,9 @@ final class PluginConfigService
                 'locked' => false,
                 'source' => 'additional',
             ];
+            if (isset($field['options'])) {
+                $rowsByKey[$key]['options'] = $field['options'];
+            }
         }
 
         return [
@@ -491,6 +498,9 @@ final class PluginConfigService
                 'summaryView' => $row['summaryView'],
                 'origin' => $isSuggested ? 'suggested' : 'additional',
             ];
+            if (isset($row['options'])) {
+                $candidate['options'] = $row['options'];
+            }
 
             if ($isSuggested) {
                 $suggestedCatalog[] = $candidate;

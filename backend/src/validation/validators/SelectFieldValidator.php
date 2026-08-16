@@ -21,7 +21,8 @@ final class SelectFieldValidator implements FieldValidatorInterface
         }
 
         foreach ($options as $option) {
-            if ((string) $option === (string) $value) {
+            $optionValue = is_array($option) ? ($option['value'] ?? null) : $option;
+            if ($optionValue !== null && (string) $optionValue === (string) $value) {
                 return [];
             }
         }

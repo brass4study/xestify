@@ -6,6 +6,7 @@ import { Api } from '../../models/ApiClientModel.js';
 import { FormLayout } from '../layout/FormLayout.js';
 import { DynamicTable } from '../modules/DynamicTable.js';
 import { component } from '../modules/ComponentFactory.js';
+import { Modal } from '../modules/Modal.js';
 import { UiResilienceService } from '../../services/UiResilienceService.js';
 
 export class PluginConfig {
@@ -661,6 +662,9 @@ export class PluginConfig {
 
 	renderTypeSelect(field) {
 		const { editable } = this.fieldMeta(field);
+		const rowIndex = Number(field.__rowIndex ?? 0);
+		const wrapper = component.create('div').setClassName('flex items-center gap-1');
+
 		const select = component.create('inputSelect', {
 			name: 'type',
 			value: field.type || 'string',
@@ -669,7 +673,31 @@ export class PluginConfig {
 			.setClassName(this.tableControlClassName())
 			.setData('name', 'type');
 		select.disabled = !editable;
-		return select;
+
+		const optionsButton = this.buildRowActionButton('', 'fa-gear', 'slate', 'edit-options', rowIndex, !editable, async () => {
+			const result = await this.openOptionsEditor(rowIndex);
+			if (result !== null) {
+				this.#state.config.fields[rowIndex].options = result;
+				this.clearNotice();
+				this.render();
+			}
+		});
+		optionsButton.setAttribute('aria-label', this.optionsButtonLabel(field));
+		optionsButton.title = this.optionsButtonLabel(field);
+		optionsButton.classList.toggle('hidden', field.type !== 'select');
+
+		select.addEventListener('change', () => {
+			optionsButton.classList.toggle('hidden', select.value !== 'select');
+		});
+
+		select.setParent(wrapper);
+		optionsButton.setParent(wrapper);
+		return wrapper;
+	}
+
+	optionsButtonLabel(field) {
+		const count = Array.isArray(field.options) ? field.options.length : 0;
+		return count > 0 ? `Configurar opciones (${count})` : 'Configurar opciones';
 	}
 
 	renderLabelInput(field) {
@@ -734,6 +762,132 @@ export class PluginConfig {
 			onClick,
 		});
 		return button.setData('rowIndex', rowIndex);
+	}
+
+	/**
+	 * Opens the value/label list editor for a `select` field's options
+	 * (gear button next to the "Tipo" select). Resolves with the saved
+	 * {value, label}[] array, or null if the admin cancelled — the caller
+	 * decides whether to write that back into #state.
+	 */
+	openOptionsEditor(rowIndex) {
+		this.syncStateFromDom();
+		const field = this.#state.config.fields[rowIndex];
+		if (!field) {
+			return Promise.resolve(null);
+		}
+
+		const options = Array.isArray(field.options) ? field.options.map((option) => ({ ...option })) : [];
+		const title = `Opciones de "${field.key || field.label || 'campo'}"`;
+
+		return new Promise((resolve) => {
+			const modal = new Modal(this.#container, { title });
+			const body = component.create('div').setClassName('grid gap-3');
+			const list = component.create('div').setClassName('grid gap-2').setData('role', 'options-list');
+			const errorText = component.create('p')
+				.setClassName('hidden text-sm text-red-600')
+				.setData('role', 'options-error');
+
+			const syncOptionsFromDom = () => {
+				Array.from(list.children).forEach((rowEl, index) => {
+					const valueInput = rowEl.querySelector('[data-name="option-value"]');
+					const labelInput = rowEl.querySelector('[data-name="option-label"]');
+					if (options[index]) {
+						options[index] = {
+							value: valueInput ? valueInput.value : '',
+							label: labelInput ? labelInput.value : '',
+						};
+					}
+				});
+			};
+
+			const renderRows = () => {
+				list.replaceChildren();
+				options.forEach((option, index) => {
+					const row = component.create('div').setClassName('flex items-center gap-2');
+					const valueInput = component.create('inputText', {
+						value: option.value ?? '',
+						placeholder: 'Valor',
+					})
+						.setClassName(this.tableControlClassName())
+						.setData('name', 'option-value');
+					const labelInput = component.create('inputText', {
+						value: option.label ?? '',
+						placeholder: 'Etiqueta',
+					})
+						.setClassName(this.tableControlClassName())
+						.setData('name', 'option-label');
+					const removeButton = DynamicTable.buildActionButton({
+						icon: 'fa-trash',
+						tone: 'red',
+						dataAction: 'remove-option',
+						onClick: () => {
+							syncOptionsFromDom();
+							options.splice(index, 1);
+							renderRows();
+						},
+					});
+
+					valueInput.setParent(row);
+					labelInput.setParent(row);
+					removeButton.setParent(row);
+					row.setParent(list);
+				});
+			};
+			renderRows();
+
+			const addButton = component.create('button', {
+				label: '+ Añadir opción',
+				variant: 'secondary',
+				size: 'xs',
+			});
+			addButton.addEventListener('click', () => {
+				syncOptionsFromDom();
+				options.push({ value: '', label: '' });
+				renderRows();
+			});
+
+			const actions = component.create('div').setClassName('flex justify-end gap-2');
+			const cancelButton = component.create('button', { label: 'Cancelar', variant: 'secondary', size: 'xs' });
+			const saveButton = component.create('button', { label: 'Guardar', variant: 'primary', size: 'xs' });
+
+			const closeWith = (result) => {
+				modal.destroy();
+				resolve(result);
+			};
+
+			cancelButton.addEventListener('click', () => closeWith(null));
+			saveButton.addEventListener('click', () => {
+				syncOptionsFromDom();
+				const collected = options
+					.map((option) => ({
+						value: String(option.value ?? '').trim(),
+						label: String(option.label ?? '').trim(),
+					}))
+					.filter((option) => option.value !== '');
+
+				const seenValues = new Set();
+				for (const option of collected) {
+					if (seenValues.has(option.value)) {
+						errorText.setText(`El valor "${option.value}" está duplicado.`).removeClass('hidden');
+						return;
+					}
+					seenValues.add(option.value);
+				}
+
+				closeWith(collected.map((option) => ({ value: option.value, label: option.label || option.value })));
+			});
+
+			list.setParent(body);
+			addButton.setParent(body);
+			errorText.setParent(body);
+			cancelButton.setParent(actions);
+			saveButton.setParent(actions);
+			actions.setParent(body);
+
+			modal.setContent(body);
+			modal.show();
+		});
 	}
 
 	/**
@@ -967,6 +1121,7 @@ export class PluginConfig {
 			summaryView: true,
 			locked: false,
 			source: 'additional',
+			options: [],
 		};
 	}
 
@@ -1085,6 +1240,7 @@ export class PluginConfig {
 			summaryView: summaryViewCheckbox ? !!summaryViewCheckbox.checked : true,
 			locked: original.locked === true,
 			source: String(original.source ?? 'additional'),
+			options: Array.isArray(original.options) ? original.options : [],
 		};
 	}
 
