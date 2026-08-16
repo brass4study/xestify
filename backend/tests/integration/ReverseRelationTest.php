@@ -144,10 +144,37 @@ TestSuite::run('GET /entities/{target}/tabs includes the reverse relation tab', 
         $tabs = $result['data']['tabs'] ?? [];
         assertEquals(1, count($tabs), 'must include exactly one reverse relation tab');
         assertEquals("relation:{$sourceSlug}:id_target", $tabs[0]['id'] ?? null, 'tab id must follow relation:{source}:{key}');
-        assertEquals('Objetivo', $tabs[0]['label'] ?? null, 'tab label must be the relation label');
+        assertEquals($sourceSlug, $tabs[0]['label'] ?? null, 'tab label must be the source entity label, not the relation field label');
         assertEquals('relation', $tabs[0]['type'] ?? null, 'tab type must be relation');
         assertEquals($sourceSlug, $tabs[0]['source_entity'] ?? null, 'tab source_entity must be the source plugin slug');
         assertEquals('id_target', $tabs[0]['key'] ?? null, 'tab key must be the relation key');
+    } finally {
+        cleanupReverseRelationFixture($pdo, $sourceSlug);
+        cleanupReverseRelationFixture($pdo, $targetSlug);
+    }
+});
+
+TestSuite::run('GET /entities/{target}/tabs disambiguates with the relation label when the same source has two relations to the same target', function () use ($pdo): void {
+    $targetSlug = 'test_reverse_target_' . bin2hex(random_bytes(3));
+    $sourceSlug = 'test_reverse_source_' . bin2hex(random_bytes(3));
+
+    try {
+        insertReverseRelationPlugin($pdo, $targetSlug);
+        insertReverseRelationPlugin($pdo, $sourceSlug, [
+            ['key' => 'id_buyer', 'type' => 'belongs_to', 'target_entity' => $targetSlug, 'target_field' => 'id', 'label' => 'Comprador', 'required' => false],
+            ['key' => 'id_seller', 'type' => 'belongs_to', 'target_entity' => $targetSlug, 'target_field' => 'id', 'label' => 'Vendedor', 'required' => false],
+        ]);
+
+        $ctrl = buildReverseRelationController();
+        $result = callReverseRelationController($ctrl, 'tabs', ['slug' => $targetSlug]);
+
+        assertTrue($result['ok'] ?? false, 'tabs() must succeed');
+        $tabs = $result['data']['tabs'] ?? [];
+        assertEquals(2, count($tabs), 'must include one tab per relation');
+
+        $labels = array_column($tabs, 'label');
+        assertTrue(in_array("{$sourceSlug} (Comprador)", $labels, true), 'buyer tab must combine entity label and relation label');
+        assertTrue(in_array("{$sourceSlug} (Vendedor)", $labels, true), 'seller tab must combine entity label and relation label');
     } finally {
         cleanupReverseRelationFixture($pdo, $sourceSlug);
         cleanupReverseRelationFixture($pdo, $targetSlug);

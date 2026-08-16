@@ -142,7 +142,12 @@ claves arbitrarias del contenido JSONB.
     No pasan por `PluginPanelRegistry` ni tienen `plugin.js` propio — el
     frontend construye directamente un panel genérico (`RelatedRecordsPanel`)
     que consume `GET .../records?field={key}&value={id del registro actual}`
-    sobre `source_entity`.
+    sobre `source_entity`. `label` es el `label` de la entidad origen (no el
+    label del campo de la relación), porque la tab lista *registros de esa
+    entidad*; si la misma entidad origen declara más de una relación hacia
+    esta (p. ej. "Comprador" y "Vendedor" ambas hacia `persons`), cada tab
+    añade el label de su relación entre paréntesis para distinguirlas
+    (`"Orders (Comprador)"`, `"Orders (Vendedor)"`).
 - Respuesta: `{ "ok": true, "data": { "tabs": [ ... ], "entity": "persons" } }`
 
 ## GET /api/v1/entities/{slug}/actions
