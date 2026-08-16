@@ -443,6 +443,7 @@ export class PluginConfig {
 				label: 'Acciones',
 				headerClassName,
 				cellClassName: actionsCellClassName,
+				shrink: true,
 				renderCell: (relation) => this.renderRelationActions(relation),
 			},
 		];
@@ -511,7 +512,7 @@ export class PluginConfig {
 	}
 
 	renderRelationActions(relation) {
-		const actions = component.create('div').setClassName('flex flex-wrap items-center gap-2');
+		const actions = component.create('div').setClassName('flex flex-nowrap items-center gap-2');
 		const rowIndex = Number(relation.__rowIndex ?? 0);
 		const lastIndex = (this.#state?.config?.relations?.length ?? 1) - 1;
 
@@ -607,6 +608,7 @@ export class PluginConfig {
 				label: 'Acciones',
 				headerClassName,
 				cellClassName: actionsCellClassName,
+				shrink: true,
 				renderCell: (field) => this.renderActions(field),
 			},
 		];
@@ -725,7 +727,7 @@ export class PluginConfig {
 
 	renderActions(field) {
 		const { immutableField } = this.fieldMeta(field);
-		const actions = component.create('div').setClassName('flex flex-wrap items-center gap-2');
+		const actions = component.create('div').setClassName('flex flex-nowrap items-center gap-2');
 		const rowIndex = Number(field.__rowIndex ?? 0);
 		const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
 

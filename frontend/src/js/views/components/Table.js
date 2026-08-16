@@ -51,15 +51,23 @@ export class TableComponent extends BaseComponent {
     const headerRow = component.create('tr');
     this._columns.forEach((column) => {
       const isSorted = column.sortDirection === 'asc' || column.sortDirection === 'desc';
+      const isSortable = column.sortable === true && typeof column.onSort === 'function';
       const header = component.create('th', {
         className: column.headerClassName ?? `group border-b border-slate-100 bg-slate-50 ${spacing.header} text-xs font-semibold uppercase tracking-wide text-slate-600`,
       });
-      header.classList.add('transition-colors', 'duration-300', 'ease-out', 'hover:bg-slate-200');
+      if (isSortable) {
+        header.classList.add('transition-colors', 'duration-300', 'ease-out', 'hover:bg-slate-200');
+      } else {
+        header.classList.add('cursor-default');
+      }
+      if (column.shrink === true) {
+        header.classList.add('w-[1%]', 'whitespace-nowrap');
+      }
       if (isSorted) {
         header.classList.add('bg-slate-200');
         header.setData('sorted', 'true');
       }
-      if (column.sortable === true && typeof column.onSort === 'function') {
+      if (isSortable) {
         header.setData('sortable', 'true');
         header.setAttribute('aria-sort', this.sortAriaValue(column.sortDirection));
         const sortButton = component.create('button', {
@@ -102,6 +110,9 @@ export class TableComponent extends BaseComponent {
           if (isSorted) {
             td.classList.add('bg-slate-50');
             td.setData('sorted', 'true');
+          }
+          if (column.shrink === true) {
+            td.classList.add('w-[1%]', 'whitespace-nowrap');
           }
           const value = this.addCell(row, column, rowIndex);
           if (value instanceof Node) {

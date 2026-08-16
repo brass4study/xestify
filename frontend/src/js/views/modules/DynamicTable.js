@@ -114,6 +114,7 @@ export class DynamicTable {
 			sortable: column.sortValue !== null,
 			sortDirection: this.#sortKey === column.key ? this.#sortDirection : null,
 			onSort: () => this.sortBy(column.key, column.sortValue),
+			shrink: column.shrink,
 		});
 		const columns = [
 			...this.#extraColumnsStart.filter((column) => this.#visibleColumns.has(column.key)).map(toTableColumn),
@@ -679,6 +680,7 @@ export class DynamicTable {
 				cellClassName: typeof column.cellClassName === 'string' && column.cellClassName !== '' ? column.cellClassName : null,
 				renderCell: column.renderCell,
 				sortValue: typeof column.sortValue === 'function' ? column.sortValue : null,
+				shrink: column.shrink === true,
 			}));
 	}
 

@@ -135,6 +135,7 @@ export class EntityList {
 				key: 'delete-action',
 				label: 'Acciones',
 				position: 'end',
+				shrink: true,
 				renderCell: (record) => DynamicTable.buildActionButton({
 					icon: 'fa-trash',
 					tone: 'red',

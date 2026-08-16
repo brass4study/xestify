@@ -230,6 +230,7 @@ export class PluginManager {
 				{
 					key: 'actions',
 					label: 'Acciones',
+					shrink: true,
 					renderCell: (row) => this.#renderActionsCell(row.__plugin, row.__update, row.__index, plugins.length),
 				},
 			],
@@ -286,7 +287,7 @@ export class PluginManager {
 	}
 
 	#renderActionsCell(plugin, updateInfo, index, total) {
-		const actions = component.create('div').setClassName('flex flex-wrap gap-1.5');
+		const actions = component.create('div').setClassName('flex flex-nowrap gap-1.5');
 
 		const isActive = plugin.status === 'active';
 		this.#pluginActionButton(

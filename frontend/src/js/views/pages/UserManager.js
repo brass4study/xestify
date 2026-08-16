@@ -136,6 +136,7 @@ export class UserManager {
 				},
 				{
 					label: t('ui.actions.actions', 'Acciones'),
+					shrink: true,
 					renderCell: (row) => this.#buildEditAction(row.__raw),
 				},
 			],
