@@ -32,7 +32,7 @@ hacer a continuacion.
 Esta regla es mandatoria. No hay excepciones. Nunca omitirla.
 
 Antes de ejecutar `git commit` para cualquier story completada, DEBES actualizar
-los tres archivos siguientes en este orden:
+los archivos siguientes en este orden:
 
 1. `docs/10-productivity/sesion.md`: marcar la story como completada, añadir commit hash,
   actualizar "Ultima actualizacion" y "Proxima story".
@@ -44,6 +44,13 @@ los tres archivos siguientes en este orden:
 4. Si el commit es un `feat` de una story o de un EPIC, tambien debes revisar y
   actualizar `docs/11-backlog/backlog.md` y `docs/11-backlog/roadmap.md` para que el
   estado del backlog quede alineado con la implementacion real.
+5. Si el commit es un `feat` de una story o de un EPIC, tambien debes revisar y
+  actualizar `README.md` (secciones "## Estado actual del proyecto (MVP)" y
+  "## Estado actual"): corte funcional, story/EPIC incluida, siguiente foco, y
+  cualquier bullet de capacidades que la story haya añadido o cambiado. Este
+  paso vive en el mismo checklist obligatorio que sesion.md/productividad.md/
+  prompts.md/backlog.md — no es una revision aparte y opcional "si cambia
+  arquitectura o contrato" (ver incidente en "Errores y lecciones aprendidas").
 
 Flujo obligatorio para cada story:
 
@@ -53,7 +60,9 @@ Flujo obligatorio para cada story:
 3. Actualizar docs/10-productivity/sesion.md
 4. Actualizar docs/10-productivity/productividad.md
 5. Actualizar docs/10-productivity/prompts.md
-6. git add -A && git commit con el formato obligatorio
+6. Si aplica (feat de story/EPIC): actualizar docs/11-backlog/backlog.md y roadmap.md
+7. Si aplica (feat de story/EPIC): actualizar README.md
+8. git add -A && git commit con el formato obligatorio
 ```
 
 Si el trabajo no corresponde a una story completada, no se deben tocar estos
@@ -84,10 +93,10 @@ Formato de commit obligatorio para stories y EPICs:
   cualquier duda sobre si aplica una excepcion, pausar y preguntar antes de
   actuar.
 - Antes de comitear una story, releer explicitamente la REGLA OBLIGATORIA de
-  `docs/10-productivity/` (arriba) y tratarla como checklist a verificar, en vez
-  de inferir su alcance copiando el commit de documentacion vivo mas reciente:
-  el commit anterior es evidencia de un alcance valido para ese caso, no del
-  alcance completo exigido en general.
+  `docs/10-productivity/` (arriba, incluye `README.md`) y tratarla como checklist
+  a verificar, en vez de inferir su alcance copiando el commit de documentacion
+  vivo mas reciente: el commit anterior es evidencia de un alcance valido para
+  ese caso, no del alcance completo exigido en general.
 - Despues de crear un commit confirmado, ejecutar `git push` para sincronizar el
   repositorio local con el remoto, salvo que el usuario indique explicitamente lo
   contrario.
@@ -214,7 +223,9 @@ git config --local core.eol lf
 
 - Mantener alineados `README.md`, `docs/11-backlog/backlog.md`,
   `docs/09-history/decisiones-tecnicas.md` y documentacion de plugins cuando cambie
-  arquitectura o contrato.
+  arquitectura o contrato, sea o no cierre de story. Para el cierre de una story
+  o EPIC, `README.md` no es una revision opcional bajo este criterio: es un paso
+  numerado de la REGLA OBLIGATORIA de `docs/10-productivity/` (arriba).
 - Evitar referencias nuevas a `system_entities`, `entity_metadata` o migraciones
   obsoletas salvo como contexto historico.  
 
@@ -233,4 +244,3 @@ el remedio aplicado. La regla que queda vigente tras cada incidente se integra
 en la sección de este archivo a la que corresponda (`## Commits`, `## Tests`,
 etc.); aquí solo se archiva el caso concreto como referencia.
 
-Todavía no hay incidentes registrados en esta sección.

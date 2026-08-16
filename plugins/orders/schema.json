@@ -1,0 +1,43 @@
+{
+    "identities": {
+        "id": {
+            "type": "uuid",
+            "label": "ID",
+            "auto_generated": true,
+            "editable": false
+        }
+    },
+    "fields": {
+        "order_date": {
+            "type": "date",
+            "required": true,
+            "label": "Fecha del pedido"
+        },
+        "status": {
+            "type": "select",
+            "required": true,
+            "label": "Estado",
+            "options": [
+                { "value": "pendiente", "label": "Pendiente" },
+                { "value": "en_proceso", "label": "En proceso" },
+                { "value": "entregado", "label": "Entregado" },
+                { "value": "cancelado", "label": "Cancelado" }
+            ]
+        },
+        "total_amount": {
+            "type": "number",
+            "required": true,
+            "label": "Importe total"
+        }
+    },
+    "custom_fields": [
+        {
+            "key": "notes",
+            "type": "text",
+            "required": false,
+            "label": "Notas",
+            "summaryView": false
+        }
+    ],
+    "relations": []
+}

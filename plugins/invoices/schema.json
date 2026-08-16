@@ -1,0 +1,47 @@
+{
+    "identities": {
+        "id": {
+            "type": "uuid",
+            "label": "ID",
+            "auto_generated": true,
+            "editable": false
+        }
+    },
+    "fields": {
+        "invoice_number": {
+            "type": "string",
+            "required": true,
+            "label": "Número de factura"
+        },
+        "issue_date": {
+            "type": "date",
+            "required": true,
+            "label": "Fecha de emisión"
+        },
+        "amount": {
+            "type": "number",
+            "required": true,
+            "label": "Importe"
+        },
+        "payment_status": {
+            "type": "select",
+            "required": true,
+            "label": "Estado de pago",
+            "options": [
+                { "value": "pendiente", "label": "Pendiente" },
+                { "value": "pagada", "label": "Pagada" }
+            ]
+        }
+    },
+    "custom_fields": [],
+    "relations": [
+        {
+            "key": "id_order",
+            "type": "belongs_to",
+            "target_entity": "orders",
+            "target_field": "id",
+            "required": true,
+            "label": "Pedido"
+        }
+    ]
+}

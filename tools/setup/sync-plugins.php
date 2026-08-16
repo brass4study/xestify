@@ -17,6 +17,7 @@ use Xestify\plugins\discovery\PluginSourceService;
 use Xestify\plugins\lifecycle\PluginClassLoader;
 use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
 use Xestify\repositories\PluginRepository;
+use Xestify\repositories\PluginWriteRepository;
 
 $pluginsDir = dirname(__DIR__, 2) . '/plugins';
 $pdo = Database::connection();
@@ -31,6 +32,7 @@ $pluginSyncService = new PluginSyncService(
         new PluginDependencyValidator($pluginRepository)
     ),
     $pluginRepository,
+    new PluginWriteRepository($pdo, new PluginSchemaCodec()),
     new PluginLifecycleInvoker(new PluginClassLoader($pluginsDir, $pdo)),
     new PluginSchemaCodec(),
     new InstalledPluginSchemaValidator()

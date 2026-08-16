@@ -1,0 +1,19 @@
+{
+    "identities": {
+        "id": {
+            "type": "uuid",
+            "label": "ID",
+            "auto_generated": true,
+            "editable": false
+        }
+    },
+    "fields": {
+        "name": {
+            "type": "string",
+            "required": true,
+            "label": "Nombre"
+        }
+    },
+    "custom_fields": [],
+    "relations": []
+}

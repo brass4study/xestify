@@ -37,6 +37,8 @@ use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
 
+const BLOCKED_BY_HOOK_MESSAGE = 'Blocked by hook';
+
 // ---------------------------------------------------------------------------
 // Stubs
 // ---------------------------------------------------------------------------
@@ -346,7 +348,7 @@ TestSuite::run('updateRecord() passes record id to beforeSave context', function
 TestSuite::run('updateRecord() beforeSave blocking throws HookException', function (): void {
     $hooks = new HookDispatcher();
     $hooks->register('beforeSave', static function (array $ctx): array { // NOSONAR
-        throw new HookException('Blocked by hook');
+        throw new HookException(BLOCKED_BY_HOOK_MESSAGE);
     });
 
     [$svc, $repo] = buildHooksService($hooks);
@@ -432,7 +434,7 @@ TestSuite::run('deleteRecord() dispatches afterDelete after repository->delete()
 TestSuite::run('deleteRecord() beforeDelete throwing HookException blocks operation', function (): void {
     $hooks = new HookDispatcher();
     $hooks->register('beforeDelete', static function (array $ctx): array { // NOSONAR
-        throw new HookException('Blocked by hook');
+        throw new HookException(BLOCKED_BY_HOOK_MESSAGE);
     });
 
     [$svc, $repo, $extension] = buildHooksService($hooks);
@@ -442,7 +444,7 @@ TestSuite::run('deleteRecord() beforeDelete throwing HookException blocks operat
         $svc->deleteRecord('fake-uuid');
     } catch (HookException $e) {
         $threw = true;
-        assertEquals('Blocked by hook', $e->getMessage(), 'HookException message must propagate');
+        assertEquals(BLOCKED_BY_HOOK_MESSAGE, $e->getMessage(), 'HookException message must propagate');
     }
 
     assertTrue($threw, 'HookException from beforeDelete must propagate');

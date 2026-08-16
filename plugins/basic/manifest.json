@@ -1,0 +1,9 @@
+{
+    "name": "basic",
+    "label": "Básico",
+    "label_singular": "Básico",
+    "version": "1.0.0",
+    "type": "entity",
+    "core_version": "1.0.0",
+    "description": "Plantilla mínima con solo el campo name, base para futuras entidades simples (categorías, familias, ubicaciones...)."
+}

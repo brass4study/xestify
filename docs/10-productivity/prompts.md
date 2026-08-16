@@ -1417,3 +1417,90 @@ amplió y por qué, no asumir silenciosamente.
 headless (pendiente confirmación visual del usuario en navegador integrado);
 13 ficheros de documentación auditados y corregidos contra el código real;
 EPIC 10 en progreso, siguiente foco STORY 10.4.
+
+### STORY 10.4 — Plugins de demostración: entidades `orders`, `invoices`, `basic`
+
+**Prompt inicial (modo plan):**
+```
+Preparemos la implementacion de la story 10.4. Si tienes cualquier duda o
+pregunta, no dudes en hacerme tandas de preguntas o sugerencias hasta que todo
+quede afinado y detallado al 100%
+```
+**Resultado:** 2 agentes `Explore` en paralelo (patrón real de `plugins/persons/`
+y mecanismo de multi-instancia; bloque `relations`/tipos de campo/seeders)
+mapearon el estado real del código antes de planificar, detectando que el AC
+literal del backlog citaba un patrón ya desactualizado (`Installer.php`,
+eliminado en STORY 10.3) y una relación `orders → distributors` /
+`purchases → clients` que ya no encajaba tras la unificación en `persons` de
+STORY 10.2. `AskUserQuestion` (3 preguntas) cerró: descartar `purchases` por
+redundante, validar `invoice_number` como único vía `Hooks.php`, y dejar
+`basic` solo como plantilla en disco sin activar instancia.
+
+**Aprobación del plan y ejecución:** implementación de los 3 plugins + 3 tests
+de contrato, ejecución completa de la suite (`php backend/tests/run.php all`)
+y sync de plugins contra la BD local para verificación real.
+
+**Hallazgo reportado por la IA durante la verificación (no un prompt del
+usuario, sino un bloqueo encontrado al ejecutar el sync):**
+```
+[IA] La tabla plugins real de esta BD local ya tiene: clients | active,
+distributors | active, ophthalmologists | active (las 3 con plugin_name=persons)
+— pero ninguna con slug=persons. La relación de orders/invoices apunta a
+target_entity=persons literal, que no resolvería a nada activo en esta BD
+concreta. ¿Cómo lo resuelvo?
+```
+**Respuesta del usuario:**
+```
+Son entidades reales que necesito para el TFM, es mandatorio que no las
+borres o reconfigures. La definicion en disco del campo relations de orders
+hacia persons no debe cumplirse, es solo una sugerencia, se creara a la hora
+de configurar el plugin en db
+```
+**Resultado:** Se corrigió `orders/schema.json` a `relations: []` (sin fijar
+ningún `target_entity` en disco), se eliminó y volvió a sincronizar la fila
+`orders` en BD para que reflejara el schema corregido, y se ajustó
+`OrdersPluginTest.php` a la nueva forma. Ninguna de las 3 instancias reales de
+`persons` del usuario (`clients`/`distributors`/`ophthalmologists`) se tocó.
+`invoices → orders` se mantuvo como relación fija en disco por no tener esa
+misma ambigüedad de instancia.
+
+**Bugs de entorno encontrados y corregidos al intentar verificar (no
+relacionados con el diseño de la story, pero bloqueaban completarla):**
+`tools/setup/sync-plugins.php` construía `PluginSyncService` sin el
+`PluginWriteRepository` que su constructor ya exige desde STORY 10.3 (roto
+desde entonces, sin cobertura de test); y el PHP CLI del entorno no cargaba
+ningún `php.ini` (`pdo_pgsql`/`mbstring` ya estaban activas en el `php.ini`
+real de Apache, pero el CLI no apuntaba a él) — corregido fijando `PHPRC` como
+variable de entorno de usuario persistente.
+
+**Prompt de revisión de calidad:**
+```
+hay hallazgos en sonarqube
+```
+**Resultado:** El export puntual de SonarLint solo devolvió 1 hallazgo, ajeno
+a los ficheros nuevos de la story (`EntityServiceHooksTest.php`, literal
+`"Blocked by hook"` duplicado 3 veces); el análisis de workspace completo no
+respondió en el timeout — diagnóstico: los ficheros nuevos nunca se habían
+abierto en el editor, por lo que SonarLint no los había analizado. Se corrigió
+el hallazgo real confirmado extrayendo la constante `BLOCKED_BY_HOOK_MESSAGE`.
+
+**Iteraciones:** 10+ (exploración en paralelo, 3 rondas de `AskUserQuestion` de
+alcance antes del plan, implementación, hallazgo de datos reales en BD con 2
+rondas adicionales de `AskUserQuestion` para no asumir sobre datos de TFM del
+usuario, 2 bugs de entorno diagnosticados y corregidos durante la propia
+verificación, revisión de SonarQube).
+**Lección:** Un AC de backlog escrito antes de un refactor mayor (aquí, la
+unificación de STORY 10.2) puede describir un diseño que ya no encaja —
+explorar el código real antes de planificar, en vez de implementar el AC
+literal, evitó construir sobre una premisa obsoleta. Y ninguna exploración de
+código o documentación puede sustituir a verificar contra el estado real de la
+BD del usuario: el hallazgo de las 3 instancias de `persons` solo emergió al
+ejecutar el sync de verdad, no al leer schemas ni tests.
+**Estado final:** STORY 10.4 implementada y verificada — backend
+`php backend/tests/run.php all` 65/65 archivos en verde (incluye integración
+con BD real); `orders`/`invoices` sincronizados y activos en la BD local del
+usuario, `basic` sincronizado e inactivo; sin ningún cambio en los datos
+reales de `persons` del usuario; pendiente confirmación visual del usuario en
+navegador integrado (crear pedido/factura, unicidad, relación configurada
+desde `PluginConfig`, bloqueo de borrado); EPIC 10 en progreso, siguiente foco
+STORY 10.5.

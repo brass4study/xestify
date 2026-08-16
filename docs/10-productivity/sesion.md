@@ -413,10 +413,12 @@ Story completada. Archivos creados/modificados:
 | 10.1 ✅ | Mejoras en la sección de login | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 229/229 assertions (21 runners); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.2 ✅ | Renombrar plugin `clients` a `persons` | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 10 runners afectados en verde (headless, pendiente confirmación visual del usuario en navegador integrado); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.3 ✅ | Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json` | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 60/60 archivos; frontend `frontend/tests/integration/` runners afectados en verde vía Playwright headless (pendiente confirmación visual del usuario en navegador integrado) ✅ |
+| 10.4 ✅ | Plugins de demostración — entidades `orders`, `invoices`, `basic` (`purchases` descartado por redundante) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 65/65 archivos en verde (incluye BD real); `orders`/`invoices` sincronizados y activos en BD local, `basic` sincronizado e inactivo ✅ |
 
 **Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
 **Detalle de la story 10.2:** ver sesión completa más abajo (2026-08-15).
 **Detalle de la story 10.3:** ver sesión completa más abajo (2026-08-16).
+**Detalle de la story 10.4:** ver sesión completa más abajo (2026-08-16).
 
 ---
 
@@ -424,7 +426,7 @@ Story completada. Archivos creados/modificados:
 
 **Fecha:** 2026-08-16
 **EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
-**Próxima story:** STORY 10.4 - Plugin de demostración `orders` (relación `belongs_to` hacia `persons`, EPIC 10)
+**Próxima story:** STORY 10.5 - Plugins de demostración — extensiones (`optometry`, `contact-lenses`, EPIC 10)
 
 ---
 
@@ -1350,5 +1352,110 @@ verde, a la espera del commit de cierre.
   (§2bis/§6/§7/§8/§9 incluidos, no solo el AC literal original); el siguiente
   punto es STORY 10.4 (plugin de demostración `orders`, primer consumidor real
   de `relations`).
+
+## Sesion 2026-08-16 - STORY 10.4 Plugins de demostración — entidades `orders`, `invoices`, `basic`
+
+Story completada con dos ajustes de alcance acordados con el usuario respecto
+al AC literal del backlog (redactado antes de la unificación en `persons` de
+STORY 10.2), y descubiertos/discutidos durante la propia implementación, no
+al planificar.
+
+**Investigación previa (2 agentes `Explore` en paralelo):** patrón real vigente
+de `plugins/persons/` (confirmó que `Installer.php` ya no existe, eliminado
+como código huérfano en STORY 10.3) y mecanismo de multi-instancia (`plugin_name`
+no único, `slug` sí — una misma carpeta en disco puede respaldar varias filas
+independientes en `plugins`, cada una con su propio `slug` y datos, ej. dos
+filas `plugin_name=persons` con slugs distintos). Confirmó también que el
+bloque `relations`/`belongs_to` (STORY 10.3 §8) nunca tuvo un ejemplo real en
+disco hasta esta story, y que el tipo `select` (para campos de estado) tampoco
+tenía ningún uso real previo pese a estar soportado end-to-end desde hace
+tiempo.
+
+**Decisiones cerradas con el usuario antes de escribir el plan (3 rondas de
+`AskUserQuestion`):**
+- `purchases` descartado del alcance: el AC original pedía `orders → distributors`
+  y `purchases → clients` como dos ejemplos gemelos, pero ninguno de los dos
+  existe ya como plugin propio tras STORY 10.2 — habría sido un plugin
+  redundante de `orders` (mismos campos, mismo target conceptual).
+- `invoices.invoice_number` se valida como único vía `Hooks.php`, siguiendo el
+  mismo patrón que `persons`/`mail` y `products`/`sku` (`AbstractUniqueFieldHook`).
+- `basic` queda solo como plantilla en disco en esta story, sin activar ninguna
+  instancia (coincide con que STORY 10.6 no lo incluye en su lista de seeders).
+
+**Hallazgo durante la propia verificación (no anticipado al planificar):** al
+ejecutar `tools/setup/sync-plugins.php` para registrar los plugins nuevos, la
+BD local del usuario resultó tener ya 3 instancias activas y en uso real del
+plugin `persons` con slugs propios (no `persons`) — datos reales para su TFM,
+no residuales, que el usuario indicó explícitamente no tocar ni reconfigurar.
+Esto invalidaba la implementación inicial de `orders`, que había fijado en el
+`schema.json` de disco una relación `belongs_to` literal hacia `target_entity:
+"persons"` (siguiendo el ejemplo de `docs/04-plugins/plantilla-plugin-entidad.md`),
+inservible en esa BD concreta al no existir ninguna instancia activa con ese
+slug exacto. El usuario aclaró que esa relación en disco no debía fijarse en
+absoluto — es una sugerencia de patrón, no un contrato — y que la relación
+real se añade después, por instalación, desde el grid "Relaciones" de
+`PluginConfig` (STORY 10.3 §8), apuntando a la instancia de `persons` que
+corresponda en cada caso. Se corrigió: `orders/schema.json` quedó con
+`relations: []`; se eliminó y volvió a sincronizar en BD la fila `orders`
+(inactiva, sin datos) para que reflejara el schema corregido; se ajustó
+`OrdersPluginTest.php` a la nueva forma. `invoices → orders` sí se dejó fijo en
+disco (relación obligatoria) por no tener esa misma ambigüedad de instancia
+(solo existe un `orders`).
+
+**Bugs preexistentes encontrados y corregidos al intentar verificar (bloqueaban
+la propia verificación, no relacionados con el diseño de la story):**
+- El PHP CLI de este entorno (`C:\apache2.4.66\php\php.exe`) no cargaba ningún
+  `php.ini` (`php --ini` mostraba vacío), por lo que `pdo_pgsql`/`mbstring`
+  parecían no estar disponibles pese a estar ya activas en
+  `C:\apache2.4.66\config\php.ini` (el mismo que usa Apache). Se fijó
+  `PHPRC=C:\apache2.4.66\config` como variable de entorno de usuario
+  (persistente) para que el CLI la cargue siempre a partir de ahora.
+- `tools/setup/sync-plugins.php` estaba roto desde STORY 10.3: construía
+  `PluginSyncService` sin el `PluginWriteRepository` que su constructor ya
+  exige (`TypeError` en cuanto se ejecutaba). Corregido añadiendo la
+  dependencia que falta, en la posición correcta.
+- Un hallazgo real de SonarQube (`php:S1192`, literal `"Blocked by hook"`
+  duplicado 3 veces en `EntityServiceHooksTest.php`, preexistente y no
+  relacionado con los ficheros nuevos de esta story) se corrigió extrayendo la
+  constante `BLOCKED_BY_HOOK_MESSAGE`.
+
+**Cambios principales:**
+- Nuevos: `plugins/orders/` (`manifest.json`, `schema.json`, `Lifecycle.php`,
+  sin `Hooks.php` por no necesitar unicidad), `plugins/invoices/` (además
+  `Hooks.php` con `AbstractUniqueFieldHook` sobre `invoice_number`),
+  `plugins/basic/` (`manifest.json`, `schema.json`, `Lifecycle.php`).
+- Nuevos tests: `backend/tests/unit/OrdersPluginTest.php`,
+  `InvoicesPluginTest.php`, `BasicPluginTest.php`, siguiendo el patrón de
+  `PersonsPluginTest.php`/`ProductsPluginTest.php`; registrados en el grupo
+  `unit` de `backend/tests/run.php`.
+- Modificado: `tools/setup/sync-plugins.php` (fix de wiring, ver arriba),
+  `backend/tests/unit/EntityServiceHooksTest.php` (fix de SonarQube, ver
+  arriba).
+- BD local: `orders` e `invoices` sincronizados y activados; `basic`
+  sincronizado e inactivo; sin cambios en `persons`/`clients`/`distributors`/
+  `ophthalmologists`.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 65/65 archivos en verde (con
+  `PHPRC` corregido, incluye integración con BD real por primera vez en esta
+  sesión — antes se saltaba por "PostgreSQL not reachable").
+- SonarQube: 1 hallazgo preexistente detectado y corregido; reexport final en
+  0 hallazgos.
+
+**Pendiente de verificación manual del usuario (no automatizable desde este
+entorno, sin herramienta de navegador):** crear un pedido y una factura ligada
+desde el navegador integrado; confirmar el rechazo de `invoice_number`
+duplicado; configurar la relación real de `orders` desde `PluginConfig`;
+confirmar el bloqueo de borrado de un pedido con facturas asociadas.
+
+**Cierre verificado (2026-08-16):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: `orders`/`invoices` quedan activos y funcionales en la
+  BD real del usuario sin alterar sus datos reales de `persons` (`clients`/
+  `distributors`/`ophthalmologists`); la relación `orders → persons` queda
+  deliberadamente sin fijar en el schema de disco, a configurar por instalación.
+- Backlog alineado: STORY 10.4 queda implementada (`purchases` descartado y
+  documentado el motivo); el siguiente punto es STORY 10.5 (plugins de
+  demostración — extensiones `optometry`/`contact-lenses`).
 
 ---

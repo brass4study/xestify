@@ -6,13 +6,13 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 9 cerrada; EPIC 10 en progreso con STORY 10.3 incluida y STORY 10.4 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 9 cerrada; EPIC 10 en progreso con STORY 10.4 incluida y STORY 10.5 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos, validación server-side y usuarios seed protegidos frente a edición/borrado/autoservicio
 - **Frontend:** SPA MVC con shell persistente, layouts reutilizables, routing hash bidireccional, feedback global, base de i18n, theming visual persistido por cliente y suite E2E Playwright contra el runtime real
 - **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
-- **Estado actual del MVP:** la base funcional del producto está consolidada, la capa transversal de frontend está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas, y la pantalla de login quedó rediseñada (identidad visual, validación, accesos rápidos de desarrollo) tras STORY 10.1
+- **Estado actual del MVP:** la base funcional del producto está consolidada, la capa transversal de frontend está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas, la pantalla de login quedó rediseñada (identidad visual, validación, accesos rápidos de desarrollo) tras STORY 10.1, y los plugins de demostración de entidad (`orders`, `invoices`, `basic`) ya cubren el primer uso real end-to-end de las relaciones `belongs_to` del schema tras STORY 10.4
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
 
@@ -157,7 +157,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 10.3 incluida** (EPIC 9 cerrada, EPIC 10 en progreso):
+MVP implementado hasta **STORY 10.4 incluida** (EPIC 9 cerrada, EPIC 10 en progreso):
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -176,9 +176,10 @@ MVP implementado hasta **STORY 10.3 incluida** (EPIC 9 cerrada, EPIC 10 en progr
 - Login rediseñado: identidad visual propia (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio (STORY 10.1).
 - Plugin `clients` renombrado a `persons` (carpeta, namespace PHP, manifest/schema y datos existentes), generalizando el modelo a clientes/distribuidores/oculistas sin ampliar sus campos (STORY 10.2).
 - `plugin_name` (identidad técnica fija = carpeta) desacoplado de `slug` (editable); tabla `plugins` consolidada en una columna `manifest_json` viva que refleja el manifest.json real en disco, eliminando columnas redundantes y `schema_version` (residual); alta manual de plugin (activo por defecto), borrado en cascada, grid de relaciones `belongs_to` editable y tab automática de relación inversa en `EntityEdit` (STORY 10.3).
+- Plugins de demostración de entidad `orders` (pedidos), `invoices` (facturas, `belongs_to orders` obligatorio con `invoice_number` único) y `basic` (plantilla mínima solo con `name`, sin activar); primer uso real end-to-end del bloque `relations` del schema. La relación `orders → persons` no se fija en el schema de disco: se configura por instalación desde el grid "Relaciones" de `PluginConfig` (STORY 10.4).
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia, login y plugins.
 
-Pendiente tras STORY 10.3: plugins de demostración de entidad/extensión con datos de ejemplo de un caso óptico, primer uso real de las relaciones `belongs_to` (STORY 10.4-10.6), y el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
+Pendiente tras STORY 10.4: plugins de demostración de extensión (`optometry`, `contact-lenses`) y datos de ejemplo de un caso óptico (STORY 10.5-10.6), y el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
 
 Operaciones manuales de setup:
 
@@ -189,8 +190,19 @@ Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
 plugins y hooks desde la base de datos; la sincronizacion disco -> BD es
 explicita.
 
-En Windows, si usas el `php.exe` de Apache y su configuracion esta en
-`C:\apache2.4.66\config\php.ini`, ejecuta esos scripts con:
+En Windows, si usas el `php.exe` de Apache, su configuracion esta en
+`C:\apache2.4.66\config\php.ini`, pero el CLI no la carga por defecto
+(`php --ini` no muestra ningun fichero cargado). Para que `php` cargue esa
+configuracion (extensiones `pdo_pgsql`/`mbstring` incluidas) sin tener que
+indicarla en cada comando, fija `PHPRC` como variable de entorno de usuario
+persistente:
+
+```powershell
+[Environment]::SetEnvironmentVariable('PHPRC', 'C:\apache2.4.66\config', 'User')
+```
+
+Alternativa puntual sin tocar variables de entorno, valida para una sola
+ejecucion:
 
 ```powershell
 C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-plugins.php

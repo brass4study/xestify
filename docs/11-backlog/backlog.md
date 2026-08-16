@@ -1238,16 +1238,19 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 - **Blockers:** Ninguno
 
 ### STORY 10.4: Plugins de demostración — entidades
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
-- **Criteria:**
-  - ✅ Plugin de entidad `orders` (pedidos): relación `belongs_to` → `distributors` (primer uso real del bloque `relations` del schema, hasta ahora sin uso), campos: fecha del pedido, estado (pendiente/en proceso/entregado/cancelado), importe total, notas
-  - ✅ Plugin de entidad `purchases` (compras): relación `belongs_to` → `clients` (segundo uso real del bloque `relations` del schema, hasta ahora sin uso), campos: fecha de la compra, estado (pendiente/en proceso/entregado/cancelado), importe total, notas
-  - ✅ Ambos `orders` y `purchases` surgen de un plugin comun, siguendo el patrón de `plugins/persons/` (manifest, schema, Installer, Lifecycle, Hooks) y usan `slug` como identidad
-  - ✅ Plugin de entidad `invoices` (facturas): relación `belongs_to` → `orders`, campos: número de factura, fecha de emisión, importe, estado de pago (pendiente/pagada)
-  - ✅ Plugin de entidad `basic` (basico): un plugin basico solamente con el campo `name`. Base para contruir en el futuro entidades basicas. Por ejemplo: Categorias, Familias, Ubicaciones, etc...
-- **IA Usage:** Generación de manifest/schema/Installer/Lifecycle siguiendo el patrón existente + primeros casos reales de uso de `relations`
+- **Criteria (AC original, con dos ajustes acordados con el usuario — ver notas debajo):**
+  - ✅ Plugin de entidad `orders` (pedidos): campos fecha del pedido, estado (pendiente/en_proceso/entregado/cancelado), importe total, notas
+  - ⛔ ~~Plugin de entidad `purchases`~~ — descartado (ver nota 1)
+  - ✅ Plugin de entidad `invoices` (facturas): relación `belongs_to` → `orders` (primer uso real end-to-end del bloque `relations` del schema, declarado desde STORY 4.7 pero sin uso hasta ahora), campos: número de factura (único, vía `Hooks.php`), fecha de emisión, importe, estado de pago (pendiente/pagada)
+  - ✅ Plugin de entidad `basic` (básico): un plugin básico solamente con el campo `name`. Base para construir en el futuro entidades básicas (categorías, familias, ubicaciones...). Queda solo como plantilla en disco, sin ninguna instancia activada
+- **Nota 1 — `purchases` descartado:** el AC original pedía `orders → distributors` y `purchases → clients` como dos ejemplos gemelos de `relations`, heredado de cuando `clients`/`distributors` eran plugins separados. Tras STORY 10.2 (unificación en `persons`), `purchases` habría sido un plugin redundante de `orders` (mismos campos, mismo target conceptual). Decisión acordada con el usuario: un único plugin `orders`, sin duplicarlo.
+- **Nota 2 — relación de `orders` no fijada en disco:** el `schema.json` de `orders` se entrega con `relations: []`. La BD local del usuario ya tiene varias instancias reales y en uso del plugin `persons` (con slugs propios, no `persons`) para su caso de uso del TFM — fijar `target_entity` en el schema de disco habría atado `orders` a una de ellas de forma incorrecta para cualquier otra instalación. La relación real `belongs_to` se añade después, por instalación, desde el grid "Relaciones" de `PluginConfig` (STORY 10.3 §8), apuntando a la instancia de `persons` que corresponda en cada caso.
+- **Nota 3 — patrón de disco actualizado:** el patrón real vigente (ver `plugins/persons/`, `docs/04-plugins/plantilla-plugin-entidad.md`) es `manifest.json` + `schema.json` + `Hooks.php`/`Lifecycle.php` opcionales — sin `Installer.php`, eliminado como código huérfano en STORY 10.3.
+- **IA Usage:** Generación de manifest/schema/Lifecycle/Hooks siguiendo el patrón vigente de `plugins/persons/` + primer caso de uso real end-to-end de `relations` (`invoices → orders`) + tests unitarios de contrato (manifest/schema) y de `Hooks.php` (unicidad de `invoice_number`) siguiendo el patrón de `PersonsPluginTest.php`/`ProductsPluginTest.php`
 - **Dependencias:** STORY 10.2 (`persons`), STORY 10.3 (`plugin_name`)
 - **Blockers:** Ninguno
 

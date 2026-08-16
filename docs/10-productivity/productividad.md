@@ -1261,3 +1261,68 @@
   por defecto al alta manual, dejando la sincronización masiva desde disco sin
   cambios (sigue registrando `inactive`) — para no activar en bloque plugins
   descubiertos sin revisión previa del admin.
+
+---
+
+### STORY 10.4: Plugins de demostración — entidades `orders`, `invoices`, `basic`
+
+- **Fecha:** 2026-08-16
+- **Estimado sin IA:** 5h (3 plugins de entidad siguiendo un patrón ya
+  establecido, uno con Hook de unicidad, más tests de contrato y diagnóstico de
+  2 bugs de entorno/wiring no evidentes hasta ejecutar la verificación real)
+- **Tiempo real con IA:** ~1h30
+- **Aceleración:** ~70%
+- **Qué hizo IA:**
+  - Investigación previa con 2 agentes `Explore` en paralelo (patrón real de
+    `plugins/persons/` y mecanismo de multi-instancia; bloque `relations`,
+    tipos de campo y patrón de seeders) antes de planificar, evitando repetir
+    el patrón desactualizado que el propio texto del backlog describía
+    (`Installer.php`, ya eliminado en STORY 10.3).
+  - Detectó por su cuenta, revisando el AC original a la luz de STORY 10.2, que
+    `purchases` sería un plugin redundante de `orders` (mismos campos, mismo
+    target conceptual) ahora que `clients`/`distributors` están unificados en
+    `persons` — lo planteó como pregunta dirigida en vez de decidirlo o
+    implementarlo sin más.
+  - Implementó los 3 plugins (`orders`, `invoices` con `Hooks.php` de unicidad
+    sobre `invoice_number`, `basic`) y sus 3 tests de contrato siguiendo
+    exactamente el patrón de `PersonsPluginTest.php`/`ProductsPluginTest.php`.
+  - Al ejecutar la verificación real (sync de plugins contra la BD local), se
+    encontró con que la BD ya tenía 3 instancias activas y reales del plugin
+    `persons` con slugs propios (datos de TFM del usuario, no residuales) —
+    algo que ninguna exploración previa podía haber anticipado por vivir solo
+    en el estado de la BD, no en el código ni la documentación. Identificó que
+    su propia implementación (relación `orders → persons` fija en el
+    `schema.json` de disco) quedaría inservible en esa BD concreta, lo
+    reportó con evidencia (consulta SQL directa) en vez de asumir un arreglo,
+    y aplicó la corrección que el usuario indicó (relación vacía en disco,
+    configurable después por instalación) incluyendo deshacer y rehacer el
+    registro en BD del plugin afectado.
+  - Diagnosticó y corrigió, sin que se le pidiera explícitamente arreglarlos
+    (bloqueaban su propia verificación), dos bugs de entorno/wiring
+    preexistentes y no relacionados con el diseño de la story:
+    `tools/setup/sync-plugins.php` roto desde STORY 10.3 (`PluginSyncService`
+    construido sin su dependencia `PluginWriteRepository`, ya obligatoria) y
+    el PHP CLI del entorno sin `php.ini` cargado (extensiones `pdo_pgsql`/
+    `mbstring` ya activas en el `php.ini` real de Apache, pero el CLI no lo
+    cargaba) — corregido con una variable de entorno `PHPRC` persistente.
+  - Ejecutó una revisión de SonarQube a petición del usuario, diagnosticando
+    primero por qué el análisis de workspace completo no devolvía hallazgos de
+    los ficheros nuevos (no habían sido abiertos en el editor, por lo que
+    SonarLint nunca los había analizado) antes de corregir el único hallazgo
+    real que sí pudo confirmar (literal duplicado en un test preexistente).
+- **Iteraciones:** 10+ (exploración en paralelo, 3 rondas de `AskUserQuestion`
+  de alcance antes del plan, implementación, hallazgo de datos reales en BD
+  con 2 rondas adicionales de `AskUserQuestion` para no asumir sobre datos de
+  TFM del usuario, 2 bugs de entorno diagnosticados y corregidos durante la
+  propia verificación, revisión de SonarQube).
+- **Decisión manual:** El usuario confirmó la recomendación de descartar
+  `purchases` en vez de mantenerlo como segundo ejemplo gemelo de `relations`.
+- **Decisión manual:** El usuario indicó explícitamente no tocar ni
+  reconfigurar sus 3 instancias reales de `persons` (datos de TFM, no
+  residuales) al descubrirse durante la verificación, y que la relación
+  `orders → persons` del AC original no debía fijarse en el `schema.json` de
+  disco — es una sugerencia de patrón, no un contrato; la relación real se
+  crea después, por instalación, desde `PluginConfig`.
+- **Decisión manual:** El usuario pidió explícitamente revisar hallazgos de
+  SonarQube antes de cerrar la story, en vez de darla por completa solo con
+  los tests en verde.

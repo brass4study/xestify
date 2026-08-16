@@ -1,0 +1,9 @@
+{
+    "name": "invoices",
+    "label": "Facturas",
+    "label_singular": "Factura",
+    "version": "1.0.0",
+    "type": "entity",
+    "core_version": "1.0.0",
+    "description": "Facturas asociadas a un pedido."
+}
