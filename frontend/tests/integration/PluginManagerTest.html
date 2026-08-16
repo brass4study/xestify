@@ -46,6 +46,12 @@
       const key = url.split('?')[0];
       return this.responses[key] ?? { ok: false, error: { message: 'Not mocked' } };
     }
+
+    async delete(url) {
+      this.calls.push({ method: 'DELETE', url });
+      const key = url.split('?')[0];
+      return this.responses[key] ?? { ok: false, error: { message: 'Not mocked' } };
+    }
   }
 
   function log(msg) {
@@ -635,6 +641,92 @@
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     assertTrue(api.calls.some((c) => c.method === 'POST' && c.url === '/plugins/persons/rollback'), 'Rollback endpoint should be called after confirm');
+  });
+
+  await test('shows delete action only for inactive plugins', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'persons', name: 'Persons', plugin_type: 'entity', version: '1.0.0', status: 'active' },
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+    });
+
+    const manager = new PluginManager(container, api);
+    await manager.init();
+
+    const activeRow = container.querySelector('tr[data-slug="persons"]');
+    const inactiveRow = container.querySelector('tr[data-slug="comments"]');
+
+    assertTrue(activeRow.querySelector('[data-action="delete"]') === null, 'Active plugin should not show delete action');
+    assertTrue(inactiveRow.querySelector('[data-action="delete"]') !== null, 'Inactive plugin should show delete action');
+  });
+
+  await test('asks confirmation before delete and calls endpoint on confirm', async () => {
+    const { shell, content } = makeShellSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments': {
+        ok: true,
+        data: { deleted: true, slug: 'comments' },
+      },
+    });
+
+    const manager = new PluginManager(content, api, { shellLayout: shell });
+    await manager.init();
+
+    const deleteBtn = content.querySelector('[data-action="delete"]');
+    deleteBtn.click();
+
+    const confirmBtn = content.querySelector('[data-action="confirm-modal"]');
+    assertTrue(confirmBtn !== null, 'Confirm button should exist in delete modal');
+    confirmBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assertTrue(api.calls.some((c) => c.method === 'DELETE' && c.url === '/plugins/comments'), 'Delete endpoint should be called after confirm');
+  });
+
+  await test('does not call delete endpoint when deletion is cancelled', async () => {
+    const { shell, content } = makeShellSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments': {
+        ok: true,
+        data: { deleted: true, slug: 'comments' },
+      },
+    });
+
+    const manager = new PluginManager(content, api, { shellLayout: shell });
+    await manager.init();
+
+    const deleteBtn = content.querySelector('[data-action="delete"]');
+    deleteBtn.click();
+
+    const cancelBtn = content.querySelector('[data-action="cancel-modal"]');
+    assertTrue(cancelBtn !== null, 'Cancel button should exist in delete modal');
+    cancelBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    assertTrue(!api.calls.some((c) => c.method === 'DELETE'), 'Delete endpoint should not be called when cancelled');
   });
 
   await test('calls onConfigure callback when configure button is clicked', async () => {

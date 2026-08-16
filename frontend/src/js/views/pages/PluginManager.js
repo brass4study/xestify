@@ -275,6 +275,10 @@ export class PluginManager {
 			this.#pluginActionButton(t('plugins.rollback', 'Revertir'), 'fa-clock-rotate-left', 'violet', 'rollback', plugin).setParent(actions);
 		}
 
+		if (!isActive) {
+			this.#pluginActionButton(t('plugins.delete', 'Borrar'), 'fa-trash', 'red', 'delete', plugin).setParent(actions);
+		}
+
 		return actions;
 	}
 
@@ -306,6 +310,11 @@ export class PluginManager {
 
 		if (action === 'rollback') {
 			this.#handleRollback(plugin, button);
+			return;
+		}
+
+		if (action === 'delete') {
+			this.#handleDelete(plugin, button);
 			return;
 		}
 
@@ -434,6 +443,40 @@ export class PluginManager {
 			this.renderError(`No se pudo revertir el plugin: ${error.message}`);
 		} finally {
 			UiResilienceService.clearButtonPending(button, 'Revertir');
+		}
+	}
+
+	async #handleDelete(plugin, button) {
+		const name = plugin.name || plugin.slug;
+		const accepted = await this.#confirmAction(
+			'Confirmar borrado de plugin',
+			`Esto borrará el plugin "${name}" y todos los datos asociados a "${name}". Esta acción es irreversible.`,
+			'Borrar plugin'
+		);
+
+		if (!accepted) {
+			return;
+		}
+
+		this.#feedbackMessage = null;
+		this.#feedbackType = null;
+		UiResilienceService.setButtonPending(button, 'Borrando...');
+
+		try {
+			await this.#api.delete(`/plugins/${plugin.slug}`);
+			this.#feedbackType = 'success';
+			this.#feedbackMessage = `Plugin "${name}" borrado correctamente.`;
+			UiResilienceService.showNotification({
+				type: 'success',
+				title: t('ui.success', 'Éxito'),
+				message: this.#feedbackMessage,
+			});
+			await this.#refreshData();
+			this.#onPluginsChanged(plugin);
+		} catch (error) {
+			this.renderError(`No se pudo borrar el plugin: ${error.message}`);
+		} finally {
+			UiResilienceService.clearButtonPending(button, 'Borrar');
 		}
 	}
 
