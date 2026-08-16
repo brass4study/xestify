@@ -241,3 +241,15 @@ Documentos clave:
 - Herramientas de backup y restauracion guiada.
 - Mayor automatizacion de despliegue y monitoreo en RPi5.
 - Hardening avanzado de cadena de suministro de plugins.
+
+## 🔒 Licencia y Términos de Uso
+
+Este proyecto es el resultado de un Trabajo de Fin de Máster (TFM) y se publica bajo una **Licencia Propietaria de Fuente Disponible (Source-Available / Read-Only)**.
+
+* **Permitido:** Consulta visual, lectura y auditoría del código fuente con fines académicos o de evaluación.
+* **Estrictamente Prohibido:** La ejecución, compilación, despliegue, modificación, redistribución o uso del software, ya sea para **fines comerciales o personales**, sin la autorización previa y por escrito del autor.
+
+Para más detalles, consulta el archivo completo [`LICENSE`](./LICENSE.md).
+
+---
+*Si deseas obtener una licencia de uso comercial o evaluación extendida, ponte en contacto en: brass4study@gmail.com*
