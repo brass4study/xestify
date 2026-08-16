@@ -433,6 +433,7 @@
     ]);
 
     const page = new EntityEdit(content, 'persons', SCHEMA, { recordId: '42', shellLayout: shell });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
     const relationTabButton = host.querySelector('[data-tab-id="relation:orders:id_person"]');
@@ -452,6 +453,7 @@
     globalThis.fetch = mockRelationFetch([]);
 
     const page = new EntityEdit(content, 'persons', SCHEMA, { recordId: '42', shellLayout: shell });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
     host.querySelector('[data-tab-id="relation:orders:id_person"]').click();
@@ -476,6 +478,7 @@
         navigatedTo = { sourceSlug, recordId };
       },
     });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
     host.querySelector('[data-tab-id="relation:orders:id_person"]').click();

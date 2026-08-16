@@ -39,15 +39,20 @@ export class RelatedRecordsPanel {
 		this.#element.className = 'flex flex-col gap-3';
 		this.#element.dataset.role = 'related-records-panel';
 
+		this.#init(recordId);
+	}
+
+	get element() {
+		return this.#element;
+	}
+
+	/** @param {string|null} recordId */
+	#init(recordId) {
 		if (recordId === null) {
 			this.#renderMessage('Guarda el registro para ver los relacionados.');
 		} else {
 			void this.#load(recordId);
 		}
-	}
-
-	get element() {
-		return this.#element;
 	}
 
 	/** @param {string} resolvedId */
