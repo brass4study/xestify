@@ -396,24 +396,11 @@ export class DynamicForm {
 		}
 
 		if (field.type === 'date') {
-			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-			if (!dateRegex.test(value)) {
-				errors.push('Must be a valid date (YYYY-MM-DD)');
-			}
+			this.validateDateFormat(value, errors);
 		}
 
 		if (field.type === 'select') {
-			const options = Array.isArray(field.options) ? field.options : [];
-			const optionValues = options.map((option) => {
-				if (typeof option === 'object' && option !== null) {
-					return String(option.value ?? '');
-				}
-				return String(option);
-			});
-
-			if (!optionValues.includes(value)) {
-				errors.push('Must be one of the allowed options');
-			}
+			this.validateSelectValue(field, value, errors);
 		}
 
 		if (typeof field.minLength === 'number' && value.length < field.minLength) {
@@ -422,6 +409,27 @@ export class DynamicForm {
 
 		if (typeof field.maxLength === 'number' && value.length > field.maxLength) {
 			errors.push(`Maximum length is ${field.maxLength}`);
+		}
+	}
+
+	validateDateFormat(value, errors) {
+		const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+		if (!dateRegex.test(value)) {
+			errors.push('Must be a valid date (YYYY-MM-DD)');
+		}
+	}
+
+	validateSelectValue(field, value, errors) {
+		const options = Array.isArray(field.options) ? field.options : [];
+		const optionValues = options.map((option) => {
+			if (typeof option === 'object' && option !== null) {
+				return String(option.value ?? '');
+			}
+			return String(option);
+		});
+
+		if (!optionValues.includes(value)) {
+			errors.push('Must be one of the allowed options');
 		}
 	}
 

@@ -189,6 +189,8 @@ export class EntityEdit {
 				return;
 			}
 
+			const focusedField = wrapper.contains(document.activeElement) ? document.activeElement : null;
+
 			const dataPanelEl = component.create('div');
 			while (wrapper.firstChild !== null) {
 				dataPanelEl.appendChild(wrapper.firstChild);
@@ -236,6 +238,10 @@ export class EntityEdit {
 				}
 				dynamicTabs.render();
 			});
+
+			if (focusedField instanceof HTMLElement && document.contains(focusedField)) {
+				focusedField.focus();
+			}
 
 			if (!this.#isCurrentRender(renderToken)) {
 				return;

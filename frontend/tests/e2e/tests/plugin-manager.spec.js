@@ -1,31 +1,50 @@
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './_helpers.js';
 
-// `test_entity_ctrl` is a leftover fixture plugin from backend integration tests.
-// It is safe to toggle without touching the plugins the other specs (entity-crud,
-// theme-wysiwyg) rely on staying active (persons, comments). Its status at rest is
-// not guaranteed across runs, so the test reads its current state instead of
-// assuming one, and always restores it before finishing.
-const TARGET_SLUG = 'test_entity_ctrl';
-
+// Used to rely on `test_entity_ctrl`, a fixture plugin left behind by the
+// backend integration test EntityControllerTest.php. STORY 10.3 added a final
+// cleanup step to that PHP test (it now deletes its own fixture row on exit),
+// so the row is no longer reliably present when this suite runs — it broke
+// this spec without anyone noticing because the E2E suite wasn't part of that
+// story's verification. Register a throwaway plugin instance of our own
+// instead, via the real "manual registration" API (STORY 10.3 §6,
+// POST /api/v1/plugins — any plugin_name discovered on disk can have extra
+// instances registered under a fresh slug). Self-contained and safe to
+// toggle without touching the plugins other specs rely on staying active
+// (clients, comments); always deleted again afterward regardless of outcome.
 test.describe('PluginManager', () => {
   test('activates and deactivates a plugin from the list', async ({ page }) => {
     await loginAsAdmin(page);
-    await page.click('[data-role="navbar-link"][data-page="plugins"]');
-    await expect(page).toHaveURL(/#\/plugins$/);
+    const token = await page.evaluate(() => localStorage.getItem('xestify_access_token'));
+    const targetSlug = `e2e_plugin_toggle_${Date.now()}`;
 
-    const row = page.locator('tr', { has: page.locator(`[data-slug="${TARGET_SLUG}"]`) });
-    await expect(row).toBeVisible();
+    const registerResponse = await page.request.post('api/v1/plugins', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { plugin_name: 'demoinventory', slug: targetSlug },
+    });
+    expect(registerResponse.ok(), await registerResponse.text()).toBeTruthy();
 
-    const badge = row.locator('[data-role="plugin-status-badge"]');
-    const startedActive = (await badge.textContent())?.trim() === 'Activo';
-    const [firstAction, secondAction] = startedActive ? ['deactivate', 'activate'] : ['activate', 'deactivate'];
-    const [firstLabel, secondLabel] = startedActive ? ['Inactivo', 'Activo'] : ['Activo', 'Inactivo'];
+    try {
+      await page.click('[data-role="navbar-link"][data-page="plugins"]');
+      await expect(page).toHaveURL(/#\/plugins$/);
 
-    await row.locator(`[data-role="plugin-action"][data-action="${firstAction}"]`).click();
-    await expect(badge).toHaveText(firstLabel);
+      const row = page.locator('tr', { has: page.locator(`[data-slug="${targetSlug}"]`) });
+      await expect(row).toBeVisible();
 
-    await row.locator(`[data-role="plugin-action"][data-action="${secondAction}"]`).click();
-    await expect(badge).toHaveText(secondLabel);
+      // registerNew() activates the instance immediately (STORY 10.3 §6), so
+      // it always starts "Activo" here.
+      const badge = row.locator('[data-role="plugin-status-badge"]');
+      await expect(badge).toHaveText('Activo');
+
+      await row.locator('[data-role="plugin-action"][data-action="deactivate"]').click();
+      await expect(badge).toHaveText('Inactivo');
+
+      await row.locator('[data-role="plugin-action"][data-action="activate"]').click();
+      await expect(badge).toHaveText('Activo');
+    } finally {
+      await page.request.delete(`api/v1/plugins/${targetSlug}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
   });
 });
