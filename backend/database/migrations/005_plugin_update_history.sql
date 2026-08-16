@@ -6,6 +6,39 @@
 -- Idempotent: safe to run multiple times.
 -- STORY 7.2, STORY 10.3
 
+-- In-place upgrade for a table created by the pre-STORY-10.3 version of this
+-- file (columns name/plugin_type/version/schema_version instead of
+-- manifest_json). CREATE TABLE IF NOT EXISTS below is a no-op against an
+-- existing table, so without this block, picking up the new schema on an
+-- environment that already ran the old migration required a manual DROP —
+-- which is exactly what silently wiped every snapshot row during STORY 10.3.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'plugin_update_history'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'plugin_update_history'
+          AND column_name = 'manifest_json'
+    ) THEN
+        ALTER TABLE plugin_update_history ADD COLUMN manifest_json JSONB;
+
+        UPDATE plugin_update_history
+        SET manifest_json = jsonb_build_object(
+            'name', name,
+            'type', plugin_type,
+            'version', version
+        );
+
+        ALTER TABLE plugin_update_history ALTER COLUMN manifest_json SET NOT NULL;
+        ALTER TABLE plugin_update_history DROP COLUMN name;
+        ALTER TABLE plugin_update_history DROP COLUMN plugin_type;
+        ALTER TABLE plugin_update_history DROP COLUMN version;
+        ALTER TABLE plugin_update_history DROP COLUMN schema_version;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS plugin_update_history (
     id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     slug           VARCHAR(100) NOT NULL,
