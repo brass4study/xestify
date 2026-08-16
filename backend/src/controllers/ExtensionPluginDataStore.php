@@ -6,7 +6,7 @@ namespace Xestify\controllers;
 
 use PDO;
 
-final class ExtensionPluginDataStore
+class ExtensionPluginDataStore
 {
     public function __construct(private PDO $pdo)
     {
@@ -183,6 +183,23 @@ final class ExtensionPluginDataStore
             'DELETE FROM plugin_extension_data WHERE plugin_slug = :slug'
         );
         $stmt->execute([':slug' => $pluginSlug]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Physically deletes every extension-data row attached to ONE entity
+     * record — used when that record itself is deleted (not the whole
+     * entity type, unlike deleteByEntitySlug()). Covers every extension
+     * plugin pointing at the record (no plugin_slug filter). Part of the
+     * caller's transaction — no transaction management here.
+     */
+    public function deleteByRecord(string $entitySlug, string $recordId): int
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM plugin_extension_data WHERE entity_slug = :slug AND record_id = :record_id'
+        );
+        $stmt->execute([':slug' => $entitySlug, ':record_id' => $recordId]);
 
         return $stmt->rowCount();
     }

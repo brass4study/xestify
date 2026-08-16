@@ -16,9 +16,11 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__, 2));
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
+require_once BASE_PATH . '/tests/helpers/autoload.php';
 require_once BASE_PATH . '/src/exceptions/DatabaseException.php';
 require_once BASE_PATH . '/src/exceptions/RepositoryException.php';
 require_once BASE_PATH . '/src/exceptions/EntityServiceException.php';
+require_once BASE_PATH . '/src/exceptions/HookException.php';
 require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/core/Database.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
@@ -26,12 +28,17 @@ require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/core/HookDispatcher.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 use Xestify\exceptions\EntityServiceException;
+use Xestify\exceptions\HookException;
 use Xestify\exceptions\ValidationException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\discovery\PluginSchemaCodec;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\GenericRepository;
+use Xestify\repositories\PluginRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
 
@@ -71,6 +78,8 @@ try {
 
 const TEST_ENTITY_SLUG = 'test_entity_service';
 const DELETE_BY_SLUG_SQL = 'DELETE FROM plugin_entity_data WHERE entity_slug = :slug';
+const DELETE_PLUGIN_BY_SLUG_SQL = 'DELETE FROM plugins WHERE slug = :slug';
+const TEST_MANIFEST_VERSION = '1.0.0';
 
 define('TEST_SCHEMA_JSON', <<<'JSON'
 {
@@ -93,7 +102,9 @@ function buildService(): EntityService
     return new EntityService(
         new GenericRepository($pdo),
         new ValidationService(),
-        $pdo
+        $pdo,
+        new ExtensionPluginDataStore($pdo),
+        new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
     );
 }
 
@@ -269,6 +280,93 @@ TestSuite::run('deleteRecord() soft deletes — getRecord() returns null afterwa
     cleanTestData();
 });
 
+TestSuite::run('deleteRecord() cascades to plugin_extension_data for that record only', function (): void {
+    cleanTestData();
+    seedSchema();
+    $pdo = Database::connection();
+    $svc = buildService();
+
+    $record = $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'HasExtensionData']);
+    $keeper = $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'Untouched']);
+    $recordId = (string) $record['id'];
+    $keeperId = (string) $keeper['id'];
+
+    $insertExtension = function (string $recordIdToLink) use ($pdo): void {
+        $pdo->prepare(
+            'INSERT INTO plugin_extension_data (plugin_slug, entity_slug, record_id, content)
+             VALUES (:plugin, :entity, :record_id, \'{}\'::jsonb)'
+        )->execute([
+            ':plugin' => 'test_ext_plugin',
+            ':entity' => TEST_ENTITY_SLUG,
+            ':record_id' => $recordIdToLink,
+        ]);
+    };
+    $insertExtension($recordId);
+    $insertExtension($recordId);
+    $insertExtension($keeperId);
+
+    $svc->deleteRecord($recordId);
+
+    $countFor = function (string $recordIdToCount) use ($pdo): int {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM plugin_extension_data WHERE record_id = :record_id');
+        $stmt->execute([':record_id' => $recordIdToCount]);
+        return (int) $stmt->fetchColumn();
+    };
+
+    assertTrue($countFor($recordId) === 0, 'extension_data rows for the deleted record must be gone');
+    assertTrue($countFor($keeperId) === 1, 'extension_data rows for other records must survive');
+
+    $pdo->prepare('DELETE FROM plugin_extension_data WHERE entity_slug = :slug')
+        ->execute([':slug' => TEST_ENTITY_SLUG]);
+    cleanTestData();
+});
+
+TestSuite::run('deleteRecord() throws HookException and keeps the record when another entity depends on it', function (): void {
+    cleanTestData();
+    seedSchema();
+    $pdo = Database::connection();
+    $dependentSlug = TEST_ENTITY_SLUG . '_dependent';
+    $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => $dependentSlug]);
+    $pdo->prepare(DELETE_PLUGIN_BY_SLUG_SQL)->execute([':slug' => $dependentSlug]);
+
+    $manifest = json_encode([
+        'name' => $dependentSlug, 'label' => $dependentSlug, 'version' => TEST_MANIFEST_VERSION,
+        'type' => 'entity', 'core_version' => TEST_MANIFEST_VERSION, 'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $schema = json_encode([
+        'identities' => ['id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false]],
+        'fields' => [],
+        'custom_fields' => [],
+        'relations' => [[
+            'key' => 'parent_id', 'label' => 'Parent', 'type' => 'belongs_to',
+            'target_entity' => TEST_ENTITY_SLUG, 'target_field' => 'id',
+        ]],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $pdo->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))"
+    )->execute([':slug' => $dependentSlug, ':manifest' => $manifest, ':schema' => $schema]);
+
+    $svc = buildService();
+    $parent = $svc->createRecord(TEST_ENTITY_SLUG, ['name' => 'HasDependent']);
+    $parentId = (string) $parent['id'];
+    $svc->createRecord($dependentSlug, ['parent_id' => $parentId]);
+
+    $caught = false;
+    try {
+        $svc->deleteRecord($parentId);
+    } catch (HookException) {
+        $caught = true;
+    }
+
+    assertTrue($caught, 'HookException must be thrown when a dependent record blocks deletion');
+    assertTrue($svc->getRecord($parentId) !== null, 'parent record must still exist after the blocked delete');
+
+    $pdo->prepare(DELETE_BY_SLUG_SQL)->execute([':slug' => $dependentSlug]);
+    $pdo->prepare(DELETE_PLUGIN_BY_SLUG_SQL)->execute([':slug' => $dependentSlug]);
+    cleanTestData();
+});
+
 TestSuite::run('listRecords() returns only active records', function (): void {
     cleanTestData();
     seedSchema();
@@ -301,7 +399,14 @@ TestSuite::run('createRecord() rolls back beforeSave hook writes when persist fa
         return $context;
     });
 
-    $svc = new EntityService(new GenericRepository($pdo), new ValidationService(), $pdo, $hooks);
+    $svc = new EntityService(
+        new GenericRepository($pdo),
+        new ValidationService(),
+        $pdo,
+        new ExtensionPluginDataStore($pdo),
+        new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec())),
+        $hooks
+    );
     $caught = false;
 
     try {
@@ -347,7 +452,14 @@ TestSuite::run('updateRecord() rolls back beforeSave hook writes when persist fa
         return $context;
     });
 
-    $svc = new EntityService(new GenericRepository($pdo), new ValidationService(), $pdo, $hooks);
+    $svc = new EntityService(
+        new GenericRepository($pdo),
+        new ValidationService(),
+        $pdo,
+        new ExtensionPluginDataStore($pdo),
+        new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec())),
+        $hooks
+    );
     $caught = false;
 
     try {

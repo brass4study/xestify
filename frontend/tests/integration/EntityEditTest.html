@@ -391,6 +391,89 @@
   });
 
   // ────────────────────────────────────────────────────────────────────────
+  // Delete button
+  // ────────────────────────────────────────────────────────────────────────
+
+  await test('delete button is absent in create mode (no recordId)', async () => {
+    const container = makeSandbox();
+    const page = new EntityEdit(container, 'person', SCHEMA, { onDelete: () => {} });
+
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    const deleteBtn = container.querySelector('[data-role="entity-edit-delete"]');
+    assertTrue(deleteBtn === null, 'Delete button should not exist without a recordId');
+  });
+
+  await test('delete button is absent without onDelete callback', async () => {
+    const container = makeSandbox();
+    const page = new EntityEdit(container, 'person', SCHEMA, { recordId: '7' });
+
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    const deleteBtn = container.querySelector('[data-role="entity-edit-delete"]');
+    assertTrue(deleteBtn === null, 'Delete button should not exist without onDelete');
+  });
+
+  await test('delete button appears in edit mode with onDelete provided', async () => {
+    const container = makeSandbox();
+    const page = new EntityEdit(container, 'person', SCHEMA, { recordId: '7', onDelete: () => {} });
+
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+    const deleteBtn = container.querySelector('[data-role="entity-edit-delete"]');
+    assertTrue(deleteBtn !== null, 'Delete button should exist with a recordId and onDelete');
+  });
+
+  await test('confirming the delete modal calls DELETE and invokes onDelete', async () => {
+    const container = makeSandbox();
+    let capturedMethod = null;
+    let capturedUrl = null;
+    globalThis.fetch = async (url, init) => {
+      const method = init?.method ?? 'GET';
+      if (method === 'DELETE') {
+        capturedMethod = method;
+        capturedUrl = url;
+        return { status: 200, json: async () => ({ ok: true, data: { deleted: true, id: '7' } }) };
+      }
+      return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+    };
+
+    let deletedId = null;
+    const page = new EntityEdit(container, 'person', SCHEMA, {
+      recordId: '7',
+      onDelete: (id) => { deletedId = id; },
+    });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+
+    container.querySelector('[data-role="entity-edit-delete"]').click();
+    const confirmButton = container.querySelector('[data-action="confirm-modal"]');
+    assertTrue(confirmButton instanceof HTMLButtonElement, 'Confirmation modal should render a confirm button');
+    confirmButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assertEquals(capturedMethod, 'DELETE', 'Should call DELETE');
+    assertTrue(String(capturedUrl).includes('/entities/person/records/7'), 'URL should target the record being edited');
+    assertEquals(deletedId, '7', 'onDelete should be called with the record id');
+  });
+
+  await test('cancelling the delete modal does not call DELETE', async () => {
+    const container = makeSandbox();
+    let deleteCalled = false;
+    globalThis.fetch = async (_url, init) => {
+      if ((init?.method ?? 'GET') === 'DELETE') {
+        deleteCalled = true;
+      }
+      return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+    };
+
+    const page = new EntityEdit(container, 'person', SCHEMA, { recordId: '7', onDelete: () => {} });
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+
+    container.querySelector('[data-role="entity-edit-delete"]').click();
+    container.querySelector('[data-action="cancel-modal"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assertTrue(!deleteCalled, 'Cancelling must not call DELETE');
+  });
+
+  // ────────────────────────────────────────────────────────────────────────
   // Reverse relation tab (STORY 10.3 §9)
   // ────────────────────────────────────────────────────────────────────────
 

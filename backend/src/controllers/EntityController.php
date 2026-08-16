@@ -332,8 +332,8 @@ class EntityController
 
         try {
             $this->service->deleteRecord($id);
-        } catch (RepositoryException $e) {
-            Response::make()->notFound($e->getMessage());
+        } catch (HookException | EntityServiceException | RepositoryException $e) {
+            $this->respondEntityWriteFailure($e);
             return;
         }
 

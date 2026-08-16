@@ -136,6 +136,8 @@ if (!function_exists('xestifyRegisterEntityServices')) {
             $container->get(GenericRepository::class),
             $container->get(ValidationService::class),
             $container->get(Database::class),
+            $container->get(ExtensionPluginDataStore::class),
+            $container->get(ReverseRelationTabResolver::class),
             $container->get(HookDispatcher::class)
         ));
     }

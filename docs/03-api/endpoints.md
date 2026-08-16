@@ -12,7 +12,7 @@
 | POST   | /api/v1/entities/{slug}/records | Crear registro de entidad | Sí |
 | GET    | /api/v1/entities/{slug}/records/{id} | Obtener registro por ID | Sí |
 | PUT    | /api/v1/entities/{slug}/records/{id} | Actualizar registro (merge JSONB) | Sí |
-| DELETE | /api/v1/entities/{slug}/records/{id} | Eliminar (soft-delete) registro | Sí |
+| DELETE | /api/v1/entities/{slug}/records/{id} | Eliminar (soft-delete) registro y limpiar en cascada su plugin_extension_data | Sí |
 | GET    | /api/v1/plugins | Listar plugins instalados | Sí (admin) |
 | GET    | /api/v1/plugins/available | Listar carpetas de disco aún no registradas | Sí (admin) |
 | POST   | /api/v1/plugins | Alta manual de una instancia nueva (se activa automáticamente) | Sí (admin) |
@@ -34,6 +34,7 @@
 > - `GET /api/v1/plugins` incluye `can_rollback` por plugin para indicar si existe snapshot compatible para rollback.
 > - `GET /api/v1/entities/{slug}/records` acepta también `?field=&value=` — filtro exacto sin paginar sobre una clave de `content` (STORY 10.3 §9), distinto del listado paginado normal.
 > - `GET /api/v1/entities/{slug}/tabs` incluye, además de las tabs aportadas por plugins vía `registerTabs`, tabs `type: "relation"` generadas automáticamente por el núcleo cuando otra entidad declara una relación hacia esta (STORY 10.3 §8/§9) — no vienen de ningún `plugin.js`.
+> - `DELETE /api/v1/entities/{slug}/records/{id}` devuelve `422` cuando otra entidad tiene registros que dependen de este vía `schema.relations[]` (no se borra hasta que se borren o desvinculen esos registros dependientes primero).
 > - Los endpoints de plugins de extensión son genéricos y discriminan por plugin_slug y entity.
 > - Ver [contratos](contratos/) para detalles de payload y respuesta.
 

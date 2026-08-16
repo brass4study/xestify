@@ -14,12 +14,17 @@ Permitir que plugins amplien comportamiento del Core sin modificar codigo centra
 Nota: `onUpdate` y `onRollback` son opcionales — un plugin los declara implementando `PluginLifecycleUpdateInterface` (que extiende `PluginLifecycleInterface`); `PluginLifecycleInvoker` comprueba `instanceof` antes de invocarlos. `onUninstall` no forma parte de ningún contrato actual.
 
 2. Hooks de entidad
-- beforeValidate
-- afterValidate
-- beforeSave
-- afterSave
-- beforeDelete
-- afterDelete
+- beforeValidate (no implementado)
+- afterValidate (no implementado)
+- beforeSave — implementado en `EntityService::createRecord()`/`updateRecord()`
+- afterSave — implementado en `EntityService::createRecord()`/`updateRecord()`
+- beforeDelete — implementado en `EntityService::deleteRecord()`; un plugin puede
+  bloquear el borrado de sus propios registros lanzando `HookException`, igual que en
+  `beforeSave`. El bloqueo por registros dependientes de OTRA entidad (via
+  `schema.relations[]`) no pasa por este hook — es un guard núcleo
+  (`EntityService::guardNoDependentRecords()`, reutiliza `ReverseRelationTabResolver`)
+  porque requiere introspección cruzada de entidades que un hook de plugin no tiene.
+- afterDelete — implementado en `EntityService::deleteRecord()`, no bloqueante
 
 3. Hooks de UI
 - registerTabs

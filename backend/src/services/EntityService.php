@@ -7,9 +7,13 @@ namespace Xestify\services;
 use PDO;
 use PDOException;
 use Throwable;
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\exceptions\EntityServiceException;
+use Xestify\exceptions\HookException;
+use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\GenericRepository;
 use Xestify\validation\schema\SchemaFieldExtractor;
 
@@ -37,6 +41,8 @@ final class EntityService
         private GenericRepository $repository,
         private ValidationService $validator,
         private PDO $pdo,
+        private ExtensionPluginDataStore $extensionDataStore,
+        private ReverseRelationTabResolver $reverseRelationTabResolver,
         private ?HookDispatcher $hooks = null,
         private SchemaFieldExtractor $fieldExtractor = new SchemaFieldExtractor()
     ) {
@@ -118,13 +124,69 @@ final class EntityService
     }
 
     /**
-     * Soft-delete a record.
+     * Soft-delete a record and cascade-clean everything that points at it:
+     * plugin_extension_data rows (hard delete, that table has no deleted_at)
+     * and dispatches beforeDelete/afterDelete so plugins can react. Blocks
+     * the operation when another entity has records depending on this one
+     * via schema.relations[] (STORY 10.3 §8/§9's reverse-relation lookup).
      *
      * @throws \Xestify\exceptions\RepositoryException when not found
+     * @throws HookException when a dependent record blocks deletion, or a
+     *                       beforeDelete hook blocks it
+     * @throws EntityServiceException when the entity's schema is not found
      */
     public function deleteRecord(string $id): void
     {
-        $this->repository->delete($id);
+        $record = $this->repository->find($id);
+        if ($record === null) {
+            throw new RepositoryException('Record not found or already deleted: ' . $id);
+        }
+
+        $entitySlug = (string) $record['entity_slug'];
+        $plugin = $this->fetchCurrentPluginRow($entitySlug);
+
+        $this->guardNoDependentRecords($entitySlug, $id);
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $this->dispatchBefore('beforeDelete', $entitySlug, $plugin['plugin_name'], [], $id);
+            $this->repository->delete($id);
+            $this->extensionDataStore->deleteByRecord($entitySlug, $id);
+            $this->dispatchAfter('afterDelete', $entitySlug, $record);
+
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Blocks deletion when another entity declares a schema.relations[]
+     * entry targeting this entity and has at least one record pointing at
+     * $recordId. Reuses ReverseRelationTabResolver (STORY 10.3 §9, already
+     * scans active entity plugins for relations targeting a given entity).
+     * Queries the repository directly (not the public findRecordsByField()
+     * used by the record-filter API) since $relation['key'] is already a
+     * trusted key taken straight from the source entity's own schema, not
+     * unvalidated request input.
+     */
+    private function guardNoDependentRecords(string $entitySlug, string $recordId): void
+    {
+        foreach ($this->reverseRelationTabResolver->resolve($entitySlug) as $relation) {
+            $dependents = $this->repository->findByFieldValue($relation['source_entity'], $relation['key'], $recordId);
+            if ($dependents !== []) {
+                throw new HookException(sprintf(
+                    "No se puede borrar: %d registro(s) de '%s' dependen de este registro.",
+                    count($dependents),
+                    $relation['source_entity']
+                ));
+            }
+        }
     }
 
     /**

@@ -131,6 +131,21 @@ export class EntityList {
 			rowDecorator: this.#onEdit === null ? null : (row, record) => this.#decorateRowAsEditable(row, record, slug),
 			pageSize: DynamicTable.getPreferredPageSize(EntityList.PAGE_SIZE),
 			totalRecords: Number.isInteger(meta?.total) ? meta.total : records.length,
+			extraColumns: [{
+				key: 'delete-action',
+				label: 'Acciones',
+				position: 'end',
+				renderCell: (record) => DynamicTable.buildActionButton({
+					icon: 'fa-trash',
+					tone: 'red',
+					label: 'Borrar',
+					dataRole: 'record-delete',
+					onClick: (event) => {
+						event.stopPropagation();
+						void this.#deleteRecord(slug, record.id, record);
+					},
+				}),
+			}],
 			onQueryChange: async (query) => {
 				try {
 					const response = await this.#api.get(this.#recordsUrl(slug, query));
@@ -170,6 +185,31 @@ export class EntityList {
 				activate();
 			}
 		});
+	}
+
+	/**
+	 * @param {string} slug
+	 * @param {string} recordId
+	 */
+	async #deleteRecord(slug, recordId) {
+		const accepted = await UiResilienceService.confirm({
+			container: this.#container,
+			title: 'Confirmar borrado',
+			message: 'Se eliminará este registro y todos los datos asociados de otros plugins (comentarios, etc.). Esta acción no se puede deshacer.',
+			confirmLabel: 'Borrar',
+			cancelLabel: 'Cancelar',
+		});
+		if (!accepted) {
+			return;
+		}
+
+		try {
+			await this.#api.delete(`/entities/${encodeURIComponent(slug)}/records/${encodeURIComponent(recordId)}`);
+			this.#showNotification('success', 'Registro borrado correctamente.', 'entity-delete-success');
+			await this.loadEntity(slug);
+		} catch (err) {
+			this.#handleError(err);
+		}
 	}
 
 	#recordsUrl(slug, query = {}) {

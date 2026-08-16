@@ -217,6 +217,101 @@
     assertEquals(calledWith, 'persons', 'onCreateNew should be called with the entity slug');
   });
 
+  await test('each row renders a "Borrar" action button', async () => {
+    const container = makeSandbox();
+    mockFetchWithMap({
+      '/entities': [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }],
+      '/entities/persons/records': [{ id: 'r1', content: { name: 'ACME' } }],
+    });
+
+    const page = new EntityList(container);
+    await page.init();
+    await page.loadEntity('persons');
+
+    const deleteButtons = container.querySelectorAll('[data-role="record-delete"]');
+    assertEquals(deleteButtons.length, 1, 'Should render one delete button per record row');
+  });
+
+  await test('clicking the delete button does not trigger row navigation (onEdit)', async () => {
+    const container = makeSandbox();
+    mockFetchWithMap({
+      '/entities': [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }],
+      '/entities/persons/records': [{ id: 'r1', content: { name: 'ACME' } }],
+    });
+
+    let editCalled = false;
+    const page = new EntityList(container, { onEdit: () => { editCalled = true; } });
+    await page.init();
+    await page.loadEntity('persons');
+
+    container.querySelector('[data-role="record-delete"]').click();
+
+    assertTrue(!editCalled, 'onEdit must NOT fire when clicking the delete button (stopPropagation)');
+  });
+
+  await test('confirming the delete modal calls DELETE and reloads the list', async () => {
+    const container = makeSandbox();
+    const calls = [];
+    const api = {
+      async get(url) {
+        calls.push({ method: 'GET', url });
+        if (url === '/entities') {
+          return { data: [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }] };
+        }
+        return { data: [{ id: 'r1', content: { name: 'ACME' } }], meta: { page: 1, page_size: 20, total: 1 } };
+      },
+      async delete(url) {
+        calls.push({ method: 'DELETE', url });
+        return { data: { deleted: true, id: 'r1' } };
+      },
+    };
+
+    const page = new EntityList(container, { api });
+    await page.init();
+    await page.loadEntity('persons');
+
+    container.querySelector('[data-role="record-delete"]').click();
+    const confirmButton = container.querySelector('[data-action="confirm-modal"]');
+    assertTrue(confirmButton instanceof HTMLButtonElement, 'Confirmation modal should render a confirm button');
+    confirmButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const deleteCall = calls.find((call) => call.method === 'DELETE');
+    assertTrue(deleteCall !== undefined, 'Must call DELETE on the record endpoint');
+    assertEquals(deleteCall.url, '/entities/persons/records/r1', 'DELETE URL must target the clicked record');
+
+    const getCallsAfterDelete = calls.filter((call) => call.method === 'GET' && call.url.startsWith('/entities/persons/records')).length;
+    assertTrue(getCallsAfterDelete >= 2, 'List must reload after a successful delete');
+  });
+
+  await test('cancelling the delete modal does not call DELETE', async () => {
+    const container = makeSandbox();
+    const calls = [];
+    const api = {
+      async get(url) {
+        calls.push({ method: 'GET', url });
+        if (url === '/entities') {
+          return { data: [{ slug: 'persons', label: 'Personas', fields: [{ name: 'name', label: 'Nombre' }] }] };
+        }
+        return { data: [{ id: 'r1', content: { name: 'ACME' } }], meta: { page: 1, page_size: 20, total: 1 } };
+      },
+      async delete(url) {
+        calls.push({ method: 'DELETE', url });
+        return { data: { deleted: true } };
+      },
+    };
+
+    const page = new EntityList(container, { api });
+    await page.init();
+    await page.loadEntity('persons');
+
+    container.querySelector('[data-role="record-delete"]').click();
+    container.querySelector('[data-action="cancel-modal"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assertTrue(!calls.some((call) => call.method === 'DELETE'), 'Cancelling must not call DELETE');
+  });
+
   // ------------------------------------------------------------------------
   // Summary
   // ------------------------------------------------------------------------

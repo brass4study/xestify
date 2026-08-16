@@ -35,6 +35,7 @@ require_once BASE_PATH . '/src/core/HookDispatcher.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 
 use Xestify\controllers\EntityController;
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
@@ -113,7 +114,9 @@ function buildController(): EntityController
         new EntityService(
             new GenericRepository($pdo),
             new ValidationService(),
-            $pdo
+            $pdo,
+            new ExtensionPluginDataStore($pdo),
+            new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
         ),
         $pdo,
         new HookDispatcher(),
@@ -165,6 +168,78 @@ function cleanCtrlData(string $slug = CTRL_ENTITY_SLUG): void
         ->execute([':slug' => $slug]);
     $pdo->prepare('UPDATE plugins SET schema_json = NULL WHERE slug = :slug')
         ->execute([':slug' => $slug]);
+}
+
+function insertCtrlExtensionRow(string $entitySlug, string $recordId, string $pluginSlug = 'test_ext_plugin'): void
+{
+    Database::connection()->prepare(
+        'INSERT INTO plugin_extension_data (plugin_slug, entity_slug, record_id, content)
+         VALUES (:plugin, :entity, :record_id, \'{}\'::jsonb)'
+    )->execute([':plugin' => $pluginSlug, ':entity' => $entitySlug, ':record_id' => $recordId]);
+}
+
+function countCtrlExtensionRows(string $recordId): int
+{
+    $stmt = Database::connection()->prepare(
+        'SELECT COUNT(*) FROM plugin_extension_data WHERE record_id = :record_id'
+    );
+    $stmt->execute([':record_id' => $recordId]);
+    return (int) $stmt->fetchColumn();
+}
+
+const CTRL_DEPENDENT_SLUG = 'test_entity_ctrl_dependent';
+
+function seedCtrlDependentPlugin(string $targetEntitySlug): void
+{
+    $manifest = json_encode([
+        'name' => CTRL_DEPENDENT_SLUG,
+        'label' => 'Test Entity Ctrl Dependent',
+        'version' => '1.0.0',
+        'type' => 'entity',
+        'core_version' => '1.0.0',
+        'description' => '',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $schema = json_encode([
+        'identities' => ['id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false]],
+        'fields' => [],
+        'custom_fields' => [],
+        'relations' => [[
+            'key' => 'parent_id',
+            'label' => 'Parent',
+            'type' => 'belongs_to',
+            'target_entity' => $targetEntitySlug,
+            'target_field' => 'id',
+        ]],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    Database::connection()->prepare(
+        "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+         VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))
+         ON CONFLICT (slug) DO UPDATE
+         SET status = 'active', manifest_json = EXCLUDED.manifest_json, schema_json = EXCLUDED.schema_json, updated_at = NOW()"
+    )->execute([':slug' => CTRL_DEPENDENT_SLUG, ':manifest' => $manifest, ':schema' => $schema]);
+}
+
+function insertCtrlDependentRecord(string $parentId): string
+{
+    $stmt = Database::connection()->prepare(
+        "INSERT INTO plugin_entity_data (entity_slug, content)
+         VALUES (:slug, CAST(:content AS jsonb)) RETURNING id"
+    );
+    $stmt->execute([
+        ':slug' => CTRL_DEPENDENT_SLUG,
+        ':content' => json_encode(['parent_id' => $parentId], JSON_UNESCAPED_UNICODE),
+    ]);
+    return (string) $stmt->fetchColumn();
+}
+
+function cleanCtrlDependentPlugin(): void
+{
+    $pdo = Database::connection();
+    $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
+        ->execute([':slug' => CTRL_DEPENDENT_SLUG]);
+    $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')
+        ->execute([':slug' => CTRL_DEPENDENT_SLUG]);
 }
 
 function hasControllerValidationError(array $result, string $field, string $code): bool
@@ -391,6 +466,49 @@ TestSuite::run('DELETE destroy soft-deletes record — show returns 404 afterwar
     assertTrue($deleteResult['ok'] ?? false, 'delete must return ok');
     assertTrue(!($showResult['ok'] ?? true), 'show must return not found after delete');
 
+    cleanCtrlData();
+});
+
+TestSuite::run('DELETE destroy cascades to plugin_extension_data for that record only', function (): void {
+    cleanCtrlData();
+    seedCtrlSchema();
+    $ctrl = buildController();
+    $created = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => 'HasComments']);
+    $keeper  = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => 'Untouched']);
+    $id = (string) ($created['data']['id'] ?? '');
+    $keeperId = (string) ($keeper['data']['id'] ?? '');
+
+    insertCtrlExtensionRow(CTRL_ENTITY_SLUG, $id);
+    insertCtrlExtensionRow(CTRL_ENTITY_SLUG, $id);
+    insertCtrlExtensionRow(CTRL_ENTITY_SLUG, $keeperId);
+
+    $deleteResult = callController($ctrl, 'destroy', ['slug' => CTRL_ENTITY_SLUG, 'id' => $id]);
+
+    assertTrue($deleteResult['ok'] ?? false, 'delete must return ok');
+    assertTrue(countCtrlExtensionRows($id) === 0, 'extension_data rows for the deleted record must be gone');
+    assertTrue(countCtrlExtensionRows($keeperId) === 1, 'extension_data rows for other records must survive');
+
+    cleanCtrlData();
+});
+
+TestSuite::run('DELETE destroy returns 422 when another entity has a dependent record', function (): void {
+    cleanCtrlData();
+    seedCtrlSchema();
+    cleanCtrlDependentPlugin();
+    seedCtrlDependentPlugin(CTRL_ENTITY_SLUG);
+    $ctrl = buildController();
+    $created = callController($ctrl, 'create', ['slug' => CTRL_ENTITY_SLUG], ['title' => 'HasDependent']);
+    $id = (string) ($created['data']['id'] ?? '');
+    insertCtrlDependentRecord($id);
+
+    $deleteResult = callController($ctrl, 'destroy', ['slug' => CTRL_ENTITY_SLUG, 'id' => $id]);
+    $showResult = callController($ctrl, 'show', ['slug' => CTRL_ENTITY_SLUG, 'id' => $id]);
+
+    assertTrue(!($deleteResult['ok'] ?? true), MSG_OK_FALSE);
+    assertTrue(($deleteResult['error']['code'] ?? 0) === 422, 'code must be 422 when a dependent record blocks deletion');
+    assertTrue($showResult['ok'] ?? false, 'record must still exist after the blocked delete');
+
+    cleanCtrlDependentPlugin();
     cleanCtrlData();
 });
 

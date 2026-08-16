@@ -35,6 +35,7 @@ require_once BASE_PATH . '/src/services/EntityService.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 
 use Xestify\controllers\EntityController;
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\core\Database;
 use Xestify\core\Request;
 use Xestify\exceptions\DatabaseException;
@@ -88,7 +89,9 @@ function buildTabsController(HookDispatcher $dispatcher): EntityController
         new EntityService(
             new GenericRepository($pdo),
             new ValidationService(),
-            $pdo
+            $pdo,
+            new ExtensionPluginDataStore($pdo),
+            new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
         ),
         $pdo,
         $dispatcher,

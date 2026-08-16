@@ -22,6 +22,7 @@ require_once BASE_PATH . '/src/core/Request.php';
 require_once BASE_PATH . '/src/controllers/EntityController.php';
 
 use Xestify\controllers\EntityController;
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\core\Database;
 use Xestify\core\HookDispatcher;
 use Xestify\core\Request;
@@ -94,7 +95,13 @@ function buildOptionsController(): EntityController
     $pdo = Database::connection();
 
     return new EntityController(
-        new EntityService(new GenericRepository($pdo), new ValidationService(), $pdo),
+        new EntityService(
+            new GenericRepository($pdo),
+            new ValidationService(),
+            $pdo,
+            new ExtensionPluginDataStore($pdo),
+            new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))
+        ),
         $pdo,
         new HookDispatcher(),
         new ReverseRelationTabResolver(new PluginRepository($pdo, new PluginSchemaCodec()))

@@ -420,7 +420,12 @@ No hay JOIN automático — la resolución es explícita, bajo demanda (lazy).
 
 ### Riesgos
 - Sin FK real → posibles registros huérfanos si se elimina el registro referenciado.
-- **Mitigación:** Hook `beforeDelete` en el plugin que tenga `has_many` puede bloquear el borrado si existen registros dependientes.
+- **Mitigado:** `EntityService::deleteRecord()` bloquea el borrado (`HookException`, HTTP 422)
+  cuando otra entidad tiene registros que apuntan al registro vía `schema.relations[]`
+  (guard núcleo con `ReverseRelationTabResolver`, no un hook de plugin — ver
+  `docs/01-architecture/hooks.md`). Además, borrar un registro limpia físicamente todo
+  `plugin_extension_data` que apuntara a él (comentarios, etc.), evitando huérfanos ahí
+  también.
 
 ### Futuro
 Si la complejidad de relaciones crece, se puede añadir una tabla `entity_relations` materializada para joins rápidos sin romper el contrato de schema (cambio aditivo).

@@ -27,6 +27,7 @@ export class EntityEdit {
 	#form = null;
 	#onSaved;
 	#onCancel;
+	#onDelete;
 	#onTabChange;
 	#onTabsReady;
 	#onNavigateToRecord;
@@ -41,7 +42,7 @@ export class EntityEdit {
 	 * @param {HTMLElement|string} container
 	 * @param {string} slug
 	 * @param {Object} schema
-	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onTabChange?: Function, onTabsReady?: Function, onNavigateToRecord?: Function}} options
+	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onDelete?: Function, onTabChange?: Function, onTabsReady?: Function, onNavigateToRecord?: Function}} options
 	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -57,6 +58,7 @@ export class EntityEdit {
 			: new Api();
 		this.#onSaved = typeof options.onSaved === 'function' ? options.onSaved : null;
 		this.#onCancel = typeof options.onCancel === 'function' ? options.onCancel : null;
+		this.#onDelete = typeof options.onDelete === 'function' ? options.onDelete : null;
 		this.#onTabChange = typeof options.onTabChange === 'function' ? options.onTabChange : null;
 		this.#onTabsReady = typeof options.onTabsReady === 'function' ? options.onTabsReady : null;
 		this.#onNavigateToRecord = typeof options.onNavigateToRecord === 'function' ? options.onNavigateToRecord : null;
@@ -154,6 +156,19 @@ export class EntityEdit {
 				},
 			});
 			layout.addAction(cancelBtn);
+		}
+
+		if (this.#recordId !== null && this.#onDelete !== null) {
+			const deleteBtn = component.create('button', {
+				label: 'Borrar',
+				variant: 'danger',
+				size: 'md',
+				dataRole: 'entity-edit-delete',
+				onClick: () => {
+					void this.#deleteRecord(deleteBtn);
+				},
+			});
+			layout.addAction(deleteBtn);
 		}
 
 		void this.#loadAndRenderTabs(wrapper, renderToken, layout);
@@ -565,6 +580,36 @@ export class EntityEdit {
 	#notifySaved(saved) {
 		if (this.#onSaved !== null) {
 			this.#onSaved(saved);
+		}
+	}
+
+	async #deleteRecord(deleteBtn) {
+		const accepted = await UiResilienceService.confirm({
+			container: this.#container,
+			title: 'Confirmar borrado',
+			message: 'Se eliminará este registro y todos los datos asociados de otros plugins (comentarios, etc.). Esta acción no se puede deshacer.',
+			confirmLabel: 'Borrar',
+			cancelLabel: 'Cancelar',
+		});
+		if (!accepted) {
+			return;
+		}
+
+		UiResilienceService.setButtonPending(deleteBtn, 'Borrando…');
+
+		try {
+			await this.#api.delete(`/entities/${this.#slug}/records/${this.#recordId}`);
+			UiResilienceService.showNotification({
+				type: 'success',
+				title: t('ui.success.title', 'Éxito'),
+				message: 'Registro borrado correctamente.',
+			});
+			if (this.#onDelete !== null) {
+				this.#onDelete(this.#recordId);
+			}
+		} catch (err) {
+			this.#showGlobalError(err instanceof ApiError ? err.message : 'Error desconocido');
+			UiResilienceService.clearButtonPending(deleteBtn, 'Borrar');
 		}
 	}
 

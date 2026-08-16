@@ -59,7 +59,11 @@ propios (esos son conceptos de la entidad a la que se acopla, no de la extensió
 
 - registerTabs (agrega pestana en ficha de cliente)
 - registerActions (botones contextuales)
-- beforeDelete owner (limpieza de registros hijos)
+
+La limpieza de `plugin_extension_data` cuando se borra el registro owner ya la hace el
+Core automáticamente (`EntityService::deleteRecord()` borra físicamente todo lo que
+apunte al registro, sin distinguir plugin) — el plugin de extensión no necesita
+implementar su propio `beforeDelete` para esto.
 
 ## Checklist
 

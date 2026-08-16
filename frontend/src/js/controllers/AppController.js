@@ -901,6 +901,9 @@ export class AppController {
       onCancel: async () => {
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
+      onDelete: async () => {
+        await this.router.navigate(entityPage(slug), { updateHash: true });
+      },
       onNavigateToRecord: async (sourceSlug, sourceRecordId) => {
         await this.router.navigate(entityRecordPage(sourceSlug, sourceRecordId), { updateHash: true });
       },

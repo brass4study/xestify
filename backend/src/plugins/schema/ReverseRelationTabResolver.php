@@ -14,7 +14,7 @@ use Xestify\repositories\PluginRepository;
  * (unlike the Comments hook-based tab), so it is resolved here as a core
  * capability rather than another plugin hook.
  */
-final class ReverseRelationTabResolver
+class ReverseRelationTabResolver
 {
     public function __construct(private PluginRepository $pluginRepository)
     {

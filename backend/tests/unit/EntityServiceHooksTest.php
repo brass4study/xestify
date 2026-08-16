@@ -23,11 +23,16 @@ require_once BASE_PATH . '/src/exceptions/ValidationException.php';
 require_once BASE_PATH . '/src/core/HookDispatcher.php';
 require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
+require_once BASE_PATH . '/src/controllers/ExtensionPluginDataStore.php';
+require_once BASE_PATH . '/src/plugins/schema/ReverseRelationTabResolver.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 
+use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\exceptions\HookException;
+use Xestify\exceptions\RepositoryException;
 use Xestify\exceptions\ValidationException;
 use Xestify\core\HookDispatcher;
+use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\GenericRepository;
 use Xestify\services\EntityService;
 use Xestify\services\ValidationService;
@@ -115,6 +120,11 @@ final class RepositoryStub extends GenericRepository
     /** @var array<string, mixed>|null */
     public ?array $lastUpdateData = null;
 
+    public bool $deleteCalled = false;
+
+    /** @var array<string, mixed>|null Row returned by find(); defaults to a fake 'client' record. */
+    public ?array $findResult = ['id' => 'fake-uuid', 'entity_slug' => 'client', 'content' => []];
+
     public function __construct()
     {
         // Skip parent constructor (requires PDO).
@@ -131,6 +141,63 @@ final class RepositoryStub extends GenericRepository
         $this->lastUpdateData = $data;
         return ['id' => $id, 'entity_slug' => 'test', 'content' => $data];
     }
+
+    public function find(string $id): ?array
+    {
+        return $this->findResult;
+    }
+
+    public function delete(string $id): void
+    {
+        $this->deleteCalled = true;
+    }
+
+    /** @var array<int, array<string, mixed>> Rows returned by findByFieldValue(); defaults to none. */
+    public array $dependentRows = [];
+
+    public function findByFieldValue(string $entitySlug, string $field, string $value): array
+    {
+        return $this->dependentRows;
+    }
+}
+
+/**
+ * ExtensionDataStoreStub — records deleteByRecord() calls without touching a database.
+ */
+final class ExtensionDataStoreStub extends ExtensionPluginDataStore
+{
+    public bool $deleteByRecordCalled = false;
+
+    public function __construct()
+    {
+        // Skip parent constructor (requires PDO).
+    }
+
+    public function deleteByRecord(string $entitySlug, string $recordId): int
+    {
+        $this->deleteByRecordCalled = true;
+        return 0;
+    }
+}
+
+/**
+ * ReverseRelationResolverStub — returns a configurable, fixed list of
+ * dependent relations instead of querying the plugins table.
+ */
+final class ReverseRelationResolverStub extends ReverseRelationTabResolver
+{
+    /** @var array<int, array{source_entity: string, key: string}> */
+    public array $relations = [];
+
+    public function __construct()
+    {
+        // Skip parent constructor (requires PluginRepository).
+    }
+
+    public function resolve(string $targetEntitySlug): array
+    {
+        return $this->relations;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -140,10 +207,12 @@ final class RepositoryStub extends GenericRepository
  */
 function buildHooksService(?HookDispatcher $hooks = null): array
 {
-    $pdo     = new PdoStub();
-    $repo    = new RepositoryStub();
-    $service = new EntityService($repo, new ValidationService(), $pdo, $hooks);
-    return [$service, $repo];
+    $pdo       = new PdoStub();
+    $repo      = new RepositoryStub();
+    $extension = new ExtensionDataStoreStub();
+    $relations = new ReverseRelationResolverStub();
+    $service   = new EntityService($repo, new ValidationService(), $pdo, $extension, $relations, $hooks);
+    return [$service, $repo, $extension, $relations];
 }
 
 // ---------------------------------------------------------------------------
@@ -196,7 +265,14 @@ TestSuite::run('createRecord() beforeSave can mutate data before persistence', f
     });
 
     [, $repo] = buildHooksService($hooks);
-    $svc = new EntityService($repo, new ValidationService(), new PdoStub(), $hooks);
+    $svc = new EntityService(
+        $repo,
+        new ValidationService(),
+        new PdoStub(),
+        new ExtensionDataStoreStub(),
+        new ReverseRelationResolverStub(),
+        $hooks
+    );
     $svc->createRecord('client', ['name' => 'alice']);
 
     assertEquals('ALICE', $repo->lastCreateData['name'] ?? '', 'beforeSave mutation must reach repository');
@@ -321,6 +397,116 @@ TestSuite::run('context passed to beforeSave contains slug and data keys', funct
 
     assertEquals('client', $capturedSlug, 'context must contain entity slug');
     assertEquals('Alice', $capturedData['name'] ?? '', 'context must contain data');
+});
+
+TestSuite::run('deleteRecord() dispatches beforeDelete before repository->delete()', function (): void {
+    $hooks = new HookDispatcher();
+    $beforeCalled = false;
+
+    $hooks->register('beforeDelete', static function (array $ctx) use (&$beforeCalled): array {
+        $beforeCalled = true;
+        return $ctx;
+    });
+
+    [$svc] = buildHooksService($hooks);
+    $svc->deleteRecord('fake-uuid');
+
+    assertTrue($beforeCalled, 'beforeDelete must be called during deleteRecord');
+});
+
+TestSuite::run('deleteRecord() dispatches afterDelete after repository->delete()', function (): void {
+    $hooks = new HookDispatcher();
+    $afterCalled = false;
+
+    $hooks->register('afterDelete', static function (array $ctx) use (&$afterCalled): array {
+        $afterCalled = true;
+        return $ctx;
+    });
+
+    [$svc] = buildHooksService($hooks);
+    $svc->deleteRecord('fake-uuid');
+
+    assertTrue($afterCalled, 'afterDelete must be called during deleteRecord');
+});
+
+TestSuite::run('deleteRecord() beforeDelete throwing HookException blocks operation', function (): void {
+    $hooks = new HookDispatcher();
+    $hooks->register('beforeDelete', static function (array $ctx): array { // NOSONAR
+        throw new HookException('Blocked by hook');
+    });
+
+    [$svc, $repo, $extension] = buildHooksService($hooks);
+    $threw = false;
+
+    try {
+        $svc->deleteRecord('fake-uuid');
+    } catch (HookException $e) {
+        $threw = true;
+        assertEquals('Blocked by hook', $e->getMessage(), 'HookException message must propagate');
+    }
+
+    assertTrue($threw, 'HookException from beforeDelete must propagate');
+    assertTrue(!$repo->deleteCalled, 'repository->delete must NOT be called when beforeDelete blocks');
+    assertTrue(!$extension->deleteByRecordCalled, 'extension data cleanup must NOT run when beforeDelete blocks');
+});
+
+TestSuite::run('deleteRecord() calls extensionDataStore->deleteByRecord() after soft-deleting', function (): void {
+    [$svc, $repo, $extension] = buildHooksService(null);
+    $svc->deleteRecord('fake-uuid');
+
+    assertTrue($repo->deleteCalled, 'repository->delete must be called');
+    assertTrue($extension->deleteByRecordCalled, 'extensionDataStore->deleteByRecord must be called');
+});
+
+TestSuite::run('deleteRecord() afterDelete failure does NOT propagate (non-blocking)', function (): void {
+    $hooks = new HookDispatcher();
+    $hooks->register('afterDelete', static function (array $ctx): array { // NOSONAR
+        throw new HookException('side effect failed');
+    });
+
+    [$svc, $repo] = buildHooksService($hooks);
+    $threw = false;
+
+    try {
+        $svc->deleteRecord('fake-uuid');
+    } catch (\Throwable) {
+        $threw = true;
+    }
+
+    assertTrue(!$threw, 'afterDelete failure must not propagate to caller');
+    assertTrue($repo->deleteCalled, 'record must still be deleted despite afterDelete failure');
+});
+
+TestSuite::run('deleteRecord() throws RepositoryException when the record does not exist', function (): void {
+    [$svc, $repo] = buildHooksService(null);
+    $repo->findResult = null;
+    $threw = false;
+
+    try {
+        $svc->deleteRecord('missing-id');
+    } catch (RepositoryException) {
+        $threw = true;
+    }
+
+    assertTrue($threw, 'RepositoryException must be thrown when find() returns null');
+});
+
+TestSuite::run('deleteRecord() throws HookException and skips delete when a dependent record exists', function (): void {
+    [$svc, $repo, $extension, $relations] = buildHooksService(null);
+    $relations->relations = [['source_entity' => 'orders', 'key' => 'person_id']];
+    $repo->dependentRows = [['id' => 'dependent-uuid']];
+    $threw = false;
+
+    try {
+        $svc->deleteRecord('fake-uuid');
+    } catch (HookException $e) {
+        $threw = true;
+        assertTrue(str_contains($e->getMessage(), 'orders'), 'message must name the dependent entity');
+    }
+
+    assertTrue($threw, 'HookException must be thrown when a dependent record exists');
+    assertTrue(!$repo->deleteCalled, 'repository->delete must NOT be called when a dependent record blocks deletion');
+    assertTrue(!$extension->deleteByRecordCalled, 'extension data cleanup must NOT run when a dependent record blocks deletion');
 });
 
 // ---------------------------------------------------------------------------
