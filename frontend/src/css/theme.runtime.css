@@ -949,6 +949,14 @@ body[data-ui-page-style="dark"] [data-role="login-shell"] input:-webkit-autofill
 	background-color: #2a2d31 !important;
 }
 
+[data-role="table-wrapper"] table tbody tr[data-role="record-row"]:hover {
+	background-color: var(--x-brand-50) !important;
+}
+
+[data-role="shell"][data-ui-page-style="dark"] [data-role="table-wrapper"] table tbody tr[data-role="record-row"]:hover {
+	background-color: color-mix(in srgb, var(--x-brand-500) 24%, transparent) !important;
+}
+
 [data-role="shell"][data-ui-page-style="dark"] [data-role="table-wrapper"] table td[data-sorted="true"] {
 	background-color: #25282d !important;
 }

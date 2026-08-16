@@ -127,26 +127,8 @@ export class EntityList {
 			.build();
 		const layout = this.#layout;
 
-		const extraColumns = this.#onEdit === null
-			? []
-			: [
-					{
-						label: 'Acciones',
-						renderCell: (record) => DynamicTable.buildActionButton({
-							label: 'Editar',
-							icon: 'fa-pen',
-							dataRole: 'record-edit',
-							onClick: () => {
-								if (this.#onEdit !== null) {
-									this.#onEdit(slug, record.id ?? null, record);
-								}
-							},
-						}),
-					},
-				];
-
 		layout.createTable(records, schema, {
-			extraColumns,
+			rowDecorator: this.#onEdit === null ? null : (row, record) => this.#decorateRowAsEditable(row, record, slug),
 			pageSize: DynamicTable.getPreferredPageSize(EntityList.PAGE_SIZE),
 			totalRecords: Number.isInteger(meta?.total) ? meta.total : records.length,
 			onQueryChange: async (query) => {
@@ -163,6 +145,30 @@ export class EntityList {
 					return null;
 				}
 			},
+		});
+	}
+
+	/**
+	 * @param {HTMLTableRowElement} row
+	 * @param {object} record
+	 * @param {string} slug
+	 */
+	#decorateRowAsEditable(row, record, slug) {
+		row.classList.add('cursor-pointer');
+		row.tabIndex = 0;
+		row.setAttribute('role', 'button');
+		row.dataset.role = 'record-row';
+		const activate = () => {
+			if (this.#onEdit !== null) {
+				this.#onEdit(slug, record.id ?? null, record);
+			}
+		};
+		row.addEventListener('click', activate);
+		row.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				activate();
+			}
 		});
 	}
 

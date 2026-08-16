@@ -171,7 +171,7 @@
     host.remove();
   });
 
-  await test('loadEntity renders "Editar" button per row when onEdit provided', async () => {
+  await test('loadEntity marks rows as clickable when onEdit provided', async () => {
     const container = makeSandbox();
     mockFetch([
       { url: '/entities/persons/records', data: RECORDS },
@@ -180,8 +180,8 @@
     const page = new EntityList(container, { onEdit: () => { return; } });
     await page.init();
     await page.loadEntity('persons');
-    const editBtns = container.querySelectorAll('[data-role="record-edit"]');
-    assertEquals(editBtns.length, RECORDS.length, `Expected ${RECORDS.length} edit buttons`);
+    const clickableRows = container.querySelectorAll('[data-role="record-row"]');
+    assertEquals(clickableRows.length, RECORDS.length, `Expected ${RECORDS.length} clickable rows`);
     container.remove();
   });
 
@@ -209,7 +209,7 @@
     host.remove();
   });
 
-  await test('clicking "Editar" calls onEdit with slug, recordId and record', async () => {
+  await test('clicking a record row calls onEdit with slug, recordId and record', async () => {
     const container = makeSandbox();
     mockFetch([
       { url: '/entities/persons/records', data: RECORDS },
@@ -223,13 +223,35 @@
     await page.init();
     await page.loadEntity('persons');
 
-    const firstEditBtn = container.querySelector('[data-role="record-edit"]');
-    assertTrue(firstEditBtn !== null, 'Expected at least one edit button');
-    firstEditBtn.click();
+    const firstRow = container.querySelector('[data-role="record-row"]');
+    assertTrue(firstRow !== null, 'Expected at least one clickable row');
+    firstRow.click();
     assertTrue(editArgs !== null, 'onEdit should have been called');
     assertEquals(editArgs.slug, 'persons', 'onEdit slug should be "persons"');
     assertEquals(editArgs.recordId, '1', 'onEdit recordId should be "1"');
     assertEquals(editArgs.record.name, 'Alice', 'onEdit record should match first record');
+    container.remove();
+  });
+
+  await test('pressing Enter on a record row calls onEdit', async () => {
+    const container = makeSandbox();
+    mockFetch([
+      { url: '/entities/persons/records', data: RECORDS },
+      { url: '/entities', data: ENTITIES },
+    ]);
+
+    let editArgs = null;
+    const page = new EntityList(container, {
+      onEdit: (slug, recordId, record) => { editArgs = { slug, recordId, record }; },
+    });
+    await page.init();
+    await page.loadEntity('persons');
+
+    const firstRow = container.querySelector('[data-role="record-row"]');
+    assertTrue(firstRow !== null, 'Expected at least one clickable row');
+    firstRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    assertTrue(editArgs !== null, 'onEdit should have been called via keyboard');
+    assertEquals(editArgs.recordId, '1', 'onEdit recordId should be "1"');
     container.remove();
   });
 
