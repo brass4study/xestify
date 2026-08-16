@@ -494,6 +494,113 @@
   });
 
   // ────────────────────────────────────────────────────────────────────────
+  // Relation field options (belongs_to select on the entity's own form)
+  // ────────────────────────────────────────────────────────────────────────
+
+  const ORDER_SCHEMA = {
+    fields: [
+      { name: 'total', label: 'Total', type: 'number', required: true },
+    ],
+    relations: [
+      { key: 'id_person', type: 'belongs_to', target_entity: 'persons', target_field: 'id', label: 'Cliente', required: true },
+    ],
+  };
+
+  function mockOptionsFetch(options, { failOptions = false } = {}) {
+    return async (url, init) => {
+      const u = String(url);
+      if (u.includes('/entities/orders/tabs')) {
+        return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+      }
+      if (u.includes('/entities/persons/options')) {
+        if (failOptions) {
+          throw new Error('network error');
+        }
+        return { status: 200, json: async () => ({ ok: true, data: options }) };
+      }
+      const body = init?.body ? JSON.parse(init.body) : {};
+      return { status: 201, json: async () => ({ ok: true, data: { id: 'o1', ...body } }) };
+    };
+  }
+
+  await test('un schema con relations[] renderiza un select deshabilitado inicialmente', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = mockOptionsFetch([{ id: 'p1', label: 'Persona 1' }]);
+
+    const page = new EntityEdit(container, 'orders', ORDER_SCHEMA);
+    assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
+
+    const select = container.querySelector('select[name="id_person"]');
+    assertTrue(select !== null, 'debe renderizarse un select para la relacion');
+    assertTrue(select.disabled === true, 'el select debe empezar deshabilitado mientras se resuelven las opciones');
+  });
+
+  await test('el select de relacion se hidrata tras la peticion fire-and-forget a /entities/{target}/options', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = mockOptionsFetch([{ id: 'p1', label: 'Persona 1' }, { id: 'p2', label: 'Persona 2' }]);
+
+    new EntityEdit(container, 'orders', ORDER_SCHEMA);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const select = container.querySelector('select[name="id_person"]');
+    assertTrue(select.disabled === false, 'el select debe reactivarse tras recibir las opciones reales');
+    const optionLabels = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
+    assertTrue(optionLabels.includes('Persona 1') && optionLabels.includes('Persona 2'), 'las opciones deben venir del endpoint de opciones');
+  });
+
+  await test('en modo edicion, initialData[relation.key] queda preseleccionado tras hidratar', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = mockOptionsFetch([{ id: 'p1', label: 'Persona 1' }, { id: 'p2', label: 'Persona 2' }]);
+
+    new EntityEdit(container, 'orders', ORDER_SCHEMA, {
+      recordId: 'ord-1',
+      initialData: { id_person: 'p2', total: 25 },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const select = container.querySelector('select[name="id_person"]');
+    assertEquals(select.value, 'p2', 'la persona guardada en el registro debe quedar preseleccionada sin interaccion manual');
+  });
+
+  await test('si la peticion de opciones falla, el select queda deshabilitado con error sin romper el resto del formulario', async () => {
+    const container = makeSandbox();
+    globalThis.fetch = mockOptionsFetch([], { failOptions: true });
+
+    new EntityEdit(container, 'orders', ORDER_SCHEMA);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const select = container.querySelector('select[name="id_person"]');
+    assertTrue(select.disabled === true, 'el select debe quedar deshabilitado si falla la carga de opciones');
+    assertTrue(select.querySelector('option').textContent.includes('No se pudieron cargar'), 'debe mostrar un mensaje de error como placeholder');
+    assertTrue(container.querySelector('input[name="total"]') !== null, 'el resto del formulario debe seguir funcionando');
+  });
+
+  await test('submit() incluye el value del campo de relacion en el body', async () => {
+    const container = makeSandbox();
+    let capturedBody = null;
+    globalThis.fetch = async (url, init) => {
+      const u = String(url);
+      if (u.includes('/entities/orders/tabs')) {
+        return { status: 200, json: async () => ({ ok: true, data: { tabs: [] } }) };
+      }
+      if (u.includes('/entities/persons/options')) {
+        return { status: 200, json: async () => ({ ok: true, data: [{ id: 'p1', label: 'Persona 1' }] }) };
+      }
+      capturedBody = JSON.parse(init.body);
+      return { status: 201, json: async () => ({ ok: true, data: { id: 'o1', ...capturedBody } }) };
+    };
+
+    const page = new EntityEdit(container, 'orders', ORDER_SCHEMA);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    container.querySelector('input[name="total"]').value = '99';
+    container.querySelector('select[name="id_person"]').value = 'p1';
+    await page.submit();
+
+    assertEquals(capturedBody.id_person, 'p1', 'el body enviado debe incluir el value seleccionado en el campo de relacion');
+  });
+
+  // ────────────────────────────────────────────────────────────────────────
   // Summary
   // ────────────────────────────────────────────────────────────────────────
 

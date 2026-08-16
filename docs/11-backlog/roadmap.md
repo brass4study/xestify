@@ -472,6 +472,9 @@ Y deja fuera, por ahora (post-MVP):
 - `EPIC A4` (QA y calidad)
 - `EPIC A5` (Auditoría funcional)
 - `EPIC A6` (Matriz de permisos fina)
+- `EPIC A10` (Relaciones avanzadas has_many/has_one: declaración real en
+  PluginConfig, hoy forzado siempre a belongs_to, y visibilidad en
+  EntityEdit/EntityList)
 - `A7` — hardening avanzado de sesiones
 - `A8` — panel health avanzado post-MVP
 - `A9` — export/import de configuración entre entornos
@@ -498,6 +501,7 @@ Y deja fuera, por ahora (post-MVP):
 | A4 | ⏭ Pendiente | POST-MVP |
 | A5 | ⏭ Pendiente | POST-MVP |
 | A6 | ⏭ Pendiente | POST-MVP |
+| A10 | ⏭ Pendiente | POST-MVP |
 
 ### Estimacion por fases, semanas y tiempo
 
@@ -524,6 +528,7 @@ Y deja fuera, por ahora (post-MVP):
 | A4 | QA y Calidad | ⏭ | Fase A4 | 16 pts | POST-MVP |
 | A5 | Auditoría Funcional | ⏭ | Adición post-MVP | 16 pts | POST-MVP |
 | A6 | Matriz de Permisos Fina | ⏭ | Adición post-MVP | 18 pts | POST-MVP |
+| A10 | Relaciones Avanzadas (has_many/has_one) | ⏭ | Adición post-MVP | 10 pts | POST-MVP |
 
 ---
 

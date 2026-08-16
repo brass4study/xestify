@@ -157,6 +157,7 @@ export class EntityEdit {
 		}
 
 		void this.#loadAndRenderTabs(wrapper, renderToken, layout);
+		void this.#hydrateRelationOptions(schemaWithDefaults, renderToken);
 		requestAnimationFrame(() => {
 			const firstInput = this.#container.querySelector('input, textarea, select:not([hidden]), [data-role="input-select-trigger"]');
 			if (firstInput instanceof HTMLElement) {
@@ -286,6 +287,56 @@ export class EntityEdit {
 		return el;
 	}
 
+	/**
+	 * Resolves options for each `belongs_to` relation field ("render now,
+	 * hydrate later" — the select is already on screen, disabled, with a
+	 * "Cargando…" placeholder from DynamicForm#normalizeRelationSection).
+	 * Promise.allSettled so one failing relation doesn't block the others or
+	 * the rest of the form.
+	 */
+	async #hydrateRelationOptions(schema, renderToken) {
+		const relations = Array.isArray(schema?.relations)
+			? schema.relations.filter((relation) => relation && typeof relation === 'object' && relation.type === 'belongs_to')
+			: [];
+
+		if (relations.length === 0 || this.#form === null) {
+			return;
+		}
+
+		const results = await Promise.allSettled(relations.map((relation) => this.#fetchRelationOptions(relation)));
+
+		if (!this.#isCurrentRender(renderToken) || this.#form === null) {
+			return;
+		}
+
+		results.forEach((result, index) => {
+			const relation = relations[index];
+			const key = typeof relation?.key === 'string' ? relation.key : '';
+			if (key === '') {
+				return;
+			}
+
+			if (result.status === 'fulfilled') {
+				this.#form.setFieldOptions(key, result.value, {
+					placeholder: relation.required === true ? undefined : 'Sin asignar',
+					disabled: false,
+				});
+			} else {
+				this.#form.setFieldOptions(key, [], {
+					placeholder: 'No se pudieron cargar las opciones',
+					disabled: true,
+				});
+			}
+		});
+	}
+
+	async #fetchRelationOptions(relation) {
+		const targetEntity = typeof relation?.target_entity === 'string' ? relation.target_entity : '';
+		const { data } = await this.#api.get(`/entities/${encodeURIComponent(targetEntity)}/options`);
+		const rows = Array.isArray(data) ? data : [];
+		return rows.map((row) => ({ value: String(row?.id ?? ''), label: String(row?.label ?? row?.id ?? '') }));
+	}
+
 	#applyInitialData(schema, initialData) {
 		if (Object.keys(initialData).length === 0) {
 			return schema;
@@ -296,6 +347,7 @@ export class EntityEdit {
 				...schema,
 				fields: this.#applyDefaultsToFieldList(schema.fields, initialData),
 				custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
+				relations: this.#applyDefaultsToFieldList(schema.relations, initialData),
 			};
 		}
 
@@ -312,12 +364,14 @@ export class EntityEdit {
 				...schema,
 				fields: fieldsWithDefaults,
 				custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
+				relations: this.#applyDefaultsToFieldList(schema.relations, initialData),
 			};
 		}
 
 		return {
 			...schema,
 			custom_fields: this.#applyDefaultsToFieldList(schema.custom_fields, initialData),
+			relations: this.#applyDefaultsToFieldList(schema.relations, initialData),
 		};
 	}
 

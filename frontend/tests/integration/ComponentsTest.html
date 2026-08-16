@@ -133,6 +133,46 @@
       assertTrue(inputSwitch.getChecked(), 'switch checked state mismatch');
     });
 
+    test('inputSelect.setOptions() replaces native options and panel rows, and reactivates a disabled select', () => {
+      const select = component.create('inputSelect', { name: 'relation', options: [], disabled: true });
+      assertTrue(select.getInput().disabled === true, 'select should start disabled');
+
+      select.setOptions([{ value: 'p1', label: 'Persona 1' }, { value: 'p2', label: 'Persona 2' }]);
+
+      assertTrue(select.getInput().disabled === false, 'setOptions() should reactivate the select by default');
+      assertEquals(select.getInput().querySelectorAll('option').length, 2, 'native select should carry the new options');
+      assertEquals(select.querySelectorAll('[role="option"]').length, 2, 'panel should carry the new rows');
+    });
+
+    test('inputSelect.setOptions() keeps disabled:true when requested explicitly', () => {
+      const select = component.create('inputSelect', { name: 'relation', options: [] });
+
+      select.setOptions([], { disabled: true, placeholder: 'No se pudieron cargar las opciones' });
+
+      assertTrue(select.getInput().disabled === true, 'select should stay disabled on explicit error state');
+      assertEquals(select.getInput().querySelector('option').textContent, 'No se pudieron cargar las opciones');
+    });
+
+    test('inputSelect.setOptions() adds a selectable empty placeholder when requested', () => {
+      const select = component.create('inputSelect', { name: 'relation', options: [] });
+
+      select.setOptions([{ value: 'p1', label: 'Persona 1' }], { placeholder: 'Sin asignar' });
+
+      const options = Array.from(select.getInput().querySelectorAll('option'));
+      assertEquals(options.length, 2, 'placeholder plus one real option expected');
+      assertEquals(options[0].value, '', 'first option should be the empty placeholder');
+      assertEquals(options[0].textContent, 'Sin asignar');
+    });
+
+    test('inputSelect.setOptions() re-selects the value requested at construction time once it exists', () => {
+      const select = component.create('inputSelect', { name: 'relation', options: [], value: 'p2' });
+      assertEquals(select.value, '', 'value requested before any matching option exists should not select anything yet');
+
+      select.setOptions([{ value: 'p1', label: 'Persona 1' }, { value: 'p2', label: 'Persona 2' }]);
+
+      assertEquals(select.value, 'p2', 'setOptions() should re-apply the originally requested value once it is available');
+    });
+
     test('breadcrumb soporta separator configurable, iconos y dropdown estilo Ant', () => {
       const breadcrumb = component.create('breadcrumb', {
         separator: '>',

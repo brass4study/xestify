@@ -193,6 +193,31 @@ final class EntityService
     }
 
     /**
+     * Lightweight {id, label} pairs for this entity's records — feeds relation
+     * <select> pickers declared on OTHER entities' schema.relations[].target_entity
+     * (no pagination: same trade-off already accepted by listRecords()/all()).
+     *
+     * @return array<int, array{id: string, label: string}>
+     * @throws EntityServiceException when the entity slug has no schema
+     */
+    public function listOptions(string $entitySlug): array
+    {
+        $schema = $this->fetchCurrentPluginRow($entitySlug)['schema'];
+        $summaryKeys = $this->summaryContentKeysInOrder($schema);
+        $records = $this->repository->all($entitySlug);
+
+        $options = [];
+        foreach ($records as $row) {
+            $id = (string) ($row['id'] ?? '');
+            $decoded = json_decode((string) ($row['content'] ?? '{}'), true);
+            $content = is_array($decoded) ? $decoded : [];
+            $options[] = ['id' => $id, 'label' => $this->buildOptionLabel($content, $summaryKeys, $id)];
+        }
+
+        return $options;
+    }
+
+    /**
      * @param array<string, mixed> $schema
      * @return array<int, string>
      */
@@ -229,6 +254,67 @@ final class EntityService
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Ordered content keys counted as "summary" (fields first, then
+     * custom_fields, matching declaration order). Mirrors
+     * PluginConfigFieldNormalizer's `(bool) ($entry['summaryView'] ?? true)`
+     * default. Deliberately does NOT reuse SchemaFieldExtractor::extract():
+     * that merges in `identities` too and loses the summaryView flag.
+     *
+     * @param array<string, mixed> $schema
+     * @return array<int, string>
+     */
+    private function summaryContentKeysInOrder(array $schema): array
+    {
+        $names = [];
+        foreach (['fields', 'custom_fields'] as $section) {
+            if (!isset($schema[$section]) || !is_array($schema[$section])) {
+                continue;
+            }
+            foreach ($schema[$section] as $key => $definition) {
+                $name = $this->summaryFieldName($key, $definition);
+                if ($name !== null) {
+                    $names[] = $name;
+                }
+            }
+        }
+        return $names;
+    }
+
+    /**
+     * @param int|string $key
+     */
+    private function summaryFieldName($key, mixed $definition): ?string
+    {
+        if (!is_array($definition) || ($definition['summaryView'] ?? true) === false) {
+            return null;
+        }
+
+        $name = is_string($key) ? $key : ($definition['key'] ?? null);
+
+        return (is_string($name) && trim($name) !== '') ? $name : null;
+    }
+
+    /**
+     * @param array<string, mixed> $content
+     * @param array<int, string> $summaryKeys
+     */
+    private function buildOptionLabel(array $content, array $summaryKeys, string $fallbackId): string
+    {
+        $parts = [];
+        foreach ($summaryKeys as $key) {
+            $value = $content[$key] ?? null;
+            if (!is_scalar($value)) {
+                continue;
+            }
+            $stringValue = trim((string) $value);
+            if ($stringValue !== '') {
+                $parts[] = $stringValue;
+            }
+        }
+        return $parts === [] ? $fallbackId : implode(' ', $parts);
+    }
 
     /**
      * Fetch the current plugin_name and decoded schema_json for an entity

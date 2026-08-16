@@ -25,9 +25,11 @@ export class InputSelectComponent extends InputComponent {
 		this.dataset.role = 'input-select';
 
 		const instanceId = `input-select-${++instanceSequence}`;
+		this._instanceId = instanceId;
 		const normalizedOptions = (Array.isArray(options.options) ? options.options : []).map(normalizeOption);
 
 		const nativeSelect = document.createElement('select');
+		this._selectInput = nativeSelect;
 		nativeSelect.hidden = true;
 		nativeSelect.tabIndex = -1;
 		nativeSelect.setAttribute('aria-hidden', 'true');
@@ -50,16 +52,19 @@ export class InputSelectComponent extends InputComponent {
 			nativeSelect.appendChild(placeholderOption);
 		}
 
-		normalizedOptions.forEach(({ value, label }) => {
-			const optionEl = document.createElement('option');
-			optionEl.value = value;
-			optionEl.textContent = label;
-			nativeSelect.appendChild(optionEl);
-		});
+		normalizedOptions.forEach(({ value, label }) => this._appendNativeOption(value, label));
 
 		if (options.value !== '' && options.value !== undefined && options.value !== null) {
 			nativeSelect.value = String(options.value);
 		}
+
+		// Remembered separately from nativeSelect.value: constructing with an
+		// empty options list (relation fields — "render now, hydrate later")
+		// makes `nativeSelect.value = ...` a silent no-op when no matching
+		// <option> exists yet. setOptions() falls back to this so the value
+		// requested at construction time still gets selected once real
+		// options arrive.
+		this._initialValue = (options.value !== undefined && options.value !== null) ? String(options.value) : '';
 
 		const trigger = document.createElement('button');
 		trigger.type = 'button';
@@ -79,35 +84,21 @@ export class InputSelectComponent extends InputComponent {
 		trigger.appendChild(chevron);
 
 		const panel = document.createElement('ul');
+		this._panel = panel;
 		panel.id = `${instanceId}-listbox`;
 		panel.setAttribute('role', 'listbox');
 		panel.dataset.role = 'input-select-panel';
 		panel.className = 'absolute left-0 top-full z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg';
 
-		normalizedOptions.forEach(({ value, label }, index) => {
-			const row = document.createElement('li');
-			row.id = `${instanceId}-option-${index}`;
-			row.setAttribute('role', 'option');
-			row.dataset.value = value;
-			row.textContent = label;
-			row.className = 'cursor-pointer select-none rounded-md px-3 py-2 text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100';
-			row.addEventListener('click', () => {
-				this.setSelectedValue(value, true);
-				this._closeDropdown();
-				this._trigger.focus();
-			});
-			panel.appendChild(row);
-		});
+		normalizedOptions.forEach(({ value, label }, index) => this._appendPanelRow(value, label, index));
 
 		this.appendChild(nativeSelect);
 		this.appendChild(trigger);
 		this.appendChild(panel);
 
-		this._selectInput = nativeSelect;
 		this._trigger = trigger;
 		this._triggerLabel = triggerLabel;
 		this._chevron = chevron;
-		this._panel = panel;
 		this._isOpen = false;
 		this._highlightedIndex = -1;
 		this._selectDisabled = false;
@@ -232,6 +223,68 @@ export class InputSelectComponent extends InputComponent {
 			this._closeDropdown();
 		}
 		return this;
+	}
+
+	/**
+	 * Replaces the option list after construction (relation fields — "render
+	 * now, hydrate later"). Reactivates the control unless config.disabled is
+	 * explicitly true, and re-selects whichever value is current — or, if
+	 * nothing is selected yet, the value originally requested at
+	 * construction time via options.value (see _initialValue) — when it now
+	 * exists among the new options.
+	 */
+	setOptions(options, config = {}) {
+		if (!(this._selectInput instanceof HTMLSelectElement) || !(this._panel instanceof HTMLElement)) {
+			return this;
+		}
+
+		this._closeDropdown();
+
+		const desiredValue = this._selectInput.value !== '' ? this._selectInput.value : this._initialValue;
+		const normalizedOptions = (Array.isArray(options) ? options : []).map(normalizeOption);
+		const placeholder = typeof config.placeholder === 'string' ? config.placeholder : '';
+
+		this._selectInput.replaceChildren();
+		this._panel.replaceChildren();
+
+		if (placeholder !== '') {
+			const placeholderOption = document.createElement('option');
+			placeholderOption.value = '';
+			placeholderOption.textContent = placeholder;
+			this._selectInput.appendChild(placeholderOption);
+		}
+
+		normalizedOptions.forEach(({ value, label }) => this._appendNativeOption(value, label));
+		normalizedOptions.forEach(({ value, label }, index) => this._appendPanelRow(value, label, index));
+
+		this.setSelectedValue(desiredValue);
+		this.setDisabled(config.disabled === true);
+
+		return this;
+	}
+
+	_appendNativeOption(value, label) {
+		const optionEl = document.createElement('option');
+		optionEl.value = value;
+		optionEl.textContent = label;
+		this._selectInput.appendChild(optionEl);
+		return optionEl;
+	}
+
+	_appendPanelRow(value, label, index) {
+		const row = document.createElement('li');
+		row.id = `${this._instanceId}-option-${index}`;
+		row.setAttribute('role', 'option');
+		row.dataset.value = value;
+		row.textContent = label;
+		row.className = 'cursor-pointer select-none rounded-md px-3 py-2 text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100';
+		row.addEventListener('click', () => {
+			this.setSelectedValue(value, true);
+			this._closeDropdown();
+			this._trigger.focus();
+		});
+		this._panel.appendChild(row);
+		return row;
 	}
 
 	_applyTriggerClassName() {

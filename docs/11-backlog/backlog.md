@@ -1737,7 +1737,57 @@ Objetivo: Permisos granulares por recurso/acción, más allá de admin/no-admin.
 
 ---
 
-## 📊 Resumen del Backlog Académico (MVP: EPIC 0-11 · post-MVP: A1-A6)
+## EPIC A10: Relaciones Avanzadas — `has_many` / `has_one` (Adición post-MVP)
+
+Objetivo: completar el modelo de relaciones documentado en `DECISION 6`
+(`docs/09-history/decisiones-tecnicas.md`) más allá de `belongs_to` — el único
+tipo con implementación real hoy, tanto en la configuración (`PluginConfig`
+fuerza siempre `type: "belongs_to"` al guardar) como en la visibilidad del
+campo en `EntityEdit` (que filtra explícitamente `type === 'belongs_to'` e
+ignora en silencio cualquier otro valor). Permitir declarar y configurar
+relaciones `has_many`/`has_one` desde `PluginConfig`, y darles visibilidad
+real en `EntityEdit`/`EntityList` análoga a la ya construida para
+`belongs_to`.
+
+### STORY A10.1: Configuración de relaciones `has_many`/`has_one` en `PluginConfig`
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - El selector de `type` en el grid "Relaciones" de `PluginConfig` deja de
+    estar fijo a `belongs_to`; permite elegir entre `belongs_to`/`has_many`/`has_one`
+  - Validación de `target_entity`/`target_field` adaptada a la dirección de
+    cada tipo: para `has_many`/`has_one` la FK vive en el registro *destino*,
+    no en el que declara la relación (al revés que `belongs_to`), por lo que
+    `target_field` debe restringirse a un campo del propio esquema en vez de
+    a las `identities` de la entidad destino — semántica exacta a cerrar en
+    el diseño de la story
+  - Persistencia en `schema_json` sin romper compatibilidad con las
+    relaciones `belongs_to` ya existentes ni con `PluginRelationsConfigTest.php`
+- **IA Usage:** Extensión del grid "Relaciones" existente + validación por tipo + tests
+- **Dependencias:** STORY 10.3 §8 (grid "Relaciones", `PluginConfigService.php`)
+- **Blockers:** Cerrar la semántica exacta de `target_field` para las direcciones inversas
+
+### STORY A10.2: Visibilidad de `has_many`/`has_one` en `EntityEdit`
+- **Points:** 5
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - `DynamicForm`/`EntityEdit` dejan de ignorar en silencio las relaciones
+    `type !== 'belongs_to'` y en su lugar renderizan la vista adecuada para
+    cada dirección
+  - Para `has_many`, el registro origen muestra una vista de "múltiples
+    registros relacionados" editable/asignable (más allá de la tab de solo
+    lectura ya existente para la relación inversa, STORY 10.3 §9)
+  - Para `has_one`, se resuelve y expone el único registro relacionado, con
+    opción de asignar/desasignar
+- **IA Usage:** Nuevo componente de asignación múltiple/única + wiring en EntityEdit + tests
+- **Dependencias:** STORY A10.1
+- **Blockers:** Ninguno
+
+---
+
+## 📊 Resumen del Backlog Académico (MVP: EPIC 0-11 · post-MVP: A1-A6, A10)
 
 ### Conteo de Puntos por EPIC (MUST priority)
 

@@ -23,6 +23,7 @@ use Xestify\services\EntityService;
  *
  * Routes (all require authenticated request via AuthMiddleware):
  *   GET    /api/v1/entities/{slug}/schema
+ *   GET    /api/v1/entities/{slug}/options
  *   GET    /api/v1/entities/{slug}/records
  *   POST   /api/v1/entities/{slug}/records
  *   GET    /api/v1/entities/{slug}/records/{id}
@@ -141,6 +142,31 @@ class EntityController
             'entity_slug'    => $slug,
             'schema'         => is_array($decoded) ? $decoded : [],
         ]);
+    }
+
+    /**
+     * GET /api/v1/entities/{slug}/options
+     * Lightweight {id, label} pairs for this entity's records, used to
+     * populate relation <select> pickers on other entities' forms.
+     */
+    public function options(array $params, ?Request $request = null): void
+    {
+        $request ??= $this->requestFactory()->fromGlobals($params);
+        $slug = (string) ($params['slug'] ?? '');
+
+        if ($slug === '') {
+            Response::make()->notFound(self::MSG_SLUG_REQUIRED);
+            return;
+        }
+
+        try {
+            $options = $this->service->listOptions($slug);
+        } catch (EntityServiceException $e) {
+            Response::make()->notFound($e->getMessage());
+            return;
+        }
+
+        Response::make()->json($options);
     }
 
     /**

@@ -41,6 +41,7 @@ $router->get('/api/v1/entities', fn(array $params, Request $request) => $contain
 
 // Entity endpoints
 $router->get('/api/v1/entities/{slug}/schema', fn(array $params, Request $request) => $container->get(EntityController::class)->schema($params, $request));
+$router->get('/api/v1/entities/{slug}/options', fn(array $params, Request $request) => $container->get(EntityController::class)->options($params, $request));
 $router->get('/api/v1/entities/{slug}/tabs', fn(array $params, Request $request) => $container->get(EntityController::class)->tabs($params, $request));
 $router->get('/api/v1/entities/{slug}/actions', fn(array $params, Request $request) => $container->get(EntityController::class)->actions($params, $request));
 $router->get('/api/v1/entities/{slug}/records', fn(array $params, Request $request) => $container->get(EntityController::class)->index($params, $request));

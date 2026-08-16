@@ -219,6 +219,91 @@
     assertEquals(data.is_active, true);
   });
 
+  function buildRelationSchema(relationOverrides = {}) {
+    return {
+      fields: [
+        { name: 'total', label: 'Total', type: 'number', required: true }
+      ],
+      relations: [
+        {
+          key: 'id_person',
+          type: 'belongs_to',
+          target_entity: 'persons',
+          target_field: 'id',
+          label: 'Cliente',
+          required: true,
+          ...relationOverrides
+        }
+      ]
+    };
+  }
+
+  await test('normalizeFields() folds schema.relations into a disabled select with a loading placeholder', async () => {
+    const form = new DynamicForm(buildRelationSchema(), '#form-container');
+    form.render();
+
+    const select = sandbox.querySelector('select[name="id_person"]');
+    assertTrue(select !== null, 'relation select should render');
+    assertTrue(select.disabled === true, 'relation select should start disabled until options are resolved');
+    assertEquals(select.options[0].textContent, 'Cargando…');
+  });
+
+  await test('a relations[] entry with type other than belongs_to (or missing type) is ignored', async () => {
+    const schema = {
+      fields: [],
+      relations: [
+        { key: 'many_orders', type: 'has_many', target_entity: 'orders', label: 'Pedidos' },
+        { key: 'no_type', target_entity: 'orders', label: 'Sin tipo' },
+        { key: 'id_person', type: 'belongs_to', target_entity: 'persons', label: 'Cliente', required: false }
+      ]
+    };
+
+    const form = new DynamicForm(schema, '#form-container');
+    form.render();
+
+    assertTrue(sandbox.querySelector('[name="many_orders"]') === null, 'has_many relation must not render a field');
+    assertTrue(sandbox.querySelector('[name="no_type"]') === null, 'a relation without type must not render a field');
+    assertTrue(sandbox.querySelector('select[name="id_person"]') !== null, 'the belongs_to relation must still render');
+  });
+
+  await test('setFieldOptions() hydrates a relation select and lets validate() accept the selected value', async () => {
+    const form = new DynamicForm(buildRelationSchema(), '#form-container');
+    form.render();
+    setInputValue('input[name="total"]', '10');
+
+    const applied = form.setFieldOptions('id_person', [{ value: 'p1', label: 'Persona 1' }]);
+    assertTrue(applied === true, 'setFieldOptions() should report success for a known field');
+
+    const select = sandbox.querySelector('select[name="id_person"]');
+    assertTrue(select.disabled === false, 'select should be reactivated once options arrive');
+    select.value = 'p1';
+
+    const result = form.validate();
+    assertTrue(result.isValid === true, `validation should pass once field.options is kept in sync: ${JSON.stringify(result.errors)}`);
+  });
+
+  await test('an optional relation accepts an empty selection once hydrated with a placeholder', async () => {
+    const form = new DynamicForm(buildRelationSchema({ required: false }), '#form-container');
+    form.render();
+    setInputValue('input[name="total"]', '10');
+
+    form.setFieldOptions('id_person', [{ value: 'p1', label: 'Persona 1' }], { placeholder: 'Sin asignar' });
+
+    const result = form.validate();
+    assertTrue(result.isValid === true, 'an unset optional relation must still validate');
+    assertEquals(form.getData().id_person, '');
+  });
+
+  await test('getData() returns the selected value for a hydrated relation field', async () => {
+    const form = new DynamicForm(buildRelationSchema(), '#form-container');
+    form.render();
+
+    form.setFieldOptions('id_person', [{ value: 'p1', label: 'Persona 1' }, { value: 'p2', label: 'Persona 2' }]);
+    sandbox.querySelector('select[name="id_person"]').value = 'p2';
+
+    assertEquals(form.getData().id_person, 'p2');
+  });
+
   finishLocalSummary();
 </script>
 </body>

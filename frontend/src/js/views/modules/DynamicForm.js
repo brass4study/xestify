@@ -114,7 +114,8 @@ export class DynamicForm {
 
 		const baseFields = this.normalizeFieldSection(schema.fields);
 		const customFields = this.normalizeFieldSection(schema.custom_fields);
-		const combined = [...baseFields, ...customFields];
+		const relationFields = this.normalizeRelationSection(schema.relations);
+		const combined = [...baseFields, ...customFields, ...relationFields];
 		const byName = new Map(combined.map((field) => [field.name, field]));
 
 		const ordered = [];
@@ -159,6 +160,41 @@ export class DynamicForm {
 		}
 
 		return [];
+	}
+
+	/**
+	 * Folds schema.relations[] into the normalized field list as `select`
+	 * inputs. Only `type: 'belongs_to'` is rendered — the FK for that type
+	 * lives in THIS record's own content, which is what an editable form
+	 * field represents. `has_many`/`has_one` (documented in DECISION 6) put
+	 * the FK on the *other* record instead, so rendering them here would
+	 * write a value into the wrong record's content; they are silently
+	 * ignored (neither type is reachable from PluginConfig today anyway).
+	 * `options` starts empty/disabled — EntityEdit resolves and injects real
+	 * options later via setFieldOptions(), after the form has already
+	 * rendered (see EntityEdit#hydrateRelationOptions).
+	 */
+	normalizeRelationSection(rawRelations) {
+		if (!Array.isArray(rawRelations)) {
+			return [];
+		}
+
+		return rawRelations
+			.filter((relation) => relation && typeof relation === 'object'
+				&& relation.type === 'belongs_to'
+				&& typeof relation.key === 'string' && relation.key.trim() !== '')
+			.map((relation) => ({
+				name: relation.key,
+				label: typeof relation.label === 'string' && relation.label.trim() !== '' ? relation.label : relation.key,
+				type: 'select',
+				required: relation.required === true,
+				default: relation.default,
+				options: [],
+				placeholder: 'Cargando…',
+				disabled: true,
+				target_entity: typeof relation.target_entity === 'string' ? relation.target_entity : '',
+				isRelation: true,
+			}));
 	}
 
 	fieldName(field) {
@@ -283,8 +319,32 @@ export class DynamicForm {
 			name: field.name,
 			value: field.default ?? '',
 			options: Array.isArray(field.options) ? field.options : [],
+			placeholder: typeof field.placeholder === 'string' ? field.placeholder : undefined,
+			disabled: field.disabled === true,
 		});
 		return select.setId(this.fieldId(field.name));
+	}
+
+	/**
+	 * Replaces a select-type field's options after the form has already
+	 * rendered (relation fields start empty/disabled — see
+	 * normalizeRelationSection). Keeps `field.options` in sync too, not just
+	 * the DOM: validate()/validateStringLike() checks the selected value
+	 * against the field definition captured at construction time, so without
+	 * this a relation value would always fail as "not an allowed option".
+	 */
+	setFieldOptions(name, options, config = {}) {
+		const field = this.#fields.find((f) => f.name === name);
+		const input = this.#inputs.get(name);
+
+		if (field === undefined || !(input instanceof HTMLElement) || typeof input.setOptions !== 'function') {
+			return false;
+		}
+
+		const normalizedOptions = Array.isArray(options) ? options : [];
+		field.options = normalizedOptions;
+		input.setOptions(normalizedOptions, config);
+		return true;
 	}
 
 	validateField(field, value) {
