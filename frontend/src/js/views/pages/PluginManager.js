@@ -14,6 +14,7 @@ export class PluginManager {
 	#api;
 	#onConfigure;
 	#onAdd;
+	#onPluginsChanged;
 	#plugins = [];
 	#updatesBySlug = {};
 	#feedbackMessage = null;
@@ -25,7 +26,7 @@ export class PluginManager {
 	/**
 	 * @param {HTMLElement|string} container
 	 * @param {Object|undefined} api
-	 * @param {{shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onConfigure?: Function, onAdd?: Function}} options
+	 * @param {{shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onConfigure?: Function, onAdd?: Function, onPluginsChanged?: Function}} options
 	 */
 	constructor(container, api = undefined, options = {}) {
 		const resolved = this.resolveContainer(container);
@@ -33,6 +34,7 @@ export class PluginManager {
 		this.#api = api ?? new Api();
 		this.#onConfigure = typeof options.onConfigure === 'function' ? options.onConfigure : () => {};
 		this.#onAdd = typeof options.onAdd === 'function' ? options.onAdd : () => {};
+		this.#onPluginsChanged = typeof options.onPluginsChanged === 'function' ? options.onPluginsChanged : () => {};
 		this.#shellLayout = options.shellLayout ?? null;
 		this.#title = typeof options.title === 'string' ? options.title : 'Gestión de plugins';
 		this.#description = typeof options.description === 'string'
@@ -336,6 +338,7 @@ export class PluginManager {
 					message: `Plugin "${plugin.name || plugin.slug}" ${newStatus === 'active' ? 'activado' : 'desactivado'} correctamente.`,
 				});
 				await this.#refreshData();
+				this.#onPluginsChanged(plugin);
 			})
 			.catch((error) => {
 				UiResilienceService.clearButtonPending(button, newStatus === 'active' ? t('plugins.activate', 'Activar') : t('plugins.deactivate', 'Desactivar'));
@@ -360,6 +363,7 @@ export class PluginManager {
 				message: this.#feedbackMessage,
 			});
 			await this.#refreshData();
+			this.#onPluginsChanged();
 		} catch (error) {
 			this.renderError(`No se pudieron sincronizar los plugins: ${error.message}`);
 		} finally {
@@ -392,6 +396,7 @@ export class PluginManager {
 				message: this.#feedbackMessage,
 			});
 			await this.#refreshData();
+			this.#onPluginsChanged(plugin);
 		} catch (error) {
 			this.renderError(`No se pudo actualizar el plugin: ${error.message}`);
 		} finally {
@@ -424,6 +429,7 @@ export class PluginManager {
 				message: this.#feedbackMessage,
 			});
 			await this.#refreshData();
+			this.#onPluginsChanged(plugin);
 		} catch (error) {
 			this.renderError(`No se pudo revertir el plugin: ${error.message}`);
 		} finally {

@@ -701,6 +701,14 @@ export class AppController {
       onAdd: () => {
         void this.router.navigate(PluginRouteController.toNewPluginConfigPage(), { updateHash: true });
       },
+      onPluginsChanged: async (plugin) => {
+        // plugin === undefined significa "sincronización masiva": alcance
+        // desconocido, se refresca siempre. Con un plugin concreto (activar/
+        // desactivar/actualizar/revertir), solo importa si es de tipo entity.
+        if (plugin === undefined || String(plugin?.plugin_type ?? '') === 'entity') {
+          await this.refreshNavEntities();
+        }
+      },
     });
     await pluginManager.init();
   }
@@ -803,6 +811,13 @@ export class AppController {
       }
 
       return [];
+    }
+  }
+
+  async refreshNavEntities() {
+    const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
+    if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
+      this.currentNavbar.setEntities(entitiesForNav);
     }
   }
 
@@ -961,10 +976,7 @@ export class AppController {
         });
 
         if (String(newPlugin?.plugin_type ?? '') === 'entity') {
-          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
-          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
-            this.currentNavbar.setEntities(entitiesForNav);
-          }
+          await this.refreshNavEntities();
         }
       },
       onDeleted: async (deletedPlugin) => {
@@ -976,10 +988,7 @@ export class AppController {
         });
 
         if (String(deletedPlugin?.plugin_type ?? '') === 'entity') {
-          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
-          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
-            this.currentNavbar.setEntities(entitiesForNav);
-          }
+          await this.refreshNavEntities();
         }
       },
       onIdentityChanged: async (oldSlug, updatedPlugin) => {
@@ -991,10 +1000,7 @@ export class AppController {
           .setBreadcrumbs(template.breadcrumbs ?? []);
 
         if (String(updatedPlugin?.plugin_type ?? '') === 'entity') {
-          const entitiesForNav = await this.loadEntitiesForNav(this.dashboardApi);
-          if (entitiesForNav !== null && this.currentNavbar instanceof Navbar) {
-            this.currentNavbar.setEntities(entitiesForNav);
-          }
+          await this.refreshNavEntities();
         }
       },
     });

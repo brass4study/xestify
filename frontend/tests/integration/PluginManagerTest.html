@@ -227,6 +227,38 @@
     assertTrue(api.calls.some((c) => c.method === 'PUT' && c.url.includes('/plugins/comments/status')), 'PUT endpoint should be called');
   });
 
+  await test('calls onPluginsChanged with the plugin after activate/deactivate', async () => {
+    const container = makeSandbox();
+    const api = new MockApi({
+      '/plugins': {
+        ok: true,
+        data: {
+          plugins: [
+            { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'inactive' },
+          ],
+        },
+      },
+      '/plugins/comments/status': {
+        ok: true,
+        data: { slug: 'comments', name: 'Comments', plugin_type: 'extension', version: '1.0.0', status: 'active' },
+      },
+    });
+
+    let changedPlugin;
+    const manager = new PluginManager(container, api, {
+      onPluginsChanged: (plugin) => {
+        changedPlugin = plugin;
+      },
+    });
+    await manager.init();
+
+    const btn = container.querySelector('[data-role="plugin-action"]');
+    btn.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assertEquals(changedPlugin?.slug, 'comments', 'onPluginsChanged should receive the affected plugin');
+  });
+
   await test('action buttons keep working after a DynamicTable internal re-render (density change)', async () => {
     const container = makeSandbox();
     const api = new MockApi({
