@@ -44,19 +44,20 @@ body[data-ui-page-style="dark"] {
 }
 
 /* El trigger de input-select es un <button>, así que Preflight le resetea
-   padding/border a 0. Los <select>/<input> nativos no lo necesitan porque ya
-   los cubre la regla base "form select, form textarea" de tailwind.src.css;
-   esta es su equivalente para que el trigger tenga el mismo aspecto aunque el
-   className que le pase cada formulario no incluya border/px/py explícitos. */
+   background-color a transparent (border/padding/font ya llegan via clases
+   Tailwind — InputComponent.BASE_CLASSNAME o el className que pase cada
+   formulario — sin que haga falta repetirlos aquí). Solo se fija
+   background-color, que ningún className de los distintos formularios
+   provee explícitamente. Deliberadamente NO se fija padding aquí: un
+   selector de atributo como este empata en especificidad con una clase
+   Tailwind (py-1, py-2...), y en ese empate gana el que carga después en el
+   <head> — que sería siempre esta regla, ignorando cualquier py-* que pase
+   el formulario. Dejar que el padding lo decida solo la clase Tailwind hace
+   que una tabla compacta (py-1 vía tableControlClassName) quede compacta en
+   el trigger tambien, sin tener que listar aquí cada tabla que lo necesite. */
 [data-role="input-select-trigger"] {
 	width: 100%;
-	border: 1px solid rgb(203 213 225);
-	border-radius: 0.5rem;
 	background-color: rgb(255 255 255);
-	padding: 0.5rem 0.75rem;
-	font-size: 0.875rem;
-	line-height: 1.25rem;
-	color: rgb(15 23 42);
 }
 
 [data-role="input-select-trigger"]:focus,
@@ -65,16 +66,6 @@ body[data-ui-page-style="dark"] {
 	outline-offset: 2px;
 	border-color: rgb(30 121 255);
 	box-shadow: 0 0 0 1px rgb(30 121 255 / 0.35);
-}
-
-/* Los controles editables dentro de una tabla (p. ej. la tabla de "Campos" de
-   PluginConfig) deben verse igual que fuera de ella, solo menos altos. Para
-   <input>/<textarea> basta con la clase Tailwind py-1 del propio elemento,
-   pero el trigger de input-select ignora esa clase porque la regla de arriba
-   fija su padding con la misma especificidad — este selector más específico
-   es necesario para poder reducirlo en ese contexto. */
-[data-role="plugin-config-table"] [data-role="input-select-trigger"] {
-	padding: 0.25rem 0.75rem;
 }
 
 [data-role="password-visibility-toggle"]:focus,

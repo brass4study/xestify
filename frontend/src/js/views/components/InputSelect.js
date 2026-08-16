@@ -75,7 +75,11 @@ export class InputSelectComponent extends InputComponent {
 		trigger.dataset.role = 'input-select-trigger';
 
 		const triggerLabel = document.createElement('span');
-		triggerLabel.className = 'truncate';
+		// min-h reserves one line's worth of height so the trigger keeps a
+		// consistent height even when the label is empty (no value selected
+		// yet), matching InputText's height instead of collapsing to the
+		// chevron icon's shorter line-height.
+		triggerLabel.className = 'truncate min-h-[1.25rem]';
 		trigger.appendChild(triggerLabel);
 
 		const chevron = document.createElement('i');
@@ -105,7 +109,9 @@ export class InputSelectComponent extends InputComponent {
 		this._triggerVisualClassName = InputComponent.BASE_CLASSNAME;
 
 		this._onDocumentClick = (event) => {
-			if (event.target instanceof Node && !this.contains(event.target)) {
+			const target = event.target;
+			const isInside = target instanceof Node && (this.contains(target) || this._panel.contains(target));
+			if (!isInside) {
 				this._closeDropdown();
 			}
 		};
@@ -114,6 +120,16 @@ export class InputSelectComponent extends InputComponent {
 				this._closeDropdown();
 				this._trigger.focus();
 			}
+		};
+		// Closes on scroll outside the panel rather than tracking the trigger,
+		// since the panel is portalled to <body> while open (see _openDropdown)
+		// and has no live link back to the trigger's position once detached.
+		this._onOutsideScroll = (event) => {
+			const target = event.target;
+			if (target instanceof Node && this._panel.contains(target)) {
+				return;
+			}
+			this._closeDropdown();
 		};
 
 		trigger.addEventListener('click', () => this._toggleDropdown());
@@ -343,6 +359,19 @@ export class InputSelectComponent extends InputComponent {
 		this._chevron.classList.add('rotate-180');
 		this._trigger.setAttribute('aria-expanded', 'true');
 
+		// Ancestors that scroll their own content (e.g. the horizontally
+		// scrollable table wrapper) clip any absolutely positioned descendant
+		// once it grows past their bounds, drawing a scrollbar in the table
+		// instead of letting the panel float above it. Escaping to <body>
+		// with fixed positioning sidesteps that clipping entirely.
+		const rect = this._trigger.getBoundingClientRect();
+		document.body.appendChild(this._panel);
+		this._panel.style.position = 'fixed';
+		this._panel.style.left = `${rect.left}px`;
+		this._panel.style.top = `${rect.bottom}px`;
+		this._panel.style.width = `${rect.width}px`;
+		this._panel.style.zIndex = '1000';
+
 		const rows = this._optionRows();
 		const currentValue = this._selectInput.value;
 		const selectedIndex = rows.findIndex((row) => row.dataset.value === currentValue);
@@ -350,6 +379,9 @@ export class InputSelectComponent extends InputComponent {
 
 		document.addEventListener('click', this._onDocumentClick);
 		document.addEventListener('keydown', this._onDocumentKeyDown);
+		window.addEventListener('scroll', this._onOutsideScroll, true);
+		window.addEventListener('resize', this._onOutsideScroll);
+		window.addEventListener('hashchange', this._onOutsideScroll);
 	}
 
 	_closeDropdown() {
@@ -361,6 +393,18 @@ export class InputSelectComponent extends InputComponent {
 		this._panel.classList.add('hidden');
 		this._chevron.classList.remove('rotate-180');
 		this._trigger.setAttribute('aria-expanded', 'false');
+
+		if (this._panel.parentNode === document.body) {
+			this.appendChild(this._panel);
+			this._panel.style.position = '';
+			this._panel.style.left = '';
+			this._panel.style.top = '';
+			this._panel.style.width = '';
+			this._panel.style.zIndex = '';
+		}
+		window.removeEventListener('scroll', this._onOutsideScroll, true);
+		window.removeEventListener('resize', this._onOutsideScroll);
+		window.removeEventListener('hashchange', this._onOutsideScroll);
 		this._trigger.removeAttribute('aria-activedescendant');
 		document.removeEventListener('click', this._onDocumentClick);
 		document.removeEventListener('keydown', this._onDocumentKeyDown);
