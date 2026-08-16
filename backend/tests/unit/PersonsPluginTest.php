@@ -120,11 +120,10 @@ TestSuite::run('Plugin persons - schema.json respeta contrato identities/fields/
     assertTrue(($data['identities']['id']['editable'] ?? true) === false, 'identity id must be non-editable');
 
     $fieldKeys = array_keys($data['fields']);
-    foreach (['name', 'surnames'] as $requiredField) {
-        assertTrue(in_array($requiredField, $fieldKeys, true), "schema.json missing field: {$requiredField}");
-        assertTrue(($data['fields'][$requiredField]['required'] ?? false) === true, "{$requiredField} must be required");
-    }
+    assertTrue(in_array('name', $fieldKeys, true), 'schema.json missing field: name');
+    assertTrue(($data['fields']['name']['required'] ?? false) === true, 'name must be required');
     assertTrue(!in_array('mail', $fieldKeys, true), 'mail must not be a base field anymore (moved to custom_fields)');
+    assertTrue(!in_array('surnames', $fieldKeys, true), 'surnames must not be a base field anymore (moved to custom_fields)');
 
     $customFieldsByKey = [];
     foreach ($data['custom_fields'] as $customField) {
@@ -137,7 +136,7 @@ TestSuite::run('Plugin persons - schema.json respeta contrato identities/fields/
     }
 
     $expectedCustomKeys = [
-        'mail', 'phone', 'identity_document_number', 'address',
+        'surnames', 'mail', 'phone', 'identity_document_number', 'address',
         'town', 'county', 'postal_code', 'notes',
     ];
     $actualCustomKeys = array_keys($customFieldsByKey);
@@ -145,8 +144,11 @@ TestSuite::run('Plugin persons - schema.json respeta contrato identities/fields/
     sort($actualCustomKeys);
     assertTrue($actualCustomKeys === $expectedCustomKeys, 'custom_fields keys must match expected set exactly');
 
+    assertTrue(($customFieldsByKey['surnames']['type'] ?? '') === 'string', 'surnames custom_field must be string');
+    assertTrue(($customFieldsByKey['surnames']['required'] ?? false) === true, 'surnames custom_field must be required');
+
     assertTrue(($customFieldsByKey['mail']['type'] ?? '') === 'mail', 'mail custom_field must be type mail');
-    assertTrue(($customFieldsByKey['mail']['required'] ?? false) === true, 'mail custom_field must be required');
+    assertTrue(($customFieldsByKey['mail']['required'] ?? true) === false, 'mail custom_field must be optional');
 
     assertTrue(($customFieldsByKey['phone']['type'] ?? '') === 'phone', 'phone custom_field must be phone');
     assertTrue(($customFieldsByKey['phone']['required'] ?? true) === false, 'phone custom_field must be optional');

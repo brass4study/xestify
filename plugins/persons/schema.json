@@ -12,14 +12,16 @@
             "type": "string",
             "required": true,
             "label": "Nombre"
-        },
-        "surnames": {
-            "type": "string",
-            "required": true,
-            "label": "Apellidos"
         }
     },
     "custom_fields": [
+        {
+            "key": "surnames",
+            "type": "string",
+            "required": true,
+            "label": "Apellidos",
+            "summaryView": true
+        },
         {
             "key": "identity_document_number",
             "type": "string",
@@ -58,7 +60,7 @@
         {
             "key": "mail",
             "type": "mail",
-            "required": true,
+            "required": false,
             "label": "Email",
             "summaryView": false
         },

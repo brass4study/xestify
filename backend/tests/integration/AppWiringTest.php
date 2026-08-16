@@ -157,11 +157,11 @@ TestSuite::run('boot wiring injects active hooks into EntityService', function (
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $schema = json_encode([
         'fields' => [
-            'name' => ['type' => 'string', 'required' => true, 'label' => 'Nombre'],
-            'surnames' => ['type' => 'string', 'required' => true, 'label' => 'Apellidos'],
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Nombre']
         ],
         'custom_fields' => [
-            ['key' => 'mail', 'type' => 'mail', 'required' => true, 'label' => 'Email'],
+            ['key' => 'surnames', 'type' => 'string', 'required' => true, 'label' => 'Apellidos'],
+            ['key' => 'mail', 'type' => 'mail', 'required' => true, 'label' => 'Email']
         ],
         'relations' => [],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -146,7 +146,8 @@ final class PluginSchemaMergeService
                 'custom_fields',
                 $merged['plugin_suggested_custom_fields'] ?? [],
                 $targetCatalog,
-                $diff
+                $diff,
+                ['origin']
             );
 
             return $merged;
@@ -157,7 +158,8 @@ final class PluginSchemaMergeService
             'custom_fields',
             $merged['custom_fields'] ?? [],
             $targetCatalog,
-            $diff
+            $diff,
+            ['origin']
         );
 
         return $merged;
@@ -167,6 +169,11 @@ final class PluginSchemaMergeService
      * @param mixed $current
      * @param mixed $target
      * @param array<string, array{added: string[]}> $diff
+     * @param string[] $ignoreKeys definition keys excluded from the equality check —
+     *   for `custom_fields`, `origin` is admin-config metadata PluginConfigService
+     *   stamps onto an already-configured plugin's catalog entries and schema.json
+     *   never has, so comparing it verbatim would flag every untouched field as
+     *   "changed" the moment a plugin gets configured at least once.
      * @return array<int, array<string, mixed>>
      */
     private function mergeListSectionByKey(
@@ -174,7 +181,8 @@ final class PluginSchemaMergeService
         string $section,
         mixed $current,
         mixed $target,
-        array &$diff
+        array &$diff,
+        array $ignoreKeys = []
     ): array {
         $currentList = $this->normalizeItemList($current);
         $targetList = $this->normalizeItemList($target);
@@ -187,7 +195,7 @@ final class PluginSchemaMergeService
             }
 
             if (isset($currentByKey[$key])) {
-                if (!$this->definitionsEqual($currentByKey[$key], $item)) {
+                if (!$this->definitionsEqual($currentByKey[$key], $item, $ignoreKeys)) {
                     throw new DomainException(
                         "Plugin '{$slug}' update is not additive: '{$section}.{$key}' changed."
                     );
@@ -238,9 +246,25 @@ final class PluginSchemaMergeService
         return isset($item['key']) && is_string($item['key']) ? $item['key'] : null;
     }
 
-    private function definitionsEqual(mixed $left, mixed $right): bool
+    /**
+     * @param string[] $ignoreKeys
+     */
+    private function definitionsEqual(mixed $left, mixed $right, array $ignoreKeys = []): bool
     {
-        return $this->schemaComparison->normalize($left) === $this->schemaComparison->normalize($right);
+        return $this->schemaComparison->normalize($this->withoutKeys($left, $ignoreKeys))
+            === $this->schemaComparison->normalize($this->withoutKeys($right, $ignoreKeys));
+    }
+
+    /**
+     * @param string[] $ignoreKeys
+     */
+    private function withoutKeys(mixed $value, array $ignoreKeys): mixed
+    {
+        if ($ignoreKeys === [] || !is_array($value)) {
+            return $value;
+        }
+
+        return array_diff_key($value, array_flip($ignoreKeys));
     }
 
     /**
