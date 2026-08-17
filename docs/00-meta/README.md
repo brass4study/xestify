@@ -10,6 +10,7 @@ Decisiones técnicas resueltas y referencia para futuras iteraciones:
 - **[09-history/historial-decisiones.md](../09-history/historial-decisiones.md)** — Full context de opciones consideradas por cada decisión (útil si en futuro quieres cambiar algo)
 - **[09-history/consideraciones-iniciales.md](../09-history/consideraciones-iniciales.md)** — Guía ejecutiva para implementación: estructura, convenciones, trampas a evitar
 - **[11-backlog/backlog.md](../11-backlog/backlog.md)** — Backlog ejecutable desglosado: 100+ historias con estimaciones, criterios de aceptación, dependencias y prioridad MoSCoW
+- **[skills/README.md](../../skills/README.md)** — Este proyecto usa Claude Code Agent Skills: automatizaciones locales (auditorías de deuda técnica, revisión de clean code, siembra de datos de demo...) que se disparan por lenguaje natural. Índice completo ahí.
 
 ## Orden de lectura recomendado (después de MVP)
 

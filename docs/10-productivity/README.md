@@ -23,6 +23,23 @@ Esta carpeta contiene documentación sobre prompts, plantillas, métricas y segu
 
 ---
 
+## Skills locales (Claude Code)
+
+Las skills de `skills/` son la parte ejecutable de la productividad asistida
+por IA en Xestify: automatizan tareas repetitivas en vez de repetir el mismo
+prompt largo cada vez. Índice completo (descripción y frase que dispara cada
+una) en [`skills/README.md`](../../skills/README.md); convención estructural
+en `AGENTS.md`, sección "Skills locales del proyecto".
+
+| Skill | Qué hace |
+|---|---|
+| [`audit-technical-debt`](../../skills/audit-technical-debt/SKILL.md) | Genera auditorías de deuda técnica (completa/incremental/acotada) |
+| [`fix-technical-debt`](../../skills/fix-technical-debt/SKILL.md) | Corrige hallazgos ya auditados, fase a fase |
+| [`review-sonarqube-clean-code`](../../skills/review-sonarqube-clean-code/SKILL.md) | Revisa/corrige findings de SonarQube for IDE/SonarLint |
+| [`seed-business-data`](../../skills/seed-business-data/SKILL.md) | Siembra datos de negocio de demostración (STORY 10.6) |
+
+---
+
 ## Recomendaciones para análisis académico
 
 - Documentar tanto éxitos como fallos o iteraciones necesarias.

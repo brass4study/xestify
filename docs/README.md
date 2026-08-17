@@ -10,6 +10,7 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 - **Catálogo de entidades:** gestionado solo por la tabla `plugins` (`plugin_type = 'entity'`)
 - **Decisiones técnicas:** [09-history/decisiones-tecnicas.md](09-history/decisiones-tecnicas.md)
 - **Productividad y flujo IA:** [10-productivity/README.md](10-productivity/README.md)
+- **Skills locales (Claude Code):** [`skills/README.md`](../skills/README.md) — auditorías de deuda técnica, revisión de clean code, siembra de datos de demo
 
 ---
 
@@ -27,7 +28,6 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 10. [09-history](09-history/README.md) — Historial de decisiones y migraciones
 11. [10-productivity](10-productivity/README.md) — Productividad, IA y prompts
 12. [11-backlog](11-backlog/README.md) — Backlog, roadmap y estado del MVP
-13. [12-technical-debt](12-technical-debt/README.md) — Histórico de auditorías de calidad de código y deuda técnica
 
 ---
 

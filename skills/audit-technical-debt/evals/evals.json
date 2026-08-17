@@ -1,0 +1,29 @@
+{
+  "skill_name": "audit-technical-debt",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Haz una auditoría completa de deuda técnica de todo el proyecto.",
+      "expected_output": "Variante completa: divide en subsistemas ~2.000-4.000 líneas por límites de EPIC, lanza agentes en paralelo leyendo ficheros completos (no grep), sintetiza informe consolidado con top 'antes de la defensa' y patrones transversales, guarda todo en skills/audit-technical-debt/archive/<fecha de hoy>/ con plan-correccion.md y progreso.md, y añade la fila nueva en skills/audit-technical-debt/archive/README.md.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Compara el estado actual del código con la última auditoría y actualiza qué sigue abierto.",
+      "expected_output": "Variante incremental: localiza la subcarpeta YYYYMMDD/ más reciente dentro de skills/audit-technical-debt/archive/, usa su progreso.md como punto de partida pero relee código para confirmar de forma independiente cada crítico/mayor, busca hallazgos nuevos, y guarda el resultado como una subcarpeta fechada nueva sin modificar la anterior.",
+      "files": ["skills/audit-technical-debt/archive/20260811/progreso.md"]
+    },
+    {
+      "id": 3,
+      "prompt": "Audita solo el módulo de gestión de plugins que acabamos de tocar en la story de esta semana.",
+      "expected_output": "Variante acotada: analiza solo ese subsistema con el mismo criterio (correctitud, redundancia, complejidad, clean code, refactors perdidos, código muerto, contraste contra docs/), y reporta en el chat citando fichero:línea sin crear subcarpeta ni artifact.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Haz una auditoría de deuda técnica.",
+      "expected_output": "Si ya existe una subcarpeta YYYYMMDD/ previa en skills/audit-technical-debt/archive/ pero también ha habido mucho trabajo nuevo desde entonces, la variante (completa vs. incremental) es ambigua: pregunta al usuario antes de lanzar agentes en paralelo en vez de asumir una de las dos.",
+      "files": []
+    }
+  ]
+}

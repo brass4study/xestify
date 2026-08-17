@@ -1,8 +1,8 @@
 # Progreso de corrección — auditoría 2026-08-11
 
-← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md) · [Convenciones de corrección](../convenciones-correccion.md) · [Formato de esta tabla](../convenciones-progreso.md)
+← [Índice de esta auditoría](README.md) · [Plan de corrección](plan-correccion.md) · [Reglas de corrección](../../../fix-technical-debt/SKILL.md) · [Formato de esta tabla](../../SKILL.md)
 
-**Antes de tocar código, lee [`../convenciones-correccion.md`](../convenciones-correccion.md)** (reglas de sesión, commit único, formato de asunto) y [`../convenciones-progreso.md`](../convenciones-progreso.md) (qué es este fichero, columnas, leyenda de estado). Este fichero solo trae el estado real de esta auditoría concreta, no repite esas reglas.
+**Antes de tocar código, lee [`skills/fix-technical-debt/SKILL.md`](../../../fix-technical-debt/SKILL.md)** (reglas de sesión, commit único, formato de asunto) y la sección "Formato de `progreso.md`" de [`skills/audit-technical-debt/SKILL.md`](../../SKILL.md) (qué es este fichero, columnas, leyenda de estado). Este fichero solo trae el estado real de esta auditoría concreta, no repite esas reglas.
 
 ## Resumen
 

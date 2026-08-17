@@ -2,7 +2,7 @@
 
 Esta carpeta guarda **auditorías de calidad de código / deuda técnica** del proyecto como instantáneas fechadas. Cada auditoría vive en su propia subcarpeta `YYYYMMDD/` (fecha en que se realizó el análisis), de modo que el histórico completo queda navegable y ninguna auditoría nueva sobreescribe o borra las anteriores.
 
-Las reglas, formatos y prompts reutilizables (estructura de carpeta, severidad, formato de ID, columnas de `progreso.md`, convención de commit, metodología para generar una auditoría) viven en **[CONVENCIONES.md](CONVENCIONES.md)** — el índice de un conjunto de ficheros de convenciones, uno por etapa (generar auditoría / corregir hallazgos / formato de `progreso.md`), común a todas las auditorías pasadas y futuras. Este README es solo el índice histórico; no repitas esas reglas aquí ni dentro de una subcarpeta fechada.
+Las reglas, formatos y metodología (estructura de carpeta, severidad, formato de ID, columnas de `progreso.md`, convención de commit) viven en las dos skills que generan y corrigen estas auditorías: **[`../SKILL.md`](../SKILL.md)** (generar) y **[`../../fix-technical-debt/SKILL.md`](../../fix-technical-debt/SKILL.md)** (corregir), comunes a todas las auditorías pasadas y futuras. Este README es solo el índice histórico; no repitas esas reglas aquí ni dentro de una subcarpeta fechada.
 
 ## Auditorías realizadas
 
@@ -20,4 +20,4 @@ Una auditoría de deuda técnica es una fotografía del código en un commit/est
 - No se puede diferenciar "esto ya se sabía y se decidió no arreglar" de "esto es nuevo".
 - Se repite trabajo: sin registro, cada auditoría vuelve a descubrir (y volver a explicar) los mismos hallazgos desde cero.
 
-Por eso cada auditoría es inmutable una vez publicada: si un hallazgo se corrige, no se borra del informe antiguo — se anota como resuelto en `progreso.md` de esa misma auditoría (sesiones de corrección) o se confirma en la **siguiente** auditoría (re-auditoría incremental). Ver [CONVENCIONES.md](CONVENCIONES.md) para el detalle de ambos mecanismos y los prompts listos para reutilizar.
+Por eso cada auditoría es inmutable una vez publicada: si un hallazgo se corrige, no se borra del informe antiguo — se anota como resuelto en `progreso.md` de esa misma auditoría (sesiones de corrección) o se confirma en la **siguiente** auditoría (re-auditoría incremental). Ver [`../SKILL.md`](../SKILL.md) y [`../../fix-technical-debt/SKILL.md`](../../fix-technical-debt/SKILL.md) para el detalle de ambos mecanismos.

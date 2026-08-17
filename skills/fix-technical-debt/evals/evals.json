@@ -1,0 +1,29 @@
+{
+  "skill_name": "fix-technical-debt",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Corrige la deuda técnica pendiente.",
+      "expected_output": "Detecta la subcarpeta YYYYMMDD/ más reciente en skills/audit-technical-debt/archive/, lee progreso.md y plan-correccion.md, comprueba primero si queda algún ID de la lista 'antes de la defensa' (Fase 1) sin resolver ni descartar y, si lo hay, confirma en una línea que va a ejecutar la Fase 1 antes de tocar código; si Fase 1 ya está resuelta, pasa a la primera sesión de Fase 2 con MAYOR pendiente.",
+      "files": ["skills/audit-technical-debt/archive/20260811/progreso.md", "skills/audit-technical-debt/archive/20260811/plan-correccion.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "Ejecuta la sesión 2.3 de corrección de la auditoría del 11 de agosto de 2026.",
+      "expected_output": "Salta la detección automática, usa skills/audit-technical-debt/archive/20260811/ y la fila 2.3 de plan-correccion.md (03-backend-motor-plugins.md + resto de 04-...), corrige solo los hallazgos MAYOR de esos ficheros uno a uno con commit único + push por hallazgo, pidiendo confirmación del mensaje de cada commit (incluido el amend).",
+      "files": ["skills/audit-technical-debt/archive/20260811/plan-correccion.md", "skills/audit-technical-debt/archive/20260811/03-backend-motor-plugins.md"]
+    },
+    {
+      "id": 3,
+      "prompt": "Limpia los MENOR y NIT que queden pendientes de la última auditoría.",
+      "expected_output": "Trata la petición como Fase 3 explícita (no se dispara sola sin pedirlo), prioriza arreglos triviales y de bajo riesgo, y puede parar y resumir si el alcance crece antes de cubrir todos los hallazgos.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "¿Qué toca corregir ahora en la auditoría de deuda técnica?",
+      "expected_output": "Si progreso.md muestra Fase 1 y Fase 2 completas (todo en Resuelto o Descartado), no toca código: informa que corresponde Fase 4 (re-auditoría incremental) y sugiere invocar skills/audit-technical-debt/SKILL.md en modo incremental.",
+      "files": ["skills/audit-technical-debt/archive/20260811/progreso.md"]
+    }
+  ]
+}

@@ -141,8 +141,9 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
   `evals/` cuando aporten valor.
 - Cuando una peticion encaje con una skill local, leer su `SKILL.md` antes de
   actuar y aplicar su flujo junto con este `AGENTS.md` y `CONTRIBUTING.md`.
-- Para revisiones de clean code con SonarQube for IDE/SonarLint, usar
-  `skills/review-sonarqube-clean-code/SKILL.md`.
+- Indice completo de skills disponibles (que hace cada una, con que frase se
+  dispara): `skills/README.md`. Mantenerlo actualizado al anadir o quitar una
+  skill es obligatorio, para no perder aqui una referencia parcial.
 
 ## Convenciones de entidades y plugins
 

@@ -8,13 +8,13 @@
 
 ## Método (resumen)
 
-Siete agentes de investigación en paralelo, cada uno acotado a un subsistema, con lectura completa de los ficheros de su ámbito (no solo `grep`) y contraste contra la documentación de `docs/` y `docs/11-backlog/backlog.md`. La metodología completa y reutilizable (para lanzar la próxima auditoría) está en [`../convenciones-auditoria.md`](../convenciones-auditoria.md).
+Siete agentes de investigación en paralelo, cada uno acotado a un subsistema, con lectura completa de los ficheros de su ámbito (no solo `grep`) y contraste contra la documentación de `docs/` y `docs/11-backlog/backlog.md`. La metodología completa y reutilizable (para lanzar la próxima auditoría) está en [`../../SKILL.md`](../../SKILL.md).
 
 > **Límite:** es una auditoría **estática** de lectura de código — no se ejecutó la aplicación ni la suite de tests real en este entorno. Los hallazgos de "camino roto en producción" deberían confirmarse manualmente antes de citarlos en la defensa.
 
 Existe también una versión navegable (HTML, con hallazgos priorizados y patrones transversales resaltados) publicada como artifact: ver [00-informe-consolidado.md](00-informe-consolidado.md) para el enlace y el resumen ejecutivo completo.
 
-Para abordar la corrección de estos hallazgos en sesiones nuevas y acotadas (con prompts listos para reutilizar), ver [plan-correccion.md](plan-correccion.md). El estado de cada hallazgo (qué está resuelto, en progreso o pendiente) se rastrea en [progreso.md](progreso.md) — ese fichero, a diferencia de este informe, se actualiza con el tiempo.
+Para abordar la corrección de estos hallazgos en sesiones nuevas y acotadas, ver [plan-correccion.md](plan-correccion.md) y la skill [`skills/fix-technical-debt/SKILL.md`](../../../fix-technical-debt/SKILL.md). El estado de cada hallazgo (qué está resuelto, en progreso o pendiente) se rastrea en [progreso.md](progreso.md) — ese fichero, a diferencia de este informe, se actualiza con el tiempo.
 
 ## Contenido
 
