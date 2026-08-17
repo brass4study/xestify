@@ -143,6 +143,23 @@
     assertEquals(sandbox.querySelector('tbody td').textContent, 'Inactivo');
   });
 
+  await test('render() muestra las fechas en formato dd/mm/yyyy', async () => {
+    const schema = {
+      fields: [
+        { name: 'name', label: 'Nombre' },
+        { name: 'birth_date', label: 'Fecha de nacimiento', type: 'date' },
+      ],
+    };
+    const table = new DynamicTable([
+      { name: 'Ana', birth_date: '2026-08-17' },
+      { name: 'Sin fecha', birth_date: null },
+    ], schema, '#table-container');
+    table.render();
+
+    const rows = Array.from(sandbox.querySelectorAll('tbody tr')).map((row) => row.children[1].textContent);
+    assertEquals(rows, ['17/08/2026', '']);
+  });
+
   await test('render() shows rows for current page', async () => {
     const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', {
       pageSize: 10,

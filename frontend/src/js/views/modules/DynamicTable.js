@@ -751,11 +751,33 @@ export class DynamicTable {
 	}
 
 	/**
+	 * `date` fields are stored as "YYYY-MM-DD" (native <input type="date">
+	 * format); the table must show them as "dd/mm/yyyy" for the user.
+	 */
+	formatDateValue(value) {
+		if (typeof value !== 'string') {
+			return this.toDisplayValue(value);
+		}
+
+		const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+		if (match === null) {
+			return this.toDisplayValue(value);
+		}
+
+		const [, year, month, day] = match;
+		return `${day}/${month}/${year}`;
+	}
+
+	/**
 	 * `select` fields store the option's raw value in the record (e.g.
 	 * "ophthalmologist"); the table must show its human label (e.g.
 	 * "Oftalmólogo") the same way the edit form's InputSelect does.
 	 */
 	formatCellValue(value, column) {
+		if (column.type === 'date') {
+			return this.formatDateValue(value);
+		}
+
 		if (column.type !== 'select' || !Array.isArray(column.options)) {
 			return this.toDisplayValue(value);
 		}
