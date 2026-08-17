@@ -72,6 +72,7 @@ $groups = [
         'backend/tests/integration/PluginDeletionServiceTest.php',
         'backend/tests/integration/PluginRegistrationServiceTest.php',
         'backend/tests/integration/PluginRelationsConfigTest.php',
+        'backend/tests/integration/PluginFieldsConfigTest.php',
         'backend/tests/integration/ReverseRelationTest.php',
         'backend/tests/integration/EntityOptionsTest.php',
         'backend/tests/integration/PluginSyncServiceTest.php',

@@ -819,11 +819,17 @@ export class PluginConfig {
 		return input.setData('name', 'required');
 	}
 
+	/**
+	 * Unlike Tipo/Etiqueta/Requerido, "Cabecera" (summaryView) stays
+	 * editable even for base/locked fields: it only toggles whether the
+	 * field feeds the record-summary label, never the schema shape that
+	 * fieldMeta().editable protects. Same precedent as the "Capa" column
+	 * (STORY 10.5) needing its own disabled rule instead of reusing
+	 * fieldMeta() wholesale.
+	 */
 	renderSummaryViewInput(field) {
-		const { editable } = this.fieldMeta(field);
 		const input = component.create('inputSwitch', {
 			checked: field.summaryView !== false,
-			disabled: !editable,
 			size: 'small',
 		});
 		return input.setData('name', 'summaryView');

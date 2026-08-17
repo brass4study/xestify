@@ -311,8 +311,30 @@
     assertTrue(keyInput.readOnly === true, 'Campo base debe estar bloqueado para clave');
     assertTrue(typeSelect.disabled === true, 'Campo base debe estar bloqueado para tipo');
     assertTrue(requiredInput.disabled === true, 'Campo base debe estar bloqueado para requerido');
-    assertTrue(summaryInput.disabled === true, 'Campo base debe estar bloqueado para cabecera');
+    assertTrue(summaryInput.disabled === false, 'Campo base debe permitir configurar su cabecera (summaryView)');
     assertTrue(summaryInput.checked === true, 'Campo base debe mostrarse en cabecera por defecto');
+  });
+
+  await test('el switch de cabecera de un campo base es editable y se envia en el payload', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'persons', api });
+    await page.init();
+
+    const firstRow = container.querySelector('[data-row-index="0"]');
+    const summaryInput = firstRow.querySelector('[data-name="summaryView"]');
+    summaryInput.checked = false;
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    const name = api.savedPayload.fields.find((field) => field.key === 'name');
+    assertTrue(name !== undefined, 'Debe existir fila name en payload');
+    assertTrue(name.summaryView === false, 'Debe enviar cabecera sobreescrita para un campo base');
+    assertEquals(name.type, 'string', 'El tipo del campo base no debe cambiar');
+    assertEquals(name.label, 'Nombre', 'La etiqueta del campo base no debe cambiar');
   });
 
   await test('campos sugeridos son editables y enviables con override', async () => {

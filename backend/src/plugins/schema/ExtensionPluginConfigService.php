@@ -85,6 +85,7 @@ final class ExtensionPluginConfigService
                 'type' => $definition['type'] ?? 'string',
                 'required' => $definition['required'] ?? false,
                 'label' => $definition['label'] ?? $key,
+                'summaryView' => $definition['summaryView'] ?? true,
                 'options' => $definition['options'] ?? null,
                 'resortable' => $definition['resortable'] ?? true,
                 'layer' => $definition['layer'] ?? 'general',
@@ -264,7 +265,7 @@ final class ExtensionPluginConfigService
         }
 
         foreach ($existingDefinition as $metaKey => $metaValue) {
-            if (in_array($metaKey, ['type', 'required', 'label', 'options', 'layer'], true)) {
+            if (in_array($metaKey, ['type', 'required', 'label', 'options', 'layer', 'summaryView'], true)) {
                 continue;
             }
 

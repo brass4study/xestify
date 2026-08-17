@@ -91,6 +91,7 @@ final class PluginConfigService
         $relations = $this->relationsCompiler->compile($relationsPayload, $compiled['seen_keys']);
 
         $nextSchema = $currentSchema;
+        $nextSchema['fields'] = $this->applyBaseSummaryView($currentSchema['fields'] ?? [], $fields, $baseByKey);
         $nextSchema['plugin_suggested_custom_fields'] = $compiled['suggested_catalog'];
         $nextSchema['custom_fields'] = $compiled['active_custom_fields'];
         $nextSchema['ui_field_order'] = $compiled['ui_order'];
@@ -522,8 +523,11 @@ final class PluginConfigService
 
     /**
      * Base entity fields are immutable through PluginConfig for every
-     * attribute — the payload row must arrive active and identical to the
-     * schema definition, or the whole save is rejected.
+     * attribute except summaryView — the payload row must arrive active and
+     * identical to the schema definition in type/label/required, or the
+     * whole save is rejected. summaryView ("Cabecera") is deliberately not
+     * checked here: it's a display preference, not part of the schema
+     * shape, so it's allowed to change (persisted by applyBaseSummaryView()).
      *
      * @param array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool} $row
      * @param array{key: string, type: string, required: bool, label: string} $base
@@ -538,6 +542,31 @@ final class PluginConfigService
         if ($invalidBase) {
             throw new InvalidArgumentException("Base field '{$key}' cannot be edited or deactivated.");
         }
+    }
+
+    /**
+     * compileEntityConfigRows() skips base-field rows entirely (their
+     * type/label/required can't change, and schema['fields'] is otherwise
+     * never rewritten for entity plugins), so a summaryView change on a
+     * base row would silently vanish unless applied here explicitly.
+     *
+     * @param array<string, mixed> $rawFields raw schema['fields'] as stored on disk
+     * @param array<int, array{key: string, summaryView: bool}> $rows normalized payload rows
+     * @param array<string, mixed> $baseByKey
+     * @return array<string, mixed>
+     */
+    private function applyBaseSummaryView(array $rawFields, array $rows, array $baseByKey): array
+    {
+        foreach ($rows as $row) {
+            $key = $row['key'];
+            if (!isset($baseByKey[$key]) || !isset($rawFields[$key]) || !is_array($rawFields[$key])) {
+                continue;
+            }
+
+            $rawFields[$key]['summaryView'] = $row['summaryView'];
+        }
+
+        return $rawFields;
     }
 
     /**

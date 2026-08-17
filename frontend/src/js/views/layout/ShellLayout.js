@@ -48,13 +48,13 @@ export class ShellLayout {
     const menu = this.#createTarget('shell-menu', 'header',
       'top-0 z-50 mx-5 flex flex-wrap items-center gap-3 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 text-white', shell);
     this.#createTarget('shell-menu-nav', 'div', 'min-w-0 flex-1', menu);
-    const menuConfig = this.#createTarget('shell-menu-config', 'div', 'ml-auto flex items-center gap-2', menu);
+    const menuConfig = this.#createTarget('shell-menu-config', 'div', 'ml-auto flex items-center', menu);
     this.#createTarget('shell-menu-config-theme', 'div', '', menuConfig);
     this.#createTarget('shell-menu-config-user', 'div', '', menuConfig);
     const mixedBar = this.#createTarget('shell-mixed-bar', 'header',
       'top-0 z-50 hidden w-full items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 text-slate-900', shell);
     this.#createTarget('shell-mixed-bar-nav', 'div', 'min-w-0 flex-1', mixedBar);
-    const mixedBarConfig = this.#createTarget('shell-mixed-bar-config', 'div', 'ml-auto flex items-center gap-2', mixedBar);
+    const mixedBarConfig = this.#createTarget('shell-mixed-bar-config', 'div', 'ml-auto flex items-center', mixedBar);
     this.#createTarget('shell-mixed-bar-config-theme', 'div', '', mixedBarConfig);
     this.#createTarget('shell-mixed-bar-config-user', 'div', '', mixedBarConfig);
 
@@ -369,8 +369,8 @@ export class ShellLayout {
       menu.append(menuConfig);
     }
     menuConfig.className = isSideNavigation
-      ? 'mt-auto flex w-full items-center gap-2'
-      : 'ml-auto flex items-center gap-2';
+      ? 'mt-auto flex w-full items-center'
+      : 'ml-auto flex items-center';
   }
 
   /**
