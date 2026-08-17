@@ -24,6 +24,13 @@ function summaryFieldName(key, definition) {
 	return typeof key === 'string' && key.trim() !== '' ? key : null;
 }
 
+function pushSummaryFieldName(names, key, definition) {
+	const name = summaryFieldName(key, definition);
+	if (name !== null) {
+		names.push(name);
+	}
+}
+
 function summaryContentKeysInOrder(schema) {
 	const names = [];
 	const sections = [schema?.fields, schema?.custom_fields];
@@ -31,17 +38,11 @@ function summaryContentKeysInOrder(schema) {
 	for (const section of sections) {
 		if (Array.isArray(section)) {
 			for (const definition of section) {
-				const name = summaryFieldName(definition?.key, definition);
-				if (name !== null) {
-					names.push(name);
-				}
+				pushSummaryFieldName(names, definition?.key, definition);
 			}
 		} else if (section !== null && typeof section === 'object') {
 			for (const key of Object.keys(section)) {
-				const name = summaryFieldName(key, section[key]);
-				if (name !== null) {
-					names.push(name);
-				}
+				pushSummaryFieldName(names, key, section[key]);
 			}
 		}
 	}
