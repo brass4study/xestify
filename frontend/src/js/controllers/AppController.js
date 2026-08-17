@@ -1607,7 +1607,7 @@ export class AppController {
       { label: 'Operaciones' },
       { label, href: `#/entity/${encodeURIComponent(entityData.slug)}` },
       {
-        label: recordSummary !== null ? `Registro de ${recordSummary}` : `Registro ${entityData.recordId}`,
+        label: recordSummary !== null ? `Registro: ${recordSummary}` : `Registro: ${entityData.recordId}`,
         active: !isTabPage,
       },
     ];
