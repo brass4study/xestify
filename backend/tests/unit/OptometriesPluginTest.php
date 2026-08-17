@@ -346,6 +346,66 @@ TestSuite::run('Hooks - registerTabs embebe solo campos origin:additional en fie
     assertTrue($warnings['required'] === false, 'embedded field must carry required');
 });
 
+TestSuite::run('Hooks - registerTabs embebe summary_fields con campos base + additional, respetando summaryView (STORY tabla dinamica)', function (): void {
+    $pdo = new OptometriesPdoStub();
+    $pdo->rows = [[
+        'slug' => 'optometries',
+        'manifest_json' => json_encode([
+            'name' => 'optometries',
+            'type' => 'extension',
+            'target_entity' => 'clients',
+        ], JSON_UNESCAPED_UNICODE),
+        'schema_json' => json_encode([
+            'fields' => [
+                'date' => ['type' => 'date', 'required' => true, 'label' => 'Fecha'],
+                'od_distance_sphere' => ['type' => 'number', 'required' => false, 'label' => 'OD · Para lejos · Esfera', 'summaryView' => false],
+                'notes' => ['type' => 'text', 'required' => false, 'label' => 'Notas', 'summaryView' => true],
+                'warnings' => [
+                    'type' => 'text', 'required' => false, 'label' => 'Avisos',
+                    'layer' => 'general', 'origin' => 'additional', 'summaryView' => true,
+                ],
+            ],
+            'relations' => [],
+            'ui_field_order' => ['date', 'od_distance_sphere', 'notes', 'warnings'],
+        ], JSON_UNESCAPED_UNICODE),
+    ]];
+
+    $hooks = new Hooks($pdo);
+    $dispatcher = new HookDispatcher();
+    $hooks->register($dispatcher);
+
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+
+    assertTrue(count($tabs) === 1, 'must inject exactly one tab');
+    $tab = $tabs[0];
+
+    assertEquals(4, count($tab['summary_fields']), 'summary_fields must include base fields too, unlike fields (which only has "warnings")');
+    $byKey = [];
+    foreach ($tab['summary_fields'] as $field) {
+        $byKey[$field['key']] = $field;
+    }
+    assertEquals(['date', 'od_distance_sphere', 'notes', 'warnings'], array_keys($byKey), 'summary_fields must preserve schema_json.fields declaration order');
+    assertTrue($byKey['date']['summaryView'] === true, 'date has no explicit summaryView -> defaults to true');
+    assertTrue($byKey['od_distance_sphere']['summaryView'] === false, 'od_distance_sphere summaryView must be honored as false');
+    assertTrue($byKey['notes']['summaryView'] === true, 'notes summaryView must be honored as true');
+    assertTrue($byKey['warnings']['summaryView'] === true, 'additional field summaryView must also be embedded');
+
+    assertEquals(['date', 'od_distance_sphere', 'notes', 'warnings'], $tab['ui_field_order'], 'ui_field_order must be embedded verbatim from schema_json');
+});
+
+TestSuite::run('Hooks - registerTabs deja ui_field_order vacio cuando schema_json no lo declara', function (): void {
+    $pdo = new OptometriesPdoStub();
+    $pdo->rows = [optometriesInstanceRow('optometries', 'clients')];
+
+    $hooks = new Hooks($pdo);
+    $dispatcher = new HookDispatcher();
+    $hooks->register($dispatcher);
+
+    $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
+
+    assertEquals([], $tabs[0]['ui_field_order'], 'ui_field_order must be [] when schema_json does not declare it');
+});
+
 TestSuite::run('Hooks - registerTabs no inyecta tab para una entidad distinta de target_entity', function (): void {
     $pdo = new OptometriesPdoStub();
     $pdo->rows = [optometriesInstanceRow('optometries', 'clients')];

@@ -1,22 +1,22 @@
 {
     "fields": {
-        "date": { "type": "date", "required": true, "label": "Fecha", "resortable": false, "layer": "top" },
+        "date": { "type": "date", "required": true, "label": "Fecha", "resortable": false, "layer": "top", "summaryView": true },
 
-        "od_lens_sphere": { "type": "number", "required": false, "label": "OD · Contacto · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
-        "od_lens_cylinder": { "type": "number", "required": false, "label": "OD · Contacto · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
-        "od_lens_axis": { "type": "number", "required": false, "label": "OD · Contacto · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
-        "od_lens_addition": { "type": "number", "required": false, "label": "OD · Contacto · Adición", "min": 0, "max": 4, "resortable": false, "layer": "od" },
+        "od_lens_sphere": { "type": "number", "required": false, "label": "OD · Contacto · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od", "summaryView": false },
+        "od_lens_cylinder": { "type": "number", "required": false, "label": "OD · Contacto · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od", "summaryView": false },
+        "od_lens_axis": { "type": "number", "required": false, "label": "OD · Contacto · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od", "summaryView": false },
+        "od_lens_addition": { "type": "number", "required": false, "label": "OD · Contacto · Adición", "min": 0, "max": 4, "resortable": false, "layer": "od", "summaryView": false },
 
-        "od_keratometry_sphere": { "type": "number", "required": false, "label": "OD · Queratometría · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
-        "od_keratometry_cylinder": { "type": "number", "required": false, "label": "OD · Queratometría · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
-        "od_keratometry_axis": { "type": "number", "required": false, "label": "OD · Queratometría · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
-        "od_keratometry_addition": { "type": "number", "required": false, "label": "OD · Queratometría · Adición", "min": 0, "max": 4, "resortable": false, "layer": "od" },
+        "od_keratometry_sphere": { "type": "number", "required": false, "label": "OD · Queratometría · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od", "summaryView": false },
+        "od_keratometry_cylinder": { "type": "number", "required": false, "label": "OD · Queratometría · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od", "summaryView": false },
+        "od_keratometry_axis": { "type": "number", "required": false, "label": "OD · Queratometría · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od", "summaryView": false },
+        "od_keratometry_addition": { "type": "number", "required": false, "label": "OD · Queratometría · Adición", "min": 0, "max": 4, "resortable": false, "layer": "od", "summaryView": false },
 
-        "od_base_curve": { "type": "number", "required": false, "label": "OD · Radio", "min": 6, "max": 10, "resortable": false, "layer": "od" },
-        "od_diameter": { "type": "number", "required": false, "label": "OD · Diámetro", "min": 12, "max": 16, "resortable": false, "layer": "od" },
+        "od_base_curve": { "type": "number", "required": false, "label": "OD · Radio", "min": 6, "max": 10, "resortable": false, "layer": "od", "summaryView": false },
+        "od_diameter": { "type": "number", "required": false, "label": "OD · Diámetro", "min": 12, "max": 16, "resortable": false, "layer": "od", "summaryView": false },
 
         "od_replacement_schedule": {
-            "type": "select", "required": false, "label": "OD · Uso", "resortable": false, "layer": "od",
+            "type": "select", "required": false, "label": "OD · Uso", "resortable": false, "layer": "od", "summaryView": false,
             "options": [
                 { "value": "", "label": "Ninguno" },
                 { "value": "diario", "label": "Diario" },
@@ -28,7 +28,7 @@
             ]
         },
         "od_pack": {
-            "type": "select", "required": false, "label": "OD · Pack", "resortable": false, "layer": "od",
+            "type": "select", "required": false, "label": "OD · Pack", "resortable": false, "layer": "od", "summaryView": false,
             "options": [
                 { "value": "", "label": "Ninguno" },
                 { "value": "1", "label": "1" },
@@ -40,21 +40,21 @@
             ]
         },
 
-        "os_lens_sphere": { "type": "number", "required": false, "label": "OI · Contacto · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
-        "os_lens_cylinder": { "type": "number", "required": false, "label": "OI · Contacto · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
-        "os_lens_axis": { "type": "number", "required": false, "label": "OI · Contacto · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
-        "os_lens_addition": { "type": "number", "required": false, "label": "OI · Contacto · Adición", "min": 0, "max": 4, "resortable": false, "layer": "os" },
+        "os_lens_sphere": { "type": "number", "required": false, "label": "OI · Contacto · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os", "summaryView": false },
+        "os_lens_cylinder": { "type": "number", "required": false, "label": "OI · Contacto · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os", "summaryView": false },
+        "os_lens_axis": { "type": "number", "required": false, "label": "OI · Contacto · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os", "summaryView": false },
+        "os_lens_addition": { "type": "number", "required": false, "label": "OI · Contacto · Adición", "min": 0, "max": 4, "resortable": false, "layer": "os", "summaryView": false },
 
-        "os_keratometry_sphere": { "type": "number", "required": false, "label": "OI · Queratometría · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
-        "os_keratometry_cylinder": { "type": "number", "required": false, "label": "OI · Queratometría · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
-        "os_keratometry_axis": { "type": "number", "required": false, "label": "OI · Queratometría · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
-        "os_keratometry_addition": { "type": "number", "required": false, "label": "OI · Queratometría · Adición", "min": 0, "max": 4, "resortable": false, "layer": "os" },
+        "os_keratometry_sphere": { "type": "number", "required": false, "label": "OI · Queratometría · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os", "summaryView": false },
+        "os_keratometry_cylinder": { "type": "number", "required": false, "label": "OI · Queratometría · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os", "summaryView": false },
+        "os_keratometry_axis": { "type": "number", "required": false, "label": "OI · Queratometría · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os", "summaryView": false },
+        "os_keratometry_addition": { "type": "number", "required": false, "label": "OI · Queratometría · Adición", "min": 0, "max": 4, "resortable": false, "layer": "os", "summaryView": false },
 
-        "os_base_curve": { "type": "number", "required": false, "label": "OI · Radio", "min": 6, "max": 10, "resortable": false, "layer": "os" },
-        "os_diameter": { "type": "number", "required": false, "label": "OI · Diámetro", "min": 12, "max": 16, "resortable": false, "layer": "os" },
+        "os_base_curve": { "type": "number", "required": false, "label": "OI · Radio", "min": 6, "max": 10, "resortable": false, "layer": "os", "summaryView": false },
+        "os_diameter": { "type": "number", "required": false, "label": "OI · Diámetro", "min": 12, "max": 16, "resortable": false, "layer": "os", "summaryView": false },
 
         "os_replacement_schedule": {
-            "type": "select", "required": false, "label": "OI · Uso", "resortable": false, "layer": "os",
+            "type": "select", "required": false, "label": "OI · Uso", "resortable": false, "layer": "os", "summaryView": false,
             "options": [
                 { "value": "", "label": "Ninguno" },
                 { "value": "diario", "label": "Diario" },
@@ -66,7 +66,7 @@
             ]
         },
         "os_pack": {
-            "type": "select", "required": false, "label": "OI · Pack", "resortable": false, "layer": "os",
+            "type": "select", "required": false, "label": "OI · Pack", "resortable": false, "layer": "os", "summaryView": false,
             "options": [
                 { "value": "", "label": "Ninguno" },
                 { "value": "1", "label": "1" },
@@ -78,7 +78,7 @@
             ]
         },
 
-        "notes": { "type": "text", "required": false, "label": "Notas", "layer": "general" }
+        "notes": { "type": "text", "required": false, "label": "Notas", "layer": "general", "summaryView": true }
     },
     "relations": [
         { "key": "od_brand", "type": "belongs_to", "target_entity": "brands", "target_field": "id", "required": false, "label": "Marca", "layer": "od" },

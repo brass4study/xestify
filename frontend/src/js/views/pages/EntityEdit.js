@@ -227,6 +227,8 @@ export class EntityEdit {
 							recordId,
 							api,
 							relations: Array.isArray(tab.relations) ? tab.relations : [],
+							summaryFields: Array.isArray(tab.summary_fields) ? tab.summary_fields : [],
+							uiFieldOrder: Array.isArray(tab.ui_field_order) ? tab.ui_field_order : [],
 							onNavigateToItem: this.#onNavigateToPluginItem === null
 								? undefined
 								: (itemId) => this.#onNavigateToPluginItem(tab.id, itemId),

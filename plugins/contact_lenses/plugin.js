@@ -11,8 +11,10 @@
  *
  * Data model: same generic HISTORY-of-fichas contract as
  * plugins/optometries/plugin.js (see that file's docblock) — one item per
- * saved lens-fitting record, Fecha/Notas summary table for the inline tab,
- * a much richer per-item form for PluginItemEdit.js.
+ * saved lens-fitting record, a summary table for the inline tab (reuses
+ * DynamicTable.normalizeColumns() exactly like EntityList: only fields with
+ * summaryView!==false, Fecha/Notas by default, see schema.json), a much
+ * richer per-item form for PluginItemEdit.js.
  *
  * The detail form is built LAYER BY LAYER exactly like optometries' (see
  * frontend/src/js/views/components/ExtensionLayerFields.js for the shared
@@ -54,7 +56,6 @@ import { DynamicTable } from '../../js/views/modules/DynamicTable.js';
 import { UiResilienceService } from '../../js/services/UiResilienceService.js';
 import {
   COMPACT_INPUT_CLASSNAME,
-  formatDate,
   axisLines as sharedAxisLines,
   formFieldRow,
   groupByLayer,
@@ -381,11 +382,20 @@ export class ContactLensesPanel {
    *   recordId: string|null,
    *   api: import('/src/js/models/ApiClientModel.js').Api,
    *   relations: Array<{ key: string, label: string, target_entity: string, required: boolean, layer: string }>,
+   *   summaryFields?: Array<{ key: string, type: string, label: string, options: Array|null, summaryView: boolean }>,
+   *   uiFieldOrder?: Array<string>,
    *   onNavigateToItem?: (itemId: string|null) => void
    * }} options
    */
-  constructor({ endpoint, recordId, api, onNavigateToItem }) {
-    this.#element = this.#build(endpoint, recordId, api, typeof onNavigateToItem === 'function' ? onNavigateToItem : () => {});
+  constructor({ endpoint, recordId, api, onNavigateToItem, summaryFields, uiFieldOrder }) {
+    this.#element = this.#build(
+      endpoint,
+      recordId,
+      api,
+      typeof onNavigateToItem === 'function' ? onNavigateToItem : () => {},
+      Array.isArray(summaryFields) ? summaryFields : [],
+      Array.isArray(uiFieldOrder) ? uiFieldOrder : [],
+    );
   }
 
   get element() {
@@ -404,45 +414,29 @@ export class ContactLensesPanel {
    * @param {string|null} recordId
    * @param {object} api
    * @param {(itemId: string|null) => void} onNavigateToItem
+   * @param {Array<{ key: string, type: string, label: string, options: Array|null, summaryView: boolean }>} summaryFields
+   * @param {Array<string>} uiFieldOrder
    */
-  #build(endpointTemplate, recordId, api, onNavigateToItem) {
+  #build(endpointTemplate, recordId, api, onNavigateToItem, summaryFields, uiFieldOrder) {
     const panel = document.createElement('div');
     panel.className = 'flex flex-col gap-4';
 
     const tableHost = document.createElement('div');
     /** @type {DynamicTable|null} */
     let table = null;
+    // Same shape DynamicTable.normalizeColumns() expects from EntityList's
+    // real entity schema: only fields with summaryView!==false become
+    // columns, ordered by ui_field_order — no hardcoded Fecha/Notas here.
+    const tableSchema = { fields: summaryFields, ui_field_order: uiFieldOrder };
 
     const toRecord = (item) => ({
+      ...(item.content && typeof item.content === 'object' ? item.content : {}),
       id: item.id,
-      date: typeof item.content.date === 'string' ? item.content.date : '',
-      notes: typeof item.content.notes === 'string' ? item.content.notes : '',
     });
 
     const renderTable = (items) => {
       const records = items.map(toRecord);
       const columns = [
-        {
-          key: 'date',
-          label: 'Fecha',
-          position: 'start',
-          shrink: true,
-          renderCell: (record) => formatDate(record.date),
-          sortValue: (record) => record.date ?? '',
-        },
-        {
-          key: 'notes',
-          label: 'Notas',
-          position: 'start',
-          renderCell: (record) => {
-            const span = document.createElement('span');
-            span.className = 'block max-w-xs truncate';
-            span.textContent = record.notes ?? '';
-            span.title = record.notes ?? '';
-            return span;
-          },
-          sortValue: (record) => record.notes ?? '',
-        },
         {
           key: 'delete-action',
           label: 'Acciones',
@@ -462,7 +456,7 @@ export class ContactLensesPanel {
       ];
 
       if (table === null) {
-        table = new DynamicTable(records, { fields: {} }, tableHost, {
+        table = new DynamicTable(records, tableSchema, tableHost, {
           showPagination: false,
           extraColumns: columns,
           rowDecorator: (tr, record) => {
@@ -518,7 +512,7 @@ export class ContactLensesPanel {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'inline-flex w-fit items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100';
-    addBtn.textContent = 'Añadir ficha nueva';
+    addBtn.textContent = 'Añadir';
     addBtn.addEventListener('click', () => onNavigateToItem(null));
 
     panel.appendChild(addBtn);

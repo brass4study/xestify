@@ -52,14 +52,16 @@ final class Hooks
 
                 foreach ($this->allowedInstances($entity) as $instance) {
                     $tabList[] = [
-                        'id'          => $instance['slug'],
-                        'label'       => 'Lentillas',
-                        'icon'        => 'fa-glasses',
-                        'endpoint'    => '/plugins/' . $instance['slug'] . '/' . $entity . '/{id}',
-                        'plugin_name' => 'contact_lenses',
-                        'entity'      => $entity,
-                        'relations'   => $instance['relations'],
-                        'fields'      => $instance['fields'],
+                        'id'             => $instance['slug'],
+                        'label'          => 'Lentillas',
+                        'icon'           => 'fa-glasses',
+                        'endpoint'       => '/plugins/' . $instance['slug'] . '/' . $entity . '/{id}',
+                        'plugin_name'    => 'contact_lenses',
+                        'entity'         => $entity,
+                        'relations'      => $instance['relations'],
+                        'fields'         => $instance['fields'],
+                        'summary_fields' => $instance['summaryFields'],
+                        'ui_field_order' => $instance['uiFieldOrder'],
                     ];
                 }
 
@@ -97,10 +99,14 @@ final class Hooks
     }
 
     /**
-     * @return list<array{slug: string, relations: list<array<string, mixed>>, fields: list<array<string, mixed>>}>
+     * @return list<array{slug: string, relations: list<array<string, mixed>>, fields: list<array<string, mixed>>, summaryFields: list<array<string, mixed>>, uiFieldOrder: list<string>}>
      *   active instances whose target_entity configuration allows $entity,
      *   ordered by their own sort_order (Subir/Bajar), each carrying its own
-     *   schema.relations[]/schema.fields[] (see class docblock for why).
+     *   schema.relations[]/schema.fields[] (see class docblock for why), plus
+     *   summaryFields/uiFieldOrder (STORY summaryView follow-up) so
+     *   plugin.js's history table can filter/order its columns the same way
+     *   DynamicTable.normalizeColumns() does for EntityList, instead of
+     *   hardcoding Fecha/Notas.
      */
     private function allowedInstances(string $entity): array
     {
@@ -134,6 +140,8 @@ final class Hooks
                     'slug' => $slug,
                     'relations' => $this->extractRelations($row['schema_json'] ?? null),
                     'fields' => $this->extractFields($row['schema_json'] ?? null),
+                    'summaryFields' => $this->extractSummaryFields($row['schema_json'] ?? null),
+                    'uiFieldOrder' => $this->decodeSchemaSection($row['schema_json'] ?? null, 'ui_field_order'),
                 ];
             }
         }
@@ -217,6 +225,35 @@ final class Hooks
                 'options' => is_array($definition['options'] ?? null) ? $definition['options'] : null,
                 'min' => $this->floatOrNull($definition['min'] ?? null),
                 'max' => $this->floatOrNull($definition['max'] ?? null),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Every field (base + additional, unlike extractFields() above which is
+     * additional-only for buildDetailForm()) with just enough shape for
+     * plugin.js's history table to run the same DynamicTable.normalizeColumns()
+     * algorithm EntityList uses: filter out summaryView===false, then order
+     * by ui_field_order.
+     *
+     * @return list<array{key: string, type: string, label: string, options: array<int, mixed>|null, summaryView: bool}>
+     */
+    private function extractSummaryFields(mixed $schemaJson): array
+    {
+        $result = [];
+        foreach ($this->decodeSchemaSection($schemaJson, 'fields') as $key => $definition) {
+            if (!is_string($key) || !is_array($definition)) {
+                continue;
+            }
+
+            $result[] = [
+                'key' => $key,
+                'type' => $this->stringOr($definition['type'] ?? null, 'string'),
+                'label' => $this->stringOr($definition['label'] ?? null, $key),
+                'options' => is_array($definition['options'] ?? null) ? $definition['options'] : null,
+                'summaryView' => ($definition['summaryView'] ?? true) === true,
             ];
         }
 
