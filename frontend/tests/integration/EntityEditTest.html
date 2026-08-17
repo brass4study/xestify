@@ -487,7 +487,7 @@
             ok: true,
             data: {
               tabs: [
-                { id: 'relation:orders:id_person', label: 'Pedidos', type: 'relation', source_entity: 'orders', key: 'id_person' },
+                { id: 'relation-orders-id_person', label: 'Pedidos', type: 'relation', source_entity: 'orders', key: 'id_person' },
               ],
             },
           }),
@@ -519,7 +519,7 @@
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
-    const relationTabButton = host.querySelector('[data-tab-id="relation:orders:id_person"]');
+    const relationTabButton = host.querySelector('[data-tab-id="relation-orders-id_person"]');
     assertTrue(relationTabButton !== null, 'La tab de relacion inversa debe renderizarse');
     assertTrue(relationTabButton.textContent.includes('Pedidos'), 'La tab debe mostrar la etiqueta de la relacion');
 
@@ -539,7 +539,7 @@
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
-    host.querySelector('[data-tab-id="relation:orders:id_person"]').click();
+    host.querySelector('[data-tab-id="relation-orders-id_person"]').click();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     const panel = host.querySelector('[data-role="related-records-panel"]');
@@ -564,7 +564,7 @@
     assertTrue(page instanceof EntityEdit, 'EntityEdit instance should be created');
     await new Promise((resolve) => setTimeout(resolve, 60));
 
-    host.querySelector('[data-tab-id="relation:orders:id_person"]').click();
+    host.querySelector('[data-tab-id="relation-orders-id_person"]').click();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     const row = host.querySelector('[data-role="related-records-panel"] tbody tr');

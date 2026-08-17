@@ -138,7 +138,7 @@ claves arbitrarias del contenido JSONB.
     dinámicamente su `plugin.js` y construye el panel con `PluginPanelRegistry`.
   - Tabs de **relación inversa** (STORY 10.3 §9), generadas automáticamente por
     el núcleo (`ReverseRelationTabResolver`) cuando otra entidad activa declara
-    una relación `belongs_to` hacia esta: `{id: "relation:{source}:{key}", label, type: "relation", source_entity, key}`.
+    una relación `belongs_to` hacia esta: `{id: "relation-{source}-{key}", label, type: "relation", source_entity, key}`.
     No pasan por `PluginPanelRegistry` ni tienen `plugin.js` propio — el
     frontend construye directamente un panel genérico (`RelatedRecordsPanel`)
     que consume `GET .../records?field={key}&value={id del registro actual}`

@@ -21,12 +21,17 @@
     import {
       entityCreatePage,
       entityPage,
+      entityPluginItemCreatePage,
+      entityPluginItemPage,
       entityRecordPage,
       entityTabPage,
       getPageFromHash,
       HASH_ROUTE_MAP,
       hashFromPage,
+      parseEntityPluginItemCreatePage,
+      parseEntityPluginItemPage,
       parseEntityRecordPage,
+      parseEntityTabPage,
       pluginConfigPage,
       userDetailPage,
     } from '../../js/controllers/RouteMapController.js';
@@ -136,6 +141,8 @@
         [entityCreatePage('persons'), '#/entity/persons/#new'],
         [entityRecordPage('persons', 'record-9'), '#/entity/persons/record-9'],
         [entityTabPage('persons', 'record-9', 'comments'), '#/entity/persons/record-9/comments'],
+        [entityPluginItemCreatePage('persons', 'record-9', 'optometries'), '#/entity/persons/record-9/optometries/#new'],
+        [entityPluginItemPage('persons', 'record-9', 'optometries', 'item-1'), '#/entity/persons/record-9/optometries/item-1'],
         ['plugins', '#/plugins'],
         [pluginConfigPage('comments'), '#/plugins/comments'],
         [pluginConfigPage('#new'), '#/plugins/#new'],
@@ -165,13 +172,13 @@
         'La antigua ruta de configuración de plugins debe quedar fuera del mapa');
       assertEquals(getPageFromHash('#/entity/persons/record-9/comments?panel=activity', 'home'),
         'entity-tab:persons:record-9:comments', 'La query no debe destruir el contexto de tab');
-      assertEquals(getPageFromHash('#/entity/persons/record-9/comments/extra', 'home'),
+      assertEquals(getPageFromHash('#/entity/persons/record-9/comments/extra/more', 'home'),
         'home', 'Las rutas fuera del mapa deben usar fallback');
     });
 
     await test('HASH_ROUTE_MAP es la única fuente de las plantillas de hash, sin entradas decorativas', async () => {
       assertEquals(Object.keys(HASH_ROUTE_MAP).sort(), [
-        'entityCreate', 'entityDetail', 'entityList', 'entityTab',
+        'entityCreate', 'entityDetail', 'entityList', 'entityPluginItem', 'entityPluginItemCreate', 'entityTab',
         'login', 'home', 'plugins', 'pluginConfig', 'profile', 'userDetail', 'users',
       ].sort(), 'El mapa no debe acumular plantillas de resultado nunca implementadas (resultEmpty/resultError/resultForbidden)');
 
@@ -183,6 +190,12 @@
         'El hash de detalle de entidad debe derivar del propio HASH_ROUTE_MAP.entityDetail');
       assertEquals(hashFromPage(entityTabPage('persons', 'record-9', 'comments')), fillTemplate(HASH_ROUTE_MAP.entityTab, 'persons', 'record-9', 'comments'),
         'El hash de tab de entidad debe derivar del propio HASH_ROUTE_MAP.entityTab');
+      assertEquals(hashFromPage(entityPluginItemCreatePage('persons', 'record-9', 'optometries')),
+        fillTemplate(HASH_ROUTE_MAP.entityPluginItemCreate, 'persons', 'record-9', 'optometries'),
+        'El hash de alta de ficha de plugin debe derivar del propio HASH_ROUTE_MAP.entityPluginItemCreate');
+      assertEquals(hashFromPage(entityPluginItemPage('persons', 'record-9', 'optometries', 'item-1')),
+        fillTemplate(HASH_ROUTE_MAP.entityPluginItem, 'persons', 'record-9', 'optometries', 'item-1'),
+        'El hash de ficha de plugin debe derivar del propio HASH_ROUTE_MAP.entityPluginItem');
     });
 
     await test('parseEntityRecordPage es la única implementación del parser entity-record:', async () => {
@@ -195,6 +208,35 @@
       assertEquals(parseEntityRecordPage('entity-record:persons:record-9:extra'),
         { slug: 'persons', recordId: 'record-9:extra' },
         'El recordId conserva cualquier resto tras el segundo separador');
+    });
+
+    await test('Los parsers de tab/plugin-item toleran un tabId que contenga ":" (defensivo: el id de una tab no debe poder romper el separador interno del router)', async () => {
+      const tabId = 'relation:sales:id_client';
+
+      assertEquals(parseEntityTabPage(entityTabPage('persons', 'record-9', tabId)),
+        { slug: 'persons', recordId: 'record-9', tabId },
+        'parseEntityTabPage debe reconstruir un tabId con múltiples ":"');
+
+      assertEquals(parseEntityPluginItemCreatePage(entityPluginItemCreatePage('persons', 'record-9', tabId)),
+        { slug: 'persons', recordId: 'record-9', tabId },
+        'parseEntityPluginItemCreatePage debe reconstruir un tabId con múltiples ":"');
+
+      assertEquals(parseEntityPluginItemPage(entityPluginItemPage('persons', 'record-9', tabId, 'item-1')),
+        { slug: 'persons', recordId: 'record-9', tabId, itemId: 'item-1' },
+        'parseEntityPluginItemPage debe reconstruir un tabId con múltiples ":", sin confundirlo con itemId');
+
+      const tabPage = entityTabPage('persons', 'record-9', tabId);
+      assertEquals(hashFromPage(tabPage), `#/entity/persons/record-9/${encodeURIComponent(tabId)}`,
+        'hashFromPage no debe caer a home cuando el tabId trae ":"');
+      assertEquals(getPageFromHash(hashFromPage(tabPage), 'home'), tabPage,
+        'El hash generado debe volver a resolver exactamente al mismo token de página');
+      assertTrue(hashFromPage(tabPage) !== HASH_ROUTE_MAP.home,
+        'No debe caer al fallback home cuando el tabId de relación contiene ":"');
+
+      assertTrue(parseEntityTabPage('entity-tab:persons:record-9') === null, 'Debe rechazar token sin tabId');
+      assertTrue(parseEntityTabPage('entity-tab:persons::comments') === null, 'Debe rechazar recordId vacío');
+      assertTrue(parseEntityPluginItemPage('entity-plugin-item:persons:record-9:tab-a:') === null,
+        'Debe rechazar itemId vacío');
     });
 
     await test('ShellLayout construye el árbol exacto y expone sus targets', async () => {

@@ -70,7 +70,7 @@ class ReverseRelationTabResolver
         $tabs = [];
         foreach ($relations as $relation) {
             $tabs[] = [
-                'id' => "relation:{$sourceSlug}:{$relation['key']}",
+                'id' => "relation-{$sourceSlug}-{$relation['key']}",
                 'label' => $ambiguous ? "{$entityLabel} ({$relation['label']})" : $entityLabel,
                 'type' => 'relation',
                 'source_entity' => $sourceSlug,

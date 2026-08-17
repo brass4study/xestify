@@ -92,11 +92,17 @@ export function parseEntityPluginItemCreatePage(page) {
   }
 
   const parts = page.slice(prefix.length).split(':');
-  if (parts.length !== 3 || parts.includes('')) {
+  if (parts.length < 3) {
     return null;
   }
 
-  return { slug: parts[0], recordId: parts[1], tabId: parts[2] };
+  const [slug, recordId] = parts;
+  const tabId = parts.slice(2).join(':');
+  if (slug === '' || recordId === '' || tabId === '') {
+    return null;
+  }
+
+  return { slug, recordId, tabId };
 }
 
 export function parseEntityPluginItemPage(page) {
@@ -106,11 +112,18 @@ export function parseEntityPluginItemPage(page) {
   }
 
   const parts = page.slice(prefix.length).split(':');
-  if (parts.length !== 4 || parts.includes('')) {
+  if (parts.length < 4) {
     return null;
   }
 
-  return { slug: parts[0], recordId: parts[1], tabId: parts[2], itemId: parts[3] };
+  const [slug, recordId] = parts;
+  const itemId = parts[parts.length - 1];
+  const tabId = parts.slice(2, -1).join(':');
+  if (slug === '' || recordId === '' || tabId === '' || itemId === '') {
+    return null;
+  }
+
+  return { slug, recordId, tabId, itemId };
 }
 
 export function pluginConfigPage(slug) {
@@ -394,11 +407,17 @@ export function parseEntityTabPage(page) {
   }
 
   const parts = page.slice(prefix.length).split(':');
-  if (parts.length !== 3 || parts.includes('')) {
+  if (parts.length < 3) {
     return null;
   }
 
-  return { slug: parts[0], recordId: parts[1], tabId: parts[2] };
+  const [slug, recordId] = parts;
+  const tabId = parts.slice(2).join(':');
+  if (slug === '' || recordId === '' || tabId === '') {
+    return null;
+  }
+
+  return { slug, recordId, tabId };
 }
 
 export function parseEntityRecordPage(page) {

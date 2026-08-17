@@ -143,7 +143,7 @@ TestSuite::run('GET /entities/{target}/tabs includes the reverse relation tab', 
         assertTrue($result['ok'] ?? false, 'tabs() must succeed');
         $tabs = $result['data']['tabs'] ?? [];
         assertEquals(1, count($tabs), 'must include exactly one reverse relation tab');
-        assertEquals("relation:{$sourceSlug}:id_target", $tabs[0]['id'] ?? null, 'tab id must follow relation:{source}:{key}');
+        assertEquals("relation-{$sourceSlug}-id_target", $tabs[0]['id'] ?? null, 'tab id must follow relation-{source}-{key}');
         assertEquals($sourceSlug, $tabs[0]['label'] ?? null, 'tab label must be the source entity label, not the relation field label');
         assertEquals('relation', $tabs[0]['type'] ?? null, 'tab type must be relation');
         assertEquals($sourceSlug, $tabs[0]['source_entity'] ?? null, 'tab source_entity must be the source plugin slug');
