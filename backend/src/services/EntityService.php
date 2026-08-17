@@ -265,7 +265,6 @@ final class EntityService
     public function listOptions(string $entitySlug): array
     {
         $schema = $this->fetchCurrentPluginRow($entitySlug)['schema'];
-        $summaryKeys = $this->summaryContentKeysInOrder($schema);
         $records = $this->repository->all($entitySlug);
 
         $options = [];
@@ -273,7 +272,7 @@ final class EntityService
             $id = (string) ($row['id'] ?? '');
             $decoded = json_decode((string) ($row['content'] ?? '{}'), true);
             $content = is_array($decoded) ? $decoded : [];
-            $options[] = ['id' => $id, 'label' => $this->buildOptionLabel($content, $summaryKeys, $id)];
+            $options[] = ['id' => $id, 'label' => $this->buildOptionLabel($content, $schema, $id)];
         }
 
         return $options;
@@ -318,61 +317,146 @@ final class EntityService
     // -------------------------------------------------------------------------
 
     /**
-     * Ordered content keys counted as "summary" (fields first, then
-     * custom_fields, matching declaration order). Mirrors
-     * PluginConfigFieldNormalizer's `(bool) ($entry['summaryView'] ?? true)`
-     * default. Deliberately does NOT reuse SchemaFieldExtractor::extract():
-     * that merges in `identities` too and loses the summaryView flag.
+     * {key => definition} map combining fields (object) then custom_fields
+     * (array), in declaration order. Mirrors PluginConfigFieldNormalizer's
+     * `(bool) ($entry['summaryView'] ?? true)` default. Deliberately does
+     * NOT reuse SchemaFieldExtractor::extract(): that merges in
+     * `identities` too and loses the summaryView flag. Keeps the full
+     * definition (not just the name) because summaryFieldDisplayValue()
+     * needs `type`/`options` to resolve `select` values to their label.
      *
      * @param array<string, mixed> $schema
-     * @return array<int, string>
+     * @return array<string, array<string, mixed>>
      */
-    private function summaryContentKeysInOrder(array $schema): array
+    private function summaryFieldDefinitions(array $schema): array
     {
-        $names = [];
-        foreach (['fields', 'custom_fields'] as $section) {
-            if (!isset($schema[$section]) || !is_array($schema[$section])) {
-                continue;
-            }
-            foreach ($schema[$section] as $key => $definition) {
-                $name = $this->summaryFieldName($key, $definition);
-                if ($name !== null) {
-                    $names[] = $name;
+        $definitions = [];
+
+        if (isset($schema['fields']) && is_array($schema['fields'])) {
+            foreach ($schema['fields'] as $key => $definition) {
+                if (is_string($key) && trim($key) !== '' && is_array($definition)) {
+                    $definitions[$key] = $definition;
                 }
             }
         }
-        return $names;
+
+        if (isset($schema['custom_fields']) && is_array($schema['custom_fields'])) {
+            foreach ($schema['custom_fields'] as $definition) {
+                if (!is_array($definition)) {
+                    continue;
+                }
+                $key = $definition['key'] ?? null;
+                if (is_string($key) && trim($key) !== '') {
+                    $definitions[$key] = $definition;
+                }
+            }
+        }
+
+        return $definitions;
     }
 
     /**
-     * @param int|string $key
+     * Declaration-order keys with summaryView !== false, reordered by
+     * schema.ui_field_order the same way DynamicTable.normalizeColumns()
+     * reorders table columns on the frontend (frontend/src/js/views/
+     * modules/DynamicTable.js): entries named in ui_field_order come
+     * first, in that order; everything else keeps declaration order.
+     *
+     * @param array<string, mixed> $schema
+     * @param array<string, array<string, mixed>> $definitions
+     * @return array<int, string>
      */
-    private function summaryFieldName($key, mixed $definition): ?string
+    private function orderedSummaryKeys(array $schema, array $definitions): array
     {
-        if (!is_array($definition) || ($definition['summaryView'] ?? true) === false) {
+        $declarationOrder = [];
+        foreach ($definitions as $key => $definition) {
+            if (($definition['summaryView'] ?? true) !== false) {
+                $declarationOrder[] = $key;
+            }
+        }
+
+        $uiFieldOrder = isset($schema['ui_field_order']) && is_array($schema['ui_field_order']) ? $schema['ui_field_order'] : [];
+        $remaining = array_flip($declarationOrder);
+        $ordered = [];
+        foreach ($uiFieldOrder as $candidate) {
+            if (is_string($candidate) && isset($remaining[$candidate])) {
+                $ordered[] = $candidate;
+                unset($remaining[$candidate]);
+            }
+        }
+        foreach ($declarationOrder as $key) {
+            if (isset($remaining[$key])) {
+                $ordered[] = $key;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * Keys to display in the record summary label, in priority order:
+     * type+name+surnames, then type+name+description, then the first two
+     * summaryView fields in display order.
+     *
+     * @param array<string, mixed> $schema
+     * @return array{0: array<int, string>, 1: array<string, array<string, mixed>>}
+     */
+    private function summaryKeysToDisplay(array $schema): array
+    {
+        $definitions = $this->summaryFieldDefinitions($schema);
+
+        foreach ([['type', 'name', 'surnames'], ['type', 'name', 'description']] as $combo) {
+            if (isset($definitions[$combo[0]], $definitions[$combo[1]], $definitions[$combo[2]])) {
+                return [$combo, $definitions];
+            }
+        }
+
+        return [array_slice($this->orderedSummaryKeys($schema, $definitions), 0, 2), $definitions];
+    }
+
+    /**
+     * Resolves a raw content value to its display string, mapping `select`
+     * values through their declared options (value -> label) the same way
+     * SelectFieldValidator matches option values — each option may be a
+     * {value, label} pair or a bare scalar (legacy schema.json catalogs).
+     *
+     * @param array<string, mixed> $definition
+     */
+    private function summaryFieldDisplayValue(mixed $rawValue, array $definition): ?string
+    {
+        if (!is_scalar($rawValue)) {
             return null;
         }
 
-        $name = is_string($key) ? $key : ($definition['key'] ?? null);
+        if (($definition['type'] ?? null) === 'select' && is_array($definition['options'] ?? null)) {
+            foreach ($definition['options'] as $option) {
+                $optionValue = is_array($option) ? ($option['value'] ?? null) : $option;
+                if ($optionValue !== null && (string) $optionValue === (string) $rawValue) {
+                    return (string) (is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option);
+                }
+            }
+        }
 
-        return (is_string($name) && trim($name) !== '') ? $name : null;
+        return (string) $rawValue;
     }
 
     /**
      * @param array<string, mixed> $content
-     * @param array<int, string> $summaryKeys
+     * @param array<string, mixed> $schema
      */
-    private function buildOptionLabel(array $content, array $summaryKeys, string $fallbackId): string
+    private function buildOptionLabel(array $content, array $schema, string $fallbackId): string
     {
+        [$keys, $definitions] = $this->summaryKeysToDisplay($schema);
+
         $parts = [];
-        foreach ($summaryKeys as $key) {
-            $value = $content[$key] ?? null;
-            if (!is_scalar($value)) {
+        foreach ($keys as $key) {
+            $displayValue = $this->summaryFieldDisplayValue($content[$key] ?? null, $definitions[$key] ?? []);
+            if ($displayValue === null) {
                 continue;
             }
-            $stringValue = trim((string) $value);
-            if ($stringValue !== '') {
-                $parts[] = $stringValue;
+            $trimmed = trim($displayValue);
+            if ($trimmed !== '') {
+                $parts[] = $trimmed;
             }
         }
         return $parts === [] ? $fallbackId : implode(' ', $parts);

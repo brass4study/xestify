@@ -238,6 +238,82 @@ TestSuite::run('returns every active record without pagination', function () use
     }
 });
 
+TestSuite::run('type + name + surnames take priority and are shown in that order', function () use ($pdo): void {
+    $slug = 'test_options_' . bin2hex(random_bytes(3));
+
+    try {
+        insertOptionsEntityPlugin(
+            $pdo,
+            $slug,
+            ['surnames' => ['type' => 'string', 'required' => true, 'label' => 'Surnames'], 'name' => ['type' => 'string', 'required' => true, 'label' => 'Name']],
+            [
+                ['key' => 'type', 'type' => 'select', 'required' => true, 'label' => 'Type', 'options' => [['value' => 'optometrist', 'label' => 'Optometrista']]],
+                ['key' => 'notes', 'type' => 'string', 'required' => false, 'label' => 'Notes', 'summaryView' => true],
+            ]
+        );
+        insertOptionsRecord($pdo, $slug, ['name' => 'Javier', 'surnames' => 'Jimenez Alvarez', 'type' => 'optometrist', 'notes' => 'irrelevante']);
+
+        $ctrl = buildOptionsController();
+        $result = callOptionsController($ctrl, ['slug' => $slug]);
+
+        $options = $result['data'] ?? [];
+        assertEquals('Optometrista Javier Jimenez Alvarez', $options[0]['label'] ?? null, 'must use the fixed order type, name, surnames and ignore other summaryView:true fields, resolving the select value to its label');
+    } finally {
+        cleanupOptionsFixture($pdo, $slug);
+    }
+});
+
+TestSuite::run('without surnames, type + name + description take priority', function () use ($pdo): void {
+    $slug = 'test_options_' . bin2hex(random_bytes(3));
+
+    try {
+        insertOptionsEntityPlugin(
+            $pdo,
+            $slug,
+            ['name' => ['type' => 'string', 'required' => true, 'label' => 'Name'], 'type' => ['type' => 'string', 'required' => true, 'label' => 'Type']],
+            [['key' => 'description', 'type' => 'string', 'required' => false, 'label' => 'Description', 'summaryView' => true]]
+        );
+        insertOptionsRecord($pdo, $slug, ['name' => 'Producto X', 'type' => 'lente', 'description' => 'Lente progresiva']);
+
+        $ctrl = buildOptionsController();
+        $result = callOptionsController($ctrl, ['slug' => $slug]);
+
+        $options = $result['data'] ?? [];
+        assertEquals('lente Producto X Lente progresiva', $options[0]['label'] ?? null, 'without a surnames field declared it must fall back to type, name, description');
+    } finally {
+        cleanupOptionsFixture($pdo, $slug);
+    }
+});
+
+TestSuite::run('without type/name/surnames or type/name/description, uses the first 2 summaryView fields in display order', function () use ($pdo): void {
+    $slug = 'test_options_' . bin2hex(random_bytes(3));
+
+    try {
+        $manifest = ['name' => $slug, 'label' => $slug, 'version' => ENTITY_OPTIONS_VERSION, 'type' => 'entity', 'core_version' => ENTITY_OPTIONS_VERSION, 'description' => ''];
+        $schema = [
+            'identities' => ['id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false]],
+            'fields' => ['sku' => ['type' => 'string', 'required' => true, 'label' => 'SKU', 'summaryView' => true], 'name' => ['type' => 'string', 'required' => true, 'label' => 'Name', 'summaryView' => true]],
+            'custom_fields' => [['key' => 'price', 'type' => 'number', 'required' => false, 'label' => 'Price', 'summaryView' => true]],
+            'ui_field_order' => ['name', 'price', 'sku'],
+            'relations' => [],
+        ];
+        $stmt = $pdo->prepare(
+            "INSERT INTO plugins (slug, status, manifest_json, schema_json)
+             VALUES (:slug, 'active', CAST(:manifest AS jsonb), CAST(:schema AS jsonb))"
+        );
+        $stmt->execute([':slug' => $slug, ':manifest' => json_encode($manifest, JSON_UNESCAPED_UNICODE), ':schema' => json_encode($schema, JSON_UNESCAPED_UNICODE)]);
+        insertOptionsRecord($pdo, $slug, ['sku' => 'SKU-1', 'name' => 'Producto', 'price' => 9.99]);
+
+        $ctrl = buildOptionsController();
+        $result = callOptionsController($ctrl, ['slug' => $slug]);
+
+        $options = $result['data'] ?? [];
+        assertEquals('Producto 9.99', $options[0]['label'] ?? null, 'must follow ui_field_order (name, price) and ignore sku even though it is declared first');
+    } finally {
+        cleanupOptionsFixture($pdo, $slug);
+    }
+});
+
 TestSuite::run('GET /entities/{unknown}/options responds 404', function () use ($pdo): void {
     $ctrl = buildOptionsController();
     $result = callOptionsController($ctrl, ['slug' => 'not_a_real_entity_' . bin2hex(random_bytes(3))]);

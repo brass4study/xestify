@@ -66,6 +66,69 @@
     assertEquals(label, 'abc-123', 'Schema y content vacios deben caer al fallbackId sin excepciones');
   });
 
+  await test('type + name + surnames tienen prioridad y se muestran en ese orden', async () => {
+    const schema = {
+      fields: {
+        surnames: { type: 'string', label: 'Apellidos' },
+        name: { type: 'string', label: 'Nombre' },
+      },
+      custom_fields: [
+        { key: 'type', type: 'select', label: 'Tipo', options: [{ value: 'optometrist', label: 'Optometrista' }] },
+        { key: 'notes', type: 'string', label: 'Notas', summaryView: true },
+      ],
+    };
+    const label = recordSummaryLabel(
+      schema,
+      { name: 'Javier', surnames: 'Jimenez Alvarez', type: 'optometrist', notes: 'irrelevante' },
+      'fallback-id'
+    );
+    assertEquals(label, 'Optometrista Javier Jimenez Alvarez', 'Debe usar el orden fijo type, name, surnames e ignorar el resto de summaryView:true');
+  });
+
+  await test('sin surnames, type + name + description tienen prioridad', async () => {
+    const schema = {
+      fields: {
+        name: { type: 'string', label: 'Nombre' },
+        type: { type: 'string', label: 'Tipo' },
+      },
+      custom_fields: [
+        { key: 'description', type: 'string', label: 'Descripcion', summaryView: true },
+      ],
+    };
+    const label = recordSummaryLabel(schema, { name: 'Producto X', type: 'lente', description: 'Lente progresiva' }, 'fallback-id');
+    assertEquals(label, 'lente Producto X Lente progresiva', 'Sin surnames declarado debe caer a type, name, description');
+  });
+
+  await test('un campo select resuelve su label declarado en options, no el value crudo', async () => {
+    const schema = {
+      fields: { name: { type: 'string', label: 'Nombre' } },
+      custom_fields: [
+        { key: 'surnames', type: 'string', label: 'Apellidos', summaryView: true },
+        { key: 'type', type: 'select', label: 'Tipo', options: [
+          { value: 'ophthalmologist', label: 'Oftalmologo' },
+          { value: 'optometrist', label: 'Optometrista' },
+        ] },
+      ],
+    };
+    const label = recordSummaryLabel(schema, { name: 'Javier', surnames: 'Jimenez Alvarez', type: 'optometrist' }, 'fallback-id');
+    assertEquals(label, 'Optometrista Javier Jimenez Alvarez', 'El value "optometrist" debe resolverse a su label "Optometrista"');
+  });
+
+  await test('sin type/name/surnames ni type/name/description, usa los 2 primeros summaryView en orden de visualizacion', async () => {
+    const schema = {
+      fields: {
+        sku: { type: 'string', label: 'SKU', summaryView: true },
+        name: { type: 'string', label: 'Nombre', summaryView: true },
+      },
+      custom_fields: [
+        { key: 'price', type: 'number', label: 'Precio', summaryView: true },
+      ],
+      ui_field_order: ['name', 'price', 'sku'],
+    };
+    const label = recordSummaryLabel(schema, { sku: 'SKU-1', name: 'Producto', price: 9.99 }, 'fallback-id');
+    assertEquals(label, 'Producto 9.99', 'Debe respetar ui_field_order (name, price) e ignorar sku aunque venga primero en la declaracion');
+  });
+
   finishTestRunner('output');
 </script>
 </body>
