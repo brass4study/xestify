@@ -1431,8 +1431,8 @@ y mecanismo de multi-instancia; bloque `relations`/tipos de campo/seeders)
 mapearon el estado real del código antes de planificar, detectando que el AC
 literal del backlog citaba un patrón ya desactualizado (`Installer.php`,
 eliminado en STORY 10.3) y una relación `orders → distributors` /
-`purchases → clients` que ya no encajaba tras la unificación en `persons` de
-STORY 10.2. `AskUserQuestion` (3 preguntas) cerró: descartar `purchases` por
+`sales → clients` que ya no encajaba tras la unificación en `persons` de
+STORY 10.2. `AskUserQuestion` (3 preguntas) cerró: descartar `sales` por
 redundante, validar `invoice_number` como único vía `Hooks.php`, y dejar
 `basic` solo como plantilla en disco sin activar instancia.
 
@@ -1643,3 +1643,93 @@ integración con BD real); `optometries`/`contact_lenses` sincronizados y
 activos en la BD local del usuario; `optometries` confirmado visualmente
 por el usuario contra el sketch, `contact_lenses` pendiente de la misma
 confirmación; EPIC 10 en progreso, siguiente foco STORY 10.6.
+
+### STORY 10.6 — Datos de ejemplo para los plugins de demostración
+
+**Prompt inicial (modo plan):**
+```
+Preparemos la implementacion de la story 10.6
+Si tienes cualquier duda o pregunta o sugerencia, no dudes en hacermela
+hasta que todo quede afinado y 100% detallado
+```
+**Resultado:** investigación directa del estado real de la BD (no solo del
+AC de backlog ni de los `schema.json` en disco) antes de proponer nada:
+`schema_json` real tenía drift respecto a disco (campos añadidos vía
+`PluginConfig`), la relación `orders → distributors` ya estaba configurada
+en producción, y la instancia `purchases` que STORY 10.4 daba por
+descartada seguía existiendo. Se reportó cada hallazgo con evidencia SQL
+antes de asumir un diseño.
+
+**Aclaración clave del usuario sobre un hallazgo reportado:**
+```
+Acabo de cambiar `purchases` por `sales` es una instancia de orders pero
+con relacion con clients. Hay que sembrarla tambien
+```
+**Resultado:** lo que parecía un residuo a limpiar era trabajo en curso
+propio del usuario — el alcance de la story se amplió para sembrar ambas
+instancias de `orders` (`orders` a distribuidor, `sales` a cliente) en vez
+de tratar `sales` como descarte.
+
+**Corrección explícita sobre una propuesta orientativa:**
+```
+Preguntame por el numero de cada de entidad, no me fale tu propuesta
+orientativa: "200 clients, 15 distributors, 12 ophthalmologists, ~300
+orders, ~250 sales, 10 brands, 6 manufacturers"
+```
+**Resultado:** dos rondas adicionales de `AskUserQuestion` para obtener
+cifras exactas por entidad (200/25/100/30/15/300/250) en vez de cerrar el
+plan con una estimación propia razonable pero no confirmada.
+
+**Correcciones sobre el plan ya escrito, antes de aprobarlo:**
+```
+Paso previo:
+- Las tablas plugin_entity_data y plugin_extension_data deben limpiarse
+  antes del sembrado.
+FakeDataGenerator:
+- Para clients y ophthalmologists name+surname debe ser unico garantizado.
+- Surnames unico garantizado
+```
+**Resultado:** el paso previo pasó de borrar solo 2 filas huérfanas
+detectadas a vaciar ambas tablas por completo, y se añadió generación de
+`surnames` sin reemplazo (pool de pares de apellidos, set de "usados" por
+grupo) para `clients`/`ophthalmologists` — ambas correcciones se aplicaron
+directamente al fichero de plan antes de `ExitPlanMode`, no después de
+implementar.
+
+**Validación de diseño con agente Plan** (antes de escribir código): corrigió
+un error de namespace en mayúsculas (habría roto el autoload case-sensitive
+en Linux/producción) y una laguna real en el algoritmo de idempotencia (el
+"skip" debía cargar los ids existentes, no dejarlos vacíos, para que los
+grupos dependientes no se rompieran en un re-run parcial).
+
+**Bug real encontrado por la propia IA al verificar su código, antes de
+tocar la BD:** `strtr($value, 'áéíóúñ...', 'aeioun...')` empareja bytes,
+no caracteres — con acentos UTF-8 multibyte producía `"garcuna"` en vez de
+`"garcia"`. Se detectó con un smoke test dedicado (no con la siembra real)
+y se corrigió con la forma de array de `strtr()`.
+
+**Pase de limpieza SonarQube proactivo** (sin que se pidiera): una clase de
+38 métodos (límite Sonar: 20) se dividió en 4 clases cohesivas, y dos
+`RuntimeException` genéricas se sustituyeron por una excepción de dominio
+nueva (`SeederException`) — reexport final: 0 hallazgos.
+
+**Iteraciones:** 12+ (investigación previa de BD real, 4 rondas de
+`AskUserQuestion` con 14 preguntas en total antes del plan, 2 correcciones
+del usuario sobre el plan ya escrito, validación con agente Plan, bug de
+`strtr()` multibyte encontrado y corregido, pase de SonarQube, verificación
+de integridad por SQL de ~2500 registros, cierre de documentación en 6
+ficheros).
+**Lección:** un hallazgo inesperado en la BD real (`purchases`/`sales`) no
+siempre es un residuo a limpiar — puede ser trabajo en curso del usuario;
+la pregunta directa ("¿qué hago con esto?") evitó tratarlo como descarte
+por analogía con el caso similar de STORY 10.4. Y cuando el usuario pide
+números exactos en vez de una cifra orientativa, ofrecer una propuesta
+razonable no sustituye a la pregunta — hay que preguntar de verdad, aunque
+ya se haya propuesto un número antes.
+**Estado final:** STORY 10.6 implementada y verificada — backend
+`php backend/tests/run.php all` 68/68 archivos en verde; seeder idempotente
+verificado con 2 ejecuciones (2534 filas sembradas en la primera, 0
+duplicadas en la segunda) y con integridad de datos confirmada por SQL
+(apellidos únicos, relaciones sin ids huérfanos, cobertura 100% de fichas,
+325/325 DNI con letra de control correcta); `EPIC 10` queda cerrada al
+completo, siguiente foco STORY 11.1 (`EPIC 11`).

@@ -6,13 +6,13 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 9 cerrada; EPIC 10 en progreso con STORY 10.5 incluida y STORY 10.6 como siguiente foco (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 9 y EPIC 10 cerradas al completo (STORY 10.1-10.6); siguiente foco STORY 11.1 (`EPIC 11`, cierre formal del MVP) (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos, validación server-side y usuarios seed protegidos frente a edición/borrado/autoservicio
 - **Frontend:** SPA MVC con shell persistente, layouts reutilizables, routing hash bidireccional, feedback global, base de i18n, theming visual persistido por cliente y suite E2E Playwright contra el runtime real
 - **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
-- **Estado actual del MVP:** la base funcional del producto está consolidada, la capa transversal de frontend está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas, la pantalla de login quedó rediseñada (identidad visual, validación, accesos rápidos de desarrollo) tras STORY 10.1, los plugins de demostración de entidad (`orders`, `invoices`, `basic`) ya cubren el primer uso real end-to-end de las relaciones `belongs_to` del schema tras STORY 10.4, y los plugins de demostración de extensión (`optometries`, `contact_lenses`) añaden historial de fichas con relaciones propias, validación server-side y la convención `layers` tras STORY 10.5
+- **Estado actual del MVP:** la base funcional del producto está consolidada, la capa transversal de frontend está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas, la pantalla de login quedó rediseñada (identidad visual, validación, accesos rápidos de desarrollo) tras STORY 10.1, los plugins de demostración de entidad (`orders`, `sales`, `invoices`, `basic`) ya cubren el primer uso real end-to-end de las relaciones `belongs_to` del schema tras STORY 10.4, los plugins de demostración de extensión (`optometries`, `contact_lenses`) añaden historial de fichas con relaciones propias, validación server-side y la convención `layers` tras STORY 10.5, y tras STORY 10.6 la base de datos de demostración puede poblarse con un seeder de negocio idempotente (`php tools/setup/seed-business-data.php`, ver [skills/seed-business-data](skills/seed-business-data/SKILL.md)) con ~2500 registros coherentes entre sí (clientes, distribuidores, oftalmólogos, marcas, fabricantes, pedidos, ventas, facturas, fichas clínicas y comentarios)
 
 Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
 
@@ -157,7 +157,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 10.5 incluida** (EPIC 9 cerrada, EPIC 10 en progreso):
+MVP implementado hasta **STORY 10.6 incluida** (EPIC 9 y EPIC 10 cerradas al completo):
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -178,14 +178,16 @@ MVP implementado hasta **STORY 10.5 incluida** (EPIC 9 cerrada, EPIC 10 en progr
 - `plugin_name` (identidad técnica fija = carpeta) desacoplado de `slug` (editable); tabla `plugins` consolidada en una columna `manifest_json` viva que refleja el manifest.json real en disco, eliminando columnas redundantes y `schema_version` (residual); alta manual de plugin (activo por defecto), borrado en cascada, grid de relaciones `belongs_to` editable y tab automática de relación inversa en `EntityEdit` (STORY 10.3).
 - Plugins de demostración de entidad `orders` (pedidos), `invoices` (facturas, `belongs_to orders` obligatorio con `invoice_number` único) y `basic` (plantilla mínima solo con `name`, sin activar); primer uso real end-to-end del bloque `relations` del schema. La relación `orders → persons` no se fija en el schema de disco: se configura por instalación desde el grid "Relaciones" de `PluginConfig` (STORY 10.4).
 - Plugins de demostración de extensión `optometries` (ficha de graduación óptica) y `contact_lenses` (ficha de adaptación de lentillas), ambos con historial de varias fichas por persona, relaciones `belongs_to` propias hacia catálogos reales (`ophthalmologists`, `distributors`, `brands`, `manufacturers`), gauge visual del eje (`AxisGauge`, SVG compartido) y tabla de medidas por ojo (`DynamicTable`); página independiente de ficha (`PluginItemEdit.js`) en vez de formulario inline. Ampliaron capacidades de núcleo: `relations` en plugins `extension` (antes solo en `entity`), validación server-side de `content` contra schema, y la convención general `layers`/`resortable` para organizar la UI de cualquier plugin (STORY 10.5).
+- Seeder de datos de negocio idempotente (`BusinessDataSeeder`, `php tools/setup/seed-business-data.php`) para poblar una demo en vivo realista: 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes (con correlación de actividad entre clientes) y `comments`; idempotencia "todo o nada por grupo" (STORY 10.6).
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia, login y plugins.
 
-Pendiente tras STORY 10.5: datos de ejemplo de un caso óptico (STORY 10.6), y el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
+Pendiente tras STORY 10.6: el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
 
 Operaciones manuales de setup:
 
 - `php tools/setup/seed-admin-user.php`: crea el admin inicial si la tabla `users` esta vacia
 - `php tools/setup/sync-plugins.php`: registra plugins nuevos y detecta updates disponibles sin consumir la version/schema runtime de plugins ya instalados
+- `php tools/setup/seed-business-data.php`: siembra datos de negocio de demostración de forma idempotente (ver [skills/seed-business-data](skills/seed-business-data/SKILL.md))
 
 Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
 plugins y hooks desde la base de datos; la sincronizacion disco -> BD es

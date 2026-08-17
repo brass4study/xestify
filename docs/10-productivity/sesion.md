@@ -406,29 +406,31 @@ Story completada. Archivos creados/modificados:
 - Se eliminó la dependencia runtime del Play CDN de Tailwind: `frontend/src/index.html` carga ahora `frontend/src/css/tailwind.generated.css`, con fuente en `frontend/src/css/tailwind.src.css` y configuración en `frontend/tailwind.config.cjs`.
 - Los estilos residuales necesarios dejaron de vivir en `main.css` y pasaron a capas `@layer base` / `@layer utilities` dentro de Tailwind.
 
-### 🔄 EPIC 10 — Login, Persons y Plugins de Demostración (EN PROGRESO)
+### ✅ EPIC 10 — Login, Persons y Plugins de Demostración (COMPLETADO)
 
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
 | 10.1 ✅ | Mejoras en la sección de login | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 229/229 assertions (21 runners); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.2 ✅ | Renombrar plugin `clients` a `persons` | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 10 runners afectados en verde (headless, pendiente confirmación visual del usuario en navegador integrado); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.3 ✅ | Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json` | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 60/60 archivos; frontend `frontend/tests/integration/` runners afectados en verde vía Playwright headless (pendiente confirmación visual del usuario en navegador integrado) ✅ |
-| 10.4 ✅ | Plugins de demostración — entidades `orders`, `invoices`, `basic` (`purchases` descartado por redundante) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 65/65 archivos en verde (incluye BD real); `orders`/`invoices` sincronizados y activos en BD local, `basic` sincronizado e inactivo ✅ |
+| 10.4 ✅ | Plugins de demostración — entidades `orders`, `invoices`, `basic` (`sales` descartado por redundante) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 65/65 archivos en verde (incluye BD real); `orders`/`invoices` sincronizados y activos en BD local, `basic` sincronizado e inactivo ✅ |
 | 10.5 ✅ | Plugins de demostración — extensiones `optometries`, `contact_lenses` (nombres ajustados desde `optometry`/`contact-lenses`, ver detalle) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 68/68 archivos en verde (incluye BD real); `optometries`/`contact_lenses` sincronizados y activos en BD local; pendiente confirmación visual final del usuario en navegador integrado ✅ |
+| 10.6 ✅ | Datos de ejemplo para los plugins de demostración — seeder de negocio idempotente (`sales` retomado como segunda instancia real de `orders`, ver detalle) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 68/68 archivos en verde; `php tools/setup/seed-business-data.php` sembró 2534 filas en verde y quedó idempotente en la re-ejecución (11/11 grupos `skipped`, 0 filas nuevas) ✅ |
 
 **Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
 **Detalle de la story 10.2:** ver sesión completa más abajo (2026-08-15).
 **Detalle de la story 10.3:** ver sesión completa más abajo (2026-08-16).
 **Detalle de la story 10.4:** ver sesión completa más abajo (2026-08-16).
 **Detalle de la story 10.5:** ver sesión completa más abajo (2026-08-17).
+**Detalle de la story 10.6:** ver sesión completa más abajo (2026-08-17).
 
 ---
 
 ## Última actualización
 
 **Fecha:** 2026-08-17
-**EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
-**Próxima story:** STORY 10.6 - Datos de ejemplo para los plugins de demostración (EPIC 10)
+**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (PENDIENTE) — `EPIC 10` queda cerrada
+**Próxima story:** STORY 11.1 - Auditoría de código y naming (EPIC 11)
 
 ---
 
@@ -1375,8 +1377,8 @@ tiempo.
 
 **Decisiones cerradas con el usuario antes de escribir el plan (3 rondas de
 `AskUserQuestion`):**
-- `purchases` descartado del alcance: el AC original pedía `orders → distributors`
-  y `purchases → clients` como dos ejemplos gemelos, pero ninguno de los dos
+- `sales` descartado del alcance: el AC original pedía `orders → distributors`
+  y `sales → clients` como dos ejemplos gemelos, pero ninguno de los dos
   existe ya como plugin propio tras STORY 10.2 — habría sido un plugin
   redundante de `orders` (mismos campos, mismo target conceptual).
 - `invoices.invoice_number` se valida como único vía `Hooks.php`, siguiendo el
@@ -1456,7 +1458,7 @@ confirmar el bloqueo de borrado de un pedido con facturas asociadas.
   BD real del usuario sin alterar sus datos reales de `persons` (`clients`/
   `distributors`/`ophthalmologists`); la relación `orders → persons` queda
   deliberadamente sin fijar en el schema de disco, a configurar por instalación.
-- Backlog alineado: STORY 10.4 queda implementada (`purchases` descartado y
+- Backlog alineado: STORY 10.4 queda implementada (`sales` descartado y
   documentado el motivo); el siguiente punto es STORY 10.5 (plugins de
   demostración — extensiones `optometry`/`contact-lenses`).
 
@@ -1633,5 +1635,129 @@ usuario ("Si, la ficha ya coincide con el sketch") antes de implementar
 - Backlog alineado: STORY 10.5 queda implementada (nombres de plugin
   ajustados y documentados, "tipo de lentilla" descartado del AC original);
   el siguiente punto es STORY 10.6 (datos de ejemplo).
+
+## Sesion 2026-08-17 - STORY 10.6 Datos de ejemplo para los plugins de demostración
+
+Story completada en modo plan, con investigación previa exhaustiva del
+estado real de la BD (no solo de los `schema.json` en disco, que habían
+sufrido drift vía `PluginConfig`) y varias rondas de `AskUserQuestion` antes
+de escribir el plan, cerrando `EPIC 10` al completo.
+
+**Hallazgos durante la investigación previa (antes de diseñar nada):**
+- `purchases` (que STORY 10.4 daba por descartado) seguía existiendo en la
+  BD real del usuario, pero como trabajo en curso propio: el usuario lo
+  había renombrado a `sales` (Ventas a cliente, `id_client` opcional) como
+  segunda instancia real y deliberada de `orders`, distinta de `orders`
+  (Pedidos a distribuidor, `id_distributor` obligatoria, la única con
+  relación desde `invoices`). El alcance de la story se amplió para sembrar
+  ambas.
+- `plugin_extension_data` tenía 45 filas de fixtures de
+  `EntityControllerTest`/`EntityServiceTest` filtradas a la BD real desde
+  que se corrigió `PHPRC` en STORY 10.4 (los tests de integración nunca
+  limpiaban tras de sí), más 1 fila huérfana del slug pre-rename
+  `optometry` de STORY 10.5.
+- `orders.id_distributor` (obligatoria) e `invoices.id_order` (obligatoria,
+  apunta al slug literal `orders`, no a `sales`) ya estaban configuradas en
+  la BD real, confirmando que "Pedidos"/"Facturas" modelan compras a
+  distribuidores (B2B), no ventas a clientes.
+
+**Decisiones cerradas con el usuario (varias rondas de `AskUserQuestion`
+antes y durante la revisión del plan):**
+- Limpiar por completo `plugin_entity_data` y `plugin_extension_data` antes
+  de sembrar (no solo las filas huérfanas detectadas) — operación puntual a
+  mano, documentada, fuera del código del seeder.
+- Volúmenes exactos (no orientativos, pedido explícito del usuario): 200
+  `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15
+  `manufacturers`, 300 `orders`, ~270 `invoices` (90% de cobertura), 250
+  `sales`.
+- Cobertura del 100% de los `clients` en `optometries` y `contact_lenses`
+  (no "varios"), con el mismo reparto 40%→3-4 fichas / 30%→2-3 / 30%→1-2 en
+  ambos plugins; `comments` solo sobre `clients` (no en `orders`/`sales`/
+  otras instancias de `persons`), reparto 40%→2-3 / 30%→1-2 / 30%→0-1.
+- Correlación "cliente VIP": un único tier de actividad por cliente
+  (alto/medio/bajo, 40/30/30) compartido entre `optometries`,
+  `contact_lenses` y `comments` — no 3 barajados independientes.
+- Idempotencia "todo o nada por grupo": si un grupo ya tiene registros se
+  salta entero y sus ids se reutilizan para los grupos dependientes.
+- `surnames` único garantizado sin reemplazo para `clients` y
+  `ophthalmologists` (pedido explícito del usuario tras revisar el plan),
+  lo que además garantiza `name + surnames` único como consecuencia.
+- Entrega como skill documentada (`skills/seed-business-data/SKILL.md`)
+  que envuelve el script PHP real, no lógica de siembra dentro de la skill.
+
+**Diseño técnico validado con un agente Plan** antes de escribir código:
+confirmó la corrección de namespace (`backend/src/database/seeders/` en
+minúsculas, como `UserSeeder.php` — un namespace en mayúsculas rompería el
+autoload case-sensitive en Linux/producción aunque pase desapercibido en
+Windows), señaló que el "skip" de idempotencia debía cargar los ids
+existentes (no dejar el array vacío) para que los grupos dependientes
+siguieran funcionando en un re-run parcial, y recomendó abortar el script
+entero si falta algún plugin activo requerido — las tres correcciones se
+incorporaron al plan final.
+
+**Bug real encontrado y corregido durante la propia implementación (antes
+de tocar la BD real):** `PersonDataGenerator::slugify()` usaba
+`strtr($value, 'áéíóúñ...', 'aeioun...')` — la forma de dos cadenas de
+`strtr()` empareja **bytes**, no caracteres, y los acentos UTF-8 ocupan más
+de un byte, lo que corrompía el resultado (`"García"` → `"garcuna"`).
+Corregido con la forma de array de `strtr()` (mapa carácter-a-carácter),
+verificado con un smoke test antes de sembrar nada.
+
+**Pase de limpieza SonarQube antes de sembrar:** `FakeDataGenerator`
+superaba las 20 funciones por clase (Sonar `php:S1448`, 38 métodos); se
+dividió en 4 clases cohesivas bajo `support/`: `RandomPrimitives`
+(aleatoriedad pura), `PersonDataGenerator` (identidad de persona: nombres,
+DNI con letra de control, emails únicos), `DateRangeGenerator` (fechas) y
+`FakeDataGenerator` (direcciones, teléfonos, empresas, pickers de dominio,
+19 métodos). También se creó `SeederException` (dominio) para sustituir dos
+`RuntimeException` genéricas (Sonar `php:S112`). Reexport final: 0
+hallazgos.
+
+**Cambios principales:**
+- Nuevos: `backend/src/database/seeders/support/{RandomPrimitives,
+  PersonDataGenerator,DateRangeGenerator,FakeDataGenerator,
+  AbstractGroupSeeder}.php`, `backend/src/database/seeders/
+  {CoreEntitySeeder,ExtensionDataSeeder,BusinessDataSeeder}.php`,
+  `backend/src/exceptions/SeederException.php`,
+  `tools/setup/seed-business-data.php`, `skills/seed-business-data/SKILL.md`.
+- Sin cambios en ningún fichero de runtime existente (seeder 100% aislado,
+  igual que `UserSeeder`/`sync-plugins.php`).
+
+**Verificación:**
+- Limpieza puntual a mano: `plugin_entity_data` (0→0, ya estaba vacía) y
+  `plugin_extension_data` (46→0 filas huérfanas eliminadas).
+- Primera ejecución de `php tools/setup/seed-business-data.php`: 11/11
+  grupos `seeded`, 2534 filas insertadas en 1.2s (30 brands, 15
+  manufacturers, 25 distributors, 100 ophthalmologists, 200 clients, 300
+  orders, 270 invoices, 250 sales, 510 optometries, 521 contact_lenses,
+  313 comments).
+- Re-ejecución: 11/11 grupos `skipped`, 0 filas nuevas — idempotencia
+  confirmada, mismos recuentos en BD antes/después.
+- Integridad verificada por SQL: `surnames` único 200/200 en `clients` y
+  100/100 en `ophthalmologists`; 0 `orders`/`sales`/`invoices` con relación
+  a un id inexistente; 0 facturas con `issue_date < order_date`; 0 clientes
+  sin ficha de `optometries`/`contact_lenses` (cobertura 100% confirmada);
+  0 comentarios con `author_id` distinto del admin; 325/325 DNI con letra
+  de control correcta (algoritmo módulo 23 verificado contra el caso
+  canónico `12345678` → `Z`).
+- Backend: `php backend/tests/run.php all` → 68/68 archivos en verde (sin
+  regresión, el seeder no toca ningún flujo de runtime existente).
+- SonarQube: 0 hallazgos tras el pase de limpieza (ver arriba).
+
+**Pendiente de verificación manual del usuario (no automatizable desde
+este entorno, sin herramienta de navegador):** confirmar visualmente en el
+navegador integrado que las fichas de `optometries`/`contact_lenses`,
+comentarios, pedidos/ventas/facturas sembrados se ven y navegan
+correctamente desde `EntityList`/`EntityEdit`/`PluginItemEdit`.
+
+**Cierre verificado (2026-08-17):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: el seeder es idempotente de verdad (re-ejecución
+  sin duplicar ni un solo registro) y coherente por construcción (toda
+  relación apunta a un id real insertado en el mismo run, nunca a un
+  placeholder).
+- Backlog alineado: STORY 10.6 queda implementada; `EPIC 10` queda cerrada
+  al completo (10.1-10.6); el siguiente punto es STORY 11.1 (`EPIC 11`,
+  cierre formal del MVP).
 
 ---

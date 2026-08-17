@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-17
-> **Estado del proyecto:** **STORY 10.5 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.6`
+> **Estado del proyecto:** **STORY 10.6 incluida** — EPIC 10 cerrada, siguiente foco `STORY 11.1`
 
 ---
 
@@ -44,15 +44,20 @@ El corte funcional vigente del producto queda fijado en:
   consolidación de `plugins` en `manifest_json`, alta manual, borrado en
   cascada, relaciones editables y tab de relación inversa)
 - `STORY 10.4` completada (plugins de demostración `orders`/`invoices`/`basic`;
-  `purchases` descartado por redundante; primer uso real end-to-end de
+  `sales` descartado por redundante; primer uso real end-to-end de
   `relations` en `invoices → orders`)
 - `STORY 10.5` completada (plugins de demostración de extensión
   `optometries`/`contact_lenses`; `relations` y validación server-side
   extendidas a plugins `extension`; convención general `layers`/`resortable`;
   página independiente de ficha para plugins con historial de varios
   registros por owner)
-- siguiente foco funcional: `STORY 10.6` (datos de ejemplo para los plugins
-  de demostración)
+- `STORY 10.6` completada (seeder de datos de negocio idempotente: 200
+  `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15
+  `manufacturers`, 300 `orders`, ~270 `invoices`, 250 `sales`, fichas
+  `optometries`/`contact_lenses` al 100% de los clientes y `comments`;
+  `EPIC 10` queda cerrada)
+- siguiente foco funcional: `STORY 11.1` (auditoría de código y
+  documentación, cierre formal del MVP)
 
 ### Funcionalidades nucleares (Core)
 
@@ -136,7 +141,7 @@ La estrategia vigente de implementación es:
 - cada fase deja un entregable verificable y demostrable
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
-- `EPIC 9` (SPA y sistema UI) está cerrado; el bloque prioritario ya abierto es `EPIC 10` (login/persons/plugins de demostración)
+- `EPIC 9` (SPA y sistema UI) y `EPIC 10` (login/persons/plugins de demostración) están cerrados; el bloque prioritario ya abierto es `EPIC 11` (cierre formal del MVP)
 - el MVP académico cierra con `EPIC 11` (cierre formal); ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
 
 ---
@@ -157,7 +162,7 @@ La estrategia vigente de implementación es:
 | 7 | Actualizaciones y rollback de plugins | ✅ Completada | Ciclo operativo de plugins cerrado (`7.1`-`7.5`) |
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | ✅ Completada | STORY 9.1 a 9.9 cerradas |
-| 10 | Login, Persons y Plugins de Demostración | 🔄 En progreso | STORY 10.1 (login pulido), 10.2 (rename persons), 10.3 (plugin_name/slug, manifest_json, altas/borrado/relaciones) y 10.4 (plugins demo orders/invoices/basic) cerradas; pendiente 10.5-10.6 |
+| 10 | Login, Persons y Plugins de Demostración | ✅ Completada | STORY 10.1 (login pulido), 10.2 (rename persons), 10.3 (plugin_name/slug, manifest_json, altas/borrado/relaciones), 10.4 (plugins demo orders/invoices/basic), 10.5 (extensiones optometries/contact_lenses) y 10.6 (seeder de datos de negocio) cerradas |
 | 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
@@ -346,16 +351,18 @@ uso óptico.
 - ✅ Story 10.1 implementada: identidad visual (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio
 - ✅ Story 10.2 implementada: plugin `clients` renombrado a `persons` (carpeta, namespace, manifest/schema, tests y datos existentes en BD), generalizando el modelo sin ampliar sus campos
 - ✅ Story 10.3 implementada: `plugin_name` (identidad técnica fija) desacoplado de `slug` (editable); consolidación de `plugins`/`plugin_update_history` en una columna `manifest_json` viva, con eliminación de `schema_version` (residual, sin reemplazo); más 4 ampliaciones acordadas con el usuario durante la sesión — alta manual de plugin (activo por defecto), borrado en cascada, grid "Relaciones" editable (primer uso funcional real del bloque `relations`) y tab automática de relación inversa en `EntityEdit`
-- ✅ Story 10.4 implementada: plugins de demostración `orders`, `invoices` (con relación real `belongs_to → orders`, primer uso end-to-end de `relations`) y `basic` (plantilla, sin activar); `purchases` descartado del alcance por redundante tras la unificación en `persons`
-- siguiente punto: Story 10.5 (plugins de demostración — extensiones)
+- ✅ Story 10.4 implementada: plugins de demostración `orders`, `invoices` (con relación real `belongs_to → orders`, primer uso end-to-end de `relations`) y `basic` (plantilla, sin activar); `sales` descartado del alcance por redundante tras la unificación en `persons` — retomado después como segunda instancia real en Story 10.6 (ver nota 1 de STORY 10.6 en `backlog.md`)
+- ✅ Story 10.5 implementada: plugins de demostración de extensión `optometries`/`contact_lenses`, con `relations` y validación server-side extendidas a plugins `extension`, convención general `layers`/`resortable` y página independiente de ficha (`PluginItemEdit.js`) para plugins con historial de varios registros por owner
+- ✅ Story 10.6 implementada: seeder de datos de negocio idempotente (`backend/src/database/seeders/BusinessDataSeeder.php`) — 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes y `comments`; idempotencia "todo o nada por grupo"; `EPIC 10` queda cerrada
+- siguiente punto: Story 11.1 (auditoría de código y documentación, `EPIC 11`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
 - rename `clients` → `persons`
 - desacoplar `plugin_name` (identidad fija) de `slug` (editable); `description` editable sin patrón i18n (texto plano, STORY A1.1 queda fuera de alcance)
 - alta manual, borrado en cascada, relaciones editables y tab de relación inversa en `PluginConfig`/`EntityEdit`
-- plugins de demostración: `orders`, `invoices`, `optometry`, `contact-lenses`
-- datos de ejemplo para los plugins de demostración
+- plugins de demostración: `orders`, `sales`, `invoices`, `basic` (`brands`/`manufacturers`), `optometries`, `contact_lenses`
+- datos de ejemplo para los plugins de demostración: seeder idempotente de datos de negocio (STORY 10.6)
 
 **Dependencias**
 - Fase 1
@@ -608,14 +615,16 @@ Una fase se considera completada cuando:
 
 La secuencia recomendada, por fases, es:
 
-1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de
+1. **Fase 10, cerrada** (`STORY 10.1` — mejoras en la sección de
    login —, `STORY 10.2` — rename `clients` → `persons` —, `STORY 10.3` —
-   `plugin_name`/`slug`, `manifest_json`, altas/borrado/relaciones — y
+   `plugin_name`/`slug`, `manifest_json`, altas/borrado/relaciones —,
    `STORY 10.4` — plugins de demostración de entidad `orders`/`invoices`/`basic` —,
    `STORY 10.5` — plugins de demostración de extensión `optometries`/`contact_lenses`,
-   `relations` en extensiones y convención `layers` — cerradas)
-   - datos de ejemplo para los plugins de demostración (`STORY 10.6`)
+   `relations` en extensiones y convención `layers` — y `STORY 10.6` — seeder
+   de datos de negocio idempotente — todas cerradas)
 
 2. **Cerrar el MVP con la Fase 11 y luego abordar las adiciones post-MVP**
-   - Fase 11 (dentro del MVP)
+   - Fase 11 (dentro del MVP): `STORY 11.1` (auditoría de código/naming), `STORY 11.2`
+     (verificación funcional E2E final), `STORY 11.3` (auditoría de coherencia de
+     documentación)
    - A1-A6 (post-MVP: ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos)

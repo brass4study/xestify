@@ -1279,7 +1279,7 @@
     el patrón desactualizado que el propio texto del backlog describía
     (`Installer.php`, ya eliminado en STORY 10.3).
   - Detectó por su cuenta, revisando el AC original a la luz de STORY 10.2, que
-    `purchases` sería un plugin redundante de `orders` (mismos campos, mismo
+    `sales` sería un plugin redundante de `orders` (mismos campos, mismo
     target conceptual) ahora que `clients`/`distributors` están unificados en
     `persons` — lo planteó como pregunta dirigida en vez de decidirlo o
     implementarlo sin más.
@@ -1316,7 +1316,7 @@
   TFM del usuario, 2 bugs de entorno diagnosticados y corregidos durante la
   propia verificación, revisión de SonarQube).
 - **Decisión manual:** El usuario confirmó la recomendación de descartar
-  `purchases` en vez de mantenerlo como segundo ejemplo gemelo de `relations`.
+  `sales` en vez de mantenerlo como segundo ejemplo gemelo de `relations`.
 - **Decisión manual:** El usuario indicó explícitamente no tocar ni
   reconfigurar sus 3 instancias reales de `persons` (datos de TFM, no
   residuales) al descubrirse durante la verificación, y que la relación
@@ -1396,3 +1396,66 @@
   columna "Adición" de `contact_lenses` se queda fija (no se convierte en
   fila) pese a que Radio/Diámetro/Uso/Pack y las relaciones por ojo sí
   pasaron a ser filas de la tabla con `colSpan` completo.
+
+### STORY 10.6: Datos de ejemplo para los plugins de demostración
+
+- **Fecha:** 2026-08-17
+- **Estimado sin IA:** 12h (diseñar un seeder de 11 grupos con dependencias
+  cruzadas, generar a mano pools de datos españoles realistas —incluyendo
+  el algoritmo de letra de control del DNI—, resolver idempotencia sin
+  columnas únicas naturales, verificar coherencia de todas las relaciones
+  por SQL y documentar el cierre en 6 ficheros)
+- **Tiempo real con IA:** ~2h
+- **Aceleración:** ~83% ⚡
+- **Qué hizo IA:**
+  - Investigó el estado real de la BD antes de proponer nada: descubrió que
+    `schema_json` en BD había sufrido drift respecto a los `schema.json` en
+    disco (campos añadidos vía `PluginConfig` como `phone_mobile`,
+    `legal_name`, `type`), que la relación `orders → distributors` ya
+    estaba configurada en producción, y que la instancia `purchases` que
+    STORY 10.4 daba por descartada seguía existiendo — reportó cada
+    hallazgo con evidencia SQL antes de asumir nada.
+  - Descubrió, preguntando directamente en vez de asumir, que `purchases`
+    era trabajo en curso del propio usuario (renombrado a `sales`, segunda
+    instancia real de `orders` para ventas a cliente) y amplió el alcance
+    de la story en consecuencia, en vez de tratarlo como residuo a limpiar.
+  - Cerró con el usuario, en dos rondas de `AskUserQuestion`, los volúmenes
+    exactos de los 11 grupos (sin aceptar una cifra orientativa propia
+    cuando el usuario pidió números concretos), la cobertura 100% de
+    fichas por cliente, la correlación "cliente VIP" entre 3 grupos
+    distintos y la estrategia de idempotencia "todo o nada por grupo".
+  - Validó el diseño técnico con un agente Plan antes de escribir código:
+    corrigió un error de namespace (mayúsculas que habrían roto el
+    autoload en Linux/producción, aunque no en Windows), y detectó que el
+    "skip" de idempotencia debía cargar los ids existentes en vez de
+    dejarlos vacíos, para que los grupos dependientes no se rompieran en
+    un re-run parcial.
+  - Encontró y corrigió, verificando su propio código antes de tocar la BD
+    real, un bug real de `strtr()` operando byte a byte sobre acentos
+    UTF-8 multibyte (`"García"` → `"garcuna"`), con un smoke test que lo
+    confirmó y validó la corrección.
+  - Hizo un pase de limpieza SonarQube proactivo sobre su propio código
+    nuevo (sin que se le pidiera): dividió una clase de 38 métodos en 4
+    clases cohesivas y sustituyó excepciones genéricas por una excepción
+    de dominio nueva, antes de dar la story por terminada.
+  - Verificó la coherencia de los ~2500 registros sembrados con consultas
+    SQL dirigidas (unicidad de apellidos, relaciones sin ids huérfanos,
+    cobertura 100% de fichas, letra de control de los 325 DNI generados)
+    en vez de confiar solo en que el script terminara sin errores.
+- **Iteraciones:** 12+ (investigación previa de BD real, 4 rondas de
+  `AskUserQuestion` con 14 preguntas en total antes de escribir el plan,
+  validación con agente Plan, bug de `strtr()` multibyte encontrado y
+  corregido, pase de limpieza SonarQube, verificación de integridad por
+  SQL, cierre de documentación en 6 ficheros).
+- **Decisión manual:** El usuario corrigió que `purchases`/`sales` no era
+  un residuo a limpiar sino su propio trabajo en curso, ampliando el
+  alcance de la story a sembrar ambas instancias de `orders`.
+- **Decisión manual:** El usuario pidió explícitamente que se le preguntara
+  el número exacto de cada entidad ("no me falles tu propuesta
+  orientativa") en vez de aceptar una estimación razonable propuesta por
+  la IA.
+- **Decisión manual:** El usuario pidió limpiar por completo
+  `plugin_entity_data`/`plugin_extension_data` antes de sembrar (no solo
+  las filas huérfanas detectadas) y que `clients`/`ophthalmologists`
+  tuvieran apellidos únicos garantizados — ambas correcciones se aplicaron
+  directamente sobre el plan ya escrito, antes de aprobarlo.
