@@ -31,6 +31,7 @@ export class EntityEdit {
 	#onTabChange;
 	#onTabsReady;
 	#onNavigateToRecord;
+	#onNavigateToPluginItem;
 	#dynamicTabs = null;
 	#pluginPanels = [];
 	#renderToken = 0;
@@ -42,7 +43,7 @@ export class EntityEdit {
 	 * @param {HTMLElement|string} container
 	 * @param {string} slug
 	 * @param {Object} schema
-	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onDelete?: Function, onTabChange?: Function, onTabsReady?: Function, onNavigateToRecord?: Function}} options
+	 * @param {{recordId?: string|null, initialTab?: string|null, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, api?: Object, initialData?: Object, onSaved?: Function, onCancel?: Function, onDelete?: Function, onTabChange?: Function, onTabsReady?: Function, onNavigateToRecord?: Function, onNavigateToPluginItem?: Function}} options
 	 */
 	constructor(container, slug, schema, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -62,6 +63,7 @@ export class EntityEdit {
 		this.#onTabChange = typeof options.onTabChange === 'function' ? options.onTabChange : null;
 		this.#onTabsReady = typeof options.onTabsReady === 'function' ? options.onTabsReady : null;
 		this.#onNavigateToRecord = typeof options.onNavigateToRecord === 'function' ? options.onNavigateToRecord : null;
+		this.#onNavigateToPluginItem = typeof options.onNavigateToPluginItem === 'function' ? options.onNavigateToPluginItem : null;
 
 		this.#render(options.initialData ?? {});
 	}
@@ -224,6 +226,10 @@ export class EntityEdit {
 							endpoint: tab.endpoint ?? '',
 							recordId,
 							api,
+							relations: Array.isArray(tab.relations) ? tab.relations : [],
+							onNavigateToItem: this.#onNavigateToPluginItem === null
+								? undefined
+								: (itemId) => this.#onNavigateToPluginItem(tab.id, itemId),
 						});
 					if (panel !== null) {
 						this.#pluginPanels.push(panel);

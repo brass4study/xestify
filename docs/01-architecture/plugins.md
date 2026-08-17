@@ -16,7 +16,17 @@
 - Se acopla a una entidad existente mediante hooks.
 - Inyecta tabs, acciones o logica sin modificar el Core.
 - Persiste sus datos en `plugin_extension_data` (tabla generica JSONB).
-- Ejemplo: `comments`.
+- Ejemplo: `comments` (panel inline simple, un solo registro por owner).
+- Puede declarar `relations` en su `schema.json` (misma forma que las
+  entidades — `{key, type: belongs_to, target_entity, target_field,
+  required, label}` — más una clave `layer`) para enlazar a entidades
+  catálogo reales; su propio `Hooks.php` debe embeberlas (junto con
+  `entity`) en el tab que registra, porque `PluginPanelRegistry.build()` no
+  pasa el schema al panel (STORY 10.5). Ejemplo con historial de varios
+  registros por owner, relaciones y página de ficha independiente:
+  `optometries`/`contact_lenses`.
+- Puede declarar un catálogo `layers` (`[{key, label}]`) en su
+  `manifest.json` — ver "Convención `layers`" más abajo.
 
 ## Estructura minima real de un plugin
 
@@ -124,6 +134,79 @@ Contrato de panel frontend:
 - `element: HTMLElement`
 - `flush(resolvedId): Promise<void>`
 
+**Página independiente de ítem de plugin (STORY 10.5):** para un plugin
+`extension` con **historial de varios registros por owner** (una ficha por
+fecha, no un único registro), el panel inline de arriba no basta — crear o
+editar cada ítem navega a una página propia y genérica,
+`frontend/src/js/views/pages/PluginItemEdit.js` (no específica de ningún
+plugin), con URL real (`#/entity/:slug/:id/:tab/:itemId` o
+`.../:tab/#new`). Esa página:
+1. Pide `GET /entities/{entitySlug}/tabs`, localiza el tab por
+   `plugin_name`/`id` y saca `endpoint`/`relations`/`fields`.
+2. Resuelve el contenido del ítem (lista completa + filtro por `id` en
+   cliente si es edición; contenido en blanco si es alta — no existe una
+   ruta de fetch de un único ítem en el backend genérico).
+3. Importa dinámicamente el `plugin.js` del plugin y llama a su
+   **`buildDetailForm(content, relations, loadOptions, extraFields)`
+   exportado** — el plugin sigue siendo dueño de su formulario, la página
+   solo aporta navegación y persistencia (Guardar/Cancelar/Eliminar).
+El panel inline dentro de `EntityEdit` (`{element, flush}`) queda entonces
+reducido a listar el historial (`DynamicTable`) y navegar a esta página —
+`flush()` pasa a ser un no-op, ya no hay staging en memoria.
+
+**Forma completa de un tab de plugin `extension`** devuelto por
+`registerTabs` (más allá del mínimo `{id, label, endpoint}`):
+`{id, label, icon, endpoint, plugin_name, entity, relations, fields}` —
+`entity` es el slug de la entidad activa (necesario para que
+`PluginItemEdit.js` pueda volver a pedir `GET /entities/{entity}/tabs`);
+`relations` son las relaciones del plugin (ver arriba); `fields` son
+**solo** los campos con `origin: 'additional'` (añadidos después de
+instalar el plugin vía "Añadir campo" en `PluginConfig`) — los campos
+originales del plugin siguen teniendo UI escrita a mano en su `plugin.js`
+y nunca se embeben aquí; solo los que no tienen UI propia se renderizan de
+forma genérica en el formulario, según su `type`.
+
+## Convención `layers` (STORY 10.5)
+
+Un plugin (`entity` o `extension`) puede declarar opcionalmente un
+catálogo de **capas/zonas de UI con nombre** en su `manifest.json`:
+
+```json
+"layers": [
+    { "key": "top", "label": "Arriba" },
+    { "key": "od", "label": "Ojo derecho" },
+    { "key": "os", "label": "Ojo izquierdo" },
+    { "key": "general", "label": "General" }
+]
+```
+
+Cada campo/relación de `schema.json` se asigna a una capa con una clave
+`layer` (string, por defecto `general`). Cuando un plugin declara
+`layers`, `PluginConfig` muestra una columna adicional "Capa"
+(`inputSelect`, acotado al catálogo del plugin) en las tablas de Campos y
+Relaciones, permitiendo reasignar la capa de cada fila sin tocar disco.
+
+Puntos clave:
+- El catálogo vive en **`manifest.json`, no en `schema.json`** — no es
+  editable desde `PluginConfig` (a diferencia de `fields`/`relations`/
+  `ui_field_order`, que sí lo son), así que no pertenece al fichero
+  mutable. Mismo precedente que `target_entity`.
+- `layers` es **metadata de configuración, no dirige el renderizado**: el
+  `plugin.js` de un plugin `extension` sigue escrito a mano (ver más
+  abajo) y el autor del plugin mantiene la asignación de capa por campo
+  sincronizada a mano con su HTML/CSS — igual que `resortable` (ver
+  siguiente apartado), que tampoco dirige el renderizado.
+- Un campo con `resortable: false` (ver siguiente apartado) tampoco puede
+  reasignarse de capa desde `PluginConfig` — si su posición está fija en
+  el HTML escrito a mano del plugin, su zona visual también lo está.
+
+**`resortable` (booleano, opcional por campo en `schema.json`, por
+defecto `true`):** cuando un campo declara `resortable: false`,
+`PluginConfig` oculta los botones Subir/Bajar de esa fila y deshabilita su
+selector de Capa — para plugins como `optometries`/`contact_lenses`, cuyo
+`plugin.js` dibuja la posición de cada campo del grid a mano (reordenar en
+`PluginConfig` no tendría ningún efecto visible en la ficha real).
+
 ## API generica para extensiones
 
 Controlador: `PluginExtensionController`.
@@ -172,3 +255,18 @@ implementadas — ver `docs/04-plugins/README.md`.
 - `comments` registra tab en ficha de cliente via hook `registerTabs`.
 - `comments` usa frontend propio en `plugin.js`.
 - `comments` persiste sus datos en `plugin_extension_data` con `plugin_slug='comments'`.
+
+**Caso ejemplo — historial con relaciones y capas (STORY 10.5):**
+- `optometries` (ficha de graduación) y `contact_lenses` (ficha de
+  lentillas) son plugins `extension` con `target_entity: "clients"`,
+  historial de varias fichas por persona (cada guardado crea un registro
+  nuevo con su propia fecha) y relaciones `belongs_to` hacia catálogos
+  reales (`ophthalmologists`, `distributors`, `brands`, `manufacturers`).
+- Ambos declaran un catálogo `layers` (`top`/`od`/`os`/`general`) en su
+  `manifest.json` y asignan `layer` a cada campo/relación en
+  `schema.json`, coherente con las zonas visuales de su `plugin.js`
+  (escrito a mano, no *schema-driven* — `layers` documenta la posición,
+  no la dirige).
+- Crear/editar una ficha navega a `PluginItemEdit.js` (página genérica,
+  no un formulario inline); el panel dentro de `EntityEdit` solo lista el
+  historial con `DynamicTable` y navega.

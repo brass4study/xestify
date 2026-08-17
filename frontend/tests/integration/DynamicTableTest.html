@@ -318,6 +318,31 @@
     assertEquals(cell.textContent, 'No records');
   });
 
+  await test('showToolbar: false oculta la toolbar completa (refrescar/densidad/opciones)', async () => {
+    const table = new DynamicTable(createRecords(2), createSchema(), '#table-container', {
+      showToolbar: false,
+    });
+    table.render();
+
+    assertTrue(sandbox.querySelector('[data-role="table-toolbar"]') === null, 'No debe renderizar la toolbar');
+    assertTrue(sandbox.querySelector('[data-role="table-refresh"]') === null, 'No debe renderizar el boton de refrescar');
+    assertTrue(sandbox.querySelector('[data-role="table-density"]') === null, 'No debe renderizar el menu de densidad');
+    assertTrue(sandbox.querySelector('[data-role="table-settings"]') === null, 'No debe renderizar el menu de opciones');
+    assertTrue(sandbox.querySelectorAll('tbody tr').length === 2, 'Las filas deben renderizarse igualmente');
+  });
+
+  await test('density fija por opcion ignora la preferencia de cookie', async () => {
+    document.cookie = `${DynamicTable.DENSITY_COOKIE}=relaxed; Path=/; SameSite=Lax`;
+
+    const table = new DynamicTable(createRecords(2), createSchema(), '#table-container', {
+      density: 'compact',
+      showToolbar: false,
+    });
+    table.render();
+
+    assertTrue(sandbox.querySelector('tbody td').classList.contains('py-1'), 'La densidad compacta fijada debe aplicarse aunque la cookie diga relaxed');
+  });
+
   finishLocalSummary();
 </script>
 </body>

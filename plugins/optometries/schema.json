@@ -1,0 +1,49 @@
+{
+    "fields": {
+        "date": { "type": "date", "required": true, "label": "Fecha", "resortable": false, "layer": "top" },
+
+        "od_distance_sphere": { "type": "number", "required": false, "label": "OD · Para lejos · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
+        "od_distance_cylinder": { "type": "number", "required": false, "label": "OD · Para lejos · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
+        "od_distance_axis": { "type": "number", "required": false, "label": "OD · Para lejos · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
+
+        "od_constant_sphere": { "type": "number", "required": false, "label": "OD · Constante · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
+        "od_constant_cylinder": { "type": "number", "required": false, "label": "OD · Constante · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
+        "od_constant_axis": { "type": "number", "required": false, "label": "OD · Constante · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
+
+        "od_near_sphere": { "type": "number", "required": false, "label": "OD · Para cerca · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
+        "od_near_cylinder": { "type": "number", "required": false, "label": "OD · Para cerca · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
+        "od_near_axis": { "type": "number", "required": false, "label": "OD · Para cerca · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
+
+        "od_contact_lens_sphere": { "type": "number", "required": false, "label": "OD · Lentilla · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "od" },
+        "od_contact_lens_cylinder": { "type": "number", "required": false, "label": "OD · Lentilla · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "od" },
+        "od_contact_lens_axis": { "type": "number", "required": false, "label": "OD · Lentilla · Eje", "min": 0, "max": 180, "resortable": false, "layer": "od" },
+
+        "od_addition": { "type": "number", "required": false, "label": "OD · Adición", "min": 0, "max": 4, "resortable": false, "layer": "od" },
+
+        "os_distance_sphere": { "type": "number", "required": false, "label": "OI · Para lejos · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
+        "os_distance_cylinder": { "type": "number", "required": false, "label": "OI · Para lejos · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
+        "os_distance_axis": { "type": "number", "required": false, "label": "OI · Para lejos · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
+
+        "os_constant_sphere": { "type": "number", "required": false, "label": "OI · Constante · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
+        "os_constant_cylinder": { "type": "number", "required": false, "label": "OI · Constante · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
+        "os_constant_axis": { "type": "number", "required": false, "label": "OI · Constante · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
+
+        "os_near_sphere": { "type": "number", "required": false, "label": "OI · Para cerca · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
+        "os_near_cylinder": { "type": "number", "required": false, "label": "OI · Para cerca · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
+        "os_near_axis": { "type": "number", "required": false, "label": "OI · Para cerca · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
+
+        "os_contact_lens_sphere": { "type": "number", "required": false, "label": "OI · Lentilla · Esfera", "min": -20, "max": 20, "resortable": false, "layer": "os" },
+        "os_contact_lens_cylinder": { "type": "number", "required": false, "label": "OI · Lentilla · Cilindro", "min": -10, "max": 10, "resortable": false, "layer": "os" },
+        "os_contact_lens_axis": { "type": "number", "required": false, "label": "OI · Lentilla · Eje", "min": 0, "max": 180, "resortable": false, "layer": "os" },
+
+        "os_addition": { "type": "number", "required": false, "label": "OI · Adición", "min": 0, "max": 4, "resortable": false, "layer": "os" },
+
+        "pupillary_distance": { "type": "number", "required": false, "label": "Distancia interpupilar", "min": 40, "max": 80, "layer": "general" },
+
+        "notes": { "type": "text", "required": false, "label": "Notas", "layer": "general" }
+    },
+    "relations": [
+        { "key": "ophthalmologist", "type": "belongs_to", "target_entity": "ophthalmologists", "target_field": "id", "required": false, "label": "Oftalmólogo", "layer": "general" },
+        { "key": "optometrist", "type": "belongs_to", "target_entity": "ophthalmologists", "target_field": "id", "required": false, "label": "Optometrista", "layer": "general" }
+    ]
+}

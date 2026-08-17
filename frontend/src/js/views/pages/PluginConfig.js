@@ -106,7 +106,7 @@ export class PluginConfig {
 				name: '',
 				description: '',
 			},
-			config: { fields: [], relations: [], target_entity: '*', entity_options: [] },
+			config: { fields: [], relations: [], layers: [], target_entity: '*', entity_options: [] },
 		};
 	}
 
@@ -130,6 +130,9 @@ export class PluginConfig {
 		this.#state.config.relations = Array.isArray(match?.config?.relations)
 			? match.config.relations.map((relation) => ({ ...relation }))
 			: [];
+		this.#state.config.layers = Array.isArray(match?.config?.layers)
+			? match.config.layers.map((layer) => ({ ...layer }))
+			: [];
 		this.#state.config.target_entity = typeof match?.config?.target_entity === 'string'
 			? match.config.target_entity
 			: '*';
@@ -150,6 +153,7 @@ export class PluginConfig {
 			: [];
 		const targetOptions = this.buildTargetOptions(entityOptions, targetEntity);
 		const fieldsHelperText = this.fieldsHelperText(isExtension);
+		const hasLayers = (this.#state.config.layers ?? []).length > 0;
 		const noticeMessage = this.#message === '' ? '' : this.#message;
 		const noticeType = this.noticeType();
 
@@ -307,38 +311,38 @@ export class PluginConfig {
 			addFieldButton.classList.add('mt-3');
 			fieldsPanel.append(addFieldButton);
 
-			this.renderFieldsTable(tableHost);
+			this.renderFieldsTable(tableHost, hasLayers);
 
-			if (!isExtension) {
-				const relationsPanel = this.createSectionPanel(panel);
-				component.create('typography', { as: 'h3', text: 'Relaciones', size: 'sm', weight: 'semibold', color: 'slate-900' })
-					.setParent(relationsPanel);
+			const relationsPanel = this.createSectionPanel(panel);
+			component.create('typography', { as: 'h3', text: 'Relaciones', size: 'sm', weight: 'semibold', color: 'slate-900' })
+				.setParent(relationsPanel);
 
-				component.create('typography', {
-					text: 'Declara a qué otras entidades pertenece un registro de este tipo (por ejemplo, un pedido pertenece a una persona).',
-					size: 'sm',
-					color: 'slate-600',
-				})
-					.setClassName('mt-1')
-					.setParent(relationsPanel);
+			component.create('typography', {
+				text: isExtension
+					? 'Declara a qué entidades catálogo apunta cada relación de esta extensión y en qué sección del formulario debe mostrarse.'
+					: 'Declara a qué otras entidades pertenece un registro de este tipo (por ejemplo, un pedido pertenece a una persona).',
+				size: 'sm',
+				color: 'slate-600',
+			})
+				.setClassName('mt-1')
+				.setParent(relationsPanel);
 
-				const relationsTableHost = component.create('div')
-					.setClassName('list-table-host mt-3')
-					.setData('role', 'list-table-host')
-					.setParent(relationsPanel);
+			const relationsTableHost = component.create('div')
+				.setClassName('list-table-host mt-3')
+				.setData('role', 'list-table-host')
+				.setParent(relationsPanel);
 
-				addRelationButton = component.create('button', {
-					label: 'Añadir relación',
-					variant: 'secondary',
-					size: 'sm',
-					dataRole: 'plugin-config-action',
-					dataAction: 'add-relation',
-				});
-				addRelationButton.classList.add('mt-3');
-				relationsPanel.append(addRelationButton);
+			addRelationButton = component.create('button', {
+				label: 'Añadir relación',
+				variant: 'secondary',
+				size: 'sm',
+				dataRole: 'plugin-config-action',
+				dataAction: 'add-relation',
+			});
+			addRelationButton.classList.add('mt-3');
+			relationsPanel.append(addRelationButton);
 
-				this.renderRelationsTable(relationsTableHost);
-			}
+			this.renderRelationsTable(relationsTableHost, hasLayers);
 		}
 
 		this.bindPageActions(panel, { addFieldButton, addRelationButton, backButton, saveButton, deleteButton });
@@ -362,7 +366,7 @@ export class PluginConfig {
 			.setParent(container);
 	}
 
-	renderFieldsTable(container) {
+	renderFieldsTable(container, hasLayers = false) {
 		const rows = this.#state?.config?.fields ?? [];
 		const records = rows.map((field, index) => ({
 			...field,
@@ -373,7 +377,7 @@ export class PluginConfig {
 		const baseCellClassName = 'border-b border-slate-100 px-2 py-2';
 		const centeredCellClassName = 'border-b border-slate-100 px-2 py-2 text-center';
 		const actionsCellClassName = 'border-b border-slate-100 px-2 py-2 whitespace-nowrap';
-		const extraColumns = this.buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName);
+		const extraColumns = this.buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName, hasLayers);
 
 		const table = new DynamicTable(records, { fields: [] }, container, {
 			showPagination: false,
@@ -389,7 +393,7 @@ export class PluginConfig {
 		table.render();
 	}
 
-	renderRelationsTable(container) {
+	renderRelationsTable(container, hasLayers = false) {
 		const rows = this.#state?.config?.relations ?? [];
 		const records = rows.map((relation, index) => ({
 			...relation,
@@ -400,7 +404,7 @@ export class PluginConfig {
 		const baseCellClassName = 'border-b border-slate-100 px-2 py-2';
 		const centeredCellClassName = 'border-b border-slate-100 px-2 py-2 text-center';
 		const actionsCellClassName = 'border-b border-slate-100 px-2 py-2 whitespace-nowrap';
-		const extraColumns = this.buildRelationTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName);
+		const extraColumns = this.buildRelationTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName, hasLayers);
 
 		const table = new DynamicTable(records, { fields: [] }, container, {
 			showPagination: false,
@@ -416,8 +420,8 @@ export class PluginConfig {
 		table.render();
 	}
 
-	buildRelationTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName) {
-		return [
+	buildRelationTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName, hasLayers = false) {
+		const columns = [
 			{
 				label: 'Clave',
 				headerClassName,
@@ -442,6 +446,18 @@ export class PluginConfig {
 				cellClassName: baseCellClassName,
 				renderCell: (relation) => this.renderRelationLabelInput(relation),
 			},
+		];
+
+		if (hasLayers) {
+			columns.push({
+				label: 'Capa',
+				headerClassName,
+				cellClassName: baseCellClassName,
+				renderCell: (relation) => this.renderRelationLayerSelect(relation),
+			});
+		}
+
+		columns.push(
 			{
 				label: 'Requerido',
 				headerClassName,
@@ -454,8 +470,38 @@ export class PluginConfig {
 				cellClassName: actionsCellClassName,
 				shrink: true,
 				renderCell: (relation) => this.renderRelationActions(relation),
-			},
-		];
+			}
+		);
+
+		return columns;
+	}
+
+	/**
+	 * Options for a "Capa" select: the plugin's own declared layers catalog
+	 * (STORY 10.5), plus the current value as an orphaned extra option if it
+	 * isn't in that catalog (e.g. the layer was removed from schema.json
+	 * between versions) — same defensive pattern as buildTargetOptions() for
+	 * an inactive target_entity, so a stale value is never silently lost.
+	 */
+	layerSelectOptions(currentValue) {
+		const layers = Array.isArray(this.#state?.config?.layers) ? this.#state.config.layers : [];
+		const options = layers.map((layer) => ({ value: layer.key, label: layer.label }));
+		const value = String(currentValue ?? 'general');
+		if (!options.some((option) => option.value === value)) {
+			options.push({ value, label: `${value} (no declarada)` });
+		}
+
+		return options;
+	}
+
+	renderRelationLayerSelect(relation) {
+		return component.create('inputSelect', {
+			name: 'relation-layer',
+			value: String(relation.layer ?? 'general'),
+			options: this.layerSelectOptions(relation.layer),
+		})
+			.setClassName(this.tableControlClassName())
+			.setData('name', 'relation-layer');
 	}
 
 	renderRelationKeyInput(relation) {
@@ -548,7 +594,7 @@ export class PluginConfig {
 	}
 
 	createEmptyRelation() {
-		return { key: '', target_entity: '', target_field: '', label: '', required: false };
+		return { key: '', target_entity: '', target_field: '', label: '', required: false, layer: 'general' };
 	}
 
 	fieldMeta(field) {
@@ -569,8 +615,8 @@ export class PluginConfig {
 		return 'Reordena, activa/desactiva y ajusta los campos sugeridos. Los campos base obligatorios son visibles pero bloqueados.';
 	}
 
-	buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName) {
-		return [
+	buildFieldTableColumns(headerClassName, baseCellClassName, centeredCellClassName, actionsCellClassName, hasLayers = false) {
+		const columns = [
 			{
 				label: 'Activo',
 				headerClassName,
@@ -601,6 +647,18 @@ export class PluginConfig {
 				cellClassName: baseCellClassName,
 				renderCell: (field) => this.renderLabelInput(field),
 			},
+		];
+
+		if (hasLayers) {
+			columns.push({
+				label: 'Capa',
+				headerClassName,
+				cellClassName: baseCellClassName,
+				renderCell: (field) => this.renderFieldLayerSelect(field),
+			});
+		}
+
+		columns.push(
 			{
 				label: 'Requerido',
 				headerClassName,
@@ -619,8 +677,45 @@ export class PluginConfig {
 				cellClassName: actionsCellClassName,
 				shrink: true,
 				renderCell: (field) => this.renderActions(field),
-			},
-		];
+			}
+		);
+
+		return columns;
+	}
+
+	/**
+	 * A field's layer is reassignable independent of its Tipo/Etiqueta/
+	 * Requerido/Cabecera lock (fieldMeta().editable would wrongly disable it
+	 * for ALL of optometries' 29 fields, which are all source:'base' —
+	 * defeating the whole point of the "Capa" column). Instead it's gated
+	 * by two unrelated conditions (STORY 10.5, corrected after an earlier
+	 * draft of this design):
+	 * - field.resortable === false: the field's UI zone is hardcoded by the
+	 *   plugin's own hand-written plugin.js, exactly like its display order
+	 *   already is (same reason Subir/Bajar are hidden for it).
+	 * - for entity plugins only, a base field: PluginConfigService never
+	 *   rewrites schema['fields'] for entity plugins, so a layer change on
+	 *   a base field couldn't be persisted even if the select allowed it.
+	 */
+	fieldLayerSelectDisabled(field) {
+		if (field.resortable === false) {
+			return true;
+		}
+
+		const { immutableField } = this.fieldMeta(field);
+		return !this.isExtensionPlugin() && immutableField;
+	}
+
+	renderFieldLayerSelect(field) {
+		const select = component.create('inputSelect', {
+			name: 'layer',
+			value: String(field.layer ?? 'general'),
+			options: this.layerSelectOptions(field.layer),
+		})
+			.setClassName(this.tableControlClassName())
+			.setData('name', 'layer');
+		select.disabled = this.fieldLayerSelectDisabled(field);
+		return select;
 	}
 
 	renderSourceBadge(field) {
@@ -740,8 +835,10 @@ export class PluginConfig {
 		const rowIndex = Number(field.__rowIndex ?? 0);
 		const lastIndex = (this.#state?.config?.fields?.length ?? 1) - 1;
 
-		this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0, () => this.moveRow(rowIndex, -1)).setParent(actions);
-		this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex, () => this.moveRow(rowIndex, 1)).setParent(actions);
+		if (field.resortable !== false) {
+			this.buildRowActionButton('Subir', 'fa-arrow-up', 'slate', 'move-up', rowIndex, rowIndex === 0, () => this.moveRow(rowIndex, -1)).setParent(actions);
+			this.buildRowActionButton('Bajar', 'fa-arrow-down', 'slate', 'move-down', rowIndex, rowIndex === lastIndex, () => this.moveRow(rowIndex, 1)).setParent(actions);
+		}
 
 		if (!immutableField) {
 			const removeButton = this.buildRowActionButton('Eliminar', 'fa-trash', 'red', 'remove-row', rowIndex, false, () => {
@@ -1130,6 +1227,7 @@ export class PluginConfig {
 			summaryView: true,
 			locked: false,
 			source: 'additional',
+			layer: 'general',
 			options: [],
 		};
 	}
@@ -1159,6 +1257,9 @@ export class PluginConfig {
 				relations: Array.isArray(data?.config?.relations)
 					? data.config.relations.map((relation) => ({ ...relation }))
 					: [],
+				layers: Array.isArray(data?.config?.layers)
+					? data.config.layers.map((layer) => ({ ...layer }))
+					: [],
 				target_entity: typeof data?.config?.target_entity === 'string'
 					? data.config.target_entity
 					: '*',
@@ -1168,12 +1269,13 @@ export class PluginConfig {
 	}
 
 	buildPayloadFromDom(wrapper) {
-		const payload = { fields: this.collectRowsFromDom(wrapper) };
+		const payload = {
+			fields: this.collectRowsFromDom(wrapper),
+			relations: this.collectRelationRowsFromDom(wrapper),
+		};
 		if (this.isExtensionPlugin()) {
 			const targetEntityInput = wrapper.querySelector('[data-name="target-entity"]');
 			payload.target_entity = targetEntityInput ? targetEntityInput.value.trim() : '';
-		} else {
-			payload.relations = this.collectRelationRowsFromDom(wrapper);
 		}
 
 		const slugInput = wrapper.querySelector('[data-name="identity-slug"]');
@@ -1195,6 +1297,7 @@ export class PluginConfig {
 		const payload = {
 			plugin_name: pluginNameInput ? pluginNameInput.value.trim() : '',
 			fields: this.collectRowsFromDom(wrapper),
+			relations: this.collectRelationRowsFromDom(wrapper),
 		};
 		const slug = slugInput ? slugInput.value.trim() : '';
 		const name = nameInput ? nameInput.value.trim() : '';
@@ -1213,8 +1316,6 @@ export class PluginConfig {
 		if (this.isExtensionPlugin()) {
 			const targetEntityInput = wrapper.querySelector('[data-name="target-entity"]');
 			payload.target_entity = targetEntityInput ? targetEntityInput.value.trim() : '';
-		} else {
-			payload.relations = this.collectRelationRowsFromDom(wrapper);
 		}
 
 		return payload;
@@ -1239,6 +1340,7 @@ export class PluginConfig {
 		const activeCheckbox = rowEl.querySelector('[data-name="active"]');
 		const requiredCheckbox = rowEl.querySelector('[data-name="required"]');
 		const summaryViewCheckbox = rowEl.querySelector('[data-name="summaryView"]');
+		const layerSelect = rowEl.querySelector('[data-name="layer"]');
 
 		return {
 			active: activeCheckbox ? !!activeCheckbox.checked : false,
@@ -1249,6 +1351,13 @@ export class PluginConfig {
 			summaryView: summaryViewCheckbox ? !!summaryViewCheckbox.checked : true,
 			locked: original.locked === true,
 			source: String(original.source ?? 'additional'),
+			resortable: original.resortable !== false,
+			// Falls back to the already-loaded value only when the plugin
+			// has no declared layers at all (no "Capa" column rendered, so
+			// no select to read) — same defensive pattern already applied
+			// to resortable above. A disabled select (fieldLayerSelectDisabled())
+			// still exposes its current .value via JS, so it's read normally.
+			layer: layerSelect ? layerSelect.value : (original.layer ?? 'general'),
 			options: Array.isArray(original.options) ? original.options : [],
 		};
 	}
@@ -1263,10 +1372,14 @@ export class PluginConfig {
 	}
 
 	readRelationRowFromDom(rowEl) {
+		const index = Number(rowEl.dataset.rowIndex);
+		const original = this.#state.config.relations[index] ?? {};
+
 		const keyInput = rowEl.querySelector('[data-name="relation-key"]');
 		const targetEntitySelect = rowEl.querySelector('[data-name="relation-target-entity"]');
 		const targetFieldSelect = rowEl.querySelector('[data-name="relation-target-field"]');
 		const labelInput = rowEl.querySelector('[data-name="relation-label"]');
+		const layerSelect = rowEl.querySelector('[data-name="relation-layer"]');
 		const requiredCheckbox = rowEl.querySelector('[data-name="relation-required"]');
 
 		return {
@@ -1275,6 +1388,11 @@ export class PluginConfig {
 			target_field: targetFieldSelect ? targetFieldSelect.value : '',
 			label: labelInput ? labelInput.value.trim() : '',
 			required: requiredCheckbox ? !!requiredCheckbox.checked : false,
+			// Falls back to the already-loaded value when the plugin has no
+			// declared layers (no "Capa" select in the DOM to read) — same
+			// defensive pattern as readRowFromDom()'s resortable fallback,
+			// so a stale layer isn't silently reset to 'general' on save.
+			layer: layerSelect ? layerSelect.value : (original.layer ?? 'general'),
 		};
 	}
 

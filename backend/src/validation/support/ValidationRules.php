@@ -91,11 +91,7 @@ final class ValidationRules
             return $value !== 0;
         }
 
-        if (!is_string($value)) {
-            return false;
-        }
-
-        $normalized = strtolower(trim($value));
-        return $normalized === '1' || $normalized === 'true' || $normalized === 'yes';
+        return is_string($value)
+            && in_array(strtolower(trim($value)), ['1', 'true', 'yes'], true);
     }
 }

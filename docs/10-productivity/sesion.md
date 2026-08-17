@@ -414,19 +414,21 @@ Story completada. Archivos creados/modificados:
 | 10.2 ✅ | Renombrar plugin `clients` a `persons` | `pendiente (este commit)` | Backend `php backend/tests/run.php` 56/56 archivos; frontend `frontend/tests/integration/` 10 runners afectados en verde (headless, pendiente confirmación visual del usuario en navegador integrado); `frontend/tests/e2e/` 12/12 specs Playwright ✅ |
 | 10.3 ✅ | Desacoplar `plugin_name` de `slug`, identidad editable y consolidación en `manifest_json` | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 60/60 archivos; frontend `frontend/tests/integration/` runners afectados en verde vía Playwright headless (pendiente confirmación visual del usuario en navegador integrado) ✅ |
 | 10.4 ✅ | Plugins de demostración — entidades `orders`, `invoices`, `basic` (`purchases` descartado por redundante) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 65/65 archivos en verde (incluye BD real); `orders`/`invoices` sincronizados y activos en BD local, `basic` sincronizado e inactivo ✅ |
+| 10.5 ✅ | Plugins de demostración — extensiones `optometries`, `contact_lenses` (nombres ajustados desde `optometry`/`contact-lenses`, ver detalle) | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 68/68 archivos en verde (incluye BD real); `optometries`/`contact_lenses` sincronizados y activos en BD local; pendiente confirmación visual final del usuario en navegador integrado ✅ |
 
 **Detalle de la story 10.1:** ver sesión completa más abajo (2026-08-14).
 **Detalle de la story 10.2:** ver sesión completa más abajo (2026-08-15).
 **Detalle de la story 10.3:** ver sesión completa más abajo (2026-08-16).
 **Detalle de la story 10.4:** ver sesión completa más abajo (2026-08-16).
+**Detalle de la story 10.5:** ver sesión completa más abajo (2026-08-17).
 
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-16
+**Fecha:** 2026-08-17
 **EPIC activo:** EPIC 10 - Login, Persons y Plugins de Demostración (EN PROGRESO)
-**Próxima story:** STORY 10.5 - Plugins de demostración — extensiones (`optometry`, `contact-lenses`, EPIC 10)
+**Próxima story:** STORY 10.6 - Datos de ejemplo para los plugins de demostración (EPIC 10)
 
 ---
 
@@ -1457,5 +1459,179 @@ confirmar el bloqueo de borrado de un pedido con facturas asociadas.
 - Backlog alineado: STORY 10.4 queda implementada (`purchases` descartado y
   documentado el motivo); el siguiente punto es STORY 10.5 (plugins de
   demostración — extensiones `optometry`/`contact-lenses`).
+
+---
+
+## Sesion 2026-08-17 - STORY 10.5 Plugins de demostración — extensiones `optometries`, `contact_lenses`
+
+Story completada, con dos capacidades de núcleo nuevas (no solo dos
+plugins) y varias rondas de corrección iterativa tras verificación visual
+del usuario en navegador.
+
+**Decisiones de diseño cerradas con el usuario (varias rondas de
+`AskUserQuestion` y correcciones directas):**
+- Marca/Fabricante/Distribuidor/Oftalmólogo/Optometrista **no son selects
+  de opciones fijas**: son relaciones `belongs_to` reales — obligó a añadir
+  soporte de `relations` a los plugins de tipo `extension` (capacidad de
+  núcleo que no existía; antes solo la tenían los plugins `entity`).
+  Catálogos destino: `ophthalmologists`/`distributors` (instancias ya
+  existentes de `persons`), `brands`/`manufacturers` (nuevas instancias del
+  plugin `basic`, creadas vía `PluginAdministrationService::registerNew()`,
+  el mismo servicio que usa `PluginConfig` al dar de alta una instancia).
+- Historial de varias fichas por persona (no un registro único): cada
+  guardado crea un registro nuevo con su propia fecha, reutilizando el
+  contrato genérico `plugin_extension_data`.
+- El listado de fichas es una `DynamicTable` real (no una tabla hecha a
+  mano) y crear/editar una ficha navega a una **página independiente**
+  (`#/entity/:slug/:id/:tab/:itemId` y `.../#new`), no un formulario
+  inline — obligó a extender el router SPA (`RouteMapController`,
+  `AppController`) y crear `PluginItemEdit.js`, página genérica reutilizada
+  por ambos plugins sin duplicar código.
+- Convención general nueva **`layers`**: cualquier plugin puede declarar un
+  catálogo de zonas de UI con nombre (`{key, label}[]`) en su
+  `manifest.json` (no en `schema.json` — no es editable desde
+  `PluginConfig`, mismo precedente que `target_entity`), y asignar `layer`
+  a cada campo/relación en `schema.json`. `PluginConfig` gana una columna
+  "Capa" (`inputSelect`) en Campos y Relaciones cuando el plugin declara
+  `layers`. Es metadata de configuración — no dirige el renderizado del
+  `plugin.js`, que sigue escrito a mano.
+- `resortable` (booleano por campo, por defecto `true`): oculta Subir/Bajar
+  y bloquea el selector de Capa cuando la posición de un campo está fija en
+  el HTML del plugin (el grid de medidas de ambos plugins).
+
+**Hallazgo bloqueante durante la implementación (no anticipado al
+planificar):** el nombre `contact-lenses` (con guion) del AC original de
+backlog es estructuralmente inválido como `name`/slug de plugin —
+`PluginClassLoader::instantiateHooks()` lo usa literal como segmento de
+namespace PHP (`namespace Xestify\plugins\contact-lenses;` no compila) y
+también falla `PluginIdentityService::SLUG_PATTERN`
+(`^[a-z][a-z0-9_]*$`, sin guiones). Renombrado a `contact_lenses`
+(directorio, `manifest.json.name`, namespace, filtros SQL, `plugin_name`
+del tab) — la etiqueta visible sigue siendo "Lentillas". `optometry`
+también se renombró a `optometries` (convención de slugs en plural del
+proyecto, no un bug).
+
+**Bugs encontrados y corregidos durante la propia implementación/verificación
+(no relacionados con el diseño de la story, descubiertos al construirla):**
+- `ValidationService::validateField()` no distinguía campos
+  `auto_generated`/`auto_populated` fuera de `identities` — al conectar la
+  validación server-side en extensiones (antes `PluginExtensionController`
+  no validaba nada), rompía `comments` (`author_id`/`stamp`). Corregido con
+  `isServerResolved()`.
+- `DynamicTable.getCurrentPageRecords()` recortaba a `#pageSize` (10)
+  incluso con `showPagination: false` — con los 29 campos de `optometries`
+  en `PluginConfig` solo se veían los primeros 10, sin control para ver el
+  resto. Corregido para no recortar cuando la paginación está desactivada
+  (bug del core, no específico de esta story).
+- `PluginConfig.js::readRowFromDom()` no copiaba `resortable` al
+  reconstruir el estado desde el DOM tras cualquier click de Subir/Bajar —
+  el flag se perdía silenciosamente en el primer re-render, mostrando
+  Subir/Bajar en campos que deberían tenerlos ocultos. Mismo patrón de bug
+  replicado (y corregido igual) para `layer`.
+- `AxisGauge` (componente SVG nuevo, compartido entre ambos plugins): la
+  etiqueta "90°" existía en el código desde el principio pero quedaba
+  recortada fuera del `viewBox` (invisible) hasta que se ajustó la
+  geometría tras varias rondas de feedback visual del usuario.
+- Densidad `compact` de las tablas OD/OI no compactaba los inputs: un
+  `classList.add('py-1')` convivía con el `py-2` base del componente
+  (ganaba por orden CSS) — corregido con `setClassName()` (reemplazo
+  completo) en vez de `classList.add()`.
+- `tools/setup/sync-plugins.php` seguía funcionando sin cambios (a
+  diferencia de STORY 10.4, donde estaba roto) — nuevos plugins se
+  registran `inactive` por defecto, activados después con
+  `PluginStatusService::activate()`.
+
+**Cambios de núcleo (más allá de los dos plugins):**
+- `relations` soportado en `schema.json` de plugins `extension`
+  (`ExtensionPluginContentService::normalizeContentBySchema()`,
+  `ValidationService`); `Hooks.php` de un plugin con relaciones las
+  embebe (junto con `entity` y `fields` `origin:additional`) en el tab que
+  registra, porque `PluginPanelRegistry.build()` no pasa el schema al panel.
+- Relaciones de plugins `extension` **totalmente editables** desde
+  `PluginConfig` (mismo grid que las de `entity`), validación compartida
+  extraída a `RelationsPayloadCompiler.php`.
+- Convención `layers`/`layer`/`resortable` de punta a punta: backend
+  (`PluginConfigFieldNormalizer`, `ExtensionPluginConfigService`,
+  `PluginConfigService`) + frontend (`PluginConfig.js`, columna "Capa").
+- `PluginItemEdit.js` (nueva, genérica) + rutas SPA nuevas
+  (`RouteMapController`, `AppController`) para la ficha independiente de
+  un ítem de plugin.
+- `AxisGauge.js` (nuevo, compartido) — gauge SVG de semicírculo 0-180° que
+  dibuja el eje de cada sección como una línea de color.
+- `DynamicTable`: 2 opciones nuevas retrocompatibles, `showToolbar: false`
+  y `density: <string>` (fija densidad ignorando la cookie), usadas por
+  las tablas de medidas de ambos plugins; `Table.js` en modo `compact`
+  reduce el padding de cabecera de `py-2.5` a `py-1.5` (cambio de core,
+  afecta a cualquier tabla en modo compacto).
+- `frontend/src/js/views/components/ExtensionLayerFields.js` (nuevo,
+  compartido) — primitivas de orquestación por capas
+  (`groupByLayer`/`appendLayerTail`/`formFieldRow`/`labeledRow`/
+  `buildRelationField`/`buildGenericFieldInput`) extraídas de
+  `optometries/plugin.js` para que `contact_lenses/plugin.js` no las
+  duplicara.
+
+**Diseño final de cada `plugin.js` (por capas, ajustado a un sketch del
+usuario tras 4-5 rondas de corrección visual):** capa `top` (Fecha) → dos
+columnas `od`/`os` (gauge + tabla de medidas `DynamicTable`, sin toolbar,
+modo compacto, cabeceras con el estilo por defecto de la app — no
+oscuras) → capa `general` (Notas + resto de campos). Dentro de la tabla de
+medidas de cada ojo, todo campo "suelto" (Radio/Diámetro/Uso/Pack en
+`contact_lenses`, y las relaciones Marca/Fabricante/Distribuidor) se
+renderiza como una fila más con un único input a ancho completo
+(`colSpan`), mismo mecanismo que la fila "Adición" ya usaba en
+`optometries` — pedido explícito del usuario tras ver el resultado inicial
+(campos sueltos debajo de la tabla) en el navegador integrado.
+
+**Pase de limpieza SonarQube** (a petición del usuario, con la skill
+`skills/review-sonarqube-clean-code`): 11 hallazgos → 0, repartidos entre
+producción (`PluginConfigService.php`, `RelationsPayloadCompiler.php`,
+`ValidationRules.php`, `AppController.js`, `AxisGauge.js`,
+`optometries/plugin.js`) y tests (`OptometriesPluginTest.php`,
+`CommentsPluginTest.php`).
+
+**Cambios principales (no exhaustivo):**
+- Nuevos: `plugins/optometries/` y `plugins/contact_lenses/` (manifest,
+  schema, Hooks, plugin.js), `frontend/src/js/views/components/AxisGauge.js`,
+  `frontend/src/js/views/components/ExtensionLayerFields.js`,
+  `frontend/src/js/views/pages/PluginItemEdit.js`,
+  `backend/src/plugins/schema/RelationsPayloadCompiler.php`,
+  `backend/tests/integration/ExtensionRelationsTest.php`,
+  `backend/tests/unit/OptometriesPluginTest.php`,
+  `backend/tests/unit/ContactLensesPluginTest.php`.
+- Modificados (núcleo): `ExtensionPluginContentService.php`,
+  `PluginExtensionController.php`, `ValidationService.php`,
+  `PluginConfigFieldNormalizer.php`, `ExtensionPluginConfigService.php`,
+  `PluginConfigService.php`, `RouteMapController.js`, `AppController.js`,
+  `EntityEdit.js`, `PluginConfig.js`, `DynamicTable.js`, `Table.js`.
+- BD local: instancias `brands`/`manufacturers` creadas y activas;
+  `optometries`/`contact_lenses` sincronizados y activos; sin cambios en
+  datos reales de `persons`/`clients`/`distributors`/`ophthalmologists`.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 68/68 archivos en verde
+  (incluye BD real).
+- Frontend: `frontend/tests/integration/DynamicTableTest.html` 16/16,
+  `PluginConfigTest.html` 19/19, `PluginRelationsConfigTest.php` (backend)
+  7/7 — sin regresión en el resto de la suite.
+- SonarQube: 11 hallazgos → 0 tras el pase con la skill dedicada.
+
+**Pendiente de verificación manual del usuario (no automatizable desde
+este entorno, sin herramienta de navegador):** confirmar en el navegador
+integrado el flujo completo de `contact_lenses` (crear/editar/borrar
+ficha, gauge de 2 líneas por ojo, selects Marca/Fabricante/Distribuidor/
+Uso/Pack en la tabla) — `optometries` ya fue confirmado visualmente por el
+usuario ("Si, la ficha ya coincide con el sketch") antes de implementar
+`contact_lenses`.
+
+**Cierre verificado (2026-08-17):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: `relations` en plugins `extension` queda validado
+  y editable de punta a punta sin romper `comments` (único plugin
+  `extension` previo con relaciones ausentes); el guion inválido de
+  `contact-lenses` se detectó y corrigió antes de sincronizar en BD, no
+  después.
+- Backlog alineado: STORY 10.5 queda implementada (nombres de plugin
+  ajustados y documentados, "tipo de lentilla" descartado del AC original);
+  el siguiente punto es STORY 10.6 (datos de ejemplo).
 
 ---

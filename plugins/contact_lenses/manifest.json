@@ -1,0 +1,15 @@
+{
+    "name": "contact_lenses",
+    "label": "Lentillas",
+    "version": "1.0.0",
+    "type": "extension",
+    "core_version": "1.0.0",
+    "target_entity": "clients",
+    "description": "Añade un historial de fichas de adaptación de lentillas a las personas.",
+    "layers": [
+        { "key": "top", "label": "Arriba" },
+        { "key": "od", "label": "Ojo derecho" },
+        { "key": "os", "label": "Ojo izquierdo" },
+        { "key": "general", "label": "General" }
+    ]
+}

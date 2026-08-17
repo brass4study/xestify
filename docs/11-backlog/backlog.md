@@ -1255,15 +1255,21 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 - **Blockers:** Ninguno
 
 ### STORY 10.5: Plugins de demostración — extensiones
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Backend
-- **Criteria:**
-  - ✅ Plugin de extensión `optometry` (ficha de optometría), `target_entity: persons`, campos: fecha de examen, esfera/cilindro/eje OD, esfera/cilindro/eje OS, distancia pupilar, notas
-  - ✅ Plugin de extensión `contact-lenses` (ficha de lentillas), `target_entity: persons`, campos: marca, tipo de lentilla, calendario de reemplazo, curva base, diámetro, notas
-  - ✅ Ambos siguen el patrón de `plugins/comments/` (manifest con `target_entity`, Hooks con `registerTabs`, `plugin.js` con panel propio vía `PluginPanelRegistry`)
-- **IA Usage:** Generación de manifest/schema/Hooks/plugin.js siguiendo el patrón de extensión existente
-- **Dependencias:** STORY 10.2 (`persons`), STORY 6.2 (hooks `registerTabs`)
+- **Criteria (AC original, con ajustes acordados con el usuario — ver notas debajo):**
+  - ✅ Plugin de extensión `optometries` (ficha de graduación óptica), `target_entity: clients` (no `persons` — ver nota 3), historial de varias fichas por persona: fecha, esfera/cilindro/eje OD y OI en 4 secciones (para lejos, constante, para cerca, lentilla), adición OD/OI, distancia pupilar, relaciones Oftalmólogo/Optometrista (→ `ophthalmologists`), notas
+  - ✅ Plugin de extensión `contact_lenses` (ficha de adaptación de lentillas — ver nota 2 sobre el nombre), `target_entity: clients`, historial de varias fichas: fecha, esfera/cilindro/eje/adición OD y OI en 2 secciones (contacto, queratometría), radio/diámetro/uso/pack OD y OI, relaciones Marca/Fabricante/Distribuidor por ojo (→ `brands`/`manufacturers`/`distributors`), notas
+  - ✅ Ambos parten del patrón de `plugins/comments/` pero lo amplían: historial de varios registros por owner (página independiente de ficha, `PluginItemEdit.js`, en vez de panel inline), relaciones `belongs_to` propias del plugin de extensión (capacidad de núcleo nueva, no existía antes de esta story), gauge visual del eje (SVG, componente compartido `AxisGauge.js`) y tabla de medidas por ojo como `DynamicTable`
+- **Nota 1 — "tipo de lentilla" eliminado:** el AC original de backlog incluía "tipo de lentilla" como campo de `contact_lenses`; no aparece en las capturas de referencia aportadas por el usuario y se descartó, igual que hizo STORY 10.4 con `purchases`.
+- **Nota 2 — nombres técnicos ajustados:** `optometry`→`optometries` (convención de slugs en plural del proyecto); `contact-lenses`→`contact_lenses` — el guion del AC original es estructuralmente inválido como `name`/slug de plugin (`PluginClassLoader::instantiateHooks()` lo usa literal como segmento de namespace PHP, donde un guion es un error de sintaxis; también falla `PluginIdentityService::SLUG_PATTERN`). La etiqueta visible sigue siendo "Lentillas", sin impacto para el usuario final.
+- **Nota 3 — `target_entity: clients` no `persons`:** mismo motivo que STORY 10.4 — no existe ninguna entidad activa con slug `persons` en la BD real del usuario (el `plugin_name` interno sigue siendo `persons`, pero la instancia activa se renombró a `clients`).
+- **Nota 4 — capacidades de núcleo nuevas, no solo dos plugins:** esta story amplió el sistema de plugins de extensión con soporte de `relations` (antes solo lo tenían los plugins `entity`), validación server-side de `content` contra schema (antes `PluginExtensionController` no validaba nada), la convención general `layers`/`layer`/`resortable` para organizar la UI de cualquier plugin (aplicable también a plugins `entity`, aunque hoy solo la usan `optometries`/`contact_lenses`) y el patrón de página independiente de ficha (`PluginItemEdit.js`) para plugins con historial de varios registros por owner — ver `docs/01-architecture/plugins.md`.
+- **Límite conocido, aceptado y documentado:** `ReverseRelationTabResolver`/`EntityService::guardNoDependentRecords()` no cubren plugins `extension` — borrar un `ophthalmologists`/`distributors`/`brands`/`manufacturers` referenciado por una ficha no se bloquea ni muestra pestaña inversa.
+- **IA Usage:** Generación de manifest/schema/Hooks/plugin.js siguiendo el patrón de extensión existente, ampliado con relaciones y capas nuevas; diseño del componente SVG `AxisGauge` reutilizable
+- **Dependencias:** STORY 10.2 (`persons`/`clients`), STORY 6.2 (hooks `registerTabs`), STORY 10.4 (patrón de multi-instancia reutilizado para `brands`/`manufacturers`)
 - **Blockers:** Ninguno
 
 ### STORY 10.6: Datos de ejemplo para los plugins de demostración
@@ -1271,8 +1277,8 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 - **Priority:** MUST
 - **Type:** Backend
 - **Criteria:**
-  - ✅ Nuevo seeder de datos de negocio (no solo usuario admin) que carga registros de ejemplo para `persons`, `orders`, `invoices`, `optometry` y `contact-lenses`
-  - ✅ Volumen mínimo: 8-10 personas, con pedidos/facturas y fichas asociadas a varias de ellas, suficiente para una demo en vivo realista
+  - ✅ Nuevo seeder de datos de negocio (no solo usuario admin) que carga registros de ejemplo para las instancias de `persons` (`clients`, `distributors`, `ophthalmologists`), `commments`, `orders`, `invoices`, `optometries`, `contact_lenses`, `brands` y `manufacturers`
+  - ✅ Volumen mínimo: 200 personas, con comanetarios/pedidos/facturas y fichas asociadas a varias de ellas, suficiente para una demo en vivo realista
   - ✅ Datos coherentes entre sí (pedidos con personas reales del seed, facturas con pedidos reales, fechas plausibles)
   - ✅ Seeder idempotente (no duplica datos si se ejecuta más de una vez)
 - **IA Usage:** Generación de datos de ejemplo realistas + script de seeder idempotente
@@ -1299,7 +1305,19 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Dependencias:** Todas las stories MUST de EPIC 0-10
 - **Blockers:** Ninguno
 
-### STORY 11.2: Auditoría de coherencia de documentación
+### STORY 11.2: Verificación funcional E2E final
+- **Points:** 5
+- **Priority:** MUST
+- **Type:** QA
+- **Criteria:**
+  - ✅ Checklist de verificación funcional E2E ejecutado y documentado: login (usuario normal + admin + botones de acceso rápido en debug) → crear/editar/eliminar persona → crear pedido/factura relacionados → gestionar plugins (activar/desactivar/desinstalar) → ficha de optometría/lentillas → exportar CSV → búsqueda/filtro en tablas → cambio de idioma → todo sin errores en el runtime real Apache+PHP
+  - ✅ Suite de tests (backend + frontend) ejecutada en verde como parte del checklist final
+  - ✅ Cualquier incidencia detectada durante la verificación queda corregida o documentada explícitamente como limitación conocida
+- **IA Usage:** Generación del checklist E2E + ejecución asistida de la suite de tests
+- **Dependencias:** STORY 10.1, STORY 10.2, STORY 10.3, STORY 10.4, STORY 10.5, STORY 10.6, STORY 11.1
+- **Blockers:** Ninguno
+
+### STORY 11.3: Auditoría de coherencia de documentación
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Documentacion
@@ -1313,7 +1331,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Dependencias:** STORY 11.1
 - **Blockers:** Ninguno
 
-### STORY 11.3: Guion de defensa del TFM
+### STORY 11.4: Guion de defensa del TFM
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Documentacion
@@ -1322,19 +1340,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
   - ✅ Flujo de demo en vivo documentado paso a paso, coherente con el checklist de STORY 11.4
   - ✅ `ia-productivity-analysis.md`/`productividad.md` completo con métricas reales de todas las stories cerradas del proyecto, no solo un subconjunto
 - **IA Usage:** Borrador asistido del guion de defensa + consolidación de métricas de productividad
-- **Dependencias:** STORY 11.2
-- **Blockers:** Ninguno
-
-### STORY 11.4: Verificación funcional E2E final
-- **Points:** 5
-- **Priority:** MUST
-- **Type:** QA
-- **Criteria:**
-  - ✅ Checklist de verificación funcional E2E ejecutado y documentado: login (usuario normal + admin + botones de acceso rápido en debug) → crear/editar/eliminar persona → crear pedido/factura relacionados → gestionar plugins (activar/desactivar/desinstalar) → ficha de optometría/lentillas → exportar CSV → búsqueda/filtro en tablas → cambio de idioma → todo sin errores en el runtime real Apache+PHP
-  - ✅ Suite de tests (backend + frontend) ejecutada en verde como parte del checklist final
-  - ✅ Cualquier incidencia detectada durante la verificación queda corregida o documentada explícitamente como limitación conocida
-- **IA Usage:** Generación del checklist E2E + ejecución asistida de la suite de tests
-- **Dependencias:** STORY 10.1, STORY 10.2, STORY 10.3, STORY 10.4, STORY 10.5, STORY 10.6, STORY 11.1
+- **Dependencias:** STORY 11.3
 - **Blockers:** Ninguno
 
 ---

@@ -27,6 +27,30 @@ TestSuite::run('normalizeFieldDefinition() trims and defaults optional fields', 
     assertTrue($field['summaryView'], 'summaryView defaults to true when absent');
 });
 
+TestSuite::run('normalizeFieldDefinition() defaults resortable to true when absent', function () use ($normalizer): void {
+    $field = $normalizer->normalizeFieldDefinition(['key' => 'phone', 'label' => 'Phone']);
+
+    assertTrue($field['resortable'], 'resortable defaults to true when the schema does not declare it');
+});
+
+TestSuite::run('normalizeFieldDefinition() carries resortable false through (STORY 10.5)', function () use ($normalizer): void {
+    $field = $normalizer->normalizeFieldDefinition(['key' => 'od_distance_sphere', 'label' => 'Esfera', 'resortable' => false]);
+
+    assertFalse($field['resortable'], 'a field whose position is hardcoded by its own plugin.js must carry resortable=false through');
+});
+
+TestSuite::run('normalizeFieldDefinition() defaults layer to general when absent (STORY 10.5)', function () use ($normalizer): void {
+    $field = $normalizer->normalizeFieldDefinition(['key' => 'phone', 'label' => 'Phone']);
+
+    assertEquals('general', $field['layer'], 'layer defaults to general when the schema does not declare it');
+});
+
+TestSuite::run('normalizeFieldDefinition() carries a declared layer through (STORY 10.5)', function () use ($normalizer): void {
+    $field = $normalizer->normalizeFieldDefinition(['key' => 'od_distance_sphere', 'label' => 'Esfera', 'layer' => 'od']);
+
+    assertEquals('od', $field['layer'], 'a declared layer must be carried through as-is');
+});
+
 TestSuite::run('normalizeFieldDefinition() rejects an empty key', function () use ($normalizer): void {
     $threw = false;
     try {
@@ -71,6 +95,14 @@ TestSuite::run('normalizePayloadRows() normalizes each row and carries active/su
     assertFalse($rows[0]['summaryView'], 'summaryView must be carried from the payload row');
     assertFalse($rows[1]['active'], 'inactive row must stay inactive');
     assertEquals('number', $rows[1]['type'], 'type must be preserved');
+});
+
+TestSuite::run('normalizePayloadRows() carries layer through, unlike resortable (STORY 10.5)', function () use ($normalizer): void {
+    $rows = $normalizer->normalizePayloadRows([
+        ['key' => 'phone', 'label' => 'Phone', 'active' => true, 'layer' => 'general'],
+    ]);
+
+    assertEquals('general', $rows[0]['layer'], 'layer is admin-editable via the payload, so normalizePayloadRows() must return it (unlike resortable, which is author-locked and sourced from disk passthrough instead)');
 });
 
 TestSuite::run('normalizePayloadRows() rejects a non-object row', function () use ($normalizer): void {

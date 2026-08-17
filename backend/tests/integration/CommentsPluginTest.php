@@ -86,6 +86,8 @@ try {
 const TEST_ENTITY   = 'persons';
 const TEST_RECORD   = '00000000-0000-0000-0000-000000000001';
 const TEST_COMMENT_BODY = 'Primer comentario de prueba';
+const COMMENTS_TEST_VERSION = '1.0.0';
+const DELETE_PLUGIN_BY_SLUG_SQL = 'DELETE FROM plugins WHERE slug = :slug';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
 const MSG_BODY_MUST_MATCH = 'body must match';
 const MSG_POST_OK_MUST_BE_TRUE = 'POST ok must be true';
@@ -161,9 +163,9 @@ function seedParentRecord(): void
         'name' => TEST_ENTITY,
         'label' => 'Personas',
         'label_singular' => 'Persona',
-        'version' => '1.0.0',
+        'version' => COMMENTS_TEST_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => COMMENTS_TEST_VERSION,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -419,9 +421,9 @@ TestSuite::run('Cada instancia activa de comments contribuye su propia tab (STOR
     $secondManifest = json_encode([
         'name' => 'comments',
         'label' => 'Comentarios (segunda instancia)',
-        'version' => '1.0.0',
+        'version' => COMMENTS_TEST_VERSION,
         'type' => 'extension',
-        'core_version' => '1.0.0',
+        'core_version' => COMMENTS_TEST_VERSION,
         'target_entity' => '*',
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -447,7 +449,7 @@ TestSuite::run('Cada instancia activa de comments contribuye su propia tab (STOR
         assertTrue(in_array($secondSlug, $ids, true), 'second instance tab must also appear');
         assertEquals(2, count(array_unique($ids)), 'both instances must contribute distinct tab ids');
     } finally {
-        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $secondSlug]);
+        $pdo->prepare(DELETE_PLUGIN_BY_SLUG_SQL)->execute([':slug' => $secondSlug]);
     }
 });
 
@@ -495,9 +497,9 @@ TestSuite::run('multiple active instances contribute tabs ordered by their own s
     $secondManifest = json_encode([
         'name' => 'comments',
         'label' => 'Comentarios (segunda instancia)',
-        'version' => '1.0.0',
+        'version' => COMMENTS_TEST_VERSION,
         'type' => 'extension',
-        'core_version' => '1.0.0',
+        'core_version' => COMMENTS_TEST_VERSION,
         'target_entity' => '*',
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -524,7 +526,7 @@ TestSuite::run('multiple active instances contribute tabs ordered by their own s
             'the instance with the lower sort_order must contribute its tab first'
         );
     } finally {
-        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $secondSlug]);
+        $pdo->prepare(DELETE_PLUGIN_BY_SLUG_SQL)->execute([':slug' => $secondSlug]);
     }
 });
 
@@ -833,7 +835,7 @@ TestSuite::run('GET with empty record id returns 404', function (): void {
 // seedParentRecord() upserts a synthetic 'persons' fixture row (TEST_ENTITY)
 // that is never the real installed persons/clients plugin — must be removed
 // once, here, or it lingers in the plugins listing forever.
-Database::connection()->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => TEST_ENTITY]);
+Database::connection()->prepare(DELETE_PLUGIN_BY_SLUG_SQL)->execute([':slug' => TEST_ENTITY]);
 
 echo str_repeat('-', 40) . "\n";
 TestSuite::summary();

@@ -1504,3 +1504,142 @@ reales de `persons` del usuario; pendiente confirmación visual del usuario en
 navegador integrado (crear pedido/factura, unicidad, relación configurada
 desde `PluginConfig`, bloqueo de borrado); EPIC 10 en progreso, siguiente foco
 STORY 10.5.
+
+### STORY 10.5 — Plugins de demostración: extensiones `optometries`, `contact_lenses`
+
+**Contexto:** story larga, con dos capturas de pantalla del usuario como
+referencia visual obligatoria y una corrección de arquitectura (relaciones
+en plugins `extension`) antes de poder empezar a implementar los plugins
+en sí. Se documenta aquí un subconjunto representativo de los prompts más
+determinantes, no la transcripción completa.
+
+**Hallazgo propio de la IA, no un prompt del usuario (bloqueante, detectado
+al escribir `Hooks.php` de `contact-lenses`):**
+```
+[IA] Encontré un bloqueador real antes de seguir: `contact-lenses` (con
+guion) no puede funcionar como `name`/slug de plugin en este sistema —
+PluginClassLoader::instantiateHooks() lo usa literal como segmento de
+namespace PHP y un guion ahí es un error de sintaxis; también falla
+PluginIdentityService::SLUG_PATTERN. Cambio el `name` técnico a
+`contact_lenses` (guion bajo) — la etiqueta visible sigue siendo
+"Lentillas", nada cambia para el usuario final.
+```
+**Resultado:** renombrado sin esperar confirmación (era un bloqueador
+técnico objetivo, no una decisión de producto) — directorio,
+`manifest.json.name`, namespace de `Hooks.php`, filtros SQL, `plugin_name`
+del tab. Verificado con `php -r 'var_dump(preg_match(...))'` que el guion
+falla el patrón y el guion bajo pasa, antes de aplicar el cambio.
+
+**Bug report del usuario (mitad de sesión, sobre una funcionalidad ya
+"cerrada"):**
+```
+Acabo de añadir desde front un nuevo campo adicional a la extension
+optometrias, el campo "warnings" a la capa "general". Pero cuando voy a
+la ficha de optometrias, ese campo no se visualiza, ni en la capa
+general, ni en ninguna.
+```
+**Resultado:** causa raíz identificada leyendo `plugin.js` completo —
+estaba escrito 100% a mano, sin ningún bucle genérico sobre campos
+`origin:additional` (el de relaciones sí era genérico, por eso una
+relación nueva sí se habría visto). `AskUserQuestion` confirmó la opción
+recomendada (renderizador genérico solo para esos campos, sin tocar los
+29 campos base) antes de implementar.
+
+**Corrección explícita sobre la calidad del propio plan (no sobre código):**
+```
+No has corregido correctamente el plan, por ejemplo, sigues poniendo que
+hay que añadir los layers a plugins/optometries/schema.json
+```
+**Resultado:** barrido completo del documento de plan (`grep` repetido
+hasta no encontrar más afirmaciones obsoletas) en vez de una única
+corrección puntual — el error no era aislado, ya se había filtrado en
+varias secciones tras una corrección de diseño anterior (el catálogo
+`layers` se movió de `schema.json` a `manifest.json` a mitad de sesión).
+
+**Prompt de rediseño total, con sketch de referencia obligatorio:**
+```
+Ok, ahora revisa de nuevo como construyes cada capa, rehaz plugin.js
+desde 0.
+-En el layer `top` debe ir Fecha
+-En el layer `od` deben ir el gauge y los campos de ojo derecho. Como una
+columna
+-En el layer `os` deben ir el gauge y los campos de ojo izquierdo. Como
+una columna
+-En el layer 'general' iran el resto de campos
+Vuelvo a pasarte el sketch al que obligatoriamente debe parecerse.
+```
+Seguido, tras un primer intento de plan que no reflejaba el cambio con
+claridad suficiente:
+```
+No veo que secciones nuevas has añadido o donde esta el rediseño del
+front de optometrias
+```
+**Resultado:** el diseño se movió a una sección `⚡ TRABAJO ACTUAL`
+destacada al principio del documento del plan (no enterrada entre
+secciones ya implementadas), y `plugin.js` se reescribió completo (no en
+parches incrementales) con builders por capa. Confirmado por el usuario
+varias rondas de ajuste visual después: *"Si, la ficha ya coincide con el
+sketch."*
+
+**Prompts de pulido visual iterativo (una muestra; hubo más de una decena
+en total, cada uno aplicado y verificado antes del siguiente):**
+```
+Debe usarse una DynamicTable, sin la cabecera de opciones, en modo
+compacto y con las columnas no ordenables
+```
+```
+Las cabeceras tambien deben usar el mismo estilo por defecto que el
+resto de las tablas, no es necesario que vayan en tonos oscuros
+```
+```
+En los layer top y general los campos deben construirse como en
+cualquier formulario(Un texto en form-field-label y el input debajo)
+```
+**Resultado:** cada uno se tradujo en un cambio quirúrgico y verificado
+(2 opciones nuevas en el core de `DynamicTable`, un ajuste de padding en
+`Table.js` que benefició a toda la app, no solo a este plugin), nunca en
+un rediseño especulativo por adelantado de lo que el usuario podría pedir
+después.
+
+**Segundo plugin, corrección de estructura de tabla tras verlo en
+navegador:**
+```
+Los campos Radio, Diámetro, Pack, etc.. de cada ojo deben comportarte
+como el campo Adición de optometrias, en la tabla y con un span de 3
+```
+Al no ser evidente cómo tratar la columna Adición propia de
+`contact_lenses` (4 columnas de valor, no 3 como en `optometries`), se
+preguntó en vez de asumir — `AskUserQuestion` confirmó dejarla fija.
+Poco después:
+```
+Marca, Fabricante, Distribuidor en ojo derecho y izuierdo tb deben ir en
+la tabla
+```
+**Resultado:** las relaciones por ojo se movieron de filas sueltas
+(`appendLayerTail`, debajo de la tabla) a filas más de la misma
+`DynamicTable`, reutilizando la misma infraestructura genérica de
+`isStandalone`/`colSpan` recién construida para Radio/Diámetro/Uso/Pack
+— sin duplicar código, gracias a haber generalizado esa pieza desde la
+primera corrección.
+
+**Iteraciones:** 25+ (núcleo relations/validación, 3+ rondas de
+`AskUserQuestion` sobre `layers`/`resortable`, bug de campos additional +
+`AskUserQuestion`, hallazgo y fix del nombre inválido de `contact_lenses`,
+reescritura completa de `plugin.js` de `optometries` ×3, 10+ rondas de
+pulido visual, extracción de módulo compartido antes de escribir el
+segundo plugin, 2 correcciones de estructura de tabla en `contact_lenses`,
+pase de SonarQube, documentación en 7 ficheros).
+**Lección:** cuando el usuario corrige el mismo diseño dos veces seguidas
+(el catálogo `layers`, primero de ubicación y después de alcance con
+`resortable`), la corrección correcta es un barrido completo del
+documento vivo (plan) buscando cualquier otra afirmación que dependa de
+la versión antigua del diseño — no solo el punto exacto que el usuario
+señaló. Y un bloqueador técnico objetivo (el guion en `contact-lenses`)
+no necesita `AskUserQuestion`: se reporta con la evidencia ya verificada
+y se corrige, reservando las preguntas para decisiones de producto reales.
+**Estado final:** STORY 10.5 implementada y verificada — backend
+`php backend/tests/run.php all` 68/68 archivos en verde (incluye
+integración con BD real); `optometries`/`contact_lenses` sincronizados y
+activos en la BD local del usuario; `optometries` confirmado visualmente
+por el usuario contra el sketch, `contact_lenses` pendiente de la misma
+confirmación; EPIC 10 en progreso, siguiente foco STORY 10.6.

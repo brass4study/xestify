@@ -7,11 +7,32 @@ namespace Xestify\controllers;
 use PDO;
 use Xestify\core\Request;
 use Xestify\plugins\schema\PluginSchemaFieldNormalizer;
+use Xestify\services\ValidationService;
+use Xestify\validation\model\ValidationResult;
 
 final class ExtensionPluginContentService
 {
-    public function __construct(private PDO $pdo)
+    public function __construct(private PDO $pdo, private ?ValidationService $validator = null)
     {
+        $this->validator ??= new ValidationService();
+    }
+
+    /**
+     * Validates $data against the extension's own schema (`fields` +
+     * `relations`), same rules entity records already get via
+     * EntityService::createRecord()/updateRecord() — extension plugins had
+     * no server-side validation at all before this (PluginExtensionController
+     * never called ValidationService), so `min`/`max`/`required` declared in
+     * schema.json.fields were silently unenforced. Relation keys pass through
+     * unchecked (DECISION 6, ValidationService.php).
+     *
+     * @param array<string, mixed> $data
+     */
+    public function validate(string $pluginSlug, array $data, bool $requireAll = true): ValidationResult
+    {
+        $schema = $this->loadExtensionSchema($pluginSlug);
+
+        return $this->validator->validate($data, $schema, $requireAll);
     }
 
     /**
@@ -22,7 +43,8 @@ final class ExtensionPluginContentService
     {
         $schema = $this->loadExtensionSchema($pluginSlug);
         $fields = PluginSchemaFieldNormalizer::normalize($schema['fields'] ?? null) ?? [];
-        if ($fields === []) {
+        $relationKeys = $this->relationKeys($schema);
+        if ($fields === [] && $relationKeys === []) {
             return $data;
         }
 
@@ -42,7 +64,38 @@ final class ExtensionPluginContentService
             }
         }
 
+        // Relations carry no auto-generation/immutability rules of their own
+        // (DECISION 6 — ValidationService already lets their keys through
+        // unchecked, same as entity relations); just pass the value through
+        // when present, same as any other plain field.
+        foreach ($relationKeys as $key) {
+            if (array_key_exists($key, $data)) {
+                $normalized[$key] = $data[$key];
+            }
+        }
+
         return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return list<string>
+     */
+    private function relationKeys(array $schema): array
+    {
+        $relations = $schema['relations'] ?? [];
+        if (!is_array($relations)) {
+            return [];
+        }
+
+        $keys = [];
+        foreach ($relations as $relation) {
+            if (is_array($relation) && is_string($relation['key'] ?? null) && $relation['key'] !== '') {
+                $keys[] = $relation['key'];
+            }
+        }
+
+        return $keys;
     }
 
     public function isEntityAllowedByPluginConfig(string $pluginSlug, string $entity): bool

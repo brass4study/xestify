@@ -10,6 +10,8 @@ export const HASH_ROUTE_MAP = Object.freeze({
   entityCreate: '#/entity/:slug/#new',
   entityDetail: '#/entity/:slug/:id',
   entityTab: '#/entity/:slug/:id/:tab',
+  entityPluginItemCreate: '#/entity/:slug/:id/:tab/#new',
+  entityPluginItem: '#/entity/:slug/:id/:tab/:itemId',
 });
 
 function fillRouteTemplate(template, ...params) {
@@ -49,6 +51,66 @@ export function entityTabPage(slug, recordId, tabId) {
   }
 
   return `entity-tab:${recordPage.slice('entity-record:'.length)}:${normalizedTabId}`;
+}
+
+/**
+ * Standalone page for creating a new item of an extension plugin (e.g. a new
+ * optometries ficha) — a real, navigable, bookmarkable route rather than an
+ * inline form (STORY 10.5), mirroring entityCreatePage()'s '#new' sentinel.
+ */
+export function entityPluginItemCreatePage(slug, recordId, tabId) {
+  const normalizedSlug = normalizeSegment(slug);
+  const normalizedRecordId = typeof recordId === 'string' ? recordId.trim() : '';
+  const normalizedTabId = normalizeSegment(tabId);
+  if (normalizedSlug === '' || normalizedRecordId === '' || normalizedTabId === '') {
+    return entityTabPage(slug, recordId, tabId);
+  }
+
+  return `entity-plugin-item-create:${normalizedSlug}:${normalizedRecordId}:${normalizedTabId}`;
+}
+
+/**
+ * Standalone page for viewing/editing an existing item of an extension
+ * plugin (e.g. one optometries ficha).
+ */
+export function entityPluginItemPage(slug, recordId, tabId, itemId) {
+  const normalizedSlug = normalizeSegment(slug);
+  const normalizedRecordId = typeof recordId === 'string' ? recordId.trim() : '';
+  const normalizedTabId = normalizeSegment(tabId);
+  const normalizedItemId = typeof itemId === 'string' ? itemId.trim() : '';
+  if (normalizedSlug === '' || normalizedRecordId === '' || normalizedTabId === '' || normalizedItemId === '') {
+    return entityTabPage(slug, recordId, tabId);
+  }
+
+  return `entity-plugin-item:${normalizedSlug}:${normalizedRecordId}:${normalizedTabId}:${normalizedItemId}`;
+}
+
+export function parseEntityPluginItemCreatePage(page) {
+  const prefix = 'entity-plugin-item-create:';
+  if (typeof page !== 'string' || !page.startsWith(prefix)) {
+    return null;
+  }
+
+  const parts = page.slice(prefix.length).split(':');
+  if (parts.length !== 3 || parts.includes('')) {
+    return null;
+  }
+
+  return { slug: parts[0], recordId: parts[1], tabId: parts[2] };
+}
+
+export function parseEntityPluginItemPage(page) {
+  const prefix = 'entity-plugin-item:';
+  if (typeof page !== 'string' || !page.startsWith(prefix)) {
+    return null;
+  }
+
+  const parts = page.slice(prefix.length).split(':');
+  if (parts.length !== 4 || parts.includes('')) {
+    return null;
+  }
+
+  return { slug: parts[0], recordId: parts[1], tabId: parts[2], itemId: parts[3] };
 }
 
 export function pluginConfigPage(slug) {
@@ -197,6 +259,24 @@ function resolveEntityHash(page) {
     return null;
   }
 
+  if (page.startsWith('entity-plugin-item-create:')) {
+    const parsed = parseEntityPluginItemCreatePage(page);
+    if (parsed === null) {
+      return HASH_ROUTE_MAP.home;
+    }
+
+    return fillRouteTemplate(HASH_ROUTE_MAP.entityPluginItemCreate, parsed.slug, parsed.recordId, parsed.tabId);
+  }
+
+  if (page.startsWith('entity-plugin-item:')) {
+    const parsed = parseEntityPluginItemPage(page);
+    if (parsed === null) {
+      return HASH_ROUTE_MAP.home;
+    }
+
+    return fillRouteTemplate(HASH_ROUTE_MAP.entityPluginItem, parsed.slug, parsed.recordId, parsed.tabId, parsed.itemId);
+  }
+
   if (page.startsWith('entity-tab:')) {
     const parsed = parseEntityTabPage(page);
     if (parsed === null) {
@@ -288,6 +368,20 @@ function resolveEntityPage(parts) {
   if (parts.length === 4) {
     const tabId = decodeSegment(parts[3]);
     return tabId === null ? null : `entity-tab:${slug}:${recordId}:${tabId}`;
+  }
+
+  if (parts.length === 5) {
+    const tabId = decodeSegment(parts[3]);
+    if (tabId === null) {
+      return null;
+    }
+
+    if (parts[4] === '#new') {
+      return `entity-plugin-item-create:${slug}:${recordId}:${tabId}`;
+    }
+
+    const itemId = decodeSegment(parts[4]);
+    return itemId === null ? null : `entity-plugin-item:${slug}:${recordId}:${tabId}:${itemId}`;
   }
 
   return null;

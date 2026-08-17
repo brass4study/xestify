@@ -55,6 +55,16 @@ render dentro del shell SPA.
 | PluginManager | `#/plugins` | `plugin-management` |
 | Configuracion de plugin | `#/plugins/:slug` | `plugin-management` |
 | Listado de entidad | `#/entity/:slug` | `list` |
+| Alta de ítem de plugin de extensión | `#/entity/:slug/:id/:tab/#new` | `plugin-item-edit` |
+| Ficha de ítem de plugin de extensión | `#/entity/:slug/:id/:tab/:itemId` | `plugin-item-edit` |
+
+Las dos últimas (STORY 10.5) navegan **siempre reconstruyendo la página**
+— a diferencia de un cambio de tab normal dentro de `EntityEdit` (que
+reutiliza la instancia sin remontar), ir a la ficha de un ítem de plugin
+instancia `PluginItemEdit.js` de nuevo. Solo aplican a plugins `extension`
+con historial de varios registros por owner (ej. `optometries`,
+`contact_lenses`) — un plugin con panel inline simple (ej. `comments`) no
+las usa.
 
 ### Rutas reservadas para stories siguientes
 

@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use OutOfBoundsException;
 use Throwable;
 use Xestify\plugins\discovery\PluginSourceService;
-use Xestify\repositories\PluginRepository;
 use Xestify\repositories\PluginWriteRepository;
 
 /**
@@ -26,7 +25,7 @@ final class PluginConfigService
         private ExtensionPluginConfigService $extensionPluginConfigService,
         private PluginConfigFieldNormalizer $fieldNormalizer,
         private PluginSourceService $pluginSourceService,
-        private PluginRepository $pluginRepository
+        private RelationsPayloadCompiler $relationsCompiler
     ) {
     }
 
@@ -89,7 +88,7 @@ final class PluginConfigService
             throw new InvalidArgumentException('relations must be an array.');
         }
         $relationsPayload = is_array($payload['relations'] ?? null) ? $payload['relations'] : [];
-        $relations = $this->compileRelationsPayload($relationsPayload, $compiled['seen_keys']);
+        $relations = $this->relationsCompiler->compile($relationsPayload, $compiled['seen_keys']);
 
         $nextSchema = $currentSchema;
         $nextSchema['plugin_suggested_custom_fields'] = $compiled['suggested_catalog'];
@@ -115,11 +114,13 @@ final class PluginConfigService
         $manifest = is_array($plugin['manifest_json'] ?? null) ? $plugin['manifest_json'] : [];
         $pluginType = (string) ($manifest['type'] ?? '');
 
+        $layers = is_array($manifest['layers'] ?? null) ? $manifest['layers'] : [];
+
         if ($pluginType === 'extension') {
             $targetEntity = (string) ($manifest['target_entity'] ?? '*');
-            $configPayload = $this->extensionPluginConfigService->buildConfigPayload($schema, $targetEntity);
+            $configPayload = $this->extensionPluginConfigService->buildConfigPayload($schema, $targetEntity, $layers);
         } else {
-            $configPayload = $this->buildEntityConfigPayload($schema);
+            $configPayload = $this->buildEntityConfigPayload($schema, $layers);
         }
 
         return [
@@ -156,13 +157,14 @@ final class PluginConfigService
         $decoded = is_array($schema) ? $schema : ['fields' => []];
         $normalizedFields = PluginSchemaFieldNormalizer::normalize($decoded['fields'] ?? null);
         $decoded['fields'] = $normalizedFields ?? [];
+        $layers = is_array($manifest['layers'] ?? null) ? $manifest['layers'] : [];
 
         if ((string) ($manifest['type'] ?? '') === 'extension') {
             $targetEntity = (string) ($manifest['target_entity'] ?? '*');
-            return $this->extensionPluginConfigService->buildConfigPayload($decoded, $targetEntity);
+            return $this->extensionPluginConfigService->buildConfigPayload($decoded, $targetEntity, $layers);
         }
 
-        return $this->buildEntityConfigPayload($decoded);
+        return $this->buildEntityConfigPayload($decoded, $layers);
     }
 
     /**
@@ -196,98 +198,177 @@ final class PluginConfigService
 
     /**
      * @param array<string, mixed> $schema
+     * @param array<int, mixed> $layers manifest_json.layers (STORY 10.5) —
+     *   see the matching param on ExtensionPluginConfigService::buildConfigPayload()
+     *   for why this lives in manifest_json, not schema_json.
     * @return array{fields: array<int, array<string, mixed>>}
      */
-    private function buildEntityConfigPayload(array $schema): array
+    private function buildEntityConfigPayload(array $schema, array $layers = []): array
     {
-        $baseFields = $this->baseFieldsFromSchema($schema);
-        $suggested = $this->suggestedCatalogFromSchema($schema);
-        $activeCustom = [];
-        if (isset($schema['custom_fields']) && is_array($schema['custom_fields'])) {
-            foreach ($schema['custom_fields'] as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-
-                $normalized = $this->fieldNormalizer->normalizeFieldDefinition($entry);
-                $normalized['origin'] = (string) ($entry['origin'] ?? 'suggested');
-                $activeCustom[] = $normalized;
-            }
-        }
-
+        $activeCustom = $this->activeCustomFieldsFromSchema($schema);
         $activeByKey = [];
         foreach ($activeCustom as $field) {
             $activeByKey[$field['key']] = $field;
         }
 
         $rowsByKey = [];
-        foreach ($baseFields as $field) {
-            $rowsByKey[$field['key']] = [
-                'active' => true,
-                'key' => $field['key'],
-                'type' => $field['type'],
-                'label' => $field['label'],
-                'required' => $field['required'],
-                'summaryView' => $field['summaryView'],
-                'locked' => true,
-                'source' => 'base',
-            ];
+        foreach ($this->baseFieldsFromSchema($schema) as $field) {
+            $rowsByKey[$field['key']] = $this->entityBaseRow($field);
         }
 
-        foreach ($suggested as $field) {
-            $key = $field['key'];
-            $activeField = $activeByKey[$key] ?? null;
-            $rowsByKey[$key] = [
-                'active' => $activeField !== null,
-                'key' => $key,
-                'type' => (string) ($activeField['type'] ?? $field['type']),
-                'label' => (string) ($activeField['label'] ?? $field['label']),
-                'required' => (bool) ($activeField['required'] ?? $field['required']),
-                'summaryView' => (bool) ($activeField['summaryView'] ?? $field['summaryView']),
-                'locked' => false,
-                'source' => 'suggested',
-            ];
-            $rowOptions = $activeField['options'] ?? $field['options'] ?? null;
-            if ($rowOptions !== null) {
-                $rowsByKey[$key]['options'] = $rowOptions;
-            }
+        foreach ($this->suggestedCatalogFromSchema($schema) as $field) {
+            $rowsByKey[$field['key']] = $this->entitySuggestedRow($field, $activeByKey[$field['key']] ?? null);
         }
 
         foreach ($activeCustom as $field) {
-            $key = $field['key'];
-            if (isset($rowsByKey[$key])) {
+            if (isset($rowsByKey[$field['key']])) {
                 continue;
             }
 
-            $rowsByKey[$key] = [
-                'active' => true,
-                'key' => $key,
-                'type' => $field['type'],
-                'label' => $field['label'],
-                'required' => $field['required'],
-                'summaryView' => $field['summaryView'],
-                'locked' => false,
-                'source' => 'additional',
-            ];
-            if (isset($field['options'])) {
-                $rowsByKey[$key]['options'] = $field['options'];
-            }
+            $rowsByKey[$field['key']] = $this->entityAdditionalRow($field);
         }
 
         return [
             'fields' => $this->fieldNormalizer->orderedRows($rowsByKey, $schema),
             'relations' => $this->relationsFromSchema($schema),
+            'layers' => $this->normalizeLayers($layers),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<int, array<string, mixed>>
+     */
+    private function activeCustomFieldsFromSchema(array $schema): array
+    {
+        if (!isset($schema['custom_fields']) || !is_array($schema['custom_fields'])) {
+            return [];
+        }
+
+        $activeCustom = [];
+        foreach ($schema['custom_fields'] as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $normalized = $this->fieldNormalizer->normalizeFieldDefinition($entry);
+            $normalized['origin'] = (string) ($entry['origin'] ?? 'suggested');
+            $activeCustom[] = $normalized;
+        }
+
+        return $activeCustom;
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     * @return array<string, mixed>
+     */
+    private function entityBaseRow(array $field): array
+    {
+        return [
+            'active' => true,
+            'key' => $field['key'],
+            'type' => $field['type'],
+            'label' => $field['label'],
+            'required' => $field['required'],
+            'summaryView' => $field['summaryView'],
+            'locked' => true,
+            'source' => 'base',
+            'resortable' => $field['resortable'] ?? true,
+            'layer' => $field['layer'] ?? 'general',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $field the catalog (suggested) definition
+     * @param array<string, mixed>|null $activeField the active override, if any
+     * @return array<string, mixed>
+     */
+    private function entitySuggestedRow(array $field, ?array $activeField): array
+    {
+        $row = [
+            'active' => $activeField !== null,
+            'key' => $field['key'],
+            'type' => (string) ($activeField['type'] ?? $field['type']),
+            'label' => (string) ($activeField['label'] ?? $field['label']),
+            'required' => (bool) ($activeField['required'] ?? $field['required']),
+            'summaryView' => (bool) ($activeField['summaryView'] ?? $field['summaryView']),
+            'locked' => false,
+            'source' => 'suggested',
+            'resortable' => $field['resortable'] ?? true,
+            'layer' => (string) ($activeField['layer'] ?? $field['layer'] ?? 'general'),
+        ];
+        $rowOptions = $activeField['options'] ?? $field['options'] ?? null;
+        if ($rowOptions !== null) {
+            $row['options'] = $rowOptions;
+        }
+
+        return $row;
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     * @return array<string, mixed>
+     */
+    private function entityAdditionalRow(array $field): array
+    {
+        $row = [
+            'active' => true,
+            'key' => $field['key'],
+            'type' => $field['type'],
+            'label' => $field['label'],
+            'required' => $field['required'],
+            'summaryView' => $field['summaryView'],
+            'locked' => false,
+            'source' => 'additional',
+            'layer' => $field['layer'] ?? 'general',
+        ];
+        if (isset($field['options'])) {
+            $row['options'] = $field['options'];
+        }
+
+        return $row;
+    }
+
+    /**
+     * Read-only catalog of named UI zones a plugin declares in
+     * manifest_json.layers (STORY 10.5) — fixed on disk, never editable
+     * from PluginConfig; only used to populate the "Capa" select's options.
+     * Duplicated verbatim in ExtensionPluginConfigService (same pattern
+     * already used for relationsFromSchema() — not worth a shared class for
+     * a permissive, unvalidated read-side projection).
+     *
+     * @param array<int, mixed> $layers
+     * @return array<int, array{key: string, label: string}>
+     */
+    private function normalizeLayers(array $layers): array
+    {
+        $normalized = [];
+        foreach ($layers as $entry) {
+            if (!is_array($entry) || !is_string($entry['key'] ?? null) || $entry['key'] === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'key' => $entry['key'],
+                'label' => (string) ($entry['label'] ?? $entry['key']),
+            ];
+        }
+
+        return $normalized;
     }
 
     /**
      * Permissive read-side projection of schema.relations — tolerant of a
      * malformed/legacy entry (skips it) since this feeds a GET response, not
-     * a write path; strict validation only happens in compileRelationsPayload()
-     * when the admin actually saves a change (STORY 10.3 §8).
+     * a write path; strict validation only happens in
+     * RelationsPayloadCompiler::compile() when the admin actually saves a
+     * change (STORY 10.3 §8). `layer` (renamed from `group`, STORY 10.5) has
+     * no meaning for entity relations (extension-only named UI zone) but is
+     * carried through anyway so both plugin types share one relation shape.
      *
      * @param array<string, mixed> $schema
-     * @return array<int, array{key: string, type: string, target_entity: string, target_field: string, label: string, required: bool}>
+     * @return array<int, array{key: string, type: string, target_entity: string, target_field: string, label: string, required: bool, layer: string}>
      */
     private function relationsFromSchema(array $schema): array
     {
@@ -308,90 +389,11 @@ final class PluginConfigService
                 'target_field' => (string) ($entry['target_field'] ?? ''),
                 'label' => (string) ($entry['label'] ?? $entry['key']),
                 'required' => (bool) ($entry['required'] ?? false),
+                'layer' => (string) ($entry['layer'] ?? 'general'),
             ];
         }
 
         return $relations;
-    }
-
-    /**
-     * Validates and normalizes payload['relations'] rows for saveConfig()/
-     * registerNew() — entity plugins only (extension plugins return early in
-     * applyConfigPayload() before reaching this). type is always forced to
-     * 'belongs_to' (STORY 10.3 §8 decision #8: the only shape this UI
-     * exposes); target_entity must be an active entity plugin; target_field
-     * must be a key declared in that entity's schema.identities block
-     * (decision #9); a relation key must not collide with an already-used
-     * field key, or it would silently shadow a base/custom field's value in
-     * the record's content.
-     *
-     * @param array<int, mixed> $rows
-     * @param array<string, bool> $fieldKeys keys already claimed by base/custom fields on this same plugin
-     * @return array<int, array{key: string, type: string, target_entity: string, target_field: string, label: string, required: bool}>
-     */
-    private function compileRelationsPayload(array $rows, array $fieldKeys): array
-    {
-        $activeEntities = $this->pluginRepository->listActiveEntitySlugs();
-        $compiled = [];
-        $seenKeys = [];
-
-        foreach ($rows as $entry) {
-            if (!is_array($entry)) {
-                throw new InvalidArgumentException('Each relation row must be an object.');
-            }
-
-            $key = trim((string) ($entry['key'] ?? ''));
-            if ($key === '') {
-                throw new InvalidArgumentException('Relation key is required.');
-            }
-            if (isset($seenKeys[$key]) || isset($fieldKeys[$key])) {
-                throw new InvalidArgumentException("Relation key '{$key}' collides with an existing field or relation.");
-            }
-            $seenKeys[$key] = true;
-
-            $targetEntity = trim((string) ($entry['target_entity'] ?? ''));
-            if (!in_array($targetEntity, $activeEntities, true)) {
-                throw new InvalidArgumentException("Relation '{$key}': target_entity '{$targetEntity}' is not an active entity.");
-            }
-
-            $targetField = trim((string) ($entry['target_field'] ?? ''));
-            if (!in_array($targetField, $this->targetEntityIdentityKeys($targetEntity), true)) {
-                throw new InvalidArgumentException("Relation '{$key}': target_field '{$targetField}' is not a declared identity of '{$targetEntity}'.");
-            }
-
-            $label = trim((string) ($entry['label'] ?? ''));
-
-            $compiled[] = [
-                'key' => $key,
-                'type' => 'belongs_to',
-                'target_entity' => $targetEntity,
-                'target_field' => $targetField,
-                'label' => $label === '' ? $key : $label,
-                'required' => (bool) ($entry['required'] ?? false),
-            ];
-        }
-
-        return $compiled;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function targetEntityIdentityKeys(string $targetEntitySlug): array
-    {
-        if ($targetEntitySlug === '') {
-            return [];
-        }
-
-        $targetPlugin = $this->pluginRepository->findBySlug($targetEntitySlug);
-        if ($targetPlugin === null) {
-            return [];
-        }
-
-        $decoded = json_decode((string) ($targetPlugin['schema_json'] ?? ''), true);
-        $identities = is_array($decoded) && is_array($decoded['identities'] ?? null) ? $decoded['identities'] : [];
-
-        return array_values(array_filter(array_keys($identities), 'is_string'));
     }
 
     /**
@@ -412,6 +414,8 @@ final class PluginConfigService
                 'required' => $definition['required'] ?? false,
                 'label' => $definition['label'] ?? $key,
                 'summaryView' => $definition['summaryView'] ?? true,
+                'resortable' => $definition['resortable'] ?? true,
+                'layer' => $definition['layer'] ?? 'general',
             ]);
         }
 
@@ -477,19 +481,15 @@ final class PluginConfigService
             $uiOrder[] = $key;
 
             if (isset($baseByKey[$key])) {
-                $base = $baseByKey[$key];
-                $invalidBase = !$row['active'] || (
-                    $row['type'] !== $base['type']
-                    || $row['label'] !== $base['label']
-                    || $row['required'] !== $base['required']
-                );
-                if ($invalidBase) {
-                    throw new InvalidArgumentException("Base field '{$key}' cannot be edited or deactivated.");
-                }
+                $this->assertUnchangedEntityBaseRow($row, $baseByKey[$key], $key);
                 continue;
             }
 
             $isSuggested = isset($catalogByKey[$key]);
+            if ($isSuggested) {
+                $this->assertLayerRespectsResortable($row, $catalogByKey[$key], $key);
+            }
+
             $candidate = [
                 'key' => $row['key'],
                 'type' => $row['type'],
@@ -497,6 +497,7 @@ final class PluginConfigService
                 'required' => $row['required'],
                 'summaryView' => $row['summaryView'],
                 'origin' => $isSuggested ? 'suggested' : 'additional',
+                'layer' => $row['layer'],
             ];
             if (isset($row['options'])) {
                 $candidate['options'] = $row['options'];
@@ -517,5 +518,51 @@ final class PluginConfigService
             'suggested_catalog' => $suggestedCatalog,
             'active_custom_fields' => $activeCustomFields,
         ];
+    }
+
+    /**
+     * Base entity fields are immutable through PluginConfig for every
+     * attribute — the payload row must arrive active and identical to the
+     * schema definition, or the whole save is rejected.
+     *
+     * @param array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool} $row
+     * @param array{key: string, type: string, required: bool, label: string} $base
+     */
+    private function assertUnchangedEntityBaseRow(array $row, array $base, string $key): void
+    {
+        $invalidBase = !$row['active'] || (
+            $row['type'] !== $base['type']
+            || $row['label'] !== $base['label']
+            || $row['required'] !== $base['required']
+        );
+        if ($invalidBase) {
+            throw new InvalidArgumentException("Base field '{$key}' cannot be edited or deactivated.");
+        }
+    }
+
+    /**
+     * A field with `resortable: false` has its UI zone fixed (STORY 10.5
+     * "layers" convention) the same way its display order is fixed —
+     * reassigning its layer from PluginConfig would be as misleading as
+     * reordering it. Mirrors
+     * ExtensionPluginConfigService::assertLayerRespectsResortable(); base
+     * entity fields don't need this check (they're already immutable for
+     * everything via $invalidBase above, for a separate structural reason —
+     * schema['fields'] is never rewritten for entity plugins at all).
+     *
+     * @param array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool, layer: string} $row
+     * @param array{key: string, type: string, required: bool, label: string, resortable?: bool, layer?: string} $existingCatalogEntry
+     */
+    private function assertLayerRespectsResortable(array $row, array $existingCatalogEntry, string $key): void
+    {
+        $resortable = ($existingCatalogEntry['resortable'] ?? true) !== false;
+        if ($resortable) {
+            return;
+        }
+
+        $existingLayer = (string) ($existingCatalogEntry['layer'] ?? 'general');
+        if ($row['layer'] !== $existingLayer) {
+            throw new InvalidArgumentException("Field '{$key}' is not resortable, its layer cannot be reassigned.");
+        }
     }
 }

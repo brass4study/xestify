@@ -27,7 +27,15 @@ Nota: `onUpdate` y `onRollback` son opcionales — un plugin los declara impleme
 - afterDelete — implementado en `EntityService::deleteRecord()`, no bloqueante
 
 3. Hooks de UI
-- registerTabs
+- registerTabs — un plugin `extension` puede devolver por tab, más allá
+  del mínimo `{id, label, endpoint}`: `{icon, plugin_name, entity,
+  relations, fields}` (STORY 10.5). `entity` es el slug de la entidad
+  activa; `relations` son las relaciones declaradas en `schema.json`
+  (misma forma que en entidades, más `layer`); `fields` son **solo** los
+  campos con `origin: 'additional'` (añadidos después vía "Añadir campo"
+  en `PluginConfig`) — los campos originales del plugin tienen UI escrita
+  a mano y nunca se embeben aquí. Ver `docs/01-architecture/plugins.md`
+  ("Convención `layers`") para el detalle completo.
 - registerActions
 - registerWidgets
 

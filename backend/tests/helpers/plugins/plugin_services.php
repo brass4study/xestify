@@ -24,6 +24,7 @@ use Xestify\plugins\lifecycle\PluginLifecycleInvoker;
 use Xestify\plugins\schema\ExtensionPluginConfigService;
 use Xestify\plugins\schema\PluginConfigFieldNormalizer;
 use Xestify\plugins\schema\PluginConfigService;
+use Xestify\plugins\schema\RelationsPayloadCompiler;
 use Xestify\controllers\ExtensionPluginDataStore;
 use Xestify\repositories\GenericRepository;
 use Xestify\repositories\PluginRepository;
@@ -138,13 +139,14 @@ function buildPluginIdentityService(\PDO $pdo): PluginIdentityService
 function buildPluginConfigService(string $root, \PDO $pdo): PluginConfigService
 {
     $fieldNormalizer = new PluginConfigFieldNormalizer();
+    $relationsCompiler = new RelationsPayloadCompiler(buildPluginRepository($pdo));
 
     return new PluginConfigService(
         buildPluginWriteRepository($pdo),
-        new ExtensionPluginConfigService(buildPluginRepository($pdo), $fieldNormalizer),
+        new ExtensionPluginConfigService(buildPluginRepository($pdo), $fieldNormalizer, $relationsCompiler),
         $fieldNormalizer,
         buildPluginSourceService($root, $pdo),
-        buildPluginRepository($pdo)
+        $relationsCompiler
     );
 }
 

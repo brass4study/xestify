@@ -10,7 +10,7 @@ final class PluginConfigFieldNormalizer
 {
     /**
      * @param array<int, mixed> $rows
-     * @return array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool, options?: array<int, array{value: string, label: string}>}>
+     * @return array<int, array{active: bool, key: string, type: string, label: string, required: bool, summaryView: bool, layer: string, options?: array<int, array{value: string, label: string}>}>
      */
     public function normalizePayloadRows(array $rows): array
     {
@@ -28,6 +28,11 @@ final class PluginConfigFieldNormalizer
                 'label' => $field['label'],
                 'required' => $field['required'],
                 'summaryView' => (bool) ($entry['summaryView'] ?? true),
+                // Unlike resortable (author-locked, never sent by the
+                // payload), layer travels through the payload — an admin is
+                // allowed to reassign it from PluginConfig (STORY 10.5,
+                // "layers" convention), so it must survive round-trip here.
+                'layer' => $field['layer'],
             ];
             if (isset($field['options'])) {
                 $row['options'] = $field['options'];
@@ -40,7 +45,7 @@ final class PluginConfigFieldNormalizer
 
     /**
      * @param array<string, mixed> $entry
-     * @return array{key: string, type: string, required: bool, label: string, summaryView: bool, options?: array<int, array{value: string, label: string}>}
+     * @return array{key: string, type: string, required: bool, label: string, summaryView: bool, layer: string, options?: array<int, array{value: string, label: string}>}
      */
     public function normalizeFieldDefinition(array $entry): array
     {
@@ -70,6 +75,18 @@ final class PluginConfigFieldNormalizer
             'required' => (bool) ($entry['required'] ?? false),
             'label' => $label,
             'summaryView' => (bool) ($entry['summaryView'] ?? true),
+            // Opt-out flag a plugin author sets in schema.json for a field
+            // whose position is hardcoded by that plugin's own hand-built UI
+            // (e.g. plugins/optometries/plugin.js reads od_distance_sphere by
+            // key, never by schema iteration order) — PluginConfig hides the
+            // Subir/Bajar buttons for that row so it doesn't suggest a reorder
+            // that would have no visible effect. Defaults true (movable).
+            'resortable' => (bool) ($entry['resortable'] ?? true),
+            // Named UI zone (STORY 10.5 "layers" convention — e.g. 'od'/'os'/
+            // 'general' for optometries), admin-editable from PluginConfig's
+            // "Capa" column when the plugin declares a `layers` catalog.
+            // Defaults to 'general'.
+            'layer' => trim((string) ($entry['layer'] ?? '')) ?: 'general',
         ];
 
         if ($type === 'select') {

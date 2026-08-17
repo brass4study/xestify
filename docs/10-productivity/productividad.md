@@ -1326,3 +1326,73 @@
 - **Decisión manual:** El usuario pidió explícitamente revisar hallazgos de
   SonarQube antes de cerrar la story, en vez de darla por completa solo con
   los tests en verde.
+
+### STORY 10.5: Plugins de demostración — extensiones `optometries`, `contact_lenses`
+
+- **Fecha:** 2026-08-17
+- **Estimado sin IA:** 16h (2 plugins de extensión con historial de varios
+  registros por owner, más dos capacidades de núcleo nuevas — `relations`
+  en extensiones y validación server-side —, un sistema de organización de
+  UI (`layers`) transversal a todo plugin, componente SVG reutilizable,
+  página independiente de ficha con routing SPA nuevo, y una decena de
+  rondas de ajuste visual iterativo contra un sketch de referencia)
+- **Tiempo real con IA:** ~3h
+- **Aceleración:** ~81% ⚡
+- **Qué hizo IA:**
+  - Detectó, antes de implementar (revisando el AC original a la luz de que
+    Marca/Fabricante/Distribuidor/Oftalmólogo/Optometrista debían ser
+    relaciones reales, no selects fijos), que los plugins `extension` no
+    tenían soporte de `relations` en absoluto y que
+    `PluginExtensionController` no validaba `content` contra schema en el
+    servidor — dos huecos de núcleo que había que cerrar antes de poder
+    empezar los plugins de demostración en sí.
+  - Diseñó y cerró con el usuario, en varias rondas de `AskUserQuestion`, la
+    convención general `layers` (catálogo en `manifest.json`, no en
+    `schema.json` — corrección del propio usuario sobre un borrador
+    intermedio) y `resortable` (bloquea también la reasignación de capa,
+    no solo Subir/Bajar — segunda corrección del usuario sobre el mismo
+    diseño), documentando el razonamiento de cada corrección en el plan en
+    vez de solo aplicarla.
+  - Encontró por su cuenta, escribiendo `contact-lenses/Hooks.php`, que el
+    nombre literal del AC original (`contact-lenses`, con guion) rompe la
+    sintaxis del namespace PHP que `PluginClassLoader` construye por
+    concatenación — lo detectó y corrigió (renombre a `contact_lenses`)
+    antes de sincronizar nada en BD, no como un bug encontrado después.
+  - Diagnosticó y corrigió 5 bugs no relacionados con el diseño de la
+    story, encontrados al construir/verificar sus propias piezas: un campo
+    `auto_generated` fuera de `identities` rompiendo `ValidationService`
+    tras conectar la validación nueva; `DynamicTable` recortando a 10
+    registros incluso con paginación desactivada; `resortable`/`layer`
+    perdiéndose silenciosamente al reconstruir estado desde el DOM tras un
+    Subir/Bajar en `PluginConfig.js`; una etiqueta de gauge invisible por
+    quedar fuera del `viewBox`; y una densidad "compact" que no compactaba
+    por convivencia de clases CSS (`classList.add` sobre una clase base ya
+    presente).
+  - Reescribió `plugin.js` de `optometries` completo, desde 0, tres veces
+    en la misma sesión, cada vez en respuesta a feedback visual concreto
+    del usuario contra un sketch de referencia (estructura por capas,
+    geometría del gauge, adopción de `DynamicTable` para la tabla de
+    medidas, estilo de formulario) — y extrajo las partes genéricas a un
+    módulo compartido (`ExtensionLayerFields.js`) antes de escribir el
+    segundo plugin, para no duplicar la lógica de orquestación por capas.
+  - Reutilizó la infraestructura de navegación de la Tercera ronda de
+    STORY 10.2/10.3 (router SPA, `PluginItemEdit.js` genérica) sin
+    necesitar ningún cambio para el segundo plugin — confirmando la
+    predicción de diseño de que sería reutilizable sin tocar.
+- **Iteraciones:** 15+ (núcleo relations/validación, 3+ rondas de
+  `AskUserQuestion` sobre `layers`/`resortable`, reescritura completa de
+  `plugin.js` ×3 con verificación visual del usuario entre cada una,
+  hallazgo y corrección del nombre inválido de `contact_lenses`, 5 bugs
+  diagnosticados durante la propia construcción, pase de SonarQube, cierre
+  de documentación en 7 ficheros).
+- **Decisión manual:** El usuario corrigió dos veces seguidas el mismo
+  diseño de `layers` (primero moviendo el catálogo de `schema.json` a
+  `manifest.json`, después extendiendo `resortable` para que también
+  bloquee la capa) antes de darlo por cerrado.
+- **Decisión manual:** El usuario pidió explícitamente rehacer
+  `plugin.js` de `optometries` "desde 0" tras verlo en el navegador, en
+  vez de aceptar ajustes incrementales sobre la primera versión.
+- **Decisión manual:** El usuario decidió, vía `AskUserQuestion`, que la
+  columna "Adición" de `contact_lenses` se queda fija (no se convierte en
+  fila) pese a que Radio/Diámetro/Uso/Pack y las relaciones por ojo sí
+  pasaron a ser filas de la tabla con `colSpan` completo.

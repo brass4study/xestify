@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-16
-> **Estado del proyecto:** **STORY 10.4 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.5`
+> **Última actualización:** 2026-08-17
+> **Estado del proyecto:** **STORY 10.5 incluida** — EPIC 9 cerrada, siguiente foco `STORY 10.6`
 
 ---
 
@@ -46,7 +46,13 @@ El corte funcional vigente del producto queda fijado en:
 - `STORY 10.4` completada (plugins de demostración `orders`/`invoices`/`basic`;
   `purchases` descartado por redundante; primer uso real end-to-end de
   `relations` en `invoices → orders`)
-- siguiente foco funcional: `STORY 10.5` (plugins de demostración — extensiones)
+- `STORY 10.5` completada (plugins de demostración de extensión
+  `optometries`/`contact_lenses`; `relations` y validación server-side
+  extendidas a plugins `extension`; convención general `layers`/`resortable`;
+  página independiente de ficha para plugins con historial de varios
+  registros por owner)
+- siguiente foco funcional: `STORY 10.6` (datos de ejemplo para los plugins
+  de demostración)
 
 ### Funcionalidades nucleares (Core)
 
@@ -605,8 +611,9 @@ La secuencia recomendada, por fases, es:
 1. **Continuar la Fase 10, ya abierta** (`STORY 10.1` — mejoras en la sección de
    login —, `STORY 10.2` — rename `clients` → `persons` —, `STORY 10.3` —
    `plugin_name`/`slug`, `manifest_json`, altas/borrado/relaciones — y
-   `STORY 10.4` — plugins de demostración de entidad `orders`/`invoices`/`basic` — cerradas)
-   - plugins de demostración de extensión (`STORY 10.5`)
+   `STORY 10.4` — plugins de demostración de entidad `orders`/`invoices`/`basic` —,
+   `STORY 10.5` — plugins de demostración de extensión `optometries`/`contact_lenses`,
+   `relations` en extensiones y convención `layers` — cerradas)
    - datos de ejemplo para los plugins de demostración (`STORY 10.6`)
 
 2. **Cerrar el MVP con la Fase 11 y luego abordar las adiciones post-MVP**

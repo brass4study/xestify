@@ -36,7 +36,7 @@ export class TableComponent extends BaseComponent {
 
   _render() {
     const densityClasses = {
-      compact: { header: 'px-3 py-2.5', cell: 'px-3 py-1' },
+      compact: { header: 'px-3 py-1.5', cell: 'px-3 py-1' },
       middle: { header: 'px-3 py-2.5', cell: 'px-3 py-2.5' },
       relaxed: { header: 'px-3 py-4', cell: 'px-3 py-4' },
     };

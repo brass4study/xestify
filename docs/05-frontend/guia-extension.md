@@ -91,7 +91,10 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
 
 1. **Backend**: el plugin registra el hook `registerTabs` (ver
    `docs/04-plugins/`) devolviendo `{ id, label, endpoint }` por cada tab que
-   aporta para la entidad activa.
+   aporta para la entidad activa (opcionalmente también `icon`,
+   `plugin_name`, `entity` y `relations`/`fields` si el plugin declara
+   relaciones o campos añadidos después vía "Añadir campo" — STORY 10.5,
+   ver `docs/01-architecture/hooks.md`).
 2. **Frontend — carga**: `EntityEdit` pide `GET /entities/{slug}/tabs`,
    importa dinámicamente `plugins/{plugin_name}/plugin.js` para cada tab de
    plugin recibida (`#loadPluginModules`, usa `tab.plugin_name`, la identidad
@@ -125,6 +128,30 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
    muestra un panel de fallback (`#buildFallbackPanel`) en vez de romper el
    resto de la vista.
 
+## Añadir un plugin de extensión con historial de ítems en página independiente
+
+Aplica cuando el plugin guarda **varios registros por owner** (una ficha
+por fecha, no un único registro — ej. `optometries`, `contact_lenses`,
+STORY 10.5), a diferencia del panel inline simple de la sección anterior
+(un solo registro, ej. `comments`).
+
+Contrato adicional sobre el de arriba:
+- `plugin.js` exporta `buildDetailForm(content, relations, loadOptions,
+  extraFields)` — no acoplado a `PluginPanelRegistry`, es una función
+  reutilizada directamente por `frontend/src/js/views/pages/
+  PluginItemEdit.js`.
+- `PluginItemEdit.js` **es genérica** (no específica de ningún plugin) y
+  **no necesita tocarse** al añadir un plugin nuevo de este tipo — resuelve
+  el tab/endpoint/relations vía `GET /entities/{slug}/tabs`, importa
+  dinámicamente el `plugin.js` del plugin y llama a su
+  `buildDetailForm()` exportado.
+- El panel inline (`{element, flush}`) que sigue registrándose en
+  `PluginPanelRegistry` queda reducido a listar el historial con
+  `DynamicTable` y navegar a la ficha (`onNavigateToItem`) — `flush()`
+  pasa a ser un no-op, sin staging en memoria.
+- Rutas nuevas: `#/entity/:slug/:id/:tab/#new` y
+  `#/entity/:slug/:id/:tab/:itemId` (ver `navegacion-anatomia.md`).
+
 ## Checklist rápida
 
 **Voy a añadir una página nueva del core:**
@@ -142,6 +169,9 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
 - [ ] Autorregistro con `PluginPanelRegistry.register(slug, Clase)` al final del módulo
 - [ ] `flush(resolvedId)` persiste contra el endpoint propio del plugin, no contra `/records`
 - [ ] Probado con un registro nuevo (sin `recordId`) y uno existente
+- [ ] Si el plugin tiene historial de ítems (varios registros por owner),
+      exporta `buildDetailForm` reutilizable por `PluginItemEdit.js` (ver
+      sección dedicada arriba) en vez de un formulario inline en el panel
 
 ## Referencias
 

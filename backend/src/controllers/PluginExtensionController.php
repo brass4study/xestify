@@ -82,6 +82,12 @@ class PluginExtensionController
             return;
         }
 
+        $result = $this->contentService->validate($context['plugin_slug'], $data);
+        if (!$result->isValid()) {
+            Response::make()->unprocessable('Validation failed.', $result->errors());
+            return;
+        }
+
         $data = $this->contentService->normalizeContentBySchema($context['plugin_slug'], $data, $context['request']);
         $row = $this->dataStore->insertRow($context['plugin_slug'], $context['entity'], $context['record_id'], $data);
 
@@ -105,6 +111,12 @@ class PluginExtensionController
         }
 
         if (!$this->guardOwnership($context)) {
+            return;
+        }
+
+        $result = $this->contentService->validate($context['plugin_slug'], $data, false);
+        if (!$result->isValid()) {
+            Response::make()->unprocessable('Validation failed.', $result->errors());
             return;
         }
 

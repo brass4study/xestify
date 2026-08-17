@@ -43,19 +43,31 @@ function createPluginFixture(
     $jsonContent = $invalidJson ? '{bad json' : (string) json_encode($manifest, JSON_PRETTY_PRINT);
     file_put_contents($pluginDir . '/manifest.json', $jsonContent);
 
-    if (($manifest['type'] ?? '') === 'entity' && !$invalidJson) {
-        $schema ??= [
-            'version' => $manifest['version'] ?? '1.0.0',
-            'identities' => [
-                'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
-            ],
-            'fields' => [
-                'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
-            ],
-            'custom_fields' => [],
-            'relations' => [],
-        ];
-        file_put_contents($pluginDir . '/schema.json', (string) json_encode($schema, JSON_PRETTY_PRINT));
+    if (!$invalidJson) {
+        if ($schema === null && ($manifest['type'] ?? '') === 'entity') {
+            $schema = [
+                'version' => $manifest['version'] ?? '1.0.0',
+                'identities' => [
+                    'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+                ],
+                'fields' => [
+                    'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+                ],
+                'custom_fields' => [],
+                'relations' => [],
+            ];
+        }
+
+        // An explicit $schema is honored for any plugin type, not just
+        // 'entity' — extension plugins tolerate a missing schema.json fine
+        // (PluginSourceService::readSchema() falls back to an empty
+        // schema), but a caller that DOES pass one (e.g. to fixture a field
+        // with resortable:false/layer already declared on disk before
+        // registerNew() runs) needs it actually written, or it's silently
+        // dropped.
+        if ($schema !== null) {
+            file_put_contents($pluginDir . '/schema.json', (string) json_encode($schema, JSON_PRETTY_PRINT));
+        }
     }
 
     if ($withHooks) {

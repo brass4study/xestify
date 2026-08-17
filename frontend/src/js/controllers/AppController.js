@@ -5,10 +5,14 @@ import { PluginRouteController } from './PluginRouteController.js';
 import {
   entityCreatePage,
   entityPage,
+  entityPluginItemCreatePage,
+  entityPluginItemPage,
   entityRecordPage,
   entityTabPage,
   getPageFromHash,
   hashFromPage,
+  parseEntityPluginItemCreatePage,
+  parseEntityPluginItemPage,
   parseEntityRecordPage,
   parseEntityTabPage,
   userDetailPage,
@@ -26,6 +30,7 @@ import { EntityEdit } from '../views/pages/EntityEdit.js';
 import { EntityList } from '../views/pages/EntityList.js';
 import { Login } from '../views/pages/Login.js';
 import { PluginConfig } from '../views/pages/PluginConfig.js';
+import { PluginItemEdit } from '../views/pages/PluginItemEdit.js';
 import { PluginManager } from '../views/pages/PluginManager.js';
 import { UserConfig } from '../views/pages/UserConfig.js';
 import { UserManager } from '../views/pages/UserManager.js';
@@ -603,6 +608,14 @@ export class AppController {
         run: (nextPage) => this.showEntityTabPage(nextPage),
       },
       {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-plugin-item-create:'),
+        run: (nextPage) => this.showEntityPluginItemCreatePage(nextPage),
+      },
+      {
+        matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-plugin-item:'),
+        run: (nextPage) => this.showEntityPluginItemPage(nextPage),
+      },
+      {
         matches: (nextPage) => typeof nextPage === 'string' && nextPage.startsWith('entity-record:'),
         run: (nextPage) => this.showEntityRecordPage(nextPage),
       },
@@ -677,6 +690,78 @@ export class AppController {
     }
 
     await this.showEntityEdit(parsed.slug, parsed.recordId, null, parsed.tabId);
+  }
+
+  async showEntityPluginItemCreatePage(page) {
+    const parsed = parseEntityPluginItemCreatePage(page);
+    if (parsed === null) {
+      this.showPlaceholder('No se pudo abrir el formulario de nueva ficha.');
+      return;
+    }
+
+    await this.showPluginItemEdit(parsed.slug, parsed.recordId, parsed.tabId, null);
+  }
+
+  async showEntityPluginItemPage(page) {
+    const parsed = parseEntityPluginItemPage(page);
+    if (parsed === null) {
+      this.showPlaceholder('No se pudo abrir la ficha.');
+      return;
+    }
+
+    await this.showPluginItemEdit(parsed.slug, parsed.recordId, parsed.tabId, parsed.itemId);
+  }
+
+  /**
+   * @param {string} slug entity slug (e.g. 'clients')
+   * @param {string} recordId owner record id
+   * @param {string} tabId plugin instance slug (e.g. 'optometries')
+   * @param {string|null} itemId null means "new item"
+   */
+  async showPluginItemEdit(slug, recordId, tabId, itemId) {
+    this.contentContainer.replaceChildren();
+    this.showPlaceholder('Cargando ficha...');
+
+    const schema = await this.loadEntitySchema(slug);
+    const recordData = schema === null ? null : await this.loadEntityRecord(slug, recordId);
+    const recordSummary = (schema !== null && recordData !== null)
+      ? recordSummaryLabel(schema, recordData, recordId)
+      : null;
+
+    // resolveEntityTabLabel() reads entityTabsBySlug, normally only populated
+    // by EntityEdit's onTabsReady — a direct navigation to this page (fresh
+    // load, bookmark, refresh) never ran that, so without this the
+    // breadcrumb/title would fall back to the raw tab id ('optometries')
+    // instead of its label ('Optometría').
+    const tabs = await this.loadEntityTabs(slug);
+    if (tabs !== null) {
+      this.entityTabsBySlug.set(slug, tabs);
+    }
+
+    const pageToken = itemId === null
+      ? entityPluginItemCreatePage(slug, recordId, tabId)
+      : entityPluginItemPage(slug, recordId, tabId, itemId);
+    const template = this.buildTemplateDefinition(pageToken, { recordSummary });
+    const pageHeader = template.pageHeader ?? {};
+
+    this.contentContainer.replaceChildren();
+    PageLayout.create(this.contentContainer, { shell: this.shellLayout })
+      .setBreadcrumbs(template.breadcrumbs ?? []);
+
+    const itemEdit = new PluginItemEdit(this.contentContainer, {
+      api: this.dashboardApi,
+      shellLayout: this.shellLayout,
+      entitySlug: slug,
+      recordId,
+      pluginSlug: tabId,
+      itemId,
+      title: pageHeader.title,
+      description: pageHeader.subtitle,
+      onDone: async () => {
+        await this.router.navigate(entityTabPage(slug, recordId, tabId), { updateHash: true });
+      },
+    });
+    await itemEdit.init();
   }
 
   async showPluginConfigPage(page) {
@@ -934,6 +1019,14 @@ export class AppController {
       onNavigateToRecord: async (sourceSlug, sourceRecordId) => {
         await this.router.navigate(entityRecordPage(sourceSlug, sourceRecordId), { updateHash: true });
       },
+      onNavigateToPluginItem: recordId === null
+        ? undefined
+        : (tabId, itemId) => {
+          const page = itemId === null
+            ? entityPluginItemCreatePage(slug, recordId, tabId)
+            : entityPluginItemPage(slug, recordId, tabId, itemId);
+          void this.router.navigate(page, { updateHash: true });
+        },
     });
     this.currentEntityEdit = entityEdit;
     this.currentEntityRoute = { slug, recordId };
@@ -951,6 +1044,17 @@ export class AppController {
     }
 
     return null;
+  }
+
+  /** @returns {Promise<Array<{id: string, label: string}>|null>} */
+  async loadEntityTabs(slug) {
+    try {
+      const { data } = await this.dashboardApi.get(`/entities/${slug}/tabs`);
+      const tabs = Array.isArray(data?.tabs) ? data.tabs : [];
+      return tabs.map((tab) => ({ id: tab.id, label: tab.label }));
+    } catch {
+      return null;
+    }
   }
 
   async loadEntityRecord(slug, recordId) {
@@ -1295,6 +1399,7 @@ export class AppController {
       this.resolveUsersTemplate.bind(this),
       this.resolveProfileTemplate.bind(this),
       this.resolveEntityCreateTemplate.bind(this),
+      this.resolveEntityPluginItemTemplate.bind(this),
       this.resolveEntityRecordTemplate.bind(this),
       this.resolveEntityListTemplate.bind(this),
     ];
@@ -1376,12 +1481,18 @@ export class AppController {
     const userName = typeof context.userName === 'string' && context.userName.trim() !== ''
       ? context.userName.trim()
       : null;
+    let userCrumbLabel = 'Detalle';
+    if (userName !== null) {
+      userCrumbLabel = `Usuario ${userName}`;
+    } else if (userId !== '') {
+      userCrumbLabel = `Usuario ${userId}`;
+    }
     return {
       template: 'detail',
       breadcrumbs: this.makeBreadcrumbItems([
         { label: 'Sistema' },
         { label: 'Usuarios', href: '#/users' },
-        { label: userName !== null ? `Usuario ${userName}` : (userId === '' ? 'Detalle' : `Usuario ${userId}`), active: true },
+        { label: userCrumbLabel, active: true },
       ]),
       pageHeader: {
         title: 'Detalle de usuario',
@@ -1428,6 +1539,48 @@ export class AppController {
         title: `Nuevo registro: ${label}`,
         subtitle: 'Completa los campos requeridos y guarda para continuar.',
       }
+    };
+  }
+
+  resolveEntityPluginItemTemplate(page, context = {}) {
+    const isCreate = page.startsWith('entity-plugin-item-create:');
+    const isItem = page.startsWith('entity-plugin-item:');
+    if (!isCreate && !isItem) {
+      return null;
+    }
+
+    const parsed = isCreate ? parseEntityPluginItemCreatePage(page) : parseEntityPluginItemPage(page);
+    if (parsed === null) {
+      return null;
+    }
+
+    const entityLabel = this.resolveEntityLabel(parsed.slug);
+    const tabLabel = this.resolveEntityTabLabel(parsed.slug, parsed.tabId);
+    const entityHref = `#/entity/${encodeURIComponent(parsed.slug)}`;
+    const recordHref = `${entityHref}/${encodeURIComponent(parsed.recordId)}`;
+    const recordSummary = typeof context.recordSummary === 'string' && context.recordSummary.trim() !== ''
+      ? context.recordSummary.trim()
+      : null;
+    const recordLabel = recordSummary !== null ? `Registro de ${recordSummary}` : `Registro ${parsed.recordId}`;
+    const tabLabelLower = tabLabel.toLowerCase();
+    const titlePrefix = isCreate ? `Nueva ficha de ${tabLabelLower}` : `Ficha de ${tabLabelLower}`;
+    const title = recordSummary !== null ? `${titlePrefix} de ${recordSummary}` : titlePrefix;
+
+    return {
+      template: 'detail',
+      breadcrumbs: this.makeBreadcrumbItems([
+        { label: 'Operaciones' },
+        { label: entityLabel, href: entityHref },
+        { label: recordLabel, href: recordHref },
+        { label: tabLabel, href: `${recordHref}/${encodeURIComponent(parsed.tabId)}` },
+        { label: isCreate ? 'Nueva ficha' : 'Ficha', active: true },
+      ]),
+      pageHeader: {
+        title,
+        subtitle: isCreate
+          ? 'Completa los datos y guarda para crear la ficha.'
+          : 'Consulta o edita los datos de esta ficha.',
+      },
     };
   }
 
@@ -1513,7 +1666,8 @@ export class AppController {
     }
 
     if (page.startsWith('entity:') || page.startsWith('entity-create:')
-      || page.startsWith('entity-record:') || page.startsWith('entity-tab:')) {
+      || page.startsWith('entity-record:') || page.startsWith('entity-tab:')
+      || page.startsWith('entity-plugin-item-create:') || page.startsWith('entity-plugin-item:')) {
       const slug = this.resolveEntitySlugFromPage(page);
       return slug === '' ? '' : `entity:${slug}`;
     }
@@ -1545,6 +1699,16 @@ export class AppController {
 
     if (page.startsWith('entity-tab:')) {
       const parsed = parseEntityTabPage(page);
+      return parsed === null ? '' : parsed.slug;
+    }
+
+    if (page.startsWith('entity-plugin-item-create:')) {
+      const parsed = parseEntityPluginItemCreatePage(page);
+      return parsed === null ? '' : parsed.slug;
+    }
+
+    if (page.startsWith('entity-plugin-item:')) {
+      const parsed = parseEntityPluginItemPage(page);
       return parsed === null ? '' : parsed.slug;
     }
 

@@ -71,6 +71,36 @@
         };
       }
 
+      if (url === '/plugins/resortable-mix/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'resortable-mix',
+              name: 'Resortable Mix',
+              plugin_type: 'extension',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 1,
+            },
+            config: {
+              target_entity: '*',
+              fields: [
+                { active: true, key: 'fixed_a', type: 'string', label: 'Fija A', required: false, locked: false, source: 'additional', resortable: false, layer: 'top' },
+                { active: true, key: 'movable', type: 'string', label: 'Movible', required: false, locked: false, source: 'additional', resortable: true, layer: 'top' },
+                { active: true, key: 'fixed_b', type: 'string', label: 'Fija B', required: false, locked: false, source: 'additional', resortable: false, layer: 'general' },
+              ],
+              relations: [
+                { key: 'owner', type: 'belongs_to', target_entity: 'persons', target_field: 'id', label: 'Owner', required: false, layer: 'general' },
+              ],
+              layers: [
+                { key: 'top', label: 'Arriba' },
+                { key: 'general', label: 'General' },
+              ],
+            },
+          },
+        };
+      }
+
       if (url === '/entities') {
         return {
           data: [
@@ -137,6 +167,31 @@
             config: {
               target_entity: body.target_entity,
               fields: body.fields,
+              relations: body.relations,
+            },
+          },
+        };
+      }
+
+      if (url === '/plugins/resortable-mix/config') {
+        return {
+          data: {
+            plugin: {
+              slug: 'resortable-mix',
+              name: 'Resortable Mix',
+              plugin_type: 'extension',
+              status: 'active',
+              version: '1.0.0',
+              schema_version: 2,
+            },
+            config: {
+              target_entity: body.target_entity,
+              fields: body.fields,
+              relations: body.relations,
+              layers: [
+                { key: 'top', label: 'Arriba' },
+                { key: 'general', label: 'General' },
+              ],
             },
           },
         };
@@ -356,6 +411,7 @@
     await new Promise((resolve) => setTimeout(resolve, 40));
 
     assertEquals(api.savedPayload.target_entity, 'persons', 'Debe enviar target_entity al guardar extension');
+    assertTrue(Array.isArray(api.savedPayload.relations), 'Debe enviar tambien relations al guardar extension, igual que un plugin entity (STORY 10.5)');
   });
 
   await test('plugin extension muestra campos base sin mentir sobre su origen', async () => {
@@ -432,7 +488,30 @@
       'Borrar fila no debe descartar la edicion de otra fila');
   });
 
-  await test('renderiza la seccion Relaciones para plugin entity con columnas esperadas, y no para extension', async () => {
+  await test('resortable=false se respeta tras mover otra fila (no debe reaparecer Subir/Bajar en filas fijas)', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'resortable-mix', api });
+    await page.init();
+
+    const findRowByKey = (key) => [...container.querySelectorAll('[data-role="plugin-config-table"] tbody tr')]
+      .find((rowEl) => rowEl.querySelector('[data-name="key"]')?.value === key);
+
+    const hasMoveButtons = (rowEl) => rowEl.querySelector('[data-action="move-up"]') !== null
+      || rowEl.querySelector('[data-action="move-down"]') !== null;
+
+    assertTrue(!hasMoveButtons(findRowByKey('fixed_a')), 'fixed_a (resortable:false) no debe tener botones Subir/Bajar antes de mover nada');
+    assertTrue(hasMoveButtons(findRowByKey('movable')), 'movable (resortable:true) si debe tener botones Subir/Bajar');
+    assertTrue(!hasMoveButtons(findRowByKey('fixed_b')), 'fixed_b (resortable:false) no debe tener botones Subir/Bajar antes de mover nada');
+
+    findRowByKey('movable').querySelector('[data-action="move-down"]').click();
+
+    assertTrue(!hasMoveButtons(findRowByKey('fixed_a')), 'fixed_a debe seguir sin Subir/Bajar tras mover otra fila (regresion: syncStateFromDom no debe descartar resortable)');
+    assertTrue(!hasMoveButtons(findRowByKey('fixed_b')), 'fixed_b debe seguir sin Subir/Bajar tras mover otra fila (regresion: syncStateFromDom no debe descartar resortable)');
+  });
+
+  await test('renderiza la seccion Relaciones editable para entity y para extension, sin columna Capa cuando el plugin no declara layers', async () => {
     const container = makeSandbox();
     const api = new MockApi();
 
@@ -440,15 +519,101 @@
     await page.init();
 
     const headers = [...container.querySelectorAll('[data-role="plugin-config-relations-table"] thead th')].map((th) => th.textContent.trim());
-    assertEquals(headers.join('|'), 'Clave|Entidad destino|Campo destino|Etiqueta|Requerido|Acciones', 'Debe renderizar columnas de relaciones esperadas');
+    assertEquals(headers.join('|'), 'Clave|Entidad destino|Campo destino|Etiqueta|Requerido|Acciones', 'persons no declara layers, no debe mostrar columna Capa');
 
     const extensionContainer = makeSandbox();
     const extensionApi = new MockApi();
     const extensionPage = new PluginConfig(extensionContainer, { slug: 'comments', api: extensionApi });
     await extensionPage.init();
 
-    assertTrue(extensionContainer.querySelector('[data-role="plugin-config-relations-table"]') === null,
-      'Un plugin extension no debe mostrar la seccion Relaciones');
+    const extensionTable = extensionContainer.querySelector('[data-role="plugin-config-relations-table"]');
+    assertTrue(extensionTable !== null,
+      'Un plugin extension debe mostrar la seccion Relaciones, editable igual que un plugin entity (STORY 10.5)');
+
+    const extensionHeaders = [...extensionTable.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    assertEquals(extensionHeaders.join('|'), 'Clave|Entidad destino|Campo destino|Etiqueta|Requerido|Acciones',
+      'comments tampoco declara layers, no debe mostrar columna Capa aunque sea un plugin extension');
+
+    assertTrue(extensionContainer.querySelector('[data-action="add-relation"]') !== null,
+      'Un plugin extension debe poder anadir nuevas relaciones, igual que un plugin entity');
+  });
+
+  await test('muestra columna Capa (select) en Campos y en Relaciones cuando el plugin declara layers, acotada al catalogo del plugin', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'resortable-mix', api });
+    await page.init();
+
+    const fieldHeaders = [...container.querySelectorAll('[data-role="plugin-config-table"] thead th')].map((th) => th.textContent.trim());
+    assertEquals(fieldHeaders.join('|'), 'Activo|Clase|Clave|Tipo|Etiqueta|Capa|Requerido|Cabecera|Acciones',
+      'resortable-mix declara layers, debe mostrar columna Capa en la tabla de Campos');
+
+    const relationHeaders = [...container.querySelectorAll('[data-role="plugin-config-relations-table"] thead th')].map((th) => th.textContent.trim());
+    assertEquals(relationHeaders.join('|'), 'Clave|Entidad destino|Campo destino|Etiqueta|Capa|Requerido|Acciones',
+      'resortable-mix declara layers, debe mostrar columna Capa en la tabla de Relaciones tambien');
+
+    const findRowByKey = (key) => [...container.querySelectorAll('[data-role="plugin-config-table"] tbody tr')]
+      .find((rowEl) => rowEl.querySelector('[data-name="key"]')?.value === key);
+
+    const movableLayerSelect = findRowByKey('movable').querySelector('[data-name="layer"]');
+    assertTrue(movableLayerSelect !== null, 'el campo movable debe tener un select de Capa');
+    assertTrue(movableLayerSelect.dataset.role === 'input-select', 'Capa debe renderizarse como combobox propio, no un input de texto libre');
+    const layerOptionValues = [...movableLayerSelect.querySelectorAll('option')].map((opt) => opt.value);
+    assertEquals(layerOptionValues.join(','), 'top,general', 'las opciones de Capa deben venir del catalogo layers del plugin (manifest.json), no texto libre');
+
+    const relationLayerSelect = container.querySelector('[data-role="plugin-config-relations-table"] [data-name="relation-layer"]');
+    assertTrue(relationLayerSelect !== null, 'la relacion owner debe tener un select de Capa');
+    assertEquals(relationLayerSelect.value, 'general', 'el valor inicial de Capa de la relacion debe venir de config.layer');
+  });
+
+  await test('el select de Capa de un campo se deshabilita cuando resortable=false, y se guarda si esta habilitado', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'resortable-mix', api });
+    await page.init();
+
+    const findRowByKey = (key) => [...container.querySelectorAll('[data-role="plugin-config-table"] tbody tr')]
+      .find((rowEl) => rowEl.querySelector('[data-name="key"]')?.value === key);
+
+    assertTrue(findRowByKey('fixed_a').querySelector('[data-name="layer"]').getInput().disabled === true,
+      'fixed_a (resortable:false) no debe permitir reasignar su capa (corregido: la reasignacion de capa esta atada a resortable, igual que Subir/Bajar)');
+    assertTrue(findRowByKey('fixed_b').querySelector('[data-name="layer"]').getInput().disabled === true,
+      'fixed_b (resortable:false) no debe permitir reasignar su capa');
+    assertTrue(findRowByKey('movable').querySelector('[data-name="layer"]').getInput().disabled === false,
+      'movable (resortable:true) si debe permitir reasignar su capa');
+  });
+
+  await test('layer sobrevive a un re-render por mover otra fila, y viaja en el payload de guardado para campos y relaciones', async () => {
+    const container = makeSandbox();
+    const api = new MockApi();
+
+    const page = new PluginConfig(container, { slug: 'resortable-mix', api });
+    await page.init();
+
+    const findRowByKey = (key) => [...container.querySelectorAll('[data-role="plugin-config-table"] tbody tr')]
+      .find((rowEl) => rowEl.querySelector('[data-name="key"]')?.value === key);
+
+    findRowByKey('movable').querySelector('[data-action="move-down"]').click();
+
+    assertEquals(findRowByKey('fixed_a').querySelector('[data-name="layer"]').getInput().value, 'top',
+      'fixed_a debe conservar su capa tras mover otra fila (regresion: mismo bug ya corregido para resortable)');
+    assertEquals(findRowByKey('fixed_b').querySelector('[data-name="layer"]').getInput().value, 'general',
+      'fixed_b debe conservar su capa tras mover otra fila');
+    assertTrue(findRowByKey('fixed_a').querySelector('[data-name="layer"]').getInput().disabled === true,
+      'fixed_a debe seguir con Capa deshabilitada tras el re-render');
+
+    const saveButton = container.querySelector('[data-action="save"]');
+    saveButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    const savedFieldsByKey = {};
+    api.savedPayload.fields.forEach((field) => { savedFieldsByKey[field.key] = field; });
+    assertEquals(savedFieldsByKey.fixed_a.layer, 'top', 'el payload de guardado debe incluir layer para cada campo');
+    assertEquals(savedFieldsByKey.fixed_b.layer, 'general', 'el payload de guardado debe incluir layer para cada campo');
+    assertEquals(savedFieldsByKey.movable.layer, 'top', 'el payload de guardado debe incluir layer para cada campo');
+    assertEquals(api.savedPayload.relations[0].layer, 'general', 'el payload de guardado debe incluir layer para cada relacion');
   });
 
   await test('permite anadir una relacion, elegir entidad y campo destino, y guardarla', async () => {

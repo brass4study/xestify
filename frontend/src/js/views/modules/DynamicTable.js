@@ -13,6 +13,7 @@ export class DynamicTable {
 	#rowDecorator = null;
 	#toolbarStart = null;
 	#showPagination = true;
+	#showToolbar = true;
 	#wrapperClassName = null;
 	#tableClassName = null;
 	#tableDataRole = null;
@@ -69,7 +70,12 @@ export class DynamicTable {
 		this.#visibleColumns = new Set(this.#columns.map((column) => column.name));
 		this.#container = this.resolveContainer(container);
 		this.#pageSize = DynamicTable.getPreferredPageSize(this.normalizePageSize(options.pageSize));
-		this.#density = DynamicTable.getPreferredDensity();
+		// An explicit density option pins the table to that density (e.g. an
+		// embedded editor grid that must stay compact); otherwise the user's
+		// cookie preference applies as always.
+		this.#density = DynamicTable.DENSITY_OPTIONS.includes(options.density)
+			? options.density
+			: DynamicTable.getPreferredDensity();
 		const extraColumns = this.normalizeExtraColumns(options.extraColumns);
 		this.#extraColumnsStart = extraColumns.filter((column) => column.position === 'start');
 		this.#extraColumnsEnd = extraColumns.filter((column) => column.position === 'end');
@@ -77,6 +83,7 @@ export class DynamicTable {
 		this.#rowDecorator = typeof options.rowDecorator === 'function' ? options.rowDecorator : null;
 		this.#toolbarStart = options.toolbarStart instanceof HTMLElement ? options.toolbarStart : null;
 		this.#showPagination = options.showPagination !== false;
+		this.#showToolbar = options.showToolbar !== false;
 		this.#wrapperClassName = typeof options.wrapperClassName === 'string' && options.wrapperClassName !== '' ? options.wrapperClassName : null;
 		this.#tableClassName = typeof options.tableClassName === 'string' && options.tableClassName !== '' ? options.tableClassName : null;
 		this.#tableDataRole = typeof options.tableDataRole === 'string' && options.tableDataRole !== '' ? options.tableDataRole : null;
@@ -93,7 +100,9 @@ export class DynamicTable {
 		const root = component.create('div', {
 			className: 'relative overflow-visible rounded-md border border-slate-200 bg-white',
 		}).setData('role', 'dynamic-table');
-		this.buildToolbar().setParent(root);
+		if (this.#showToolbar) {
+			this.buildToolbar().setParent(root);
+		}
 		const records = this.getCurrentPageRecords();
 		const baseColumns = this.#columns
 			.filter((column) => this.#visibleColumns.has(column.name))
@@ -207,6 +216,13 @@ export class DynamicTable {
 	getCurrentPageRecords() {
 		if (this.#remoteMode) {
 			return [...this.#records];
+		}
+		if (!this.#showPagination) {
+			// showPagination: false hides the pager controls but callers still
+			// expect every record to render — without this, slicing to
+			// #pageSize (default 10) silently drops rows past the first page
+			// with no way left in the UI to reach them.
+			return this.getSortedRecords();
 		}
 		const start = (this.#currentPage - 1) * this.#pageSize;
 		return this.getSortedRecords().slice(start, start + this.#pageSize);

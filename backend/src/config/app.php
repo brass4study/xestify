@@ -41,6 +41,7 @@ use Xestify\plugins\schema\InstalledPluginSchemaValidator;
 use Xestify\plugins\schema\PluginConfigFieldNormalizer;
 use Xestify\plugins\schema\PluginConfigService;
 use Xestify\plugins\schema\PluginSchemaMergeService;
+use Xestify\plugins\schema\RelationsPayloadCompiler;
 use Xestify\plugins\schema\ReverseRelationTabResolver;
 use Xestify\repositories\ConfigurationRepository;
 use Xestify\repositories\GenericRepository;
@@ -229,16 +230,20 @@ if (!function_exists('xestifyRegisterPluginServices')) {
             $container->get(PluginWriteRepository::class)
         ));
         $container->singleton(PluginConfigFieldNormalizer::class, fn() => new PluginConfigFieldNormalizer());
+        $container->singleton(RelationsPayloadCompiler::class, fn() => new RelationsPayloadCompiler(
+            $container->get(PluginRepository::class)
+        ));
         $container->singleton(ExtensionPluginConfigService::class, fn() => new ExtensionPluginConfigService(
             $container->get(PluginRepository::class),
-            $container->get(PluginConfigFieldNormalizer::class)
+            $container->get(PluginConfigFieldNormalizer::class),
+            $container->get(RelationsPayloadCompiler::class)
         ));
         $container->singleton(PluginConfigService::class, fn() => new PluginConfigService(
             $container->get(PluginWriteRepository::class),
             $container->get(ExtensionPluginConfigService::class),
             $container->get(PluginConfigFieldNormalizer::class),
             $container->get(PluginSourceService::class),
-            $container->get(PluginRepository::class)
+            $container->get(RelationsPayloadCompiler::class)
         ));
         $container->singleton(PluginIdentityService::class, fn() => new PluginIdentityService(
             $container->get(PluginRepository::class),
