@@ -11,7 +11,7 @@
         "order_date": {
             "type": "date",
             "required": true,
-            "label": "Fecha del pedido"
+            "label": "Fecha"
         },
         "status": {
             "type": "select",

@@ -1412,7 +1412,7 @@
     `schema_json` en BD había sufrido drift respecto a los `schema.json` en
     disco (campos añadidos vía `PluginConfig` como `phone_mobile`,
     `legal_name`, `type`), que la relación `orders → distributors` ya
-    estaba configurada en producción, y que la instancia `purchases` que
+    estaba configurada en producción, y que la instancia `sales` que
     STORY 10.4 daba por descartada seguía existiendo — reportó cada
     hallazgo con evidencia SQL antes de asumir nada.
   - Descubrió, preguntando directamente en vez de asumir, que `purchases`
@@ -1447,7 +1447,7 @@
   validación con agente Plan, bug de `strtr()` multibyte encontrado y
   corregido, pase de limpieza SonarQube, verificación de integridad por
   SQL, cierre de documentación en 6 ficheros).
-- **Decisión manual:** El usuario corrigió que `purchases`/`sales` no era
+- **Decisión manual:** El usuario corrigió que `sales` no era
   un residuo a limpiar sino su propio trabajo en curso, ampliando el
   alcance de la story a sembrar ambas instancias de `orders`.
 - **Decisión manual:** El usuario pidió explícitamente que se le preguntara

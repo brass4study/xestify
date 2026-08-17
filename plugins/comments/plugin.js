@@ -51,7 +51,7 @@ export class CommentsPanel {
    */
   #build(endpointTemplate, recordId, api) {
     const panel = document.createElement('div');
-    panel.className = 'flex flex-col gap-3';
+    panel.className = 'flex flex-col gap-2';
 
     // In-memory state.
     /** @type {Array<object>} */
@@ -183,7 +183,7 @@ export class CommentsPanel {
 
     // Add-comment form.
     const addForm = document.createElement('form');
-    addForm.className = 'mt-2 flex flex-col gap-2 border-t border-slate-200 pt-3';
+    addForm.className = 'flex flex-col gap-2 border-t border-slate-200 pt-3';
 
     const textarea = document.createElement('textarea');
     textarea.className = 'w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-500 focus:ring-brand-500';
