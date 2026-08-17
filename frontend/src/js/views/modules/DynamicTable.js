@@ -112,7 +112,7 @@ export class DynamicTable {
 			sortable: true,
 			sortDirection: this.#sortKey === column.name ? this.#sortDirection : null,
 			onSort: () => this.sortBy(column.name),
-			render: (record) => this.toDisplayValue(record?.[column.name]),
+			render: (record) => this.formatCellValue(record?.[column.name], column),
 		}));
 		const toTableColumn = (column) => ({
 			key: column.key,
@@ -661,6 +661,8 @@ export class DynamicTable {
 					return {
 						name,
 						label: field.label ?? name,
+						type: typeof field.type === 'string' ? field.type : null,
+						options: Array.isArray(field.options) ? field.options : null,
 					};
 				})
 				.filter((column) => column !== null);
@@ -674,7 +676,9 @@ export class DynamicTable {
 				}
 
 				const label = cfg && typeof cfg === 'object' ? (cfg.label ?? name) : name;
-				return { name, label };
+				const type = cfg && typeof cfg === 'object' && typeof cfg.type === 'string' ? cfg.type : null;
+				const options = cfg && typeof cfg === 'object' && Array.isArray(cfg.options) ? cfg.options : null;
+				return { name, label, type, options };
 			}).filter((column) => column !== null);
 		}
 
@@ -744,5 +748,32 @@ export class DynamicTable {
 		}
 
 		return String(value);
+	}
+
+	/**
+	 * `select` fields store the option's raw value in the record (e.g.
+	 * "ophthalmologist"); the table must show its human label (e.g.
+	 * "Oftalmólogo") the same way the edit form's InputSelect does.
+	 */
+	formatCellValue(value, column) {
+		if (column.type !== 'select' || !Array.isArray(column.options)) {
+			return this.toDisplayValue(value);
+		}
+
+		if (value === null || value === undefined) {
+			return '';
+		}
+
+		const stringValue = String(value);
+		const match = column.options.find((option) => {
+			const optionValue = option && typeof option === 'object' ? option.value : option;
+			return String(optionValue ?? '') === stringValue;
+		});
+
+		if (match === undefined) {
+			return this.toDisplayValue(value);
+		}
+
+		return match && typeof match === 'object' ? String(match.label ?? match.value ?? '') : String(match);
 	}
 }

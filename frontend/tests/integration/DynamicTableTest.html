@@ -98,6 +98,51 @@
     assertEquals(headers, ['ID', 'Title']);
   });
 
+  await test('render() muestra la etiqueta de las opciones select, no el value crudo', async () => {
+    const schema = {
+      fields: [
+        { name: 'name', label: 'Nombre' },
+        {
+          name: 'type',
+          label: 'Tipo',
+          type: 'select',
+          options: [
+            { value: 'ophthalmologist', label: 'Oftalmólogo' },
+            { value: 'optometrist', label: 'Optometrista' },
+          ],
+        },
+      ],
+    };
+    const table = new DynamicTable([
+      { name: 'Ana', type: 'ophthalmologist' },
+      { name: 'Luis', type: 'optometrist' },
+      { name: 'Sin tipo', type: 'unknown' },
+    ], schema, '#table-container');
+    table.render();
+
+    const rows = Array.from(sandbox.querySelectorAll('tbody tr')).map((row) => row.children[1].textContent);
+    assertEquals(rows, ['Oftalmólogo', 'Optometrista', 'unknown']);
+  });
+
+  await test('render() resuelve options select en schemas de objeto (custom_fields)', async () => {
+    const schema = {
+      fields: {
+        status: {
+          label: 'Estado',
+          type: 'select',
+          options: [
+            { value: 'active', label: 'Activo' },
+            { value: 'inactive', label: 'Inactivo' },
+          ],
+        },
+      },
+    };
+    const table = new DynamicTable([{ status: 'inactive' }], schema, '#table-container');
+    table.render();
+
+    assertEquals(sandbox.querySelector('tbody td').textContent, 'Inactivo');
+  });
+
   await test('render() shows rows for current page', async () => {
     const table = new DynamicTable(createRecords(3), createSchema(), '#table-container', {
       pageSize: 10,
