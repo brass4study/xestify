@@ -24,29 +24,44 @@
  * value crudo guardado en el contenido.
  */
 
+function isValidFieldKey(key) {
+	return typeof key === 'string' && key.trim() !== '';
+}
+
+function isValidFieldDefinition(definition) {
+	return definition !== null && typeof definition === 'object';
+}
+
+function collectFieldsDefinitions(fields, definitions) {
+	if (fields === null || typeof fields !== 'object' || Array.isArray(fields)) {
+		return;
+	}
+
+	for (const key of Object.keys(fields)) {
+		const definition = fields[key];
+		if (isValidFieldKey(key) && isValidFieldDefinition(definition)) {
+			definitions.set(key, definition);
+		}
+	}
+}
+
+function collectCustomFieldsDefinitions(customFields, definitions) {
+	if (!Array.isArray(customFields)) {
+		return;
+	}
+
+	for (const definition of customFields) {
+		const key = definition?.key;
+		if (isValidFieldKey(key) && isValidFieldDefinition(definition)) {
+			definitions.set(key, definition);
+		}
+	}
+}
+
 function summaryFieldDefinitions(schema) {
 	const definitions = new Map();
-
-	const fields = schema?.fields;
-	if (fields !== null && typeof fields === 'object' && !Array.isArray(fields)) {
-		for (const key of Object.keys(fields)) {
-			const definition = fields[key];
-			if (key.trim() !== '' && definition !== null && typeof definition === 'object') {
-				definitions.set(key, definition);
-			}
-		}
-	}
-
-	const customFields = schema?.custom_fields;
-	if (Array.isArray(customFields)) {
-		for (const definition of customFields) {
-			const key = definition?.key;
-			if (typeof key === 'string' && key.trim() !== '' && definition !== null && typeof definition === 'object') {
-				definitions.set(key, definition);
-			}
-		}
-	}
-
+	collectFieldsDefinitions(schema?.fields, definitions);
+	collectCustomFieldsDefinitions(schema?.custom_fields, definitions);
 	return definitions;
 }
 

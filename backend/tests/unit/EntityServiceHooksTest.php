@@ -25,6 +25,7 @@ require_once BASE_PATH . '/tests/unit/validation_bootstrap.php';
 require_once BASE_PATH . '/src/repositories/GenericRepository.php';
 require_once BASE_PATH . '/src/controllers/ExtensionPluginDataStore.php';
 require_once BASE_PATH . '/src/plugins/schema/ReverseRelationTabResolver.php';
+require_once BASE_PATH . '/src/services/EntityOptionLabelBuilder.php';
 require_once BASE_PATH . '/src/services/EntityService.php';
 
 use Xestify\controllers\ExtensionPluginDataStore;

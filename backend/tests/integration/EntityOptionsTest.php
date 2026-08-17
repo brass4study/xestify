@@ -314,7 +314,7 @@ TestSuite::run('without type/name/surnames or type/name/description, uses the fi
     }
 });
 
-TestSuite::run('GET /entities/{unknown}/options responds 404', function () use ($pdo): void {
+TestSuite::run('GET /entities/{unknown}/options responds 404', function (): void {
     $ctrl = buildOptionsController();
     $result = callOptionsController($ctrl, ['slug' => 'not_a_real_entity_' . bin2hex(random_bytes(3))]);
 
