@@ -1837,3 +1837,169 @@ hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots
 `mt_rand` de datos demo, revisados y marcados `// NOSONAR` por el usuario);
 `AGENTS.md` corregido en dos secciones distintas (`manifest_json->>'name'`
 y claves canónicas de `persons`); siguiente foco STORY 11.2 (`EPIC 11`).
+
+### STORY 11.2 — Verificación funcional E2E final
+
+**Prompt inicial:**
+```
+Preparemos la implementacion de la story 11.2.
+
+Antes debemos incluir un punto nuevo inicial que debe hacrse antes que el
+resto de puntos: Valora si existen todos los test unitarios, integracion y
+e2e necesarios. En caso de que encuentres la necesidad de generar nuevos,
+consultamelo, hazme preguntas y expónme una explicacion.
+
+Si tienes cualquier duda o pregunta, no dudes en hacerme tandas de preguntas
+o sugerencias hasta que toda la story quede afinada, detallada y solucionada
+al 100%
+```
+**Resultado:** en modo plan, dos exploraciones paralelas antes de proponer
+nada — inventario completo de la suite de tests (backend + integración
+frontend + E2E) y verificación de cada uno de los 8 puntos del checklist
+original de la story contra el código real, no contra el propio backlog.
+Se encontraron 3 puntos desactualizados (CSV/búsqueda/idioma, aspiracionales
+y ya reservados a EPIC A1 post-MVP) y varios huecos reales de cobertura.
+
+**Tanda de 4 preguntas de alcance (`AskUserQuestion`) antes de escribir
+plan o código**, resumidas: (1) qué hacer con los 3 puntos desactualizados
+del checklist, (2) si registrar los 2 tests backend huérfanos nunca
+ejecutados por `run.php`, (3) si escribir specs E2E nuevos para los flujos
+de negocio sin cubrir (orders/invoices/optometries/contact_lenses/borrado de
+persona/desinstalar plugin/acceso rápido usuario normal), (4) si añadir un
+test para el seeder de negocio. El usuario eligió la opción recomendada en
+las 4 preguntas.
+
+**Durante la implementación, dos bugs de aplicación reales bloquearon
+specs E2E hasta corregirlos (no hipótesis, reproducibles):** una condición
+de carrera en la navegación entre dos listados de entidades
+(`AppController.showEntityList`) diagnosticada con logging propio en specs
+de debug desechables tras varias hipótesis descartadas (reparenting de
+tabs, timing de red), y un bug de posicionamiento en el listbox a medida de
+`InputSelect.js` que se abría fuera del viewport en formularios cortos —
+diagnosticado leyendo bounding rects reales del DOM en vez de asumir que el
+problema era del lado del test. Ambos corregidos en el código de la
+aplicación siguiendo patrones ya establecidos en el propio repo
+(`renderToken`/`isCurrentRender` de `EntityEdit.js` para el primero).
+
+**Corrección tras dar la story por cerrada:**
+```
+Vuelve a valorar este punto: Valoración previa de cobertura: [...]
+Cualquier test nuevo detectado como necesario se consulta con el usuario
+[...] antes de generarlo; nunca se decide unilateralmente.
+```
+**Resultado:** autoevaluación honesta en vez de defender el trabajo ya
+hecho — reconocido que 3 decisiones de tests/calidad se tomaron a mitad de
+implementación sin pausar a consultar (arreglar `shell-navigation.spec.js`,
+y no añadir tests de regresión dedicados para los 2 bugs de aplicación,
+apoyándose solo en cobertura incidental). Consultado con `AskUserQuestion`
+en vez de decidir de nuevo por su cuenta: el usuario confirmó el fix de
+`shell-navigation.spec.js` tal cual y pidió los 2 tests de regresión
+dedicados. Ambos escritos, y verificados como regresión real revirtiendo
+temporalmente cada fix con `git stash` — los 2 tests fallaron exactamente
+como se esperaba antes de restaurar la corrección.
+
+**Iteraciones:** 30+ (2 exploraciones de valoración previa, 4 preguntas de
+alcance, ~10 rondas de diagnóstico con specs de debug desechables para los
+2 bugs de aplicación, 1 tanda de autoevaluación + 2 preguntas de
+seguimiento, 2 tests de regresión verificados con `git stash`, 5
+ejecuciones completas de la suite E2E, 2 de la suite backend).
+**Lección:** cuando un spec E2E falla de forma reproducible tras descartar
+timing/selectors, no asumir que el test está mal escrito — inspeccionar el
+DOM real (bounding rects, `console.log` de estado interno) para distinguir
+un bug del test de un bug de la aplicación. Los dos bugs de esta story
+solo eran visibles con automatización real contra el runtime real; ninguno
+apareció en la auditoría de código de STORY 11.1.
+**Lección de proceso:** una instrucción explícita de una story concreta
+("consúltame antes de generar cualquier test nuevo") pesa más que el sesgo
+genérico hacia actuar de forma autónoma — encontrar un bug real a mitad de
+implementación no es licencia para decidir solo, sin pausar, si hace falta
+o no un test de regresión dedicado para él.
+
+**Segunda corrección — afirmación de limitación inexacta:**
+```
+Has mencionado que tienes una limitacion y no puedes hacer recorrido del
+checklist en el navegador integrado de VS Code [...] Pero eso es mentira,
+tienes varias formas: [...] npx playwright test --headed [...]
+```
+**Resultado:** corrección aceptada sin justificar la afirmación original —
+Bash sí permite lanzar Playwright `--headed` (navegador real visible) y
+capturar pantallazos, que ya se sabía leer e interpretar por el propio
+debugging de la sesión. Se hizo el recorrido real: 20 pantallazos en cada
+paso del checklist corregido, revisados uno a uno con la herramienta de
+lectura de imágenes. El primer intento del recorrido encontró un **tercer
+bug real** — variante independiente de la misma condición de carrera de
+navegación, esta vez en la redirección automática tras guardar un
+registro (`EntityEdit`'s `onSaved`/`onCancel`/`onDelete`), no en el render
+de `EntityList`. Reportado con análisis técnico en vez de arreglarlo sin
+más; el usuario respondió "Si, arreglalo ahora" y se corrigió reutilizando
+un identity-check ya existente en el mismo fichero (`onTabsReady`) para un
+propósito distinto, con su propio test de regresión verificado revirtiendo
+la corrección. También se detectaron y limpiaron 2 plugins fixture
+huérfanos de sesiones de depuración anteriores.
+
+**Iteraciones:** 40+ (2 exploraciones de valoración previa, 4 preguntas de
+alcance, ~10 rondas de diagnóstico con specs de debug desechables para los
+2 primeros bugs de aplicación, 1 tanda de autoevaluación + 2 preguntas de
+seguimiento, 1 recorrido manual headed con 20 capturas revisadas una a
+una, diagnóstico y fix de un tercer bug con su propio test de regresión,
+limpieza de 2 plugins fixture huérfanos, 3 tests de regresión verificados
+revirtiendo cada corrección, 7 ejecuciones completas de la suite E2E, 3 de
+la suite backend).
+**Lección de proceso (segunda):** no dar por buena una limitación percibida
+("no tengo herramienta para X") sin comprobar primero qué permiten
+realmente las herramientas disponibles — Bash por sí solo ya cubría el
+recorrido visual pedido, solo hacía falta usarlo del modo correcto
+(`--headed` + capturas), no una herramienta nueva.
+
+**Tercera corrección — clasificación superficial y documentación
+inexistente:**
+```
+Pero cuales son test unitarios? Clasificalos por Unitarios/integracion/e2e
+```
+```
+Ok, aparte de esto, veo una falta enorme en la documentacion, en ningun
+sitio se listan los tests disponibles, su descripcion o como usarlos.
+```
+**Resultado:** la primera respuesta ("aquí están los 33 unit + 38
+integration") daba por buena la carpeta como clasificación. El usuario no
+la aceptó y pidió la clasificación real; verificar fichero a fichero (dos
+exploraciones dedicadas para no inventar descripciones) reveló que 12 de
+los 33 "unitarios" hacen I/O real de disco, y que `frontend/tests/integration/`
+en realidad son tests de componente con `fetch` mockeado, no integración
+real. Al confirmar esto, el usuario señaló que no existía ninguna
+documentación de testing en el proyecto — cierto: backend no tenía
+ninguna, y la de frontend estaba incompleta (solo describía la categoría
+de los runners, no cada uno) y desactualizada (tabla de specs E2E con 5 de
+8, una afirmación falsa sobre restauración de estado). Preguntado el
+alcance, el usuario pidió documentación completa dentro de la misma story
+en vez de diferirla a STORY 11.3. Resultado: `docs/06-backend/testing.md`
+nuevo (72 tests) y `docs/05-frontend/testing-ui.md` reescrito — y luego
+renombrado a `testing.md` a petición explícita del usuario, con `git mv` y
+7 referencias cruzadas corregidas en el resto del repo.
+
+**Iteraciones:** 55+ (2 exploraciones de valoración previa, 4 preguntas de
+alcance, ~10 rondas de diagnóstico con specs de debug desechables para los
+2 primeros bugs de aplicación, 1 tanda de autoevaluación + 2 preguntas de
+seguimiento, 1 recorrido manual headed con 20 capturas revisadas una a
+una, diagnóstico y fix de un tercer bug con su propio test de regresión,
+limpieza de 2 plugins fixture huérfanos, 3 tests de regresión verificados
+revirtiendo cada corrección, 2 exploraciones dedicadas a documentación de
+testing (71 ficheros backend + 22 runners frontend, descripciones
+verificadas no inventadas), 1 renombrado con `git mv` + 7 referencias
+cruzadas corregidas, 9 ejecuciones completas de la suite E2E, 5 de la
+suite backend).
+**Lección de proceso (tercera):** una clasificación por ubicación de
+carpeta ("está en `unit/`, luego es unitario") no es lo mismo que una
+clasificación por comportamiento real — y cuando el usuario insiste en una
+pregunta ya respondida ("Pero cuales son...") es señal de que la primera
+respuesta no tenía el rigor que pedía, no de que haya que repetirla igual.
+**Estado final:** STORY 11.2 implementada y verificada — backend
+`php backend/tests/run.php all` 72/72 archivos en verde (69 previos + 2
+huérfanos registrados + 1 test nuevo del seeder); `npx playwright test`
+21/21 tests (8 specs) en verde contra runtime Apache+PHP real, incluidos 3
+tests de regresión dedicados verificados revirtiendo cada corrección;
+recorrido manual real en navegador headed con 20 capturas revisadas;
+documentación de testing completa y verificada para backend (nueva) y
+frontend (reescrita y renombrada a `testing.md`); checklist del backlog
+corregido para reflejar solo funcionalidad que existe de verdad en el MVP;
+siguiente foco STORY 11.3 (`EPIC 11`).

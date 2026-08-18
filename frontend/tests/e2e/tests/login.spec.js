@@ -105,6 +105,22 @@ test.describe('Login', () => {
     await expect(page).not.toHaveURL(/#\/login$/);
   });
 
+  test('quick-access user button logs in as the seeded non-admin user', async ({ page, request, baseURL }) => {
+    // The test above only ever exercises the admin quick-access button —
+    // this covers the "usuario normal" one (QUICK_ACCESS_USER in Login.js,
+    // usuario@xestify.local / usuario123, seeded by UserSeeder.php since
+    // STORY 10.1) actually logging in, not just being visible.
+    const health = await request.get(new URL('health', baseURL).toString());
+    const { data } = await health.json();
+    test.skip(data.debug !== true, 'APP_DEBUG is not enabled in this environment');
+
+    await page.goto('#/login');
+    await page.click('[data-role="login-quick-user"]');
+
+    await expect(page.locator('[data-role="shell-menu-nav"]')).toBeVisible();
+    await expect(page).not.toHaveURL(/#\/login$/);
+  });
+
   test('an invalid stored session redirects to login with a session-expired warning', async ({ page }) => {
     await loginAsAdmin(page);
 

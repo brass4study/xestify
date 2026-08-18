@@ -111,7 +111,7 @@ form.render();
 
 ## Pruebas y calidad
 
-- `frontend/tests/integration/`: 19 runners HTML de componente/integración
+- `frontend/tests/integration/`: 22 runners HTML de componente/integración
   (DOM real, `fetch` mockeado, sin backend real) para flujos principales
   (login, listado, edición, plugins).
 - `frontend/tests/e2e/`: suite Playwright con navegador real contra el
@@ -126,7 +126,7 @@ form.render();
   árbol `/js/*` que usa la aplicacion real.
 - Se recomienda mantener la cobertura de pruebas al añadir nuevos componentes o plugins.
 - Detalle completo de ambos niveles, prerrequisitos y comandos de ejecución
-  en [testing-ui.md](testing-ui.md).
+  en [testing.md](testing.md).
 
 ---
 
@@ -134,7 +134,7 @@ form.render();
 
 - [arquitectura.md](arquitectura.md): Estructura de carpetas, convenciones de componentes, flujo SPA y decisiones de routing
 - [guia-extension.md](guia-extension.md): Cómo añadir páginas nuevas y puntos de integración de plugins en UI
-- [testing-ui.md](testing-ui.md): Jerarquía de tests de frontend y ejecución de la suite E2E
+- [testing.md](testing.md): Jerarquía de tests de frontend y ejecución de la suite E2E
 - [renderizado-dinamico.md](renderizado-dinamico.md): Guía detallada de renderizado y mapeo de tipos
 - [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño de STORY 9.1 inspirados en Ant Design
 - [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy de STORY 9.2

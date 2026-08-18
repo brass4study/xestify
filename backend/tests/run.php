@@ -48,6 +48,8 @@ $groups = [
         'backend/tests/unit/PluginConfigFieldNormalizerTest.php',
         'backend/tests/unit/PluginClassLoaderTest.php',
         'backend/tests/unit/TestRunnerExitCodeTest.php',
+        'backend/tests/unit/PluginTypeGuardTest.php',
+        'backend/tests/unit/SchemaComparisonUtilTest.php',
     ],
     'integration-db' => [
         'backend/tests/integration/DatabaseTest.php',
@@ -65,6 +67,7 @@ $groups = [
         'backend/tests/integration/AuthControllerTest.php',
         'backend/tests/integration/EntityServiceTest.php',
         'backend/tests/integration/EntityControllerTest.php',
+        'backend/tests/integration/BusinessDataSeederTest.php',
     ],
     'integration-plugins' => [
         'backend/tests/integration/PluginDependencyValidatorTest.php',

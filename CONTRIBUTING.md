@@ -55,6 +55,9 @@ node --check frontend\src\js\pages\EntityEdit.js
 ```
 
 - Documentar en la respuesta cualquier test que no se haya podido ejecutar.
+- Listado completo de los tests existentes (qué verifica cada uno, cómo
+  ejecutarlos): `docs/06-backend/testing.md` (backend) y
+  `docs/05-frontend/testing.md` (frontend, integración + E2E).
 
 ## SonarQube for IDE
 

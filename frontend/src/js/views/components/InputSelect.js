@@ -372,6 +372,19 @@ export class InputSelectComponent extends InputComponent {
 		this._panel.style.width = `${rect.width}px`;
 		this._panel.style.zIndex = '1000';
 
+		// A trigger sitting in the lower part of the viewport (e.g. a relation
+		// picker with many rows, positioned near the bottom of a short form)
+		// otherwise opens a panel that renders partially or fully below the
+		// visible viewport — flip it above the trigger when there isn't enough
+		// room below, clamping to stay on-screen if there isn't enough room
+		// above either.
+		const viewportMargin = 8;
+		const panelHeight = this._panel.getBoundingClientRect().height;
+		if (rect.bottom + panelHeight > window.innerHeight - viewportMargin) {
+			const openUpwardTop = rect.top - panelHeight;
+			this._panel.style.top = `${Math.max(viewportMargin, openUpwardTop)}px`;
+		}
+
 		const rows = this._optionRows();
 		const currentValue = this._selectInput.value;
 		const selectedIndex = rows.findIndex((row) => row.dataset.value === currentValue);

@@ -17,8 +17,8 @@ TestSuite::run('assertTypeUnchanged() allows a manifest with the same plugin_typ
     $threw = false;
     try {
         $guard->assertTypeUnchanged(
-            ['plugin_type' => 'entity'],
-            ['slug' => 'persons', 'type' => 'entity']
+            ['manifest_json' => ['type' => 'entity']],
+            ['name' => 'persons', 'type' => 'entity']
         );
     } catch (\DomainException) {
         $threw = true;
@@ -32,8 +32,8 @@ TestSuite::run('assertTypeUnchanged() rejects a manifest that changes plugin_typ
     $message = '';
     try {
         $guard->assertTypeUnchanged(
-            ['plugin_type' => 'entity'],
-            ['slug' => 'persons', 'type' => 'extension']
+            ['manifest_json' => ['type' => 'entity']],
+            ['name' => 'persons', 'type' => 'extension']
         );
     } catch (\DomainException $e) {
         $threw = true;

@@ -38,7 +38,7 @@ transversales, ver [arquitectura.md](arquitectura.md).
      `frontend/tests/js/helpers.js`).
    - Si la página participa en un flujo de usuario relevante (login,
      navegación, CRUD, plugins, tema), añade o extiende un spec en
-     `frontend/tests/e2e/tests/`. Ver [testing-ui.md](testing-ui.md).
+     `frontend/tests/e2e/tests/`. Ver [testing.md](testing.md).
 
 ## Patrones de datos
 
@@ -179,5 +179,5 @@ Contrato adicional sobre el de arriba:
 - [layouts-guide.md](layouts-guide.md): contrato de ShellLayout/PageLayout/ListLayout/FormLayout
 - [navegacion-anatomia.md](navegacion-anatomia.md): mapa de rutas y anatomía de página
 - [renderizado-dinamico.md](renderizado-dinamico.md): mapeo de tipos de schema a controles de UI
-- [testing-ui.md](testing-ui.md): jerarquía de tests y ejecución de la suite E2E
+- [testing.md](testing.md): jerarquía de tests y ejecución de la suite E2E
 - [../04-plugins/](../04-plugins/): contrato de hooks backend (`registerTabs`, `registerActions`) y manifest

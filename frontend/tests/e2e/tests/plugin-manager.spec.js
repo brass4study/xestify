@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from './_helpers.js';
+import { loginAsAdmin, useLargeTablePageSize } from './_helpers.js';
 
 // Used to rely on `test_entity_ctrl`, a fixture plugin left behind by the
 // backend integration test EntityControllerTest.php. STORY 10.3 added a final
@@ -14,6 +14,7 @@ import { loginAsAdmin } from './_helpers.js';
 // (clients, comments); always deleted again afterward regardless of outcome.
 test.describe('PluginManager', () => {
   test('activates and deactivates a plugin from the list', async ({ page }) => {
+    await useLargeTablePageSize(page);
     await loginAsAdmin(page);
     const token = await page.evaluate(() => localStorage.getItem('xestify_access_token'));
     const targetSlug = `e2e_plugin_toggle_${Date.now()}`;
@@ -42,6 +43,52 @@ test.describe('PluginManager', () => {
       await row.locator('[data-role="plugin-action"][data-action="activate"]').click();
       await expect(badge).toHaveText('Activo');
     } finally {
+      await page.request.delete(`api/v1/plugins/${targetSlug}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  });
+
+  test('uninstalls a plugin from the list', async ({ page }) => {
+    await useLargeTablePageSize(page);
+    await loginAsAdmin(page);
+    const token = await page.evaluate(() => localStorage.getItem('xestify_access_token'));
+    const targetSlug = `e2e_plugin_delete_${Date.now()}`;
+
+    const registerResponse = await page.request.post('api/v1/plugins', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { plugin_name: 'demoinventory', slug: targetSlug },
+    });
+    expect(registerResponse.ok(), await registerResponse.text()).toBeTruthy();
+
+    try {
+      await page.click('[data-role="navbar-link"][data-page="plugins"]');
+      await expect(page).toHaveURL(/#\/plugins$/);
+
+      const row = page.locator('tr', { has: page.locator(`[data-slug="${targetSlug}"]`) });
+      await expect(row).toBeVisible();
+
+      // The delete/"Borrar" action only appears once the instance is
+      // inactive (PluginManager.js#handleAction, `!isActive` guard) — an
+      // active plugin has to be deactivated first, exactly like a real admin
+      // would have to.
+      await row.locator('[data-role="plugin-action"][data-action="deactivate"]').click();
+      const badge = row.locator('[data-role="plugin-status-badge"]');
+      await expect(badge).toHaveText('Inactivo');
+
+      await row.locator('[data-role="plugin-action"][data-action="delete"]').click();
+      await page.click('[data-action="confirm-modal"]');
+
+      await expect(row).toHaveCount(0);
+
+      const listResponse = await page.request.get('api/v1/plugins', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const { data } = await listResponse.json();
+      expect(data.plugins.some((plugin) => plugin.slug === targetSlug)).toBe(false);
+    } finally {
+      // Safety net in case the UI assertions above failed mid-test and the
+      // fixture plugin never actually got deleted through the UI action.
       await page.request.delete(`api/v1/plugins/${targetSlug}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

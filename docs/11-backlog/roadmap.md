@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-18
-> **Estado del proyecto:** **STORY 11.1 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.2`
+> **Estado del proyecto:** **STORY 11.2 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.3`
 
 ---
 
@@ -60,8 +60,19 @@ El corte funcional vigente del producto queda fijado en:
   hallazgos pendientes, sin críticos/bloqueantes, código muerto,
   `decisiones-tecnicas.md` y rastro `clients`/`persons` revisados, naming
   técnico corregido en `AGENTS.md`)
-- siguiente foco funcional: `STORY 11.2` (verificación funcional E2E final,
-  `EPIC 11`)
+- `STORY 11.2` completada (verificación funcional E2E final: checklist
+  corregido para reflejar solo funcionalidad real del MVP; suite Playwright
+  ampliada de 5 a 8 specs/21 tests cubriendo orders/invoices,
+  optometries/contact_lenses, borrado de persona, desinstalación de plugin y
+  acceso rápido de usuario normal; recorrido manual real en navegador
+  headed con pantallazo en cada paso del checklist; corrigió tres bugs de
+  aplicación reales encontrados en el proceso — condición de carrera en
+  navegación entre listados de entidades, una segunda variante de la misma
+  carrera en la redirección tras guardar un registro, y posicionamiento del
+  selector de relaciones fuera del viewport —, cada uno con su propio test
+  de regresión dedicado)
+- siguiente foco funcional: `STORY 11.3` (auditoría de coherencia de
+  documentación, `EPIC 11`)
 
 ### Funcionalidades nucleares (Core)
 
@@ -359,7 +370,8 @@ uso óptico.
 - ✅ Story 10.5 implementada: plugins de demostración de extensión `optometries`/`contact_lenses`, con `relations` y validación server-side extendidas a plugins `extension`, convención general `layers`/`resortable` y página independiente de ficha (`PluginItemEdit.js`) para plugins con historial de varios registros por owner
 - ✅ Story 10.6 implementada: seeder de datos de negocio idempotente (`backend/src/database/seeders/BusinessDataSeeder.php`) — 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes y `comments`; idempotencia "todo o nada por grupo"; `EPIC 10` queda cerrada
 - ✅ Story 11.1 implementada: pase de SonarQube sobre backend y frontend (38→0 hallazgos pendientes, 0 críticos/bloqueantes), eliminación de código muerto (`DynamicTable.setSchema()`, `.env.example`) y TODOs obsoletos (ninguno encontrado), revisión de `decisiones-tecnicas.md` (dos decisiones corregidas), rastro `clients`/`persons` limpiado en código/tests, y naming técnico corregido en `AGENTS.md` (`mail` en vez de `email`, claves reales de `persons`)
-- siguiente punto: Story 11.2 (verificación funcional E2E final, `EPIC 11`)
+- ✅ Story 11.2 implementada: checklist funcional corregido (CSV/búsqueda en tablas/selector de idioma retirados por ser aspiracionales, reservados a `EPIC A1`); suite Playwright ampliada de 5 a 7 specs/18 tests (`orders-invoices`, `optometries-contact-lenses` nuevos; `entity-crud`, `plugin-manager`, `login` extendidos con borrado, desinstalación y acceso rápido de usuario normal); 2 tests backend huérfanos registrados en `run.php` y test nuevo para `BusinessDataSeeder`; corrigió dos bugs de aplicación reales encontrados en el proceso (condición de carrera en `AppController.showEntityList`, listbox de `InputSelect.js` fuera del viewport)
+- siguiente punto: Story 11.3 (auditoría de coherencia de documentación, `EPIC 11`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug

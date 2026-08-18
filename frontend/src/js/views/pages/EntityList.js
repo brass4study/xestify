@@ -35,10 +35,11 @@ export class EntityList {
 	#description;
 	#layout = null;
 	#notificationRole = null;
+	#isCurrent;
 
 	/**
 	 * @param {string|HTMLElement} container
-	 * @param {{api?: Api, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onCreateNew?: Function, onEdit?: Function}} options
+	 * @param {{api?: Api, shellLayout?: import('../layout/ShellLayout.js').ShellLayout|null, title?: string, description?: string, onCreateNew?: Function, onEdit?: Function, isCurrent?: () => boolean}} options
 	 */
 	constructor(container, options = {}) {
 		this.#container = this.resolveContainer(container);
@@ -54,6 +55,13 @@ export class EntityList {
 		this.#shellLayout = options.shellLayout ?? null;
 		this.#title = typeof options.title === 'string' ? options.title : null;
 		this.#description = typeof options.description === 'string' ? options.description : null;
+		// Guards the two DOM-mutating continuations below (init()/loadEntity()) against
+		// a slower, overlapping navigation to a *different* entity finishing its own
+		// fetch afterwards and silently overwriting this page's freshly rendered
+		// content with stale data (same renderToken pattern as EntityEdit.js — the
+		// caller owns the notion of "which navigation is current", this instance
+		// doesn't guess it from its own state).
+		this.#isCurrent = typeof options.isCurrent === 'function' ? options.isCurrent : () => true;
 	}
 
 	/**
@@ -71,6 +79,9 @@ export class EntityList {
 
 		try {
 			const { data } = await this.#api.get('/entities');
+			if (!this.#isCurrent()) {
+				return;
+			}
 			const entities = Array.isArray(data) ? data : [];
 			SessionModel.setEntities(entities);
 			this.#setLoading(false);
@@ -85,6 +96,9 @@ export class EntityList {
 				UiResilienceService.clearViewState(this.#layout.getContentTarget());
 			}
 		} catch (err) {
+			if (!this.#isCurrent()) {
+				return;
+			}
 			this.#setLoading(false);
 			this.#handleError(err);
 		}
@@ -102,14 +116,22 @@ export class EntityList {
 
 		try {
 			const { data, meta } = await this.#api.get(this.#recordsUrl(slug));
+			if (!this.#isCurrent()) {
+				return;
+			}
 			const records = this.#normalizeRecords(data);
 
 			const schema = this.#schemaForSlug(slug);
 			this.#renderRecords(records, schema, slug, meta);
 		} catch (err) {
+			if (!this.#isCurrent()) {
+				return;
+			}
 			this.#handleError(err);
 		} finally {
-			this.#setLoading(false);
+			if (this.#isCurrent()) {
+				this.#setLoading(false);
+			}
 		}
 	}
 

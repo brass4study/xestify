@@ -136,4 +136,4 @@ el panel activo y los breadcrumbs, preservando back/forward.
 - [navegacion-anatomia.md](navegacion-anatomia.md): mapa de rutas y anatomía de página (STORY 9.2)
 - [layouts-guide.md](layouts-guide.md): contrato completo de ShellLayout/PageLayout/ListLayout/FormLayout
 - [guia-extension.md](guia-extension.md): cómo añadir páginas nuevas y puntos de integración de plugins en UI
-- [testing-ui.md](testing-ui.md): jerarquía de tests de frontend y ejecución de la suite E2E
+- [testing.md](testing.md): jerarquía de tests de frontend y ejecución de la suite E2E

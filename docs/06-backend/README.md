@@ -17,3 +17,4 @@ router HTTP y PostgreSQL. No introduce frameworks ni Composer.
 - [API y contratos](../03-api/README.md)
 - [Seguridad](../07-security/README.md)
 - [Operación y despliegue](../08-operations/README.md)
+- [Testing de backend](testing.md): los 72 tests (`unit`/`integration-db`/`integration-plugins`), qué verifica cada uno y cómo ejecutarlos

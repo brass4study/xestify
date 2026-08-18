@@ -429,16 +429,18 @@ Story completada. Archivos creados/modificados:
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
 | 11.1 ✅ | Auditoría de código limpio | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 69/69 archivos en verde (ejecutado tras cada tanda de cambios); SonarQube (`skills/review-sonarqube-clean-code`) 38→0 hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots `mt_rand`, revisados y marcados `// NOSONAR`); `frontend/tests/e2e/tests/entity-crud.spec.js` 2/2 Playwright contra runtime real ✅ |
+| 11.2 ✅ | Verificación funcional E2E final | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 72/72 archivos en verde (69 + 2 huérfanos registrados + 1 test nuevo del seeder); `npx playwright test` 21/21 tests (8 specs) en verde contra runtime Apache+PHP real, incluye 3 specs nuevas y 5 extendidas; recorrido manual real en navegador headed con pantallazos; 3 bugs funcionales reales encontrados y corregidos, cada uno con su propio test de regresión dedicado (verificado revirtiendo la corrección para confirmar que falla sin ella) ✅ |
 
 **Detalle de la story 11.1:** ver sesión completa más abajo (2026-08-18).
+**Detalle de la story 11.2:** ver sesión completa más abajo (2026-08-18).
 
 ---
 
 ## Última actualización
 
 **Fecha:** 2026-08-18
-**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.1` completada
-**Próxima story:** STORY 11.2 - Verificación funcional E2E final (EPIC 11)
+**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.2` completada
+**Próxima story:** STORY 11.3 - Auditoría de coherencia de documentación (EPIC 11)
 
 ---
 
@@ -1942,5 +1944,274 @@ y naming consistente.
   son librería construida por adelantado, no código muerto real).
 - Backlog alineado: STORY 11.1 queda implementada; el siguiente punto es
   STORY 11.2 (`EPIC 11`, verificación funcional E2E final).
+
+## Sesion 2026-08-18 - STORY 11.2 Verificación funcional E2E final
+
+Story completada. El usuario pidió añadir un punto 0 explícito a la story:
+valorar si existe toda la cobertura de tests necesaria antes de tocar nada,
+consultando con preguntas antes de generar cualquier test nuevo en vez de
+decidirlo unilateralmente. Esa valoración (dos exploraciones paralelas:
+inventario completo de la suite + verificación de cada punto del checklist
+original contra el código real) y las 4 preguntas de seguimiento se hicieron
+antes de escribir una sola línea de código.
+
+**Corrección a mitad de story:** tras cerrar la implementación inicial, el
+usuario pidió revisar de nuevo el propio punto 0 ("consúltame antes de
+generar cualquier test nuevo"). Revisión honesta: durante la
+implementación aparecieron 3 decisiones relacionadas con tests que se
+tomaron sin consultar — arreglar `shell-navigation.spec.js` (huérfano de
+`products`, ver punto 4), y no añadir tests de regresión dedicados para los
+2 bugs de aplicación encontrados (punto 3), apoyándose solo en la cobertura
+incidental de los specs de negocio nuevos. Consultado con
+`AskUserQuestion`: el usuario confirmó el fix de `shell-navigation.spec.js`
+tal cual, y pidió añadir los 2 tests de regresión dedicados — ver punto 3.
+
+**Segunda corrección — recorrido visual real, no delegado:** el cierre
+inicial afirmaba no disponer de herramienta para el recorrido manual en el
+navegador integrado de VS Code que pide el criterio de la story. El usuario
+corrigió esa afirmación (era inexacta: sí hay Bash, con el que se puede
+lanzar Playwright en `--headed` y capturar pantallazos en cada paso). Se
+hizo el recorrido real: 8 specs/20 tests · Playwright headed con capturas
+en cada uno de los pasos del checklist (login × 3 modos, CRUD de persona
+completo, fichas de optometría/lentillas, pedido+factura relacionados,
+gestión de plugins), revisadas una a una con la herramienta de lectura de
+imágenes en vez de asumir el resultado. El primer intento del recorrido
+encontró **un tercer bug real** (ver punto 3) — el "Sí, arréglalo ahora"
+del usuario llevó a corregirlo con su propio test de regresión antes de
+cerrar la story. También se detectaron y limpiaron 2 plugins `demoinventory`
+huérfanos (`e2e_plugin_debug_...`, `manual_checklist_...`) que habían
+quedado registrados por ejecuciones de depuración anteriores de esta misma
+sesión — operación puntual sobre datos locales, documentada aquí.
+
+**0. Valoración previa y checklist corregido:**
+
+- El checklist original de 11.2 (`docs/11-backlog/backlog.md`) estaba
+  desactualizado en 3 de 8 puntos: "exportar CSV" y "búsqueda/filtro en
+  tablas" nunca se implementaron (aspiracionales, reservados a STORY A1.7/A1
+  post-MVP); "cambio de idioma" solo tiene infraestructura interna
+  (`I18nModel.js`) sin selector visible (reservado a STORY A1.1). Corregido:
+  esos 3 puntos se retiran del checklist y quedan documentados como fuera de
+  alcance por diseño, no como incidencia de esta story.
+- Huecos reales de cobertura confirmados y cerrados (ver puntos 1-3): 2 tests
+  backend huérfanos nunca ejecutados por `run.php`, el seeder de negocio sin
+  test, y ningún E2E de `orders`/`invoices`/`optometries`/`contact_lenses`,
+  borrado de persona, desinstalación de plugin ni acceso rápido de usuario
+  normal en login.
+
+**1. Backend — tests huérfanos y seeder de negocio:**
+
+- `backend/tests/unit/PluginTypeGuardTest.php` y
+  `SchemaComparisonUtilTest.php` existían en disco pero no estaban en ningún
+  array de `backend/tests/run.php` — la suite oficial (`php backend/tests/run.php
+  all`) nunca los ejecutaba. Registrados en el grupo `unit`.
+- Al registrar `PluginTypeGuardTest.php` se descubrió que llevaba tiempo roto
+  de verdad: sus fixtures usaban `['plugin_type' => ..., 'slug' => ...]`
+  mientras que `PluginTypeGuard::assertTypeUnchanged()` (el código real, ya
+  usado en producción vía `PluginSyncService`/`PluginUpdateService`) espera
+  `['manifest_json' => ['type' => ...]]` y `manifest['name']` — un drift
+  invisible precisamente porque el test nunca corría. Corregidas las
+  fixtures del test para que coincidan con el contrato real.
+- `backend/tests/integration/BusinessDataSeederTest.php` (nuevo, 4 tests):
+  `BusinessDataSeeder.php` genera todos los datos demo para la defensa del
+  TFM y no tenía ningún test. Verifica que `run()` no lanza y devuelve la
+  forma esperada, que una segunda ejecución es realmente idempotente (todos
+  los grupos `skipped`, recuentos de `plugin_entity_data`/
+  `plugin_extension_data` sin variación), y que las relaciones sembradas son
+  reales (`invoices.content->>'id_order'` apunta a un `orders` existente;
+  `optometries`/`contact_lenses` cuelgan de un `clients` existente).
+  Registrado en el grupo `integration-db`.
+
+**2. E2E — specs nuevas para flujos de negocio sin cubrir:**
+
+- `frontend/tests/e2e/tests/orders-invoices.spec.js` (nuevo): crea un pedido
+  y una factura ligada a él vía `id_order`, verificando la relación en la
+  respuesta real de la API.
+- `frontend/tests/e2e/tests/optometries-contact-lenses.spec.js` (nuevo):
+  añade una ficha de optometría y una de lentillas de contacto a una
+  persona, ejercitando `PluginItemEdit.js` de extremo a extremo en un
+  navegador real (sin runner de integración HTML dedicado, pero con mejor
+  cobertura que uno aislado para una página cuyo trabajo es orquestar
+  llamadas API reales).
+- `entity-crud.spec.js`: nuevo test de borrado de persona, verificando el
+  soft-delete real (404 en un GET posterior al id).
+- `plugin-manager.spec.js`: nuevo test de desinstalación de plugin desde la
+  UI (desactivar → borrar → confirmar), distinto del test existente que solo
+  cubría activar/desactivar.
+- `login.spec.js`: nuevo test para el botón de acceso rápido de "usuario
+  normal" (`usuario@xestify.local`), que antes solo se comprobaba visible,
+  nunca que loguase de verdad.
+- `_helpers.js`: helpers nuevos para interactuar con el selector custom de
+  `InputSelect.js` (`selectCustomOption`, `selectCustomOptionByValue`,
+  `selectFirstCustomOption`) y `useLargeTablePageSize` (ver punto 4).
+
+**3. Tres bugs funcionales reales encontrados y corregidos durante la
+escritura de los specs y el recorrido manual (no hallazgos hipotéticos:
+cada uno rompía el test/recorrido correspondiente de forma reproducible
+hasta que se corrigió el código de la app, no el test):**
+
+- **Condición de carrera en la navegación entre dos listados de entidades**
+  (`AppController.showEntityList()` / `EntityList.js`): guardar un registro
+  navega automáticamente de vuelta al listado (`showEntityList('orders')`,
+  asíncrono); si el usuario navega a OTRA entidad casi inmediatamente
+  después (`showEntityList('invoices')`), ambas llamadas quedan en curso a
+  la vez, y si la más antigua resuelve después, sobreescribe en silencio el
+  listado ya renderizado de la más nueva — incluido el botón "Crear nuevo
+  registro", que queda apuntando a la entidad equivocada sin ningún error
+  visible. Corregido con el mismo patrón `renderToken`/`isCurrentRender` que
+  ya usa `EntityEdit.js`: `AppController` pasa un `isCurrent()` basado en un
+  contador de generación a cada `EntityList`, que lo comprueba después de
+  cada `await` antes de tocar el DOM.
+- **El listbox de `InputSelect.js` podía abrirse fuera del viewport:** un
+  campo de relación (`<select>` con muchas opciones) situado cerca del final
+  de un formulario corto renderizaba su panel `position: fixed` por debajo
+  del borde inferior de la ventana, con cero forma de hacerlo visible
+  (fixed no se mueve al hacer scroll de la página). Corregido: `_openDropdown()`
+  ahora invierte el panel hacia arriba del trigger cuando no cabe por debajo.
+- **Variante independiente de la misma clase de carrera, encontrada en el
+  recorrido manual:** guardar un registro dispara una redirección
+  automática asíncrona de vuelta al listado (`EntityEdit`'s
+  `onSaved`/`onCancel`/`onDelete`, cableados en `AppController.showEntityEdit()`).
+  Si el usuario navega a otra entidad ANTES de que esa redirección
+  automática llegue a ejecutarse (ej. clic en "Guardar" seguido de clic
+  inmediato en otro enlace del navbar, sin esperar confirmación en
+  pantalla), la redirección completada de todos modos le devolvía a la
+  entidad que acababa de abandonar — el guard de `EntityList` de más arriba
+  no protege esto porque el conflicto no es entre dos renders de
+  `EntityList`, es una redirección disparada por una instancia de
+  `EntityEdit` ya abandonada. Corregido reutilizando el identity-check que
+  `onTabsReady` ya usaba en el mismo fichero por otra razón
+  (`AppController#isCurrentEntityRoute()`, comparando `currentEntityRoute`
+  contra `slug`/`recordId` capturados en el cierre de `showEntityEdit()`).
+- Los tres bugs afectan a un usuario real navegando rápido entre páginas,
+  usando selectores de relación en formularios cortos, o guardando y
+  navegando sin esperar confirmación visual — no son artefactos de
+  Playwright.
+- Tests de regresión dedicados, uno por bug: `shell-navigation.spec.js`
+  tiene 2 (fuerza el orden determinista retrasando con `page.route()` solo
+  la petición relevante en cada caso — la lista de `orders` en el primero,
+  el `POST` de creación en el segundo — en vez de depender de timing real)
+  y `frontend/tests/e2e/tests/input-select-viewport.spec.js` (nuevo spec,
+  comprueba que el panel del selector de relación queda dentro del
+  viewport). Verificados como regresión real: los 3 fixes de app se
+  revirtieron temporalmente uno a uno (`git stash` para los dos primeros,
+  edición temporal de `#isCurrentEntityRoute()` para el tercero, ya que
+  compartía fichero con el primer fix) y los 3 tests fallaron exactamente
+  como se esperaba antes de restaurar cada corrección.
+
+**4. Hallazgo adicional de estado local, no de código:**
+`shell-navigation.spec.js` usaba `products` (plugin de EPIC 3, ya inactivo
+en el catálogo local desde que EPIC 10 introdujo las entidades de demo
+reales) como segunda entidad de navegación — llevaba tiempo roto en
+silencio porque nadie había vuelto a correr la suite completa. Corregido a
+`distributors` (activo, EPIC 10).
+
+**5. Gaps menores documentados como limitación conocida, no corregidos**
+(no cambian comportamiento funcional visible en la demo ni en el checklist):
+`frontend/src/js/views/pages/PluginItemEdit.js` sin runner de integración
+HTML dedicado (cubierto por el punto 2 vía E2E real); modelos utilitarios
+(`BasePathModel.js`, `PluginPanelModel.js`, `AppConfigurationModel.js`,
+`ClipboardUtil.js`) y varios servicios backend (`PluginRepository`,
+`PluginAdministrationService`, etc.) con solo cobertura indirecta vía
+integración; plugin fixture `plugins/demoinventory` sin test backend
+dedicado (solo usado como fixture de QA, sin datos de negocio reales).
+
+**6. Documentación de testing — carencia real señalada por el usuario:**
+en ningún sitio del proyecto se listaban los tests disponibles, su
+descripción o cómo ejecutarlos. Verificado antes de escribir nada (no
+asumido): backend no tenía ningún documento de testing;
+`docs/05-frontend/testing-ui.md` sí existía pero solo describía la
+categoría de los 22 runners de integración sin enumerarlos, y su tabla de
+specs E2E estaba desactualizada (5 de 8) con una afirmación incorrecta
+("todos los specs restauran el estado inicial" — falso, la mayoría de los
+que crean datos de negocio los dejan como demo acumulativa a propósito).
+Corregido con documentación real, extraída de cada fichero (dos
+exploraciones dedicadas, no descripciones inventadas): `docs/06-backend/testing.md`
+nuevo (72 tests backend, con la distinción honesta de qué "unit" son
+unitarios de verdad y cuáles hacen I/O real de disco) y
+`docs/05-frontend/testing-ui.md` reescrito y **renombrado a
+`docs/05-frontend/testing.md`** (a petición del usuario, para que
+coincida con la convención de `docs/06-backend/testing.md`) — con `git mv`
+para preservar el historial, y las 7 referencias cruzadas a
+`testing-ui.md` corregidas en `AGENTS.md`, `CONTRIBUTING.md`,
+`docs/05-frontend/{README,arquitectura,guia-extension}.md` y el propio
+`docs/06-backend/testing.md`. Las menciones históricas a `testing-ui.md`
+en las entradas de STORY 9.9 de este mismo fichero (`sesion.md`) y de
+`productividad.md`/`prompts.md` se dejan tal cual: describen el nombre
+real que tenía el fichero cuando se creó entonces, no una referencia rota.
+
+**Cambios principales:**
+- Backend: `backend/tests/run.php` (2 huérfanos registrados + nuevo test),
+  `backend/tests/unit/PluginTypeGuardTest.php` (fixtures corregidas),
+  `backend/tests/integration/BusinessDataSeederTest.php` (nuevo).
+- Frontend app: `frontend/src/js/controllers/AppController.js` (guard de
+  navegación en `showEntityList()` + `#isCurrentEntityRoute()` para
+  `onSaved`/`onCancel`/`onDelete`), `frontend/src/js/views/pages/EntityList.js`
+  (guard de navegación), `frontend/src/js/views/components/InputSelect.js`
+  (flip de panel).
+- E2E: `frontend/tests/e2e/tests/orders-invoices.spec.js` (nuevo),
+  `frontend/tests/e2e/tests/optometries-contact-lenses.spec.js` (nuevo),
+  `frontend/tests/e2e/tests/input-select-viewport.spec.js` (nuevo, test de
+  regresión dedicado), `frontend/tests/e2e/tests/entity-crud.spec.js`,
+  `frontend/tests/e2e/tests/plugin-manager.spec.js`,
+  `frontend/tests/e2e/tests/login.spec.js`,
+  `frontend/tests/e2e/tests/shell-navigation.spec.js` (fix de `products` +
+  2 tests de regresión dedicados), `frontend/tests/e2e/tests/_helpers.js`.
+- Docs: `docs/11-backlog/backlog.md` (STORY 11.2 reescrita con el punto 0 y
+  el checklist corregido); `docs/06-backend/testing.md` (nuevo);
+  `docs/05-frontend/testing-ui.md` → `docs/05-frontend/testing.md`
+  (renombrado con `git mv` + reescrito); referencias corregidas en
+  `AGENTS.md`, `CONTRIBUTING.md`, `docs/06-backend/README.md`,
+  `docs/05-frontend/{README,arquitectura,guia-extension}.md`.
+- Datos locales: 2 plugins `demoinventory` huérfanos de sesiones de
+  depuración anteriores borrados vía API (`e2e_plugin_debug_...`,
+  `manual_checklist_...`) — operación puntual, catálogo local ya limpio.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 72/72 archivos en verde
+  (69 previos + 2 huérfanos registrados + 1 test nuevo del seeder).
+- E2E: `npx playwright test` → 21/21 tests (8 specs) en verde, 2 ejecuciones
+  completas consecutivas tras el tercer fix. En tandas previas hubo un
+  único fallo aislado en cada una de 2 ejecuciones (`login.spec.js` una
+  vez, `entity-crud.spec.js` otra — nunca el mismo test dos veces), siempre
+  un timeout de 5s esperando un elemento tras una petición de red real, con
+  el botón de login todavía en estado "Entrando…" en la captura — carga
+  real del sistema tras una sesión de pruebas muy larga, no una regresión
+  de código.
+- `node --check` en los 13 ficheros JS nuevos/modificados.
+- Checklist funcional del backlog: recorrido real en navegador headed
+  (Playwright `--headed`, no solo automatizado sin supervisión) con
+  pantallazo en cada paso, revisados uno a uno — login × 3 modos, CRUD de
+  persona completo (crear/editar/eliminar), fichas de optometría/lentillas,
+  pedido+factura relacionados (se ve el pedido correcto seleccionado en el
+  formulario de factura), gestión de plugins activar/desactivar/desinstalar
+  con banner de confirmación. El recorrido encontró el tercer bug de este
+  informe.
+
+**Cierre verificado (2026-08-18):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: los tres bugs de navegación/posicionamiento no eran
+  hipotéticos — cada uno bloqueaba de forma reproducible el spec E2E o el
+  recorrido manual correspondiente hasta corregir el código de la
+  aplicación, no el test; y cada uno tiene ahora su propio test de
+  regresión dedicado, verificado revirtiendo temporalmente la corrección de
+  que falla sin ella.
+- Lección de proceso (tres correcciones del usuario en la misma story): el
+  punto 0 de esta misma story ("consúltame antes de generar cualquier test
+  nuevo") no se cumplió al 100% durante la primera pasada de
+  implementación — 3 decisiones de tests/calidad se tomaron sin pausar a
+  preguntar. La afirmación inicial de "no tengo herramienta para el
+  navegador integrado de VS Code" era inexacta — Bash permite lanzar
+  Playwright `--headed` y capturar pantallazos, que ya se sabía leer e
+  interpretar por el propio debugging de la sesión. Y la clasificación
+  inicial "tests unitarios" ofrecida al usuario asumía que vivir en la
+  carpeta `unit/` bastaba, sin comprobar si cada fichero hacía I/O real —
+  el propio usuario insistió en pedir la clasificación correcta antes de
+  aceptarla, lo que llevó a encontrar que ni el backend tenía documentación
+  de testing en absoluto ni la de frontend estaba al día. En los tres
+  casos, la instrucción explícita de una story sobre cómo verificar (o una
+  duda insistente del usuario sobre una afirmación ya dada) pesa más que
+  asumir una limitación o una clasificación sin comprobarla primero.
+- Backlog alineado: STORY 11.2 queda implementada; el siguiente punto es
+  STORY 11.3 (`EPIC 11`, auditoría de coherencia de documentación).
 
 ---

@@ -53,6 +53,52 @@ test.describe('Entity CRUD (clients)', () => {
     await expect(page.locator('input[name="name"]')).toHaveValue(updatedName, { timeout: 10000 });
   });
 
+  test('creates and deletes a person record', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.click('[data-role="navbar-link"][data-page="entity:clients"]');
+    await expect(page).toHaveURL(/#\/entity\/clients$/);
+    await expect(page.locator('table')).toBeVisible();
+
+    await page.click('[data-role="record-create"]');
+    await expect(page.locator('input[name="name"]')).toBeVisible();
+    await page.fill('input[name="name"]', `Playwright E2E Delete ${Date.now()}`);
+    await page.fill('input[name="surnames"]', 'Automated Suite');
+    await page.fill('input[name="mail"]', `playwright-delete-${Date.now()}@xestify.local`);
+
+    const [createResponse] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes('/entities/clients/records') && res.request().method() === 'POST'),
+      page.click('[data-role="entity-edit-save"]'),
+    ]);
+    const recordId = (await createResponse.json()).data.id;
+    expect(recordId).toBeTruthy();
+
+    // Direct edit URL + reload (same reasoning as the create/edit test above):
+    // the list sorts by created_at ascending, so a just-created row isn't on
+    // the first page and isn't worth locating there just to click into it.
+    await page.goto(`#/entity/clients/${recordId}`);
+    await page.reload();
+    await expect(page.locator('[data-role="entity-edit-delete"]')).toBeVisible();
+
+    await page.click('[data-role="entity-edit-delete"]');
+    await page.click('[data-action="confirm-modal"]');
+
+    await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes(`/entities/clients/records/${recordId}`) && res.request().method() === 'DELETE'
+      ),
+    ]);
+    await expect(page).toHaveURL(/#\/entity\/clients$/);
+
+    // GenericRepository::delete() is a soft delete (deleted_at, not a row
+    // removal) — confirm the record is actually excluded from the default
+    // active listing, not just that the UI navigated away.
+    const token = await page.evaluate(() => localStorage.getItem('xestify_access_token'));
+    const afterDelete = await page.request.get(`api/v1/entities/clients/records/${recordId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(afterDelete.status()).toBe(404);
+  });
+
   // Regression: EntityEdit#loadAndRenderTabs reparents the whole "Datos" panel
   // (including whichever field the browser just focused) into a fresh detached
   // <div> while building the tabs, then reattaches it. That detach/reattach used

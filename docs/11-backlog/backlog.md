@@ -1315,10 +1315,12 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Priority:** MUST
 - **Type:** QA
 - **Criteria:**
-  - ✅ Checklist de verificación funcional E2E ejecutado y documentado: login (usuario normal + admin + botones de acceso rápido en debug) → crear/editar/eliminar persona → crear pedido/factura relacionados → gestionar plugins (activar/desactivar/desinstalar) → ficha de optometría/lentillas → exportar CSV → búsqueda/filtro en tablas → cambio de idioma → todo sin errores en el runtime real Apache+PHP
-  - ✅ Suite de tests (backend + frontend) ejecutada en verde como parte del checklist final
+  - ✅ Valoración previa de cobertura: antes de ejecutar el checklist, se valora si existen todos los tests unitarios, de integración y E2E necesarios para dar por cerrado el MVP. Cualquier test nuevo detectado como necesario se consulta con el usuario (preguntas + explicación) antes de generarlo; nunca se decide unilateralmente.
+  - ✅ Checklist de verificación funcional E2E ejecutado y documentado: login (usuario normal + admin + botones de acceso rápido en debug) → crear/editar/eliminar persona → crear pedido/factura relacionados → gestionar plugins (activar/desactivar/desinstalar) → ficha de optometría/lentillas → todo sin errores en el runtime real Apache+PHP
+  - ✅ Exportar CSV, búsqueda/filtro en tablas y selector de idioma visible quedan fuera de este checklist por no existir en el MVP: son funcionalidad reservada a EPIC A1 post-MVP (STORY A1.1 y STORY A1.7 respectivamente) y se documentan como tal, no como incidencia de esta story
+  - ✅ Suite de tests (backend + frontend + E2E) ejecutada en verde como parte del checklist final, incluyendo los tests nuevos que resulten de la valoración previa (tests huérfanos registrados en el runner, cobertura del seeder de datos de negocio, specs E2E nuevos de flujos de negocio sin cubrir)
   - ✅ Cualquier incidencia detectada durante la verificación queda corregida o documentada explícitamente como limitación conocida
-- **IA Usage:** Generación del checklist E2E + ejecución asistida de la suite de tests
+- **IA Usage:** Valoración asistida de cobertura de tests + generación del checklist E2E + generación de tests/specs nuevos consultados con el usuario + ejecución asistida de la suite de tests
 - **Dependencias:** STORY 10.1, STORY 10.2, STORY 10.3, STORY 10.4, STORY 10.5, STORY 10.6, STORY 11.1
 - **Blockers:** Ninguno
 

@@ -1525,3 +1525,84 @@
   de cambios concurrentes suyos en `AGENTS.md`/`backlog.md`, confirmando
   que el tercero (retirar una nota de `PHPRC` de `README.md`) era
   intencionado.
+
+### STORY 11.2: Verificación funcional E2E final
+
+- **Fecha:** 2026-08-18
+- **Estimado sin IA:** 21h (inventariar a mano toda la suite de tests
+  existente, escribir specs Playwright nuevos para 4 flujos de negocio sin
+  cubrir contra un componente de selección a medida sin documentar,
+  diagnosticar tres bugs de navegación/posicionamiento intermitentes solo
+  reproducibles con automatización real, hacer un recorrido manual
+  completo de la app con capturas en cada paso, y documentar desde cero
+  los 72 tests de backend y los 22 runners de frontend leyendo cada
+  fichero uno a uno)
+- **Tiempo real con IA:** ~6h
+- **Aceleración:** ~71% ⚡
+- **Qué hizo IA:**
+  - Antes de escribir nada, valoró la cobertura de tests existente con dos
+    exploraciones paralelas (inventario completo de la suite + verificación
+    de cada punto del checklist original de la story contra el código real,
+    no contra el backlog) y presentó los huecos y contradicciones
+    encontrados como preguntas concretas al usuario en vez de decidir el
+    alcance por su cuenta.
+  - Descubrió que 3 de los 8 puntos del checklist original (exportar CSV,
+    búsqueda en tablas, cambio de idioma) eran aspiracionales — nunca
+    implementados y ya reservados a EPIC A1 post-MVP en el propio
+    `backlog.md` — y que un cuarto punto (desinstalar plugin) ya existía
+    pese a que el checklist daba a entender lo contrario.
+  - Diagnosticó y corrigió, iterando contra el runtime real en vez de
+    adivinar, una condición de carrera real entre dos navegaciones
+    asíncronas superpuestas (`AppController.showEntityList`) que dejaba el
+    botón "Crear nuevo registro" apuntando a la entidad equivocada sin
+    ningún error visible — reprodujo el bug con logging propio, lo achacó
+    correctamente a resolución fuera de orden de dos `fetch` async, y aplicó
+    el mismo patrón `renderToken`/`isCurrentRender` ya establecido en
+    `EntityEdit.js` en vez de inventar uno nuevo.
+  - Diagnosticó y corrigió un segundo bug real e independiente: el listbox
+    a medida de `InputSelect.js` podía abrirse por debajo del borde inferior
+    del viewport en formularios cortos con muchas opciones, sin ningún modo
+    de hacerlo clicable — descartó viewport/scroll del lado del test antes
+    de concluir que el bug estaba en el posicionamiento `position: fixed`
+    del propio componente, y añadió lógica de inversión hacia arriba.
+  - Encontró y corrigió al pasar dos regresiones silenciosas más sin
+    relación entre sí: un test backend huérfano (`PluginTypeGuardTest.php`)
+    nunca ejecutado por `run.php` cuyas fixtures llevaban tiempo
+    desincronizadas del contrato real, y un spec E2E (`shell-navigation.spec.js`)
+    que dependía de un plugin (`products`) ya inactivo desde EPIC 10.
+- **Iteraciones:** 25+ (2 exploraciones de valoración previa, 4 preguntas de
+  alcance respondidas antes de codificar, ~10 rondas de diagnóstico con
+  specs de debug desechables para aislar cada uno de los 2 bugs de
+  aplicación, 3 ejecuciones completas de la suite E2E, 2 de la suite
+  backend).
+- **Decisión manual:** El usuario pidió explícitamente añadir un punto 0 a
+  la story (valorar cobertura de tests existente y consultar antes de
+  generar cualquiera nuevo) y respondió una tanda de 4 preguntas de
+  alcance antes de que empezara cualquier implementación — todas las
+  recomendaciones propuestas por la IA fueron aceptadas tal cual.
+- **Decisión manual:** Tras dar la story por cerrada, el usuario pidió
+  revisar de nuevo el propio punto 0 ("consúltame antes de generar
+  cualquier test nuevo"). La IA reconoció que 3 decisiones de tests/calidad
+  se habían tomado a mitad de implementación sin pausar a consultar
+  (arreglar un spec E2E roto, y no añadir tests de regresión dedicados
+  para los 2 bugs de aplicación encontrados). El usuario confirmó una
+  decisión y pidió corregir la otra — añadir los 2 tests de regresión
+  dedicados, verificados con `git stash` de que fallan sin la corrección
+  correspondiente.
+- **Decisión manual:** El usuario corrigió una segunda afirmación
+  inexacta de la IA — que no había herramienta para el recorrido manual en
+  el navegador integrado de VS Code que pide el criterio de la story. La
+  IA reconoció el error (Bash permite lanzar Playwright `--headed` y
+  capturar pantallazos) e hizo el recorrido real, encontrando un tercer
+  bug de aplicación en el proceso. El usuario pidió corregirlo también
+  ("Sí, arréglalo ahora"), con su propio test de regresión.
+- **Decisión manual:** El usuario no aceptó la primera clasificación de
+  "tests unitarios" (asumía que la carpeta `unit/` bastaba) y pidió
+  clasificar de verdad por Unitarios/Integración/E2E. Al comprobarlo
+  fichero a fichero se encontró que 12 de los 33 "unitarios" hacen I/O
+  real de disco, y que el propio proyecto no tenía ninguna documentación
+  de testing para backend ni una lista completa de los runners de
+  frontend. El usuario pidió la documentación completa dentro de la misma
+  story ("Documentación completa de testing ahora, dentro de esta
+  story") y, después, renombrar `testing-ui.md` a `testing.md` para que
+  siguiera la misma convención que el nuevo documento de backend.

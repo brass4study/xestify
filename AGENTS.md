@@ -217,7 +217,7 @@ git config --local core.eol lf
 - Para tests frontend HTML (`frontend/tests/integration/*.html`), la verificacion canonica y prioritaria debe hacerse abriendo el test en una pestaña del navegador integrado de VS Code, sirviendolo por Apache del proyecto o, en su defecto, por un servidor HTTP local equivalente.
 - No usar navegador headless como via principal cuando el objetivo sea validar o enseñar resultados de tests HTML frontend al usuario. El modo headless solo puede usarse como apoyo tecnico adicional, nunca como sustituto del navegador integrado cuando este disponible.
 - Cuando se valide un test HTML frontend, mantener abierta la pestaña del navegador integrado para que el usuario pueda ver el resultado directamente en VS Code.
-- `frontend/tests/e2e/` contiene la suite E2E (Playwright) contra el runtime Apache+PHP real, backend y BD reales. Se ejecuta con `npx playwright test` (ver `docs/05-frontend/testing-ui.md`); no sustituye la verificacion manual en navegador integrado de los runners de `frontend/tests/integration/`, cubre un nivel distinto (flujos reales de extremo a extremo).
+- `frontend/tests/e2e/` contiene la suite E2E (Playwright) contra el runtime Apache+PHP real, backend y BD reales. Se ejecuta con `npx playwright test` (ver `docs/05-frontend/testing.md`); no sustituye la verificacion manual en navegador integrado de los runners de `frontend/tests/integration/`, cubre un nivel distinto (flujos reales de extremo a extremo).
 
 ## Documentacion
 

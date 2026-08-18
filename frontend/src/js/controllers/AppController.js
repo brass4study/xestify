@@ -59,6 +59,12 @@ export class AppController {
     this.uiHydrating = false;
     this.uiSaveTimer = null;
     this.currentNavbarNavigationMode = null;
+    // Bumped on every showEntityList() call so a slower, overlapping call for a
+    // *previous* entity (e.g. the list rendered right after saving a record,
+    // followed almost immediately by navigating to a different entity list) can
+    // detect it's stale after its own await and skip re-rendering over the
+    // newer page — see EntityList.js's `isCurrent` option.
+    this.entityListNavigationGeneration = 0;
 
     this.router = new RouteController({
       onNavigate: async (page) => {
@@ -585,6 +591,22 @@ export class AppController {
     return true;
   }
 
+  // Guards EntityEdit's onSaved/onCancel/onDelete callbacks: each is async
+  // (a network round-trip happens before the redirect back to the list), so
+  // if the user navigates away *before* that callback actually fires — e.g.
+  // clicking a different navbar link right after hitting "Guardar", without
+  // waiting to see it confirmed on screen — it would otherwise still redirect
+  // them back to the entity they just left, overwriting whatever page they
+  // navigated to in the meantime. `slug`/`recordId` are the values captured
+  // in showEntityEdit()'s closure at construction time, i.e. "which record
+  // this specific EntityEdit instance was opened for" — same identity check
+  // `onTabsReady` above already uses for the same reason.
+  #isCurrentEntityRoute(slug, recordId) {
+    return this.currentEntityRoute !== null
+      && this.currentEntityRoute.slug === slug
+      && this.currentEntityRoute.recordId === recordId;
+  }
+
   async handlePageNavigation(page) {
     const handlers = [
       {
@@ -914,6 +936,7 @@ export class AppController {
   }
 
   async showEntityList(preloadSlug) {
+    const generation = ++this.entityListNavigationGeneration;
     this.contentContainer.replaceChildren();
     const pageHeader = preloadSlug === null
       ? {}
@@ -924,6 +947,7 @@ export class AppController {
       shellLayout: this.shellLayout,
       title: pageHeader.title,
       description: pageHeader.subtitle,
+      isCurrent: () => this.entityListNavigationGeneration === generation,
       onCreateNew: (slug) => {
         void this.router.navigate(entityCreatePage(slug), { updateHash: true });
       },
@@ -1008,12 +1032,21 @@ export class AppController {
       title: pageHeader.title,
       description: pageHeader.subtitle,
       onSaved: async () => {
+        if (!this.#isCurrentEntityRoute(slug, recordId)) {
+          return;
+        }
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
       onCancel: async () => {
+        if (!this.#isCurrentEntityRoute(slug, recordId)) {
+          return;
+        }
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
       onDelete: async () => {
+        if (!this.#isCurrentEntityRoute(slug, recordId)) {
+          return;
+        }
         await this.router.navigate(entityPage(slug), { updateHash: true });
       },
       onNavigateToRecord: async (sourceSlug, sourceRecordId) => {
