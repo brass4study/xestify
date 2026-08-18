@@ -1,0 +1,5 @@
+# Only plugin.js and assets/* are public (rewritten from the root .htaccess).
+# PHP classes and manifest/schema JSON are server-side only.
+<FilesMatch "\.(php|json)$">
+    Require all denied
+</FilesMatch>

@@ -1,4 +1,4 @@
--- Migration: 002_plugin_entity_data.sql
+-- Schema: 002_plugin_entity_data.sql
 -- Business records for any registered entity type.
 -- content is an untyped JSONB bag; schema validated at application layer.
 -- Soft delete via deleted_at (NULL = active).

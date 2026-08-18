@@ -45,7 +45,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all UserRepositoryTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-007).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run php tools/setup/install.php.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -81,10 +81,10 @@ function cleanupTestUser(PDO $pdo, string $id): void
     $stmt->execute([':id' => $id]);
 }
 
-TestSuite::run('initial users migration defines profile columns', function (): void {
+TestSuite::run('initial users schema file defines profile columns', function (): void {
     $pdo = Database::connection();
-    $migrationSql = file_get_contents(BASE_PATH . '/database/migrations/001_users.sql');
-    assertTrue($migrationSql !== false, 'Initial users migration should be readable');
+    $migrationSql = file_get_contents(BASE_PATH . '/database/schema/001_users.sql');
+    assertTrue($migrationSql !== false, 'Initial users schema file should be readable');
 
     $stmt = $pdo->query(
         "SELECT column_name
@@ -93,9 +93,9 @@ TestSuite::run('initial users migration defines profile columns', function (): v
            AND column_name IN ('name', 'avatar', 'deleted_at')
          ORDER BY column_name"
     );
-    assertTrue($stmt !== false, 'Migration should expose table metadata');
+    assertTrue($stmt !== false, 'Schema should expose table metadata');
     $columns = array_map(static fn(array $row): string => (string) $row['column_name'], $stmt->fetchAll(PDO::FETCH_ASSOC));
-    assertEquals(['avatar', 'deleted_at', 'name'], $columns, 'Profile columns should be present in the initial users migration');
+    assertEquals(['avatar', 'deleted_at', 'name'], $columns, 'Profile columns should be present in the initial users schema file');
 });
 
 TestSuite::run('UserRepository::find and ::all return persisted profile data', function (): void {

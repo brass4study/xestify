@@ -1,4 +1,4 @@
--- Migration: 001_users.sql
+-- Schema: 001_users.sql
 -- Creates the users table for authentication.
 -- Idempotent: safe to run multiple times.
 

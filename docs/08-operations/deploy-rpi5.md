@@ -6,7 +6,7 @@ Desplegar Xestify localmente por negocio con Apache+PHP como runtime
 principal, en una Raspberry Pi 5.
 
 Para el procedimiento de instalación paso a paso (Apache, PHP, PostgreSQL,
-migraciones, usuario admin, sincronización de plugins, etc.), consulta
+esquema de base de datos, administrador, sincronización de plugins, etc.), consulta
 [INSTALL.md](../../INSTALL.md) en la raíz del repositorio. Este documento
 cubre únicamente lo específico de producción/Raspberry Pi 5.
 

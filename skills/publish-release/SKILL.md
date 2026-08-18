@@ -15,10 +15,14 @@ marcadas en los pasos (version, notas y tag).
 ## Que contiene el artefacto
 
 Solo lo estrictamente necesario para instalar y ejecutar la aplicacion:
-runtime PHP (`backend/public`, `backend/src`, migraciones SQL y
-`.env.example`), frontend servido tal cual (`frontend/src`), los plugins
-completos (`plugins/`), los scripts de instalacion (`tools/setup/`), el
-`.htaccess` raiz y las guias `INSTALL.md`, `LICENSE.md` y `README.md`.
+runtime PHP (`backend/public`, `backend/src`, esquema SQL inicial en
+`backend/database/schema/` y `.env.example`), frontend servido tal cual
+(`frontend/src`), los plugins completos (`plugins/`), los scripts de
+instalacion CLI (`tools/setup/`: `install.php`, `create-admin-user.php`,
+`check-install.php`, seeds y sync — nunca `tools/dev/`, que es QA), los
+`.htaccess` (raiz y por directorio: `backend/`, `backend/public/`,
+`plugins/`, `tools/setup/`) y las guias `INSTALL.md`, `LICENSE.md` y
+`README.md`.
 
 La lista canonica (whitelist, rutas prohibidas y ficheros obligatorios)
 vive en `scripts/build-release-zip.sh`. No duplicarla aqui ni en otro

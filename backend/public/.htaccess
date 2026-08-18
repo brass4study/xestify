@@ -1,0 +1,3 @@
+# Backend HTTP entrypoint: reached only through the root .htaccess rewrite
+# of /api/* and /health. Re-grants access denied by backend/.htaccess.
+Require all granted

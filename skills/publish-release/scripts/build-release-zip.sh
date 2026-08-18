@@ -17,6 +17,7 @@ REF="${1:?Uso: build-release-zip.sh <ref (vX.Y.Z | HEAD)>}"
 # ============================================================
 WHITELIST=(
   .htaccess
+  backend/.htaccess
   backend/public
   backend/src
   backend/database
@@ -33,6 +34,7 @@ WHITELIST=(
 FORBIDDEN=(
   docs/
   skills/
+  tools/dev/
   backend/tests/
   frontend/tests/
   frontend/tailwind.config.cjs
@@ -59,7 +61,16 @@ REQUIRED=(
   backend/public/index.php
   frontend/src/index.html
   frontend/src/css/tailwind.generated.css
+  backend/.htaccess
+  backend/public/.htaccess
+  backend/database/schema/001_users.sql
+  plugins/.htaccess
+  tools/setup/.htaccess
   tools/setup/bootstrap.php
+  tools/setup/cli-helpers.php
+  tools/setup/install.php
+  tools/setup/create-admin-user.php
+  tools/setup/check-install.php
 )
 
 ROOT="$(git rev-parse --show-toplevel)"

@@ -1471,6 +1471,20 @@ Objetivo: Cerrar brechas de experiencia de usuario y calidad frontend detectadas
 - **Dependencias:** STORY 3.9, STORY 6.4, STORY 8.2, STORY 9.8, STORY A1.1, STORY A1.2
 - **Blockers:** Confirmar si el backend ya soporta DELETE real de entidad y desinstalación de plugin, o si hay que implementarlo desde cero (revisar `EntityController`/`EntityService` y `PluginRepository`)
 
+### STORY A1.8: Alta de usuarios desde gestión de usuarios
+- **Points:** 3
+- **Priority:** SHOULD
+- **Type:** Fullstack
+- **Criteria:**
+  - ✅ Endpoint `POST /api/v1/users` (solo admin) que crea un usuario real (`is_seed=false`) con email, nombre, contraseña y roles, con la misma validación de email/contraseña que `AdminUserCreator` (`Xestify\database\seeders\AdminUserCreator`, reutilizado o extraído a un servicio compartido en vez de duplicar reglas)
+  - ✅ Rechazo de email duplicado con error legible; nunca crea usuarios `is_seed=true`
+  - ✅ Modal "Nuevo usuario" en `UserManagement` (`#/users`) con validación inline, feedback de éxito/error y refresco de la tabla
+  - ✅ `INSTALL.md` y `README.md` actualizados: `tools/setup/create-admin-user.php` pasa a ser vía de recuperación/CLI, no la única forma de alta
+  - ✅ Tests: endpoint (admin/no admin, validación, duplicado) y runner HTML/E2E del modal
+- **IA Usage:** Endpoint + reutilización del creador de admin + modal en `UserManagement` + tests
+- **Dependencias:** STORY 8.2, STORY 8.5
+- **Blockers:** Ninguno. Contexto: hoy la única forma de crear un usuario real es la CLI (`install.php` / `create-admin-user.php`), porque los usuarios seed no pueden iniciar sesión con `APP_DEBUG=false` (ver DECISION 11 en `docs/09-history/decisiones-tecnicas.md`)
+
 ---
 
 ## EPIC A2: Operación Técnica y Observabilidad (Adición post-MVP)

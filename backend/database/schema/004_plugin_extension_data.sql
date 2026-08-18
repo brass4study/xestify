@@ -1,4 +1,4 @@
--- Migration: 004_plugin_extension_data.sql
+-- Schema: 004_plugin_extension_data.sql
 -- Generic storage table for all extension-type plugins.
 -- Parallels plugin_entity_data but attaches data to existing entity records.
 -- Each extension plugin stores its records here, identified by plugin_slug.

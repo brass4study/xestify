@@ -30,16 +30,16 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all ConfigurationRepositoryTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migrations in order (001-006).\n";
+    echo "       Configure backend/.env with valid DB_* vars and run php tools/setup/install.php.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
 }
 
-TestSuite::run('configuration migration file exists', function (): void {
-    $sql = file_get_contents(BASE_PATH . '/database/migrations/006_configuration.sql');
-    assertTrue($sql !== false, 'Configuration migration should be readable');
-    assertTrue(str_contains($sql, 'CREATE TABLE IF NOT EXISTS configuration'), 'Migration should create configuration table');
+TestSuite::run('configuration schema file exists', function (): void {
+    $sql = file_get_contents(BASE_PATH . '/database/schema/006_configuration.sql');
+    assertTrue($sql !== false, 'Configuration schema file should be readable');
+    assertTrue(str_contains($sql, 'CREATE TABLE IF NOT EXISTS configuration'), 'Schema file should create configuration table');
 });
 
 TestSuite::run('ConfigurationRepository saves and retrieves ui-preferences', function (): void {

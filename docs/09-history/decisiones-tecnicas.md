@@ -665,3 +665,88 @@ su único rol real era un contador interno de auditoría sin consumidores.
 - Smoke test manual sobre un plugin real: activar/desactivar/actualizar/
   rollback, confirmando que `label`/`description` editados sobreviven a un
   `syncAll()`/`update()` posterior.
+
+---
+
+## DECISION 11: Instalación CLI, esquema base en `backend/database/schema/` y superficie web de `tools/`
+
+**Seleccionado:** (a) los SQL de definición inicial (`001`-`006`) viven en
+`backend/database/schema/` y los aplica `tools/setup/install.php` a través de
+PDO (`SchemaInstaller`, transacción por fichero, sin dependencia de `psql`);
+`backend/database/migrations/` queda vacía y reservada para migraciones
+incrementales futuras, sin tabla de tracking hasta que exista la primera
+migración real. (b) Todo `tools/**/*.php` es exclusivamente CLI: guard
+`PHP_SAPI !== 'cli'` en `tools/setup/bootstrap.php` (requerido como primera
+sentencia por cada script, vigilado por `ToolsCliGuardTest`), más `.htaccess`
+`Require all denied` por directorio (`tools/`, `backend/`, `docs/`, `skills/`;
+`backend/public/` re-permite; `plugins/` deniega `*.php|*.json`) y `[NC]` en las
+reglas de bloqueo del `.htaccess` raíz. (c) El instalador crea un administrador
+real (`AdminUserCreator`, `is_seed=false`); los usuarios seed de contraseña
+conocida solo se crean con `APP_DEBUG=true` o `--with-seed-users`; ningún script
+acepta secretos por flag (prompt o `XESTIFY_*`); `backend/.env` a `0640`.
+`tools/dev/` (QA) no se distribuye en el ZIP de release.
+**Alternativas descartadas:** dejar los SQL en `migrations/` (nombre engañoso:
+no son incrementales); confiar solo en la regla del `.htaccess` raíz (dependía
+de Apache + `AllowOverride All` + `mod_rewrite` y era case-sensitive, con bypass
+real en Windows vía `/Tools/...`); sacar `tools/setup` del artefacto (complica la
+instalación y no protege a quien clona el repo); instalador web con token de un
+solo uso (justo la superficie que se quiere evitar); mover el `DocumentRoot` a una
+subcarpeta `public/` (solución definitiva, cambio arquitectónico grande —
+registrada como deuda, no implementada).
+**Fecha:** Agosto 18, 2026 (fuera de story; discutido en 4 rondas con el usuario)
+
+### Contexto
+
+`INSTALL.md` describía una instalación manual (bucle `psql` sobre
+`backend/database/migrations/*.sql`, seeds y sync a mano). Al diseñar el
+instalador se comprobó que (1) los ficheros de `migrations/` eran en realidad
+la definición idempotente del esquema completo; (2) los scripts de
+`tools/setup/` viajan en el ZIP dentro del `DocumentRoot` y su única protección
+era una `RewriteRule` case-sensitive del `.htaccess` raíz, con
+`switch-demoinventory-version.php` (escribe en `plugins/`) ni siquiera pasando
+por `bootstrap.php`; (3) con `APP_DEBUG=false` los usuarios seed no pueden
+iniciar sesión (`AuthController`) y la aplicación no tiene ninguna vía de alta
+de usuarios, así que una instalación de producción quedaba sin acceso.
+
+### Verificacion
+
+- Instalación limpia real no interactiva sobre BD/rol desechables
+  (`--create-db`, `production` y `development`), segunda ejecución idempotente,
+  `--seed-business-data` abortando en BD limpia como se documenta.
+- Guard sin Apache (`php -S`, que ignora `.htaccess`) → 403 en todos los scripts
+  de `tools/`; contra el vhost Apache real, 403 en rutas internas (incluidas
+  variantes en mayúsculas) y 200 en `/health`, SPA, `plugin.js`, CSS/JS;
+  `check-install.php` exit 0; suite E2E Playwright 21/21.
+- `php backend/tests/run.php all` 74/74 (`SchemaIdempotenceTest`,
+  `AdminUserCreatorTest`, `ToolsCliGuardTest` nuevos/renombrados).
+
+### Deuda derivada
+
+- `DocumentRoot` en subcarpeta pública (`public/`) con el resto del código
+  fuera del árbol servible.
+- Alta de usuarios desde la UI/API (backlog, STORY A1.8); mientras tanto
+  `tools/setup/create-admin-user.php`.
+- El mecanismo de migraciones incrementales (tracking, orden, rollback) se
+  definirá con la primera migración real en `backend/database/migrations/`.
+
+### Correcciones derivadas (hallazgos de la instalación limpia real)
+
+- `InstalledPluginSchemaValidator::assertContainsCanonical()` (comprobación de
+  "schema instalado corrupto" en cada `syncAll()`) exigía igualdad total con el
+  disco, incluida una sección `identities` que los plugins `extension` nunca
+  tienen y atributos/secciones que `PluginConfig` permite editar por diseño
+  (`summaryView` de campos base, catálogo de `custom_fields` editable/borrable,
+  `relations` por instalación). Resultado: toda extensión recién registrada y
+  todo plugin configurado se reportaban `error` en cada sync. Regla vigente:
+  solo `identities` y `fields` base son inmutables y se comparan (ignorando
+  `summaryView`/`layer`/`origin`); una sección que el disco no declara no se
+  exige; `custom_fields`/`relations` no se comparan. La deriva real (p. ej.
+  `label` de un campo base cambiado en disco sin subir versión) se sigue
+  reportando. Cobertura: 3 casos nuevos en `PluginSyncServiceTest.php`.
+- `tools/setup/sync-plugins.php` imprimía `unknown` por plugin: no leía el
+  formato por instancia que `syncAll()` devuelve desde STORY 10.3.
+- Datos locales (operación puntual, no versionada): borrado de un usuario
+  huérfano de tests (`admin-seedlist-…@xestify.test`) y realineación de 24
+  `label` de campos base de `contact_lenses` con `schema.json` (deriva de disco
+  sin subir versión). Tras ello, `sync-plugins.php` en la BD de desarrollo:
+  14 instancias `unchanged`, 0 errores.

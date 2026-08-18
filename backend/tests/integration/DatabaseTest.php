@@ -9,7 +9,7 @@
  *
  * Prerequisites:
  *   1. backend/.env exists with valid DB_* vars.
- *   2. Migration 001_users.sql has been applied.
+ *   2. Schema file backend/database/schema/001_users.sql has been applied.
  *
  * Run:
  *   php backend/tests/integration/DatabaseTest.php
@@ -57,7 +57,7 @@ try {
 } catch (DatabaseException) {
     $dbAvailable = false;
     echo "[SKIP] PostgreSQL not reachable — all DatabaseTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run the migration.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run php tools/setup/install.php.\n";
     echo "----------------------------------------\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

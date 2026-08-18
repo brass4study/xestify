@@ -18,10 +18,10 @@ framework de testing externo. Cada fichero:
 ## Ejecutar los tests
 
 ```bash
-php backend/tests/run.php unit                  # 33 ficheros
-php backend/tests/run.php integration-db        # 16 ficheros
+php backend/tests/run.php unit                  # 34 ficheros
+php backend/tests/run.php integration-db        # 17 ficheros
 php backend/tests/run.php integration-plugins   # 23 ficheros
-php backend/tests/run.php all                   # los 72 ficheros
+php backend/tests/run.php all                   # los 74 ficheros
 php backend/tests/unit/RouterTest.php           # un solo fichero, directo
 ```
 
@@ -56,7 +56,7 @@ failed, exit 0) si la base de datos no está disponible, en vez de fallar
   código de producción — lee el código fuente de *otros* ficheros de test
   para comprobar que propagan bien su código de salida.
 
-## Grupo `unit` (33 ficheros)
+## Grupo `unit` (34 ficheros)
 
 | Fichero | Verifica |
 |---|---|
@@ -93,15 +93,16 @@ failed, exit 0) si la base de datos no está disponible, en vez de fallar
 | `TestRunnerExitCodeTest.php` 🧪 | Que los ficheros de test señalizan fallos al runner agrupado vía código de salida |
 | `PluginTypeGuardTest.php` | Rechaza cambios del campo `plugin_type` entre actualizaciones de manifest |
 | `SchemaComparisonUtilTest.php` | Normaliza estructuras para comparar schemas ignorando el orden de claves |
+| `ToolsCliGuardTest.php` | Guard estático de `tools/`: `bootstrap.php` empieza con la comprobación `PHP_SAPI !== 'cli'`, todo `tools/**/*.php` lo requiere como primera sentencia y ningún script acepta contraseñas por flag |
 
-## Grupo `integration-db` (16 ficheros)
+## Grupo `integration-db` (17 ficheros)
 
 Tablas core, repositorios genéricos y controladores que las usan directamente.
 
 | Fichero | Verifica |
 |---|---|
 | `DatabaseTest.php` | Conexión a PostgreSQL, saltando las pruebas si la base de datos no está disponible |
-| `MigrationIdempotenceTest.php` | Todas las migraciones SQL son idempotentes al ejecutarse dos veces |
+| `SchemaIdempotenceTest.php` | Los ficheros de `backend/database/schema/` se descubren en orden y se aplican dos veces sin error ni pérdida de datos vía `SchemaInstaller` (mismo camino que `tools/setup/install.php`, sin `psql`); comprobaciones de solo lectura de `DatabaseProvisioner` (existencia de rol/BD, rechazo de identificadores inválidos) |
 | `EntityDataTableTest.php` | La tabla `plugin_entity_data` fue creada correctamente por su migración |
 | `EntityMetadataTableTest.php` | `plugin_entity_metadata` ya no existe y `plugins` tiene la columna `schema_json` |
 | `PluginsRegistryTableTest.php` | La tabla `plugins` fue creada correctamente por su migración |
@@ -116,6 +117,7 @@ Tablas core, repositorios genéricos y controladores que las usan directamente.
 | `EntityServiceTest.php` | Operaciones CRUD (crear, actualizar, borrar, listar) de `EntityService` contra BD real |
 | `EntityControllerTest.php` | Métodos de `EntityController` de extremo a extremo contra BD real |
 | `BusinessDataSeederTest.php` | `BusinessDataSeeder` genera datos demo de forma idempotente y con relaciones cruzadas válidas (STORY 11.2) |
+| `AdminUserCreatorTest.php` | `AdminUserCreator` crea un administrador real (`is_seed=false`, rol admin, hash bcrypt verificable), detecta si ya existe uno y rechaza email inválido/duplicado, nombre vacío y contraseña corta sin insertar |
 
 ## Grupo `integration-plugins` (23 ficheros)
 
@@ -131,7 +133,7 @@ Ciclo de vida de plugins, hooks activos en runtime y endpoints de gestión.
 | `PluginFieldsConfigTest.php` | `saveConfig()` persiste cambios de `summaryView` en campos base y de extensión |
 | `ReverseRelationTest.php` | Las relaciones inversas declaradas por un plugin generan tabs y listados filtrados |
 | `EntityOptionsTest.php` | Endpoint `GET /entities/{slug}/options` usado para poblar selects de relación |
-| `PluginSyncServiceTest.php` | `PluginSyncService` registra plugins, detecta corrupción de schema y hace rollback en `syncAll()` |
+| `PluginSyncServiceTest.php` | `PluginSyncService` registra plugins, detecta deriva real del schema instalado (`identities`/`fields` base frente al disco, ignorando `summaryView`/`layer`/`origin`), no marca como corrupta la configuración permitida por PluginConfig (extensiones sin `identities`, campos sugeridos editados/eliminados, relaciones por instalación) y hace rollback en `syncAll()` |
 | `PluginUpdateServiceTest.php` | `PluginUpdateService` actualiza versión y fusiona cambios de schema de forma aditiva |
 | `PluginRollbackServiceTest.php` | `PluginRollbackService` restaura una versión anterior desde snapshot e invoca `onRollback()` |
 | `PluginStatusServiceTest.php` | `PluginStatusService` activa/desactiva plugins e invoca sus hooks de ciclo de vida |

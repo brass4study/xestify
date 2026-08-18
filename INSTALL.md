@@ -17,7 +17,7 @@ guía es puramente técnica: cómo dejar la aplicación funcionando.
 |--------------|-----------------|-------|
 | Apache       | 2.4+            | Módulos `mod_rewrite` y `mod_headers` habilitados |
 | PHP          | 8.1+            | Extensiones `pdo_pgsql` y `mbstring` habilitadas |
-| PostgreSQL   | 13+             | Las migraciones usan `gen_random_uuid()` nativo (disponible sin extensiones desde la 13) |
+| PostgreSQL   | 13+             | El esquema usa `gen_random_uuid()` nativo (disponible sin extensiones desde la 13) |
 | git          | cualquiera reciente | Para clonar el repositorio |
 
 Sistemas operativos cubiertos en esta guía: **Linux/Debian/Raspberry Pi OS**
@@ -81,22 +81,29 @@ Instala PostgreSQL 13 o superior (`apt install postgresql` en Linux, o el
 instalador oficial de [postgresql.org](https://www.postgresql.org/download/windows/)
 en Windows).
 
-Crea un rol y una base de datos dedicados para la aplicación (no uses el
-superusuario `postgres` en producción):
+La aplicación necesita un rol y una base de datos dedicados (no uses el
+superusuario `postgres` en producción). Tienes dos opciones:
 
-```sql
-CREATE ROLE xestify LOGIN PASSWORD 'una_contraseña_fuerte';
-CREATE DATABASE xestify OWNER xestify;
-```
+- **Dejar que el instalador los cree** (paso 6): `php tools/setup/install.php --create-db`
+  se conecta a la base de datos de mantenimiento (`postgres`) con un usuario
+  con privilegios (por defecto `postgres`, contraseña pedida por consola o
+  `XESTIFY_MAINT_PASSWORD`) y crea el rol `DB_USER` y la base de datos
+  `DB_NAME` si no existen.
+- **Crearlos a mano** ahora:
 
-En Linux normalmente se ejecuta como:
+  ```sql
+  CREATE ROLE xestify LOGIN PASSWORD 'una_contraseña_fuerte';
+  CREATE DATABASE xestify OWNER xestify;
+  ```
 
-```bash
-sudo -u postgres psql -c "CREATE ROLE xestify LOGIN PASSWORD 'una_contraseña_fuerte';"
-sudo -u postgres psql -c "CREATE DATABASE xestify OWNER xestify;"
-```
+  En Linux normalmente se ejecuta como:
 
-En Windows, usa `psql` con el usuario `postgres` creado por el instalador.
+  ```bash
+  sudo -u postgres psql -c "CREATE ROLE xestify LOGIN PASSWORD 'una_contraseña_fuerte';"
+  sudo -u postgres psql -c "CREATE DATABASE xestify OWNER xestify;"
+  ```
+
+  En Windows, usa `psql` con el usuario `postgres` creado por el instalador.
 
 ---
 
@@ -146,7 +153,99 @@ Reinicia Apache tras aplicar la configuración.
 
 ---
 
-## 6. Configurar la aplicación
+## 6. Instalación asistida (recomendada)
+
+Con Apache, PHP y PostgreSQL instalados y el código en su sitio, el
+instalador de línea de comandos hace el resto en un solo paso, de forma
+idempotente (se puede volver a ejecutar sin efectos secundarios):
+
+```bash
+php tools/setup/install.php
+```
+
+Qué hace, en orden:
+
+1. **Requisitos**: PHP ≥ 8.1 con `pdo_pgsql` y `mbstring`.
+2. **`backend/.env`**: si no existe, lo crea a partir de `backend/.env.example`
+   preguntando por consola host/puerto/base de datos/usuario/contraseña de
+   PostgreSQL y `APP_ENV` (`development` por defecto, `production` para una
+   instalación real; `APP_DEBUG` se deriva de él). Genera un `JWT_SECRET`
+   aleatorio de 64 caracteres hexadecimales y, en Linux/macOS, deja el fichero
+   con permisos `0640`. Si `backend/.env` ya existe se usa tal cual.
+3. **Rol y base de datos** (solo con `--create-db`): los crea si faltan
+   conectando a la base de datos de mantenimiento como superusuario (`--maint-user`,
+   por defecto `postgres`; contraseña por consola o `XESTIFY_MAINT_PASSWORD`).
+4. **Conexión** con las credenciales de `backend/.env`.
+5. **Esquema base**: aplica en orden, a través de PDO (no hace falta `psql`),
+   los ficheros de [backend/database/schema/](backend/database/schema/)
+   (`users`, `plugins`, `plugin_entity_data`, `plugin_extension_data`,
+   `plugin_update_history`, `configuration`). Son idempotentes.
+6. **Administrador real**: crea el primer usuario administrador (email, nombre
+   y contraseña de al menos 12 caracteres, pedidos por consola). Es el usuario
+   con el que se entra en producción; se omite si ya existe uno.
+7. **Usuarios de demostración** (`admin@xestify.local` / `admin123` y
+   `usuario@xestify.local` / `usuario123`): **solo** si `APP_DEBUG=true` (o con
+   `--with-seed-users`). Con `APP_DEBUG=false` esas cuentas no pueden iniciar
+   sesión, así que en producción no se crean.
+8. **Plugins**: registra en base de datos los plugins presentes en `plugins/`
+   (quedan inactivos: se activan o instancian desde PluginManager).
+9. **Datos de demostración** (solo con `--seed-business-data`, ver paso 10).
+
+Opciones útiles (`php tools/setup/install.php --help` muestra todas):
+
+| Opción | Efecto |
+|---|---|
+| `--non-interactive` | Sin preguntas: usa flags, variables de entorno y valores por defecto (para scripts/CI). Falla con código 2 si falta un secreto obligatorio. |
+| `--db-host= --db-port= --db-name= --db-user= --app-env=` | Valores de `backend/.env` cuando aún no existe. |
+| `--create-db`, `--maint-user=`, `--maint-db=` | Creación de rol y base de datos. |
+| `--admin-email=`, `--admin-name=` | Datos del administrador real. |
+| `--skip-admin`, `--with-seed-users`, `--skip-plugins`, `--seed-business-data` | Ajustan los pasos 6-9. |
+
+**Las contraseñas nunca se pasan como flag** (quedarían en el historial de la
+shell y en la lista de procesos): se piden por consola (sin eco en Linux/macOS)
+o se leen de las variables de entorno `XESTIFY_DB_PASSWORD`,
+`XESTIFY_MAINT_PASSWORD` y `XESTIFY_ADMIN_PASSWORD` (más `XESTIFY_ADMIN_EMAIL`
+/ `XESTIFY_ADMIN_NAME` como alternativa a los flags).
+
+Ejemplo de instalación de producción sin interacción:
+
+```bash
+XESTIFY_MAINT_PASSWORD='...' XESTIFY_DB_PASSWORD='...' XESTIFY_ADMIN_PASSWORD='...' \
+php tools/setup/install.php --non-interactive --create-db \
+    --db-host=127.0.0.1 --db-name=xestify --db-user=xestify --app-env=production \
+    --admin-email=admin@miempresa.es --admin-name="Administrador"
+```
+
+Scripts complementarios en [tools/setup/](tools/setup/):
+
+- `php tools/setup/create-admin-user.php` — crea otro administrador real (o
+  recupera el acceso) en una instalación existente. Mientras la aplicación no
+  tenga alta de usuarios desde la interfaz (backlog, STORY A1.8), esta es la vía
+  para dar de alta usuarios.
+- `php tools/setup/check-install.php --url=http://host/` — comprobación de
+  seguridad post-instalación (paso 9).
+- `php tools/setup/seed-admin-user.php`, `sync-plugins.php`,
+  `seed-business-data.php` — los pasos individuales que también ejecuta el
+  instalador, por si quieres lanzarlos por separado.
+
+### Nota para Windows con Apache+PHP
+
+Si usas un binario de PHP dedicado a Apache y su `php.ini` efectivo vive en
+una ruta distinta a la de tu PHP de línea de comandos, fuerza ese `ini`
+con `-c` al ejecutar los scripts:
+
+```powershell
+C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/install.php
+```
+
+---
+
+## 7. Instalación manual (alternativa)
+
+Equivalente paso a paso al instalador, por si prefieres controlar cada
+operación.
+
+### 7.1 Configurar la aplicación
 
 Copia la plantilla de entorno:
 
@@ -179,31 +278,29 @@ Notas:
 - Usa `DB_HOST=127.0.0.1` en vez de `localhost` para evitar la latencia
   extra de resolución de nombre en conexiones locales.
 - En desarrollo puedes dejar `APP_ENV=development` y `APP_DEBUG=true`.
-- `PSQL_PATH` (comentado en `.env.example`) solo hace falta si vas a
-  ejecutar `MigrationIdempotenceTest.php` y `psql` no está en el `PATH`
-  (típico en Windows).
+- En Linux, protege el fichero: `chmod 0640 backend/.env` y grupo del usuario
+  de Apache (`chgrp www-data backend/.env`).
 
----
+### 7.2 Crear el esquema de base de datos
 
-## 7. Crear el esquema de base de datos
+El esquema base son ficheros SQL planos en
+[backend/database/schema/](backend/database/schema/), pensados para aplicarse
+en orden. Son idempotentes: se pueden volver a ejecutar sin error.
+(`backend/database/migrations/` queda reservada para migraciones incrementales
+futuras; hoy está vacía.)
 
-Las migraciones son ficheros SQL planos en
-[backend/database/migrations/](backend/database/migrations/), pensados para
-aplicarse a mano y en orden. Son idempotentes: se pueden volver a ejecutar
-sin error.
-
-### Linux/macOS
+Linux/macOS:
 
 ```bash
-for f in backend/database/migrations/*.sql; do
+for f in backend/database/schema/*.sql; do
   psql -h 127.0.0.1 -U xestify -d xestify -f "$f"
 done
 ```
 
-### Windows (PowerShell)
+Windows (PowerShell):
 
 ```powershell
-Get-ChildItem backend\database\migrations\*.sql | Sort-Object Name | ForEach-Object {
+Get-ChildItem backend\database\schema\*.sql | Sort-Object Name | ForEach-Object {
     psql -h 127.0.0.1 -U xestify -d xestify -f $_.FullName
 }
 ```
@@ -211,22 +308,20 @@ Get-ChildItem backend\database\migrations\*.sql | Sort-Object Name | ForEach-Obj
 Si `psql` no está en el `PATH`, usa la ruta completa al ejecutable (por
 ejemplo `C:\Program Files\PostgreSQL\18\bin\psql.exe`).
 
----
-
-## 8. Inicializar la aplicación
-
-Con el esquema ya creado, ejecuta los scripts de arranque en
-[tools/setup/](tools/setup/):
+### 7.3 Inicializar la aplicación
 
 ```bash
-php tools/setup/seed-admin-user.php
-php tools/setup/sync-plugins.php
+php tools/setup/create-admin-user.php      # administrador real (obligatorio en producción)
+php tools/setup/seed-admin-user.php        # usuarios de demostración (solo desarrollo/demo)
+php tools/setup/sync-plugins.php           # registra los plugins de plugins/
 ```
 
-- `seed-admin-user.php` crea los usuarios seed iniciales si la tabla
-  `users` está vacía (`admin@xestify.local` / `admin123` y
-  `usuario@xestify.local` / `usuario123` — **cambia estas contraseñas o
-  gestiona los usuarios reales desde la aplicación tras el primer login**).
+- `create-admin-user.php` pide email, nombre y contraseña (o los lee de
+  `XESTIFY_ADMIN_EMAIL` / `XESTIFY_ADMIN_NAME` / `XESTIFY_ADMIN_PASSWORD`).
+- `seed-admin-user.php` crea `admin@xestify.local` / `admin123` y
+  `usuario@xestify.local` / `usuario123` (`is_seed=true`). Con `APP_DEBUG=false`
+  **no pueden iniciar sesión** (el script avisa); son cuentas para desarrollo,
+  demos y tests.
 - `sync-plugins.php` registra en base de datos los plugins presentes en
   `plugins/` (entidades y extensiones de demostración incluidas).
 
@@ -234,16 +329,46 @@ Ninguna de estas operaciones se ejecuta automáticamente en cada request;
 hay que lanzarlas explícitamente en la instalación inicial y tras añadir
 plugins nuevos.
 
-### Nota para Windows con Apache+PHP
+---
 
-Si usas un binario de PHP dedicado a Apache y su `php.ini` efectivo vive en
-una ruta distinta a la de tu PHP de línea de comandos, fuerza ese `ini`
-con `-c` al ejecutar los scripts:
+## 8. Modelo de seguridad de la instalación
 
-```powershell
-C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/seed-admin-user.php
-C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-plugins.php
-```
+Xestify se sirve con el `DocumentRoot` en la raíz del repositorio, así que
+todo el código (incluidos `backend/.env`, los scripts de `tools/` y las
+clases PHP de `plugins/`) vive dentro del árbol servible. La protección se
+apoya en varias capas independientes:
+
+1. **Los scripts de `tools/` solo funcionan desde línea de comandos.**
+   `tools/setup/bootstrap.php` (que todo script de `tools/` requiere en su
+   primera sentencia) responde `403` y termina si `PHP_SAPI` no es `cli`, sea
+   cual sea el servidor web o su configuración. Un test automático
+   (`backend/tests/unit/ToolsCliGuardTest.php`) impide añadir scripts sin ese
+   guard.
+2. **`.htaccess` raíz**: reescribe únicamente las rutas públicas (`/`, `/api/*`,
+   `/health`, `/css/*`, `/js/*`, `/plugins/<x>/plugin.js`, `/plugins/<x>/assets/*`)
+   y devuelve `403` (sin distinguir mayúsculas) para `backend/`, `docs/`,
+   `frontend/`, `skills/`, `tools/`, `var/`, los `.md` de la raíz y cualquier
+   dotfile.
+3. **`.htaccess` por directorio** (`Require all denied` en `tools/setup/`,
+   `tools/dev/`, `backend/`, `docs/`, `skills/`; `Require all granted` solo en
+   `backend/public/`; en `plugins/` se deniegan `*.php` y `*.json`): segunda
+   barrera aunque cambien las reglas raíz.
+4. **Sin secretos en la línea de comandos** y `backend/.env` con permisos
+   restringidos.
+5. **Sin cuentas por defecto en producción**: los usuarios seed con contraseña
+   conocida solo se crean con `APP_DEBUG=true`, y aun existiendo no pueden
+   iniciar sesión con `APP_DEBUG=false`.
+
+Requisitos para que las capas 2 y 3 actúen: Apache con `mod_rewrite`,
+`AllowOverride All` sobre el `DocumentRoot` y el `DocumentRoot` apuntando a la
+raíz del proyecto (paso 5). Verifícalo siempre con `check-install.php` (paso 9).
+
+Deuda conocida: la solución definitiva es servir desde una subcarpeta pública
+(`DocumentRoot` = `public/`) con el resto del código fuera del árbol servible;
+está anotada en `docs/09-history/decisiones-tecnicas.md` (DECISION 11).
+
+Herramientas de QA/desarrollo (`tools/dev/`) no se incluyen en el artefacto de
+release.
 
 ---
 
@@ -254,9 +379,20 @@ C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-p
    curl http://xestify.local/health
    ```
    Debe devolver una respuesta `200 OK`.
-2. Abre la aplicación en el navegador (`http://xestify.local/` o la
-   subruta configurada) e inicia sesión con uno de los usuarios seed.
-3. Opcionalmente, ejecuta la suite de tests backend completa contra la
+2. Ejecuta la comprobación de exposición web contra la URL real de la
+   instalación (acepta subrutas, p. ej. `http://localhost/xestify/`):
+   ```bash
+   php tools/setup/check-install.php --url=http://xestify.local/
+   ```
+   Verifica que `/health` y la SPA responden `200` y que ninguna ruta interna
+   se sirve (`/tools/setup/install.php`, `/Tools/setup/install.php`,
+   `/backend/.env`, `/plugins/comments/Hooks.php`, `/INSTALL.md`, `/.git/HEAD`,
+   etc. deben dar `403`/`404`). Sale con código 1 si algo está expuesto.
+   Equivalente manual: `curl -I http://xestify.local/backend/.env` → `403`.
+3. Abre la aplicación en el navegador (`http://xestify.local/` o la
+   subruta configurada) e inicia sesión con el administrador real creado en el
+   paso 6 (o con un usuario seed si `APP_DEBUG=true`).
+4. Opcionalmente, ejecuta la suite de tests backend completa contra la
    base de datos real:
    ```bash
    php backend/tests/run.php all
@@ -268,14 +404,21 @@ C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-p
 
 Para tener una instalación con datos de ejemplo listos para evaluar (~2500
 registros: clientes, distribuidores, oftalmólogos, marcas, fabricantes,
-pedidos, ventas, facturas y fichas clínicas), tras haber creado el usuario
-admin ejecuta:
+pedidos, ventas, facturas y fichas clínicas), ejecuta:
 
 ```bash
-php tools/setup/seed-business-data.php
+php tools/setup/seed-business-data.php          # o: php tools/setup/install.php --seed-business-data
 ```
 
-Es idempotente: se puede volver a ejecutar sin duplicar datos. Detalle
+Requisitos previos: el usuario `admin@xestify.local` (usuarios seed, paso 6/7)
+y las once instancias de plugin que usa el seeder **activas** (`clients`,
+`distributors`, `ophthalmologists`, `brands`, `manufacturers`, `orders`,
+`sales`, `invoices`, `optometries`, `contact_lenses`, `comments`). En una
+instalación recién creada los plugins quedan inactivos y varias de esas
+instancias (`clients`/`distributors`/`ophthalmologists` sobre `persons`,
+`brands`/`manufacturers` sobre `basic`, `sales` sobre `orders`) se crean desde
+PluginManager; hasta entonces el seeder aborta sin insertar nada e indica qué
+falta. Es idempotente: se puede volver a ejecutar sin duplicar datos. Detalle
 completo en [skills/seed-business-data/SKILL.md](skills/seed-business-data/SKILL.md).
 
 ---
@@ -296,9 +439,13 @@ consulta [docs/08-operations/actualizaciones.md](docs/08-operations/actualizacio
 | Síntoma | Causa probable | Solución |
 |---|---|---|
 | Error de conexión a base de datos al usar la app | `DB_HOST`/`DB_PORT`/credenciales incorrectas en `.env`, o extensión `pdo_pgsql` no habilitada | Revisa `backend/.env` y `php -m \| grep pgsql` |
-| La app no arranca, error de `JWT_SECRET` | `JWT_SECRET` vacío en `backend/.env` | Genera y define un valor aleatorio (ver paso 6) |
+| La app no arranca, error de `JWT_SECRET` | `JWT_SECRET` vacío en `backend/.env` | Genera y define un valor aleatorio (ver paso 7.1) o deja que `install.php` lo genere |
 | 403/404 en rutas de la aplicación (`/api/*`, `/health`, navegación SPA) | Falta `AllowOverride All` o los módulos `mod_rewrite`/`mod_headers` no están cargados | Revisa la `<Directory>` del VirtualHost y los `LoadModule` de Apache |
 | Página en blanco o assets (`/css/*`, `/js/*`) no cargan | `DocumentRoot` no apunta a la raíz del repo, o el usuario de Apache no tiene permisos de lectura | Verifica el paso 5 y los permisos de lectura sobre el repositorio clonado |
+| `install.php` no conecta: base de datos o rol inexistente | Aún no se ha creado el rol/BD del paso 3 | Relanza con `--create-db` (credenciales de mantenimiento) o créalos a mano |
+| `check-install.php` marca rutas `EXPUESTO` (`/backend/.env`, `/tools/...` responden 200) | `.htaccess` ignorados: falta `AllowOverride All`, `mod_rewrite` no cargado, o el `DocumentRoot` no es la raíz del proyecto | Corrige el VirtualHost (paso 5) y repite la comprobación; los scripts de `tools/` siguen sin ejecutarse por web (guard CLI), pero `.env` y el código quedan legibles |
+| No puedo iniciar sesión en producción con `admin@xestify.local` | Con `APP_DEBUG=false` los usuarios seed están bloqueados por diseño | Crea un administrador real: `php tools/setup/create-admin-user.php` |
+| `Falta la contrasena ...` con código 2 | Modo `--non-interactive` sin la variable de entorno del secreto | Define `XESTIFY_DB_PASSWORD` / `XESTIFY_MAINT_PASSWORD` / `XESTIFY_ADMIN_PASSWORD` o ejecuta en modo interactivo |
 
 ---
 

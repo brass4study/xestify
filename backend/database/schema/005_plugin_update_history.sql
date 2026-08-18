@@ -1,4 +1,4 @@
--- Migration: 005_plugin_update_history.sql
+-- Schema: 005_plugin_update_history.sql
 -- Snapshots of plugin state before explicit updates.
 -- Used to support transactional updates now and manual rollback in STORY 7.4.
 -- manifest_json/schema_json mirror the plugins row being snapshotted (STORY

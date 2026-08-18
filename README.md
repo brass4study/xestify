@@ -186,15 +186,21 @@ MVP implementado hasta **STORY 11.2 incluida** (EPIC 9 y EPIC 10 cerradas al com
 
 Pendiente tras STORY 11.2: auditoría de coherencia de documentación y guion de defensa del TFM (EPIC 11).
 
-Operaciones manuales de setup:
+Operaciones de setup (CLI; guía completa en [INSTALL.md](INSTALL.md)):
 
-- `php tools/setup/seed-admin-user.php`: crea el admin inicial si la tabla `users` esta vacia
+- `php tools/setup/install.php`: instalación completa e idempotente — requisitos, `backend/.env`, rol/BD opcional (`--create-db`), esquema base (`backend/database/schema/`), administrador real, usuarios seed solo en debug, sincronización de plugins y datos demo opcionales
+- `php tools/setup/create-admin-user.php`: crea un administrador real (`is_seed=false`) en una instalación existente (la app aún no tiene alta de usuarios desde la UI, ver STORY A1.8)
+- `php tools/setup/check-install.php --url=...`: comprobación post-instalación de que las rutas públicas responden y ninguna ruta interna (`tools/`, `backend/.env`, PHP/JSON de plugins, docs) se sirve por web
+- `php tools/setup/seed-admin-user.php`: crea los usuarios seed de demostración (`admin@xestify.local` / `usuario@xestify.local`, solo pueden iniciar sesión con `APP_DEBUG=true`)
 - `php tools/setup/sync-plugins.php`: registra plugins nuevos y detecta updates disponibles sin consumir la version/schema runtime de plugins ya instalados
 - `php tools/setup/seed-business-data.php`: siembra datos de negocio de demostración de forma idempotente (ver [skills/seed-business-data](skills/seed-business-data/SKILL.md))
 
 Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
 plugins y hooks desde la base de datos; la sincronizacion disco -> BD es
-explicita.
+explicita. Todos los scripts de `tools/` son exclusivamente de línea de
+comandos: `tools/setup/bootstrap.php` rechaza cualquier otro SAPI, y los
+`.htaccess` por directorio impiden servirlos por web (ver "Modelo de seguridad
+de la instalación" en `INSTALL.md`).
 
 Para evitar latencia innecesaria en local con Apache+PHP:
 

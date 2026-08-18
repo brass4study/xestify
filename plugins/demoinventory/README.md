@@ -11,7 +11,7 @@ Este plugin se usa para probar en frontend las funcionalidades de STORY 7.5:
 1. Poner plugin en v1 (disco):
 
 ```powershell
-php tools/setup/switch-demoinventory-version.php 1
+php tools/dev/switch-demoinventory-version.php 1
 ```
 
 2. Sincronizar plugins (API o script):
@@ -25,7 +25,7 @@ php tools/setup/sync-plugins.php
 4. Cambiar plugin a v2 (disco):
 
 ```powershell
-php tools/setup/switch-demoinventory-version.php 2
+php tools/dev/switch-demoinventory-version.php 2
 ```
 
 5. En PluginManager, pulsar `Synchronize`.

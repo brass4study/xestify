@@ -1,4 +1,4 @@
--- Migration: 003_plugins.sql
+-- Schema: 003_plugins.sql
 -- Registry of all plugins installed in the system.
 -- Stores lifecycle metadata and optional schema definition.
 -- status: 'active' | 'inactive' | 'error'

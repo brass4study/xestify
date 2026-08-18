@@ -50,16 +50,17 @@ try {
     echo "Outdated: {$summary['outdated']}\n";
     echo "Errors: {$summary['errors']}\n";
 
-    foreach ($plugins as $slug => $plugin) {
-        $resultType = is_array($plugin) && isset($plugin['result']) ? (string) $plugin['result'] : 'unknown';
-        $installed = is_array($plugin) && isset($plugin['installed_version'])
-            ? (string) $plugin['installed_version']
-            : 'n/a';
-        $available = is_array($plugin) && isset($plugin['available_version'])
-            ? (string) $plugin['available_version']
-            : 'n/a';
-        $message = is_array($plugin) && isset($plugin['message']) ? (string) $plugin['message'] : '';
-        echo "- {$slug}: {$resultType} (installed={$installed}, available={$available}) {$message}\n";
+    // syncAll() reports one entry per registered instance of each disk plugin
+    // (plugin_name is not unique since STORY 10.3).
+    foreach ($plugins as $pluginName => $instances) {
+        foreach ($instances as $instance) {
+            $slug = (string) ($instance['slug'] ?? $pluginName);
+            $resultType = (string) ($instance['result'] ?? 'unknown');
+            $installed = (string) ($instance['installed_version'] ?? 'n/a');
+            $available = (string) ($instance['available_version'] ?? 'n/a');
+            $message = (string) ($instance['message'] ?? '');
+            echo "- {$pluginName} [{$slug}]: {$resultType} (installed={$installed}, available={$available}) {$message}\n";
+        }
     }
 } catch (\Throwable $e) {
     fwrite(STDERR, "Plugin sync failed: {$e->getMessage()}\n");

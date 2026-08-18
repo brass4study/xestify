@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/setup/bootstrap.php';
+
 $version = $argv[1] ?? '';
 
 if (!in_array($version, ['1', '2', 'v1', 'v2', '1.0.0', '2.0.0'], true)) {
-    fwrite(STDERR, "Uso: php tools/setup/switch-demoinventory-version.php <1|2>\n");
+    fwrite(STDERR, "Uso: php tools/dev/switch-demoinventory-version.php <1|2>\n");
     exit(1);
 }
 

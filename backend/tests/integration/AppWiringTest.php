@@ -63,7 +63,7 @@ try {
     Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all AppWiringTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run migrations.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run php tools/setup/install.php.\n";
     echo str_repeat('-', 40) . "\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);

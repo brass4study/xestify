@@ -8,8 +8,8 @@ RewriteRule ^ - [E=HTTP_AUTHORIZATION:%1]
 
 # Never expose dotfiles or internal repo folders directly.
 RewriteRule (^|/)\. - [F,END]
-RewriteRule ^(?:backend|docs|frontend|skills|tools|var)(?:/|$) - [F,END]
-RewriteRule ^(?:AGENTS|CONTRIBUTING|INSTALL|README)\.md$ - [F,END]
+RewriteRule ^(?:backend|docs|frontend|skills|tools|var)(?:/|$) - [F,NC,END]
+RewriteRule ^(?:AGENTS|CONTRIBUTING|INSTALL|README)\.md$ - [F,NC,END]
 
 # Canonical backend entrypoints under the same origin.
 RewriteRule ^(?:api/.*|health)$ backend/public/index.php [QSA,END]
@@ -24,7 +24,7 @@ RewriteRule ^js/(.*)$ frontend/src/js/$1 [END]
 # Plugin frontend assets.
 RewriteRule ^plugins/([^/]+)/plugin\.js$ plugins/$1/plugin.js [END]
 RewriteRule ^plugins/([^/]+)/assets/(.*)$ plugins/$1/assets/$2 [END]
-RewriteRule ^plugins/ - [F,END]
+RewriteRule ^plugins/ - [F,NC,END]
 
 # SPA shell.
 RewriteRule ^$ frontend/src/index.html [END]

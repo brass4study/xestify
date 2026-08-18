@@ -50,10 +50,11 @@ $groups = [
         'backend/tests/unit/TestRunnerExitCodeTest.php',
         'backend/tests/unit/PluginTypeGuardTest.php',
         'backend/tests/unit/SchemaComparisonUtilTest.php',
+        'backend/tests/unit/ToolsCliGuardTest.php',
     ],
     'integration-db' => [
         'backend/tests/integration/DatabaseTest.php',
-        'backend/tests/integration/MigrationIdempotenceTest.php',
+        'backend/tests/integration/SchemaIdempotenceTest.php',
         'backend/tests/integration/EntityDataTableTest.php',
         'backend/tests/integration/EntityMetadataTableTest.php',
         'backend/tests/integration/PluginsRegistryTableTest.php',
@@ -68,6 +69,7 @@ $groups = [
         'backend/tests/integration/EntityServiceTest.php',
         'backend/tests/integration/EntityControllerTest.php',
         'backend/tests/integration/BusinessDataSeederTest.php',
+        'backend/tests/integration/AdminUserCreatorTest.php',
     ],
     'integration-plugins' => [
         'backend/tests/integration/PluginDependencyValidatorTest.php',

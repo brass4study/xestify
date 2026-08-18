@@ -37,6 +37,28 @@ define los estandares tecnicos que deben aplicar personas, agentes y herramienta
   same-origin real, nunca por un servidor alternativo (ver "Desarrollo
   local" en `AGENTS.md`).
 
+## Herramientas CLI (`tools/`)
+
+Los scripts de `tools/` viajan en el artefacto de release dentro del
+`DocumentRoot`, asi que deben ser imposibles de ejecutar por web:
+
+- `tools/setup/bootstrap.php` empieza con el guard `if (PHP_SAPI !== 'cli')`
+  (403 + exit) antes de cualquier otra sentencia.
+- Todo `tools/**/*.php` requiere ese bootstrap como **primera sentencia** tras
+  `declare(strict_types=1)`: `require_once __DIR__ . '/bootstrap.php';` en
+  `tools/setup/`, `require_once dirname(__DIR__) . '/setup/bootstrap.php';` en
+  `tools/dev/` u otras subcarpetas. Los helpers compartidos de consola viven en
+  `tools/setup/cli-helpers.php` (prompts, secretos, parseo de opciones).
+- Nunca aceptar contrasenas ni secretos como flags de linea de comandos:
+  prompt (oculto cuando el terminal lo permite) o variables de entorno
+  `XESTIFY_*`.
+- `tools/setup/` es lo que un operador necesita (instalacion, admin, seeds,
+  sync, comprobacion); `tools/dev/` es QA/desarrollo y queda fuera del ZIP de
+  release (`skills/publish-release`).
+- `backend/tests/unit/ToolsCliGuardTest.php` verifica estas reglas de forma
+  estatica; falla si se añade un script sin el guard o con un flag de
+  contrasena.
+
 ## Verificacion
 
 - Al tocar backend, ejecutar la suite relevante.

@@ -18,7 +18,7 @@ try {
     $pdo = Database::connection();
 } catch (DatabaseException) {
     echo "[SKIP] PostgreSQL not reachable — all PluginSyncServiceTest cases skipped.\n";
-    echo "       Configure backend/.env with valid DB_* vars and run migrations.\n";
+    echo "       Configure backend/.env with valid DB_* vars and run php tools/setup/install.php.\n";
     echo str_repeat('-', 40) . "\n";
     echo "Resultado: 0 passed, 0 failed (skipped)\n";
     exit(0);
@@ -570,6 +570,141 @@ TestSuite::run('syncAll() recognizes a renamed instance by plugin_name and does 
         assertEquals('1', (string) ($countRow['cnt'] ?? '0'), 'Sync after a rename must not create a duplicate row for the same plugin_name');
     } finally {
         cleanupPluginRecord($pdo, $pluginName);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() re-syncs an unchanged extension plugin whose disk schema has no identities without error', function () use ($pdo): void {
+    // Regression: extension schemas on disk declare `fields` only, so the
+    // installed schema (copied verbatim at registration) never has an
+    // `identities` block. Requiring it made every fresh-install re-sync of
+    // comments/optometries/contact_lenses fail with "identities missing".
+    $slug = 'test_sync_ext_plain_' . bin2hex(random_bytes(3));
+    $schema = [
+        'fields' => [
+            'body' => ['type' => 'text', 'required' => true, 'label' => 'Body'],
+        ],
+    ];
+    insertSyncTestPlugin($pdo, $slug, [
+        'label' => 'Plain Extension',
+        'type' => 'extension',
+        'target_entity' => '*',
+    ], 'inactive', $schema);
+
+    $root = createPluginFixture([
+        'name' => $slug,
+        'label' => 'Plain Extension',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'extension',
+        'core_version' => SYNC_SEMVER_1_0,
+    ]);
+    file_put_contents($root . '/' . $slug . SCHEMA_JSON_SUFFIX, (string) json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    try {
+        $result = buildPluginSyncService($root, $pdo)->syncAll();
+
+        assertEquals(0, $result['summary']['errors'], 'An untouched extension plugin must not be reported as corrupt');
+        assertEquals('unchanged', $result['plugins'][$slug][0]['result'], 'Extension result should be unchanged');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() does not report corruption for admin configuration allowed by PluginConfig', function () use ($pdo): void {
+    // Everything PluginConfig lets the admin do on an entity plugin must survive
+    // a routine sync as "unchanged": summaryView toggled on a base field, a
+    // suggested field removed from the catalog and another one relabelled
+    // (with the `origin` metadata the config service stamps), and a relation
+    // added per installation. Only identities/base fields are immutable.
+    $slug = 'test_sync_admin_cfg_' . bin2hex(random_bytes(3));
+    $canonical = [
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name', 'summaryView' => false],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => false, 'label' => 'Phone', 'summaryView' => false],
+            ['key' => 'notes', 'type' => 'text', 'required' => false, 'label' => 'Notes', 'summaryView' => false],
+        ],
+        'relations' => [],
+    ];
+    $configured = [
+        'identities' => $canonical['identities'],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name', 'summaryView' => true],
+        ],
+        'custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => true, 'label' => 'Telefono', 'summaryView' => true, 'origin' => 'suggested'],
+        ],
+        'plugin_suggested_custom_fields' => [
+            ['key' => 'phone', 'type' => 'string', 'required' => true, 'label' => 'Telefono', 'summaryView' => true, 'origin' => 'suggested'],
+        ],
+        'ui_field_order' => ['name', 'phone', 'id_owner'],
+        'relations' => [
+            ['key' => 'id_owner', 'type' => 'belongs_to', 'target_entity' => 'clients', 'target_field' => 'id', 'required' => false, 'label' => 'Owner', 'layer' => 'general'],
+        ],
+    ];
+    insertSyncTestPlugin($pdo, $slug, ['label' => 'Configured By Admin'], 'active', $configured);
+
+    $root = createPluginFixture([
+        'name' => $slug,
+        'label' => 'Configured By Admin',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ], false, false, $canonical);
+
+    try {
+        $result = buildPluginSyncService($root, $pdo)->syncAll();
+
+        assertEquals(0, $result['summary']['errors'], 'Admin configuration allowed by PluginConfig must not be reported as corrupt');
+        assertEquals('unchanged', $result['plugins'][$slug][0]['result'], 'Plugin should sync as unchanged');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+        removePluginFixture($root);
+    }
+});
+
+TestSuite::run('syncAll() still reports a base field whose immutable definition drifted from disk', function () use ($pdo): void {
+    // The check that remains: identities and base fields are immutable for the
+    // admin, so an installed definition differing from disk in a non-display
+    // attribute (label here) is real drift and must still be reported.
+    $slug = 'test_sync_drift_' . bin2hex(random_bytes(3));
+    $canonical = [
+        'identities' => [
+            'id' => ['type' => 'uuid', 'auto_generated' => true, 'editable' => false],
+        ],
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Full name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+    $drifted = $canonical;
+    $drifted['fields']['name']['label'] = 'Name';
+    insertSyncTestPlugin($pdo, $slug, ['label' => 'Drifted Plugin'], 'inactive', $drifted);
+
+    $root = createPluginFixture([
+        'name' => $slug,
+        'label' => 'Drifted Plugin',
+        'version' => SYNC_SEMVER_1_0,
+        'type' => 'entity',
+        'core_version' => SYNC_SEMVER_1_0,
+    ], false, false, $canonical);
+
+    try {
+        $result = buildPluginSyncService($root, $pdo)->syncAll();
+
+        assertEquals(1, $result['summary']['errors'], 'A drifted base field label must still be reported');
+        assertTrue(
+            str_contains((string) ($result['plugins'][$slug][0]['message'] ?? ''), 'fields.name changed'),
+            'Error message must name the drifted definition'
+        );
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
         removePluginFixture($root);
     }
 });

@@ -14,7 +14,7 @@ Catalogo unificado de plugins instalados. Incluye tanto plugins de tipo `entity`
 **Esta tabla es la unica fuente de verdad para el catalogo de entidades.**
 La antigua tabla `system_entities` fue eliminada en Release B (migracion `010_drop_system_entities.sql`).
 
-Columnas reales (`backend/database/migrations/003_plugins.sql`, STORY 10.3 §2bis
+Columnas reales (`backend/database/schema/003_plugins.sql`, STORY 10.3 §2bis
 — no hay columnas propias `plugin_type`/`name`/`version`/`description`/
 `schema_version`, todo eso vive dentro de `manifest_json`):
 

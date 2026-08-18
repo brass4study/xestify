@@ -170,6 +170,12 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Base de datos local
 
+- La definicion inicial del esquema vive en `backend/database/schema/`
+  (SQL numerados e idempotentes, aplicados por `php tools/setup/install.php`
+  via PDO). `backend/database/migrations/` esta reservada para migraciones
+  incrementales futuras y hoy esta vacia (ver su README): no colocar ahi
+  cambios del esquema base.
+- Instalacion desde cero: `php tools/setup/install.php` (ver `INSTALL.md`).
 - No añadir migraciones, seeders ni automatismos permanentes para arreglos
   puntuales de una instalacion local salvo peticion explicita.
 - Si hay que corregir datos locales puntuales, hacerlo como operacion puntual y
@@ -185,6 +191,11 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
   `/`, `/api/*`, `/health`, `/plugins/*`, `/css/*`, `/js/*` y, solo en
   desarrollo, `/tests/*`.
 - La exposicion de tests frontend bajo Apache se activa con `SetEnvIf ... ENABLE_TEST=1`.
+- Los scripts de `tools/` (`tools/setup/` operativos, `tools/dev/` de QA no
+  distribuidos en el release) son exclusivamente CLI: todo `tools/**/*.php`
+  debe requerir `tools/setup/bootstrap.php` (guard `PHP_SAPI`) como primera
+  sentencia y nunca aceptar contrasenas por flag (lo verifica
+  `backend/tests/unit/ToolsCliGuardTest.php`; convencion en `CONTRIBUTING.md`).
 - Evitar `tools/dev/frontend-router.php`; ya no forma parte del flujo soportado.
 
 ## Politica de finales de linea (CRLF/LF)

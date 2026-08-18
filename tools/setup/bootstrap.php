@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+// CLI-only guard: every script under tools/ requires this file as its first
+// statement, so none of them can be executed through the web server even if the
+// .htaccess layers are bypassed (other web server, AllowOverride None, ...).
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit(1);
+}
+
 define('BASE_PATH', dirname(__DIR__, 2) . '/backend');
 
 $envFile = BASE_PATH . '/.env';
