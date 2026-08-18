@@ -8,6 +8,7 @@ Las reglas, formatos y metodología (estructura de carpeta, severidad, formato d
 
 | Fecha | Alcance | Hallazgos (crítico / mayor / menor / nit) | Informe |
 |---|---|---|---|
+| 2026-08-18 | EPIC 0 a EPIC 10 (completa desde cero, incluye EPIC 10 y verificación independiente del cierre de la auditoría anterior) | 2 / 38 / 85 / 54 (179 total) | [20260818/](20260818/README.md) |
 | 2026-08-11 | EPIC 0 a EPIC 9 (corte completo del MVP hasta esa fecha) | 4 / 30 / 40 / 11 (85 total) | [20260811/](20260811/README.md) |
 
 ---
