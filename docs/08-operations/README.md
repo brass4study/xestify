@@ -30,6 +30,7 @@ plugins bajo un solo origen desde la raiz del repositorio.
 
 ## Referencias y guias
 
-- [deploy-rpi5.md](deploy-rpi5.md): Guia de despliegue en Raspberry Pi 5
+- [INSTALL.md](../../INSTALL.md): guia de instalacion paso a paso (raiz del repo) — punto de entrada canonico
+- [deploy-rpi5.md](deploy-rpi5.md): notas especificas de produccion/Raspberry Pi 5 (servicios, backups, monitoreo, hardening)
 - [actualizaciones.md](actualizaciones.md): Estrategias y procedimientos de actualizacion
 - [apache-vhost-examples.md](apache-vhost-examples.md): ejemplos de VirtualHost Apache para produccion, desarrollo y alias/subruta

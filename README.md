@@ -98,6 +98,7 @@ El sistema soporta ciclo de vida de plugin:
 
 ## Navegación rápida
 
+- [Guía de instalación](INSTALL.md)
 - [Visión, convenciones y glosario](docs/00-meta/README.md)
 - [Arquitectura y patrones](docs/01-architecture/README.md)
 - [Modelo de datos y entidades](docs/02-entities/README.md)
