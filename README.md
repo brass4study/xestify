@@ -6,7 +6,7 @@ Xestify es una plataforma web local-first para pequeños negocios, pensada para 
 
 ## Estado actual del proyecto (MVP)
 
-- **Corte funcional:** EPIC 9 y EPIC 10 cerradas al completo (STORY 10.1-10.6); siguiente foco STORY 11.1 (`EPIC 11`, cierre formal del MVP) (ver [backlog](docs/11-backlog/backlog.md))
+- **Corte funcional:** EPIC 9 y EPIC 10 cerradas al completo (STORY 10.1-10.6); STORY 11.1 (auditoría de código limpio) completada; siguiente foco STORY 11.2 (`EPIC 11`, verificación funcional E2E final) (ver [backlog](docs/11-backlog/backlog.md))
 - **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
 - **Arquitectura:** Core minimalista, extensible solo mediante plugins
 - **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos, validación server-side y usuarios seed protegidos frente a edición/borrado/autoservicio
@@ -157,7 +157,7 @@ Como plataforma local de mision critica para negocio, Xestify prioriza:
 
 ## Estado actual
 
-MVP implementado hasta **STORY 10.6 incluida** (EPIC 9 y EPIC 10 cerradas al completo):
+MVP implementado hasta **STORY 11.1 incluida** (EPIC 9 y EPIC 10 cerradas al completo; EPIC 11 en progreso):
 
 - Login JWT y rutas API protegidas por `AuthMiddleware`.
 - CRUD dinámico de entidades sobre `plugin_entity_data`.
@@ -179,9 +179,10 @@ MVP implementado hasta **STORY 10.6 incluida** (EPIC 9 y EPIC 10 cerradas al com
 - Plugins de demostración de entidad `orders` (pedidos), `invoices` (facturas, `belongs_to orders` obligatorio con `invoice_number` único) y `basic` (plantilla mínima solo con `name`, sin activar); primer uso real end-to-end del bloque `relations` del schema. La relación `orders → persons` no se fija en el schema de disco: se configura por instalación desde el grid "Relaciones" de `PluginConfig` (STORY 10.4).
 - Plugins de demostración de extensión `optometries` (ficha de graduación óptica) y `contact_lenses` (ficha de adaptación de lentillas), ambos con historial de varias fichas por persona, relaciones `belongs_to` propias hacia catálogos reales (`ophthalmologists`, `distributors`, `brands`, `manufacturers`), gauge visual del eje (`AxisGauge`, SVG compartido) y tabla de medidas por ojo (`DynamicTable`); página independiente de ficha (`PluginItemEdit.js`) en vez de formulario inline. Ampliaron capacidades de núcleo: `relations` en plugins `extension` (antes solo en `entity`), validación server-side de `content` contra schema, y la convención general `layers`/`resortable` para organizar la UI de cualquier plugin (STORY 10.5).
 - Seeder de datos de negocio idempotente (`BusinessDataSeeder`, `php tools/setup/seed-business-data.php`) para poblar una demo en vivo realista: 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes (con correlación de actividad entre clientes) y `comments`; idempotencia "todo o nada por grupo" (STORY 10.6).
+- Auditoría de código limpio: pase de SonarQube sobre backend y frontend (38→0 hallazgos pendientes, sin críticos/bloqueantes), sin código muerto ni TODOs obsoletos pendientes, `docs/09-history/decisiones-tecnicas.md` sin decisiones superadas marcadas como vigentes, sin rastro de `clients` que debiera ser `persons`, y naming técnico consistente en inglés (`AGENTS.md` corregido: `mail` en vez de `email`, claves reales de `persons`) (STORY 11.1).
 - Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` y suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia, login y plugins.
 
-Pendiente tras STORY 10.6: el cierre formal del MVP — auditoría de código limpio, auditoría de coherencia de documentación, guion de defensa del TFM y verificación funcional E2E final (EPIC 11).
+Pendiente tras STORY 11.1: verificación funcional E2E final, auditoría de coherencia de documentación y guion de defensa del TFM (EPIC 11).
 
 Operaciones manuales de setup:
 
@@ -192,24 +193,6 @@ Operaciones manuales de setup:
 Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
 plugins y hooks desde la base de datos; la sincronizacion disco -> BD es
 explicita.
-
-En Windows, si usas el `php.exe` de Apache, su configuracion esta en
-`C:\apache2.4.66\config\php.ini`, pero el CLI no la carga por defecto
-(`php --ini` no muestra ningun fichero cargado). Para que `php` cargue esa
-configuracion (extensiones `pdo_pgsql`/`mbstring` incluidas) sin tener que
-indicarla en cada comando, fija `PHPRC` como variable de entorno de usuario
-persistente:
-
-```powershell
-[Environment]::SetEnvironmentVariable('PHPRC', 'C:\apache2.4.66\config', 'User')
-```
-
-Alternativa puntual sin tocar variables de entorno, valida para una sola
-ejecucion:
-
-```powershell
-C:\apache2.4.66\php\php.exe -c C:\apache2.4.66\config\php.ini tools/setup/sync-plugins.php
-```
 
 Para evitar latencia innecesaria en local con Apache+PHP:
 

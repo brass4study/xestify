@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-17
-> **Estado del proyecto:** **STORY 10.6 incluida** — EPIC 10 cerrada, siguiente foco `STORY 11.1`
+> **Última actualización:** 2026-08-18
+> **Estado del proyecto:** **STORY 11.1 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.2`
 
 ---
 
@@ -56,8 +56,12 @@ El corte funcional vigente del producto queda fijado en:
   `manufacturers`, 300 `orders`, ~270 `invoices`, 250 `sales`, fichas
   `optometries`/`contact_lenses` al 100% de los clientes y `comments`;
   `EPIC 10` queda cerrada)
-- siguiente foco funcional: `STORY 11.1` (auditoría de código y
-  documentación, cierre formal del MVP)
+- `STORY 11.1` completada (auditoría de código limpio: SonarQube 38→0
+  hallazgos pendientes, sin críticos/bloqueantes, código muerto,
+  `decisiones-tecnicas.md` y rastro `clients`/`persons` revisados, naming
+  técnico corregido en `AGENTS.md`)
+- siguiente foco funcional: `STORY 11.2` (verificación funcional E2E final,
+  `EPIC 11`)
 
 ### Funcionalidades nucleares (Core)
 
@@ -354,7 +358,8 @@ uso óptico.
 - ✅ Story 10.4 implementada: plugins de demostración `orders`, `invoices` (con relación real `belongs_to → orders`, primer uso end-to-end de `relations`) y `basic` (plantilla, sin activar); `sales` descartado del alcance por redundante tras la unificación en `persons` — retomado después como segunda instancia real en Story 10.6 (ver nota 1 de STORY 10.6 en `backlog.md`)
 - ✅ Story 10.5 implementada: plugins de demostración de extensión `optometries`/`contact_lenses`, con `relations` y validación server-side extendidas a plugins `extension`, convención general `layers`/`resortable` y página independiente de ficha (`PluginItemEdit.js`) para plugins con historial de varios registros por owner
 - ✅ Story 10.6 implementada: seeder de datos de negocio idempotente (`backend/src/database/seeders/BusinessDataSeeder.php`) — 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes y `comments`; idempotencia "todo o nada por grupo"; `EPIC 10` queda cerrada
-- siguiente punto: Story 11.1 (auditoría de código y documentación, `EPIC 11`)
+- ✅ Story 11.1 implementada: pase de SonarQube sobre backend y frontend (38→0 hallazgos pendientes, 0 críticos/bloqueantes), eliminación de código muerto (`DynamicTable.setSchema()`, `.env.example`) y TODOs obsoletos (ninguno encontrado), revisión de `decisiones-tecnicas.md` (dos decisiones corregidas), rastro `clients`/`persons` limpiado en código/tests, y naming técnico corregido en `AGENTS.md` (`mail` en vez de `email`, claves reales de `persons`)
+- siguiente punto: Story 11.2 (verificación funcional E2E final, `EPIC 11`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug

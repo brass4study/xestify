@@ -45,6 +45,7 @@ try {
 }
 
 const REVERSE_RELATION_VERSION = '1.0.0';
+const MSG_TABS_MUST_SUCCEED = 'tabs() must succeed';
 
 /**
  * @param array<int, array<string, mixed>> $relations
@@ -140,7 +141,7 @@ TestSuite::run('GET /entities/{target}/tabs includes the reverse relation tab', 
         $ctrl = buildReverseRelationController();
         $result = callReverseRelationController($ctrl, 'tabs', ['slug' => $targetSlug]);
 
-        assertTrue($result['ok'] ?? false, 'tabs() must succeed');
+        assertTrue($result['ok'] ?? false, MSG_TABS_MUST_SUCCEED);
         $tabs = $result['data']['tabs'] ?? [];
         assertEquals(1, count($tabs), 'must include exactly one reverse relation tab');
         assertEquals("relation-{$sourceSlug}-id_target", $tabs[0]['id'] ?? null, 'tab id must follow relation-{source}-{key}');
@@ -168,7 +169,7 @@ TestSuite::run('GET /entities/{target}/tabs disambiguates with the relation labe
         $ctrl = buildReverseRelationController();
         $result = callReverseRelationController($ctrl, 'tabs', ['slug' => $targetSlug]);
 
-        assertTrue($result['ok'] ?? false, 'tabs() must succeed');
+        assertTrue($result['ok'] ?? false, MSG_TABS_MUST_SUCCEED);
         $tabs = $result['data']['tabs'] ?? [];
         assertEquals(2, count($tabs), 'must include one tab per relation');
 
@@ -196,7 +197,7 @@ TestSuite::run('GET /entities/{other}/tabs does not include a relation tab point
         $ctrl = buildReverseRelationController();
         $result = callReverseRelationController($ctrl, 'tabs', ['slug' => $unrelatedSlug]);
 
-        assertTrue($result['ok'] ?? false, 'tabs() must succeed');
+        assertTrue($result['ok'] ?? false, MSG_TABS_MUST_SUCCEED);
         assertEquals([], $result['data']['tabs'] ?? null, 'an entity with no relations pointing at it must get an empty tabs list');
     } finally {
         cleanupReverseRelationFixture($pdo, $sourceSlug);

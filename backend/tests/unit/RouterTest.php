@@ -25,6 +25,7 @@ use Xestify\services\JwtService;
 const ROUTE_HEALTH = '/health';
 const ROUTE_ENTITY_1 = '/entities/1';
 const ROUTE_API_ENTITIES = '/api/v1/entities';
+const MSG_DISPATCH_RETURNS_TRUE = 'dispatch debe retornar true';
 
 // ---------------------------------------------------------------------------
 // Helpers específicos del Router
@@ -80,7 +81,7 @@ TestSuite::run('GET ruta estática hace match y ejecuta handler', function () {
     }, protected: false);
 
     [$result] = dispatchCapture($router, 'GET', ROUTE_HEALTH);
-    assertTrue($result === true, 'dispatch debe retornar true');
+    assertTrue($result === true, MSG_DISPATCH_RETURNS_TRUE);
     assertTrue($called, 'Handler no fue llamado');
 });
 
@@ -125,8 +126,8 @@ TestSuite::run('Ruta dinámica extrae un parámetro :slug', function () {
         $captured = $params;
     }, protected: false);
 
-    dispatchCapture($router, 'GET', '/entities/client');
-    assertEquals('client', $captured['slug'] ?? null);
+    dispatchCapture($router, 'GET', '/entities/widgets');
+    assertEquals('widgets', $captured['slug'] ?? null);
 });
 
 TestSuite::run('Ruta dinámica extrae múltiples parámetros', function () {
@@ -137,8 +138,8 @@ TestSuite::run('Ruta dinámica extrae múltiples parámetros', function () {
         $captured = $params;
     }, protected: false);
 
-    dispatchCapture($router, 'GET', '/entities/client/records/42');
-    assertEquals('client', $captured['slug'] ?? null);
+    dispatchCapture($router, 'GET', '/entities/widgets/records/42');
+    assertEquals('widgets', $captured['slug'] ?? null);
     assertEquals('42', $captured['id'] ?? null);
 });
 
@@ -215,7 +216,7 @@ TestSuite::run('Ruta protegida requiere token bearer', function () {
     [$result, $output] = dispatchCapture($router, 'GET', ROUTE_API_ENTITIES);
     $decoded = json_decode($output, true);
 
-    assertTrue($result === true, 'dispatch debe retornar true');
+    assertTrue($result === true, MSG_DISPATCH_RETURNS_TRUE);
     assertFalse($called, 'handler protegido no debe ejecutarse sin token');
     assertEquals(401, $decoded['error']['code'] ?? null, 'debe devolver 401');
 });
@@ -266,7 +267,7 @@ TestSuite::run('Una ruta nueva sin declarar "protected" explicitamente queda pro
     [$result, $output] = dispatchCapture($router, 'GET', '/api/v1/a-brand-new-endpoint-nobody-remembered-to-protect');
     $decoded = json_decode($output, true);
 
-    assertTrue($result === true, 'dispatch debe retornar true');
+    assertTrue($result === true, MSG_DISPATCH_RETURNS_TRUE);
     assertFalse($called, 'una ruta nueva sin protected:false explicito no debe ejecutarse sin token');
     assertEquals(401, $decoded['error']['code'] ?? null, 'debe devolver 401 por defecto, sin necesidad de listar el prefijo en ningun sitio');
 });

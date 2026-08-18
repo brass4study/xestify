@@ -1459,3 +1459,69 @@
   las filas huérfanas detectadas) y que `clients`/`ophthalmologists`
   tuvieran apellidos únicos garantizados — ambas correcciones se aplicaron
   directamente sobre el plan ya escrito, antes de aprobarlo.
+
+### STORY 11.1: Auditoría de código limpio
+
+- **Fecha:** 2026-08-18
+- **Estimado sin IA:** 12h (triar 38 hallazgos de SonarQube a mano con
+  arreglos seguros y tests, verificar candidatos a código muerto sin caer
+  en falsos positivos, contrastar `decisiones-tecnicas.md` y `AGENTS.md`
+  contra el código real campo a campo, y depurar dos bugs de tooling en la
+  propia skill de SonarQube)
+- **Tiempo real con IA:** ~3h
+- **Aceleración:** ~75% ⚡
+- **Qué hizo IA:**
+  - Diagnosticó y corrigió dos bugs reales en la skill
+    `review-sonarqube-clean-code` antes de poder ejecutar el pase pedido:
+    una copia de extensión de VSCode desactualizada (comparación byte a
+    byte contra el repo) y un trigger JSON con BOM UTF-8 que Node
+    rechazaba (root cause: `Set-Content -Encoding UTF8` en PowerShell 5.1
+    siempre añade BOM) — ambos con fix mínimo y verificación end-to-end
+    antes de continuar.
+  - Ejecutó el pase completo de SonarQube (38 hallazgos, 0 críticos) y
+    limpió 36 de 38 en lotes pequeños, con test o smoke test dedicado por
+    cambio no trivial (aserciones Playwright reescritas y verificadas
+    contra runtime real, smoke test funcional de 16 combinaciones de rutas
+    para el refactor de `RouteMapController.js`).
+  - Detectó su propia regresión durante la verificación (un refactor de
+    `PluginExtensionController` para bajar el conteo de `return` cruzó el
+    límite de métodos por clase de SonarQube) y la corrigió antes de dar
+    el punto por cerrado, en vez de reportarlo como pendiente.
+  - Verificó cada candidato a "código muerto" contra `backlog.md` antes de
+    tocar nada: el primer intento (Spinner/Skeleton/InputRadio) resultó
+    ser librería de UI construida por adelantado con story futura ya
+    planificada, no código muerto — se descartó tras la verificación en
+    vez de borrarlo por coincidir con una lista de auditoría previa.
+  - Encontró que la propia `AGENTS.md` (norma canónica del proyecto) tenía
+    la clave técnica canónica de `persons` mal documentada (`email` en vez
+    de `mail`, y dos campos que ni existen en ese plugin) — lo verificó
+    contra `plugins/persons/schema.json` línea a línea antes de corregir.
+  - Distinguió sistemáticamente coincidencias reales de `client` (slugs de
+    plugin, docblocks de endpoint) de falsos positivos (la palabra inglesa
+    genérica "client", vocabulario interno de seeders, documentación
+    histórica legítima) en vez de hacer un reemplazo masivo por patrón.
+- **Iteraciones:** 20+ (2 bugs de tooling depurados y verificados, 38
+  hallazgos de Sonar triados y 36 corregidos en lotes con test dedicado,
+  1 regresión propia detectada y corregida, revisión independiente de
+  código muerto con un falso positivo descartado, contraste campo a campo
+  de `decisiones-tecnicas.md` y `AGENTS.md` contra el código real, 3
+  ejecuciones completas de la suite backend).
+- **Decisión manual:** El usuario corrigió el rumbo al inicio de la story:
+  "La story 11.1 no incluye correcciones de deuda técnica por la skill de
+  auditoría de deuda técnica" — la IA había arrancado usando el workflow
+  de `fix-technical-debt` en vez de las skills/criterios específicos del
+  backlog de STORY 11.1.
+- **Decisión manual:** Dos preguntas directas del usuario ("¿Qué hace
+  exactamente...?", "No estoy viendo que esté haciendo ninguna de esas
+  cosas") llevaron a diagnosticar los dos bugs reales de tooling en vez de
+  asumir que el análisis en curso funcionaba.
+- **Decisión manual:** El usuario pidió explícitamente limpiar también los
+  38 hallazgos no críticos de SonarQube ("Limpiar los 38 también"), no solo
+  verificar que ninguno fuera crítico/bloqueante como pedía el criterio tal
+  cual estaba escrito.
+- **Decisión manual:** El usuario revisó y corrigió personalmente la
+  terminología técnica (`manifest_json->>'name'`) en dos de los tres
+  ficheros que la IA había señalado como incorrectos durante una revisión
+  de cambios concurrentes suyos en `AGENTS.md`/`backlog.md`, confirmando
+  que el tercero (retirar una nota de `PHPRC` de `README.md`) era
+  intencionado.

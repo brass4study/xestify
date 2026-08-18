@@ -12,6 +12,8 @@ require_once BASE_PATH . '/tests/helpers/plugins/plugin_services.php';
 use Xestify\core\Database;
 use Xestify\exceptions\DatabaseException;
 
+const PLUGIN_FIXTURE_VERSION = '1.0.0';
+
 loadPluginTestEnv(BASE_PATH);
 
 try {
@@ -44,9 +46,9 @@ PHP;
     $root = createPluginFixture([
         'name' => $slug,
         'label' => 'Register Active',
-        'version' => '1.0.0',
+        'version' => PLUGIN_FIXTURE_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => PLUGIN_FIXTURE_VERSION,
     ], false, false, null, $lifecycle);
 
     try {
@@ -71,9 +73,9 @@ TestSuite::run('registerNew() with identity/field overrides still ends up active
     $root = createPluginFixture([
         'name' => $slug,
         'label' => 'Register Active Overrides',
-        'version' => '1.0.0',
+        'version' => PLUGIN_FIXTURE_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => PLUGIN_FIXTURE_VERSION,
     ]);
 
     try {
@@ -97,9 +99,9 @@ TestSuite::run('syncAll() bulk auto-discovery still registers plugins as inactiv
     $root = createPluginFixture([
         'name' => $slug,
         'label' => 'Bulk Sync',
-        'version' => '1.0.0',
+        'version' => PLUGIN_FIXTURE_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => PLUGIN_FIXTURE_VERSION,
     ]);
 
     try {

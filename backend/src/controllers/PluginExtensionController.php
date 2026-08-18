@@ -106,11 +106,8 @@ class PluginExtensionController
         $context = $this->resolveItemContext($params, $request);
         $data = $context['request']->allBody();
 
-        if (!$this->guardExtensionWriteRequest($context['plugin_slug'], $context['entity'], $context['record_id'], $context['item_id'], $data)) {
-            return;
-        }
-
-        if (!$this->guardOwnership($context)) {
+        $requestGuarded = $this->guardExtensionWriteRequest($context['plugin_slug'], $context['entity'], $context['record_id'], $context['item_id'], $data);
+        if (!$requestGuarded || !$this->guardOwnership($context)) {
             return;
         }
 
@@ -395,15 +392,12 @@ class PluginExtensionController
     private function guardOwnership(array $context): bool
     {
         $row = $this->dataStore->findRow($context['item_id'], $context['plugin_slug'], $context['entity'], $context['record_id']);
-        if ($row === false) {
-            // Let the caller's own lookup return 404 for a missing item.
-            return true;
-        }
-
-        $content = $this->decodeContent($row)['content'] ?? [];
+        $content = $row === false ? [] : ($this->decodeContent($row)['content'] ?? []);
         $authorId = trim((string) ($content['author_id'] ?? ''));
-        if ($authorId === '') {
-            // Item type has no authorship concept (or legacy row without it): nothing to guard.
+
+        // Nothing to guard: a missing item (let the caller's own lookup
+        // return 404) or a row with no authorship concept (legacy row).
+        if ($row === false || $authorId === '') {
             return true;
         }
 

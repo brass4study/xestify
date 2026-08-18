@@ -125,8 +125,8 @@ final class RepositoryStub extends GenericRepository
 
     public bool $deleteCalled = false;
 
-    /** @var array<string, mixed>|null Row returned by find(); defaults to a fake 'client' record. */
-    public ?array $findResult = ['id' => 'fake-uuid', 'entity_slug' => 'client', 'content' => []];
+    /** @var array<string, mixed>|null Row returned by find(); defaults to a fake 'widgets' record. */
+    public ?array $findResult = ['id' => 'fake-uuid', 'entity_slug' => 'widgets', 'content' => []];
 
     public function __construct()
     {
@@ -226,7 +226,7 @@ echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('createRecord() works without HookDispatcher (hooks=null)', function (): void {
     [$svc] = buildHooksService(null);
-    $record = $svc->createRecord('client', ['name' => 'Alice']);
+    $record = $svc->createRecord('widgets', ['name' => 'Alice']);
     assertTrue(isset($record['id']), 'record must have id');
 });
 
@@ -240,7 +240,7 @@ TestSuite::run('createRecord() dispatches beforeSave before persisting', functio
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->createRecord('client', ['name' => 'Alice']);
+    $svc->createRecord('widgets', ['name' => 'Alice']);
 
     assertTrue($beforeCalled, 'beforeSave must be called during createRecord');
 });
@@ -255,7 +255,7 @@ TestSuite::run('createRecord() dispatches afterSave after persisting', function 
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->createRecord('client', ['name' => 'Alice']);
+    $svc->createRecord('widgets', ['name' => 'Alice']);
 
     assertTrue($afterCalled, 'afterSave must be called during createRecord');
 });
@@ -276,7 +276,7 @@ TestSuite::run('createRecord() beforeSave can mutate data before persistence', f
         new ReverseRelationResolverStub(),
         $hooks
     );
-    $svc->createRecord('client', ['name' => 'alice']);
+    $svc->createRecord('widgets', ['name' => 'alice']);
 
     assertEquals('ALICE', $repo->lastCreateData['name'] ?? '', 'beforeSave mutation must reach repository');
 });
@@ -291,7 +291,7 @@ TestSuite::run('createRecord() beforeSave throwing HookException blocks operatio
     $threw = false;
 
     try {
-        $svc->createRecord('client', ['name' => 'Alice']);
+        $svc->createRecord('widgets', ['name' => 'Alice']);
     } catch (HookException $e) {
         $threw = true;
         assertEquals('Email already exists', $e->getMessage(), 'HookException message must propagate');
@@ -311,7 +311,7 @@ TestSuite::run('updateRecord() dispatches beforeSave before persisting', functio
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->updateRecord('some-id', 'client', ['name' => 'Bob']);
+    $svc->updateRecord('some-id', 'widgets', ['name' => 'Bob']);
 
     assertTrue($beforeCalled, 'beforeSave must be called during updateRecord');
 });
@@ -326,7 +326,7 @@ TestSuite::run('updateRecord() dispatches afterSave after persisting', function 
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->updateRecord('some-id', 'client', ['name' => 'Bob']);
+    $svc->updateRecord('some-id', 'widgets', ['name' => 'Bob']);
 
     assertTrue($afterCalled, 'afterSave must be called during updateRecord');
 });
@@ -341,7 +341,7 @@ TestSuite::run('updateRecord() passes record id to beforeSave context', function
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->updateRecord('record-123', 'client', ['name' => 'Bob']);
+    $svc->updateRecord('record-123', 'widgets', ['name' => 'Bob']);
 
     assertEquals('record-123', $capturedId, 'updateRecord must pass record id into beforeSave context');
 });
@@ -356,7 +356,7 @@ TestSuite::run('updateRecord() beforeSave blocking throws HookException', functi
     $threw = false;
 
     try {
-        $svc->updateRecord('x', 'client', ['name' => 'Bob']);
+        $svc->updateRecord('x', 'widgets', ['name' => 'Bob']);
     } catch (HookException) {
         $threw = true;
     }
@@ -375,7 +375,7 @@ TestSuite::run('afterSave failure does NOT propagate (non-blocking)', function (
     $threw = false;
 
     try {
-        $record = $svc->createRecord('client', ['name' => 'Alice']);
+        $record = $svc->createRecord('widgets', ['name' => 'Alice']);
     } catch (\Throwable) {
         $threw = true;
     }
@@ -396,9 +396,9 @@ TestSuite::run('context passed to beforeSave contains slug and data keys', funct
     });
 
     [$svc] = buildHooksService($hooks);
-    $svc->createRecord('client', ['name' => 'Alice']);
+    $svc->createRecord('widgets', ['name' => 'Alice']);
 
-    assertEquals('client', $capturedSlug, 'context must contain entity slug');
+    assertEquals('widgets', $capturedSlug, 'context must contain entity slug');
     assertEquals('Alice', $capturedData['name'] ?? '', 'context must contain data');
 });
 

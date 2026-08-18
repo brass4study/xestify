@@ -77,6 +77,8 @@ const TEST_RECORD       = '00000000-0000-0000-0000-000000000002';
 const TARGET_RECORD     = '00000000-0000-0000-0000-000000000003';
 const MSG_OK_MUST_BE_FALSE = 'ok must be false';
 const MSG_OK_MUST_BE_TRUE  = 'ok must be true';
+const TEST_PLUGIN_VERSION  = '1.0.0';
+const TEST_EVENT_DATE      = '2026-08-17';
 
 function callExt(PluginExtensionController $ctrl, string $method, array $params, array $body = []): array
 {
@@ -94,9 +96,9 @@ function seedPersonsParentPlugin(): void
         'name' => TEST_ENTITY,
         'label' => 'Personas',
         'label_singular' => 'Persona',
-        'version' => '1.0.0',
+        'version' => TEST_PLUGIN_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => TEST_PLUGIN_VERSION,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -134,9 +136,9 @@ function seedExtensionPluginWithRelations(): void
     $manifest = json_encode([
         'name' => TEST_PLUGIN_SLUG,
         'label' => 'Extension relations test',
-        'version' => '1.0.0',
+        'version' => TEST_PLUGIN_VERSION,
         'type' => 'extension',
-        'core_version' => '1.0.0',
+        'core_version' => TEST_PLUGIN_VERSION,
         'target_entity' => TEST_ENTITY,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -188,7 +190,7 @@ TestSuite::run('POST rejects a number above its schema max (validation now runs 
         $ctrl,
         'create',
         ['plugin_slug' => TEST_PLUGIN_SLUG, 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
-        ['event_date' => '2026-08-17', 'score' => 999]
+        ['event_date' => TEST_EVENT_DATE, 'score' => 999]
     );
 
     assertTrue(!($result['ok'] ?? true), MSG_OK_MUST_BE_FALSE);
@@ -224,12 +226,12 @@ TestSuite::run('POST with a valid payload including a relation value persists th
         $ctrl,
         'create',
         ['plugin_slug' => TEST_PLUGIN_SLUG, 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
-        ['event_date' => '2026-08-17', 'score' => 7, 'owner_ref' => TARGET_RECORD]
+        ['event_date' => TEST_EVENT_DATE, 'score' => 7, 'owner_ref' => TARGET_RECORD]
     );
 
     assertTrue($result['ok'] ?? false, MSG_OK_MUST_BE_TRUE);
     $content = $result['data']['content'] ?? [];
-    assertEquals('2026-08-17', $content['event_date'] ?? null, 'event_date must persist');
+    assertEquals(TEST_EVENT_DATE, $content['event_date'] ?? null, 'event_date must persist');
     assertEquals(7, $content['score'] ?? null, 'score must persist');
     assertEquals(
         TARGET_RECORD,
@@ -248,7 +250,7 @@ TestSuite::run('PUT partial update touching only the relation key succeeds and u
         $ctrl,
         'create',
         ['plugin_slug' => TEST_PLUGIN_SLUG, 'entity' => TEST_ENTITY, 'id' => TEST_RECORD],
-        ['event_date' => '2026-08-17']
+        ['event_date' => TEST_EVENT_DATE]
     );
     $itemId = (string) ($created['data']['id'] ?? '');
     assertTrue($itemId !== '', 'created item must have an id');

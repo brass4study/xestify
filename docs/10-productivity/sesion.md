@@ -424,13 +424,21 @@ Story completada. Archivos creados/modificados:
 **Detalle de la story 10.5:** ver sesión completa más abajo (2026-08-17).
 **Detalle de la story 10.6:** ver sesión completa más abajo (2026-08-17).
 
+### 🔄 EPIC 11 — Cierre Formal y Exhaustivo del MVP (EN PROGRESO)
+
+| Story | Descripción | Commit | Verificación |
+|-------|-------------|--------|--------------|
+| 11.1 ✅ | Auditoría de código limpio | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 69/69 archivos en verde (ejecutado tras cada tanda de cambios); SonarQube (`skills/review-sonarqube-clean-code`) 38→0 hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots `mt_rand`, revisados y marcados `// NOSONAR`); `frontend/tests/e2e/tests/entity-crud.spec.js` 2/2 Playwright contra runtime real ✅ |
+
+**Detalle de la story 11.1:** ver sesión completa más abajo (2026-08-18).
+
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-17
-**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (PENDIENTE) — `EPIC 10` queda cerrada
-**Próxima story:** STORY 11.1 - Auditoría de código y naming (EPIC 11)
+**Fecha:** 2026-08-18
+**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.1` completada
+**Próxima story:** STORY 11.2 - Verificación funcional E2E final (EPIC 11)
 
 ---
 
@@ -1759,5 +1767,180 @@ correctamente desde `EntityList`/`EntityEdit`/`PluginItemEdit`.
 - Backlog alineado: STORY 10.6 queda implementada; `EPIC 10` queda cerrada
   al completo (10.1-10.6); el siguiente punto es STORY 11.1 (`EPIC 11`,
   cierre formal del MVP).
+
+## Sesion 2026-08-18 - STORY 11.1 Auditoría de código limpio
+
+Story completada cubriendo los 5 criterios del backlog: pase de SonarQube,
+código muerto/TODOs, decisiones técnicas superadas, rastro `clients`/`persons`
+y naming consistente.
+
+**1. Pase de SonarQube (`skills/review-sonarqube-clean-code/SKILL.md`):**
+
+- Antes de poder ejecutar el pase completo, se encontraron y corrigieron dos
+  bugs reales en la propia skill (no del proyecto):
+  - La copia de la extensión de VSCode instalada en
+    `~/.vscode/extensions/xestify.sonarlint-problems-exporter-0.1.0/` estaba
+    desactualizada respecto a `skills/review-sonarqube-clean-code/assets/
+    vscode-extension/extension.js` — refrescada, con recarga de ventana.
+  - `analyze-sonarlint-workspace.ps1` escribía el fichero trigger con BOM
+    UTF-8 (`Set-Content -Encoding UTF8` en Windows PowerShell 5.1 siempre
+    añade BOM), que `JSON.parse` de la extensión rechazaba — corregido a
+    escritura UTF-8 sin BOM (`[System.IO.File]::WriteAllText` con
+    `UTF8Encoding($false)`).
+  - Ambos fixes en `skills/review-sonarqube-clean-code/scripts/
+    analyze-sonarlint-workspace.ps1` y `.../assets/vscode-extension/
+    extension.js` (más exclusión de `playwright-report/` del glob de
+    análisis, artefacto generado que producía 4 falsos positivos).
+- Pase completo sobre backend y frontend: **38 hallazgos iniciales, 0
+  críticos/bloqueantes** (todos "warning"/Code Smell + 1 Security Hotspot).
+  Limpiados 36 de 38:
+  - `EmptyState.js`: 4 variables muertas.
+  - `entity-crud.spec.js`: 3× `networkidle` sustituido por aserciones
+    web-first / `waitForResponse` específico — verificado contra runtime
+    real (2/2 tests Playwright, el segundo test incluso más rápido).
+  - `DynamicTable.js`: `RegExp.exec()` en vez de `String.match()`.
+  - `RouteMapController.js`: `.at()` en vez de índice manual; extracción de
+    `resolveParsedEntityHash()`/`resolveSimpleEntityHash()` y
+    `resolveEntityPluginItemSegment()` para bajar la complejidad cognitiva
+    de dos funciones bajo el límite — verificado con un smoke test
+    funcional dedicado de las 16 combinaciones de rutas (incluye el caso
+    más anidado y el sentinel `#new`).
+  - Backend: 5 métodos con más de 3 `return` divididos en helpers/guardas
+    compactas (`SelectFieldValidator`, `ValidationService`,
+    `ProfileUpdateAuthorizer`, `PluginExtensionController` ×2) — la primera
+    versión de `PluginExtensionController` añadía 2 métodos nuevos y cruzó
+    el límite de 20 métodos por clase (`S1448`, nuevo hallazgo autoinducido);
+    corregido fusionando las guardas en condiciones compuestas en vez de
+    extraer métodos, volviendo a 20 métodos exactos.
+  - 20 literales duplicados extraídos a constantes en 15 ficheros de test +
+    `tools/setup/seed-business-data.php`, siguiendo el patrón `const`/
+    `define` ya establecido en cada fichero.
+  - El hotspot `mt_rand()` de `RandomPrimitives.php` (2 hallazgos, Security
+    Hotspot — no Bug/Code Smell) se revisó: ya estaba documentado en su
+    propio docblock como aceptado (datos demo, no contexto de seguridad).
+    El usuario marcó ambos con `// NOSONAR` tras la revisión — el
+    tratamiento correcto de un Security Hotspot es precisamente revisarlo y
+    anularlo explícitamente si resulta correcto, no dejarlo indefinidamente
+    como pendiente.
+- Verificación: `php backend/tests/run.php all` → 69/69 en verde, ejecutado
+  tres veces (tras el barrido inicial, tras corregir la regresión `S1448`,
+  y al cierre); reanálisis SonarLint final → 2 hallazgos (los dos aceptados).
+
+**2. Código muerto y TODOs obsoletos:**
+
+- Barrido de `TODO|FIXME|XXX:|HACK:` en `backend/src`, `frontend/src`,
+  `plugins/`, `tools/` y sus tests: cero coincidencias en todo el proyecto.
+- Verificación independiente de código muerto (sin reutilizar el listado de
+  la auditoría de deuda técnica de `skills/audit-technical-debt/`). Primer
+  intento (Spinner/Skeleton/InputRadio) fue un falso positivo: `backlog.md`
+  los documenta explícitamente como librería de componentes construida por
+  adelantado, con story futura ya planificada para cablearlos y cobertura
+  de test real — descartados tras verificar.
+  - `DynamicTable.setSchema()`: cero llamadas en toda la app y sus tests,
+    duplicaba exactamente la lógica ya ejecutada en el constructor.
+    Eliminado.
+  - `backend/.env.example`: `APP_URL`, `JWT_ALGORITHM`, `PLUGINS_PATH` no
+    los lee ningún fichero de `backend/src` (verificado con `$_ENV`/
+    `getenv`) — eliminadas las 3 líneas muertas del template, conservando
+    `APP_ENV`/`APP_DEBUG`/`JWT_EXPIRY`, que sí se leen.
+  - `GenericRepository::restore()` revisado y descartado como candidato:
+    está en el backlog original de STORY 2.5 como método requerido — no es
+    código muerto, es funcionalidad completa a falta de endpoint (mismo
+    patrón que Skeleton.js).
+
+**3. Decisiones técnicas superadas marcadas como vigentes
+(`docs/09-history/decisiones-tecnicas.md`):**
+
+- DECISION 5: el diagrama de flujo decía "schema vivo en `entity_metadata`",
+  contradiciendo la propia sección "Implicaciones" de la misma decisión
+  (que ya dice `plugins.schema_json`); `entity_metadata` nunca llegó a
+  existir en las migraciones reales, según ya documentaba `backlog.md`.
+  Corregido.
+- DECISION 8 (convención de rutas): la tabla documentaba `#/entity/:slug/
+  new`, pero el código real usa `#/entity/:slug/#new` (verificado con el
+  smoke test de `RouteMapController.js` del propio punto 1). Corregido, y
+  añadidas las dos rutas de item de plugin extension de STORY 10.5 que
+  faltaban por completo. Eliminadas `#/result/empty`/`#/result/error`, que
+  ya no existen en el código.
+- Nota fuera de alcance de esta story, señalada pero no corregida: DECISION
+  6 y DECISION 7 aparecen duplicadas (dos bloques distintos con el mismo
+  número cada uno) dentro del propio fichero, y `historial-decisiones.md`
+  numera de forma independiente — más del terreno de STORY 11.3.
+
+**4. Rastro de `clients` que debería ser `persons`:**
+
+- `plugins/comments/plugin.js`: docblock con ejemplo de endpoint
+  `/plugins/comments/client/{id}` (ni con el slug real, que es plural) →
+  corregido a `/plugins/comments/{entity}/{id}`, coincidiendo con el
+  patrón real de `Hooks.php`.
+- 6 ficheros de test backend (`RouterTest`, `RequestResponseTest`,
+  `EntityServiceHooksTest`, `HookFilterApiTest`, `HookFilterTest`,
+  `HookDispatcherTest`) usaban `'client'` como slug arbitrario de relleno
+  en tests genéricos de infraestructura (router, hooks) sin relación con
+  el plugin real → renombrados a `'widgets'`/`'product'`.
+- Verificado y descartado sin tocar: "client" como palabra inglesa
+  genérica (HTTP client, client-side), vocabulario interno de seeders
+  (categorías `'client'|'distributor'|'ophthalmologist'` para elegir pool
+  de notas) y menciones en documentación histórica genuina
+  (`historial-decisiones.md`, `consideraciones-iniciales.md`,
+  `productividad.md`) — todas legítimas.
+
+**5. Naming consistente (claves técnicas en inglés, `AGENTS.md`):**
+
+- `AGENTS.md` — la propia norma canónica estaba mal: listaba `email` como
+  clave canónica de `persons` cuando el schema real usa `mail`
+  (`plugins/persons/schema.json:61`), y listaba `creation_stamp`/
+  `is_active`, que no existen en `persons` en absoluto (pertenecen al
+  plugin `demoinventory`, inactivo). Corregido a las claves reales:
+  `name`, `surnames`, `mail`, `phone`, `identity_document_number`,
+  `address`.
+- `CoreEntitySeeder.php:307`: clave técnica en español `'numero'` sembrada
+  en JSONB (sin consumidores en frontend/backend, verificado) → renombrada
+  a `'license_number'`. Solo afecta a futuras siembras; los datos ya
+  sembrados en BD local conservan la clave antigua salvo re-siembra
+  explícita.
+- Barrido completo de `backend/src`, `frontend/src` y todos los
+  `plugins/*/schema.json` sin más claves técnicas en español.
+
+**Cambios principales:**
+- Modificados (SonarQube/backend): `frontend/src/js/views/components/
+  EmptyState.js`, `frontend/tests/e2e/tests/entity-crud.spec.js`,
+  `frontend/src/js/views/modules/DynamicTable.js`,
+  `frontend/src/js/controllers/RouteMapController.js`,
+  `backend/src/validation/validators/SelectFieldValidator.php`,
+  `backend/src/services/ValidationService.php`,
+  `backend/src/services/ProfileUpdateAuthorizer.php`,
+  `backend/src/controllers/PluginExtensionController.php`, más 15 ficheros
+  de test y `tools/setup/seed-business-data.php` (constantes por literales
+  duplicados).
+- Modificados (skill de SonarQube): `skills/review-sonarqube-clean-code/
+  scripts/analyze-sonarlint-workspace.ps1`, `.../assets/vscode-extension/
+  extension.js`.
+- Modificados (código muerto/naming): `frontend/src/js/views/modules/
+  DynamicTable.js` (además de lo anterior), `backend/.env.example`,
+  `backend/src/database/seeders/CoreEntitySeeder.php`,
+  `plugins/comments/plugin.js`, `AGENTS.md`, y 6 ficheros de test backend
+  (slug `'client'` → `'widgets'`/`'product'`).
+- Modificados (documentación): `docs/09-history/decisiones-tecnicas.md`.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 69/69 archivos en verde
+  (ejecutado tras cada tanda de cambios).
+- Frontend: `npx playwright test entity-crud.spec.js` → 2/2 en verde
+  contra runtime Apache+PHP real; `node --check` en todos los ficheros JS
+  modificados.
+- SonarQube: 38 → 0 hallazgos pendientes (los 2 últimos, hotspots
+  `mt_rand`, revisados y marcados `// NOSONAR` por el usuario).
+
+**Cierre verificado (2026-08-18):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: la corrección de una regresión propia (`S1448` en
+  `PluginExtensionController` tras el primer intento de fix de `S1142`)
+  antes de dar el pase de SonarQube por cerrado, y la verificación
+  independiente de cada candidato a "código muerto" contra `backlog.md`
+  antes de borrar nada (evitó eliminar Spinner/Skeleton/InputRadio, que
+  son librería construida por adelantado, no código muerto real).
+- Backlog alineado: STORY 11.1 queda implementada; el siguiente punto es
+  STORY 11.2 (`EPIC 11`, verificación funcional E2E final).
 
 ---

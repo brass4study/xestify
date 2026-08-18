@@ -18,7 +18,7 @@ final class RandomPrimitives
 
     public static function intBetween(int $min, int $max): int
     {
-        return mt_rand($min, $max);
+        return mt_rand($min, $max); // NOSONAR
     }
 
     public static function floatBetween(float $min, float $max, int $decimals = 2): float
@@ -27,7 +27,7 @@ final class RandomPrimitives
         $scaledMin = (int) round($min * $factor);
         $scaledMax = (int) round($max * $factor);
 
-        return mt_rand($scaledMin, $scaledMax) / $factor;
+        return mt_rand($scaledMin, $scaledMax) / $factor; // NOSONAR
     }
 
     /**

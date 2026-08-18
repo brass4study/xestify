@@ -25,7 +25,7 @@ echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('applyFilter() returns empty array when no callbacks registered', function (): void {
     $d = new HookDispatcher();
-    $result = $d->applyFilter('registerTabs', [], ['entity' => 'client']);
+    $result = $d->applyFilter('registerTabs', [], ['entity' => 'widgets']);
     assertEquals([], $result, 'Should return initial empty array');
 });
 
@@ -35,7 +35,7 @@ TestSuite::run('applyFilter() accumulates items from a single callback', functio
         $tabs[] = ['id' => 'info', 'label' => 'Info'];
         return $tabs;
     });
-    $result = $d->applyFilter('registerTabs', [], ['entity' => 'client']);
+    $result = $d->applyFilter('registerTabs', [], ['entity' => 'widgets']);
     assertEquals(1, count($result), 'Should have 1 tab');
     assertEquals('info', $result[0]['id'], 'Tab id should be info');
     assertEquals('Info', $result[0]['label'], 'Tab label should be Info');
@@ -88,7 +88,7 @@ TestSuite::run('applyFilter() registerActions accumulates action buttons', funct
         return $actions;
     });
 
-    $result = $d->applyFilter('registerActions', [], ['entity' => 'client']);
+    $result = $d->applyFilter('registerActions', [], ['entity' => 'widgets']);
     assertEquals(2, count($result), 'Should have 2 actions');
     assertEquals('view', $result[0]['id'], 'First action id');
     assertEquals('archive', $result[1]['id'], 'Second action id');
@@ -130,7 +130,7 @@ TestSuite::run('execute() and applyFilter() coexist independently on same hook n
         return $tabs;
     });
 
-    $execResult   = $d->execute('beforeSave', ['entity' => 'client']);
+    $execResult   = $d->execute('beforeSave', ['entity' => 'widgets']);
     $filterResult = $d->applyFilter('registerTabs', [], []);
 
     assertTrue($execResult['validated'] === true, 'execute() should still work');

@@ -25,6 +25,9 @@ try {
 }
 
 const DELETION_VERSION = '1.0.0';
+const SQL_COUNT_PLUGIN_BY_SLUG = 'SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug';
+const SQL_DELETE_PLUGIN_BY_SLUG = 'DELETE FROM plugins WHERE slug = :slug';
+const MSG_PLUGINS_ROW_GONE = 'plugins row must be gone';
 
 /**
  * @return array<string, mixed> decoded row (manifest_json is a PHP array)
@@ -99,7 +102,7 @@ TestSuite::run('deletePlugin() removes an inactive entity plugin and all its dat
         $service = buildPluginAdministrationService(sys_get_temp_dir(), $pdo);
         $service->deletePlugin($slug);
 
-        assertEquals('0', countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug', [':slug' => $slug]), 'plugins row must be gone');
+        assertEquals('0', countRows($pdo, SQL_COUNT_PLUGIN_BY_SLUG, [':slug' => $slug]), MSG_PLUGINS_ROW_GONE);
         assertEquals('0', countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugin_entity_data WHERE entity_slug = :slug', [':slug' => $slug]), 'plugin_entity_data must be gone');
         assertEquals(
             '0',
@@ -108,7 +111,7 @@ TestSuite::run('deletePlugin() removes an inactive entity plugin and all its dat
         );
         assertEquals('0', countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugin_update_history WHERE slug = :slug', [':slug' => $slug]), 'plugin_update_history must be gone');
     } finally {
-        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $slug]);
+        $pdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => $slug]);
         $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $slug]);
         $pdo->prepare('DELETE FROM plugin_extension_data WHERE entity_slug = :slug')->execute([':slug' => $slug]);
         $pdo->prepare('DELETE FROM plugin_update_history WHERE slug = :slug')->execute([':slug' => $slug]);
@@ -133,7 +136,7 @@ TestSuite::run('deletePlugin() removes an extension plugin and only its own data
         $service = buildPluginAdministrationService(sys_get_temp_dir(), $pdo);
         $service->deletePlugin($slug);
 
-        assertEquals('0', countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug', [':slug' => $slug]), 'plugins row must be gone');
+        assertEquals('0', countRows($pdo, SQL_COUNT_PLUGIN_BY_SLUG, [':slug' => $slug]), MSG_PLUGINS_ROW_GONE);
         assertEquals(
             '0',
             countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugin_extension_data WHERE plugin_slug = :slug', [':slug' => $slug]),
@@ -145,7 +148,7 @@ TestSuite::run('deletePlugin() removes an extension plugin and only its own data
             'the host entity\'s own data must survive — deleting an extension must not touch entity data'
         );
     } finally {
-        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $slug]);
+        $pdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => $slug]);
         $pdo->prepare('DELETE FROM plugin_extension_data WHERE plugin_slug = :slug')->execute([':slug' => $slug]);
         $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')->execute([':slug' => $hostEntitySlug]);
     }
@@ -182,9 +185,9 @@ PHP;
         $service->deletePlugin($slug);
 
         assertTrue($GLOBALS['delete_deactivate_called'] === true, 'onDeactivate must fire before deleting an active plugin');
-        assertEquals('0', countRows($pdo, 'SELECT COUNT(*) AS cnt FROM plugins WHERE slug = :slug', [':slug' => $slug]), 'plugins row must be gone');
+        assertEquals('0', countRows($pdo, SQL_COUNT_PLUGIN_BY_SLUG, [':slug' => $slug]), MSG_PLUGINS_ROW_GONE);
     } finally {
-        $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => $slug]);
+        $pdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => $slug]);
         removePluginFixture($root);
     }
 });

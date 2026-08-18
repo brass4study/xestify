@@ -1330,7 +1330,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
   - ✅ Cada carpeta de `docs/` (01-architecture, 03-api, 04-plugins, 05-frontend, 07-security, 08-operations, 09-history, 10-productivity, 11-backlog) revisada contra el código real, sin contradicciones ni referencias rotas
   - ✅ Verificación de que la numeración de EPICs/STORIES es coherente entre `backlog.md`, `roadmap.md`, `MASTER-brief.md` e `ia-productivity-template.md`, sin restos de renombrados anteriores
   - ✅ `docs/03-api/endpoints.md` refleja todos los endpoints reales, incluyendo los nuevos de EPIC 10
-  - ✅ `docs/04-plugins` refleja el nuevo modelo `plugin_name`/`slug` y los plugins de demostración creados
+  - ✅ `docs/04-plugins` refleja el nuevo modelo `slug`/manifest_json->>'name' y los plugins de demostración creados
   - ✅ `docs/10-productivity/sesion.md` refleja el estado final real del proyecto al cierre
 - **IA Usage:** Auditoría cruzada de documentación vs código real + generación de matriz de discrepancias
 - **Dependencias:** STORY 11.1

@@ -119,7 +119,7 @@ TestSuite::run('tabs() returns empty tabs when no plugin registers any', functio
     $dispatcher = new HookDispatcher();
     $ctrl       = buildTabsController($dispatcher);
 
-    $result = callTabs($ctrl, ['slug' => 'client']);
+    $result = callTabs($ctrl, ['slug' => 'product']);
 
     assertTrue($result['ok'] ?? false, 'ok must be true'); // NOSONAR
 });
@@ -142,7 +142,7 @@ TestSuite::run('plugin registers tab via registerTabs hook — appears in API re
     });
 
     $ctrl   = buildTabsController($dispatcher);
-    $result = callTabs($ctrl, ['slug' => 'client']);
+    $result = callTabs($ctrl, ['slug' => 'product']);
 
     assertTrue($result['ok'] ?? false, 'ok must be true'); // NOSONAR
     $tabs = $result['data']['tabs'] ?? [];
@@ -163,7 +163,7 @@ TestSuite::run('multiple plugins register tabs — all appear in API response', 
     }, 20);
 
     $ctrl   = buildTabsController($dispatcher);
-    $result = callTabs($ctrl, ['slug' => 'client']);
+    $result = callTabs($ctrl, ['slug' => 'product']);
 
     assertTrue($result['ok'] ?? false, 'ok must be true'); // NOSONAR
     $tabs = $result['data']['tabs'] ?? [];
@@ -196,15 +196,15 @@ TestSuite::run('actions() returns empty actions when no plugin registers any', f
     $dispatcher = new HookDispatcher();
     $ctrl       = buildTabsController($dispatcher);
 
-    $request = new Request([], [], [], ['slug' => 'client']);
+    $request = new Request([], [], [], ['slug' => 'product']);
     ob_start();
-    $ctrl->actions(['slug' => 'client'], $request);
+    $ctrl->actions(['slug' => 'product'], $request);
     $output  = ob_get_clean();
     $result  = json_decode((string) $output, true) ?? [];
 
     assertTrue($result['ok'] ?? false, 'ok must be true'); // NOSONAR
     assertEquals([], $result['data']['actions'] ?? null, 'actions must be empty array');
-    assertEquals('client', $result['data']['entity'] ?? null, 'entity slug must be client');
+    assertEquals('product', $result['data']['entity'] ?? null, 'entity slug must be product');
 });
 
 TestSuite::run('actions() returns 404 when slug is empty', function (): void {
@@ -229,9 +229,9 @@ TestSuite::run('plugin registers action via registerActions hook — appears in 
     });
 
     $ctrl    = buildTabsController($dispatcher);
-    $request = new Request([], [], [], ['slug' => 'client']);
+    $request = new Request([], [], [], ['slug' => 'product']);
     ob_start();
-    $ctrl->actions(['slug' => 'client'], $request);
+    $ctrl->actions(['slug' => 'product'], $request);
     $output  = ob_get_clean();
     $result  = json_decode((string) $output, true) ?? [];
 
@@ -254,9 +254,9 @@ TestSuite::run('multiple plugins register actions — all appear in API response
     }, 20);
 
     $ctrl    = buildTabsController($dispatcher);
-    $request = new Request([], [], [], ['slug' => 'client']);
+    $request = new Request([], [], [], ['slug' => 'product']);
     ob_start();
-    $ctrl->actions(['slug' => 'client'], $request);
+    $ctrl->actions(['slug' => 'product'], $request);
     $output  = ob_get_clean();
     $result  = json_decode((string) $output, true) ?? [];
 

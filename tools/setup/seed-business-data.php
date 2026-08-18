@@ -26,8 +26,10 @@ $totalSkipped = 0;
 $groupsSeeded = 0;
 $groupsSkipped = 0;
 
-printf("%-18s %-10s %6s\n", 'Grupo', 'Estado', 'Filas');
-printf("%-18s %-10s %6s\n", str_repeat('-', 18), str_repeat('-', 10), str_repeat('-', 6));
+const REPORT_ROW_FORMAT = "%-18s %-10s %6s\n";
+
+printf(REPORT_ROW_FORMAT, 'Grupo', 'Estado', 'Filas');
+printf(REPORT_ROW_FORMAT, str_repeat('-', 18), str_repeat('-', 10), str_repeat('-', 6));
 
 foreach ($result['groups'] as $group) {
     printf("%-18s %-10s %6d\n", $group['group'], $group['status'], $group['count']);
@@ -41,7 +43,7 @@ foreach ($result['groups'] as $group) {
     }
 }
 
-printf("%-18s %-10s %6s\n", str_repeat('-', 18), str_repeat('-', 10), str_repeat('-', 6));
+printf(REPORT_ROW_FORMAT, str_repeat('-', 18), str_repeat('-', 10), str_repeat('-', 6));
 echo "\nGrupos sembrados: {$groupsSeeded} | saltados: {$groupsSkipped}\n";
 echo "Filas insertadas en esta ejecucion: {$totalSeeded} | filas ya existentes (saltadas): {$totalSkipped}\n";
 echo "\nDone.\n";

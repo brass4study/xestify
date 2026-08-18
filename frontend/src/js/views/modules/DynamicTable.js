@@ -160,11 +160,6 @@ export class DynamicTable {
 		this.#currentPage = Math.max(1, page);
 	}
 
-	setSchema(schema) {
-		this.#columns = this.normalizeColumns(schema);
-		this.#visibleColumns = new Set(this.#columns.map((column) => column.name));
-	}
-
 	sortBy(columnName, sortValue = null) {
 		if (typeof columnName !== 'string' || columnName === '') {
 			return;
@@ -759,7 +754,7 @@ export class DynamicTable {
 			return this.toDisplayValue(value);
 		}
 
-		const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+		const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
 		if (match === null) {
 			return this.toDisplayValue(value);
 		}

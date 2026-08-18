@@ -40,6 +40,15 @@ final class ProfileUpdateAuthorizer
             return self::NOT_FOUND;
         }
 
+        return $this->authorizeVerifiedChange($payload, $profile, $isEmailChange, $isPasswordChange);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $profile
+     */
+    private function authorizeVerifiedChange(array $payload, array $profile, bool $isEmailChange, bool $isPasswordChange): ?string
+    {
         $requiresVerification = $this->secretVerifier->requiresVerification($payload, $profile, $isEmailChange, $isPasswordChange);
         if (!$requiresVerification) {
             return null;
@@ -53,15 +62,20 @@ final class ProfileUpdateAuthorizer
             return self::PROTECTED_SEED;
         }
 
+        return $this->verifySecret($payload, $profile, $isEmailChange);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $profile
+     */
+    private function verifySecret(array $payload, array $profile, bool $isEmailChange): ?string
+    {
         $currentPassword = (string) ($payload['current_password'] ?? '');
         if ($currentPassword === '') {
             return $isEmailChange ? self::EMAIL_SECRET_REQUIRED : self::PASSWORD_SECRET_REQUIRED;
         }
 
-        if (!$this->secretVerifier->matches($currentPassword, $profile)) {
-            return self::SECRET_MISMATCH;
-        }
-
-        return null;
+        return $this->secretVerifier->matches($currentPassword, $profile) ? null : self::SECRET_MISMATCH;
     }
 }

@@ -29,6 +29,8 @@ use Xestify\core\Database;
 use Xestify\database\seeders\UserSeeder;
 use Xestify\exceptions\DatabaseException;
 
+const SQL_DELETE_USERS = 'DELETE FROM users';
+
 // ---------------------------------------------------------------------------
 // Load .env so $_ENV is populated (mirrors bootstrap.php, no full bootstrap)
 // ---------------------------------------------------------------------------
@@ -136,7 +138,7 @@ TestSuite::run('UserSeeder::seedIfEmpty inserts the fixed admin and normal accou
     $pdo = Database::connection();
 
     $pdo->exec('BEGIN');
-    $pdo->exec('DELETE FROM users');
+    $pdo->exec(SQL_DELETE_USERS);
 
     UserSeeder::seedIfEmpty();
 
@@ -165,7 +167,7 @@ TestSuite::run('UserSeeder::seedIfEmpty inserts the fixed accounts alongside pre
     $pdo = Database::connection();
 
     $pdo->exec('BEGIN');
-    $pdo->exec('DELETE FROM users');
+    $pdo->exec(SQL_DELETE_USERS);
     $pdo->prepare(
         'INSERT INTO users (email, password_hash, roles) VALUES (:e, :h, :r)'
     )->execute([':e' => 'existing@xestify.local', ':h' => 'hash', ':r' => '["operador"]']);
@@ -185,7 +187,7 @@ TestSuite::run('UserSeeder::seedIfEmpty is idempotent when run twice', function 
     $pdo = Database::connection();
 
     $pdo->exec('BEGIN');
-    $pdo->exec('DELETE FROM users');
+    $pdo->exec(SQL_DELETE_USERS);
 
     UserSeeder::seedIfEmpty();
     UserSeeder::seedIfEmpty();

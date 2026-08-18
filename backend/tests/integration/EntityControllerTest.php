@@ -82,6 +82,8 @@ try {
 // ---------------------------------------------------------------------------
 
 const CTRL_ENTITY_SLUG = 'test_entity_ctrl';
+const CTRL_ENTITY_VERSION = '1.0.0';
+const SQL_DELETE_PLUGIN_BY_SLUG = 'DELETE FROM plugins WHERE slug = :slug';
 
 const CTRL_SCHEMA_JSON = <<<'JSON'
 {
@@ -99,9 +101,9 @@ function seedCtrlDescribedSchema(string $description): void
     $manifest = json_encode([
         'name' => CTRL_ENTITY_SLUG_DESCRIBED,
         'label' => 'Test Entity Ctrl Described',
-        'version' => '1.0.0',
+        'version' => CTRL_ENTITY_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => CTRL_ENTITY_VERSION,
         'description' => $description,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -170,9 +172,9 @@ function seedCtrlSchema(string $slug = CTRL_ENTITY_SLUG, string $schemaJson = CT
     $manifest = json_encode([
         'name' => $slug,
         'label' => 'Test Entity Ctrl',
-        'version' => '1.0.0',
+        'version' => CTRL_ENTITY_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => CTRL_ENTITY_VERSION,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -219,9 +221,9 @@ function seedCtrlDependentPlugin(string $targetEntitySlug): void
     $manifest = json_encode([
         'name' => CTRL_DEPENDENT_SLUG,
         'label' => 'Test Entity Ctrl Dependent',
-        'version' => '1.0.0',
+        'version' => CTRL_ENTITY_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => CTRL_ENTITY_VERSION,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $schema = json_encode([
@@ -263,7 +265,7 @@ function cleanCtrlDependentPlugin(): void
     $pdo = Database::connection();
     $pdo->prepare('DELETE FROM plugin_entity_data WHERE entity_slug = :slug')
         ->execute([':slug' => CTRL_DEPENDENT_SLUG]);
-    $pdo->prepare('DELETE FROM plugins WHERE slug = :slug')
+    $pdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)
         ->execute([':slug' => CTRL_DEPENDENT_SLUG]);
 }
 
@@ -568,9 +570,9 @@ TestSuite::run('DELETE destroy returns 422 when another entity has a dependent r
 // ---------------------------------------------------------------------------
 
 $finalPdo = Database::connection();
-$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG]);
-$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG_IDENTITY]);
-$finalPdo->prepare('DELETE FROM plugins WHERE slug = :slug')->execute([':slug' => CTRL_ENTITY_SLUG_DESCRIBED]);
+$finalPdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => CTRL_ENTITY_SLUG]);
+$finalPdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => CTRL_ENTITY_SLUG_IDENTITY]);
+$finalPdo->prepare(SQL_DELETE_PLUGIN_BY_SLUG)->execute([':slug' => CTRL_ENTITY_SLUG_DESCRIBED]);
 
 // ---------------------------------------------------------------------------
 // Summary

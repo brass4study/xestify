@@ -38,7 +38,6 @@ test.describe('Entity CRUD (clients)', () => {
 
     await page.goto(`#/entity/clients/${recordId}`);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.locator('input[name="name"]')).toHaveValue(uniqueName, { timeout: 10000 });
 
     const updatedName = `${uniqueName} (editado)`;
@@ -51,7 +50,6 @@ test.describe('Entity CRUD (clients)', () => {
 
     await page.goto(`#/entity/clients/${recordId}`);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.locator('input[name="name"]')).toHaveValue(updatedName, { timeout: 10000 });
   });
 
@@ -65,10 +63,13 @@ test.describe('Entity CRUD (clients)', () => {
     await page.click('[data-role="navbar-link"][data-page="entity:clients"]');
     await expect(page).toHaveURL(/#\/entity\/clients$/);
 
+    const tabsLoaded = page.waitForResponse(
+      (res) => res.url().includes('/entities/clients/tabs') && res.request().method() === 'GET'
+    );
     await page.click('[data-role="record-create"]');
     await expect(page.locator('input[name="name"]')).toBeFocused();
 
-    await page.waitForLoadState('networkidle');
+    await tabsLoaded;
     await expect(page.locator('input[name="name"]')).toBeFocused();
   });
 });

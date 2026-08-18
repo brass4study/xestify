@@ -81,13 +81,13 @@ TestSuite::run('bearerToken() retorna null si no es Bearer', function () {
 });
 
 TestSuite::run('param() devuelve route param', function () {
-    $req = new Request(routeParams: ['slug' => 'client', 'id' => '42']);
-    assertEquals('client', $req->param('slug'));
+    $req = new Request(routeParams: ['slug' => 'widgets', 'id' => '42']);
+    assertEquals('widgets', $req->param('slug'));
     assertEquals('42', $req->param('id'));
 });
 
 TestSuite::run('allParams() devuelve todos los route params', function () {
-    $params = ['slug' => 'client'];
+    $params = ['slug' => 'widgets'];
     $req    = new Request(routeParams: $params);
     assertEquals($params, $req->allParams());
 });

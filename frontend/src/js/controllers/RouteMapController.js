@@ -117,7 +117,7 @@ export function parseEntityPluginItemPage(page) {
   }
 
   const [slug, recordId] = parts;
-  const itemId = parts[parts.length - 1];
+  const itemId = parts.at(-1);
   const tabId = parts.slice(2, -1).join(':');
   if (slug === '' || recordId === '' || tabId === '' || itemId === '') {
     return null;
@@ -267,55 +267,68 @@ function resolvePluginsHash(page) {
   return fillRouteTemplate(HASH_ROUTE_MAP.pluginConfig, parsed.slug);
 }
 
+/**
+ * Shared shape of most `resolveEntityHash()` branches: a page was already
+ * parsed by one of the `parseEntity*Page()` helpers above, and either the
+ * parse failed (→ home) or its fields fill a HASH_ROUTE_MAP template in
+ * order. Extracted so each branch below is a single guarded return instead
+ * of its own nested null-check, which is what drove this function's
+ * cognitive complexity past the linter's threshold.
+ */
+function resolveParsedEntityHash(parsed, templateKey, ...fieldNames) {
+  if (parsed === null) {
+    return HASH_ROUTE_MAP.home;
+  }
+
+  return fillRouteTemplate(HASH_ROUTE_MAP[templateKey], ...fieldNames.map((field) => parsed[field]));
+}
+
+/** Shared shape of the two `prefix:slug` branches (no further segments to parse). */
+function resolveSimpleEntityHash(page, prefix, templateKey) {
+  const slug = page.slice(prefix.length);
+  return slug === '' ? HASH_ROUTE_MAP.home : fillRouteTemplate(HASH_ROUTE_MAP[templateKey], slug);
+}
+
 function resolveEntityHash(page) {
   if (typeof page !== 'string') {
     return null;
   }
 
   if (page.startsWith('entity-plugin-item-create:')) {
-    const parsed = parseEntityPluginItemCreatePage(page);
-    if (parsed === null) {
-      return HASH_ROUTE_MAP.home;
-    }
-
-    return fillRouteTemplate(HASH_ROUTE_MAP.entityPluginItemCreate, parsed.slug, parsed.recordId, parsed.tabId);
+    return resolveParsedEntityHash(
+      parseEntityPluginItemCreatePage(page),
+      'entityPluginItemCreate',
+      'slug',
+      'recordId',
+      'tabId'
+    );
   }
 
   if (page.startsWith('entity-plugin-item:')) {
-    const parsed = parseEntityPluginItemPage(page);
-    if (parsed === null) {
-      return HASH_ROUTE_MAP.home;
-    }
-
-    return fillRouteTemplate(HASH_ROUTE_MAP.entityPluginItem, parsed.slug, parsed.recordId, parsed.tabId, parsed.itemId);
+    return resolveParsedEntityHash(
+      parseEntityPluginItemPage(page),
+      'entityPluginItem',
+      'slug',
+      'recordId',
+      'tabId',
+      'itemId'
+    );
   }
 
   if (page.startsWith('entity-tab:')) {
-    const parsed = parseEntityTabPage(page);
-    if (parsed === null) {
-      return HASH_ROUTE_MAP.home;
-    }
-
-    return fillRouteTemplate(HASH_ROUTE_MAP.entityTab, parsed.slug, parsed.recordId, parsed.tabId);
+    return resolveParsedEntityHash(parseEntityTabPage(page), 'entityTab', 'slug', 'recordId', 'tabId');
   }
 
   if (page.startsWith('entity-create:')) {
-    const slug = page.slice('entity-create:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.home : fillRouteTemplate(HASH_ROUTE_MAP.entityCreate, slug);
+    return resolveSimpleEntityHash(page, 'entity-create:', 'entityCreate');
   }
 
   if (page.startsWith('entity-record:')) {
-    const parsed = parseEntityRecordPage(page);
-    if (parsed === null) {
-      return HASH_ROUTE_MAP.home;
-    }
-
-    return fillRouteTemplate(HASH_ROUTE_MAP.entityDetail, parsed.slug, parsed.recordId);
+    return resolveParsedEntityHash(parseEntityRecordPage(page), 'entityDetail', 'slug', 'recordId');
   }
 
   if (page.startsWith('entity:')) {
-    const slug = page.slice('entity:'.length);
-    return slug === '' ? HASH_ROUTE_MAP.home : fillRouteTemplate(HASH_ROUTE_MAP.entityList, slug);
+    return resolveSimpleEntityHash(page, 'entity:', 'entityList');
   }
 
   return null;
@@ -345,6 +358,26 @@ function resolvePluginsPage(parts) {
   }
 
   return parts.length === 1 ? 'plugins' : null;
+}
+
+/**
+ * The 5-segment case ('entity/:slug/:id/:tab/:itemOrNew') alone accounted
+ * for most of resolveEntityPage()'s nesting: it decodes a further segment,
+ * branches on the '#new' sentinel, and decodes yet another. Extracted so it
+ * carries its own (shallow) nesting instead of adding to the parent's.
+ */
+function resolveEntityPluginItemSegment(slug, recordId, parts) {
+  const tabId = decodeSegment(parts[3]);
+  if (tabId === null) {
+    return null;
+  }
+
+  if (parts[4] === '#new') {
+    return `entity-plugin-item-create:${slug}:${recordId}:${tabId}`;
+  }
+
+  const itemId = decodeSegment(parts[4]);
+  return itemId === null ? null : `entity-plugin-item:${slug}:${recordId}:${tabId}:${itemId}`;
 }
 
 function resolveEntityPage(parts) {
@@ -384,17 +417,7 @@ function resolveEntityPage(parts) {
   }
 
   if (parts.length === 5) {
-    const tabId = decodeSegment(parts[3]);
-    if (tabId === null) {
-      return null;
-    }
-
-    if (parts[4] === '#new') {
-      return `entity-plugin-item-create:${slug}:${recordId}:${tabId}`;
-    }
-
-    const itemId = decodeSegment(parts[4]);
-    return itemId === null ? null : `entity-plugin-item:${slug}:${recordId}:${tabId}:${itemId}`;
+    return resolveEntityPluginItemSegment(slug, recordId, parts);
   }
 
   return null;

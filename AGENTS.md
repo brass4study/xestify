@@ -147,10 +147,9 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 
 ## Convenciones de entidades y plugins
 
-- `persons` es el slug canonico de personas: unifica clientes, distribuidores
-  y oculistas bajo un unico modelo (STORY 10.2 renombro el plugin desde
-  `clients` con este objetivo). No reintroducir `client`/`clients` como slug
-  funcional, fixture o dato demo.
+- `persons` es el manifest_json->>'name' canonico de personas: unifica clientes, distribuidores
+  y oculistas bajo un unico modelo. No reintroducir `clients` como manifest_json->>'name'
+  funcional, fixture o dato demo. Ahora `clients` es una instancia de `persons`
 - Los plugins de tipo `entity` son la fuente de verdad del catalogo de entidades.
 - El catalogo debe salir de plugins instalados y activos, no de seeders de entidades.
 - Los seeders deben limitarse a usuario admin y datos demo explicitos cuando se pidan.
@@ -161,13 +160,13 @@ feat: STORY 5.1 - Frontend - Crear pagina Login
 - Para `persons`, usar:
   - `name`
   - `surnames`
-  - `email`
+  - `mail`
   - `phone`
-  - `creation_stamp`
-  - `is_active`
+  - `identity_document_number`
+  - `address`
 - Las labels visibles para UI pueden ir en espanol.
 - No mezclar claves tecnicas en espanol como `nombre`, `apellidos`, `telefono`
-  o `activo`.
+  o `correo`.
 
 ## Base de datos local
 

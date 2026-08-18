@@ -1733,3 +1733,107 @@ duplicadas en la segunda) y con integridad de datos confirmada por SQL
 (apellidos únicos, relaciones sin ids huérfanos, cobertura 100% de fichas,
 325/325 DNI con letra de control correcta); `EPIC 10` queda cerrada al
 completo, siguiente foco STORY 11.1 (`EPIC 11`).
+
+### STORY 11.1 — Auditoría de código limpio
+
+**Prompt inicial:**
+```
+Abordemos la epic 11.1
+```
+**Resultado:** interpretación inicial incorrecta — la IA arrancó el flujo
+de la skill `fix-technical-debt` (corrección de hallazgos de la auditoría
+de deuda técnica de `skills/audit-technical-debt/`) al ver que STORY 11.1
+se llama "Auditoría de código limpio" y que ya existía una auditoría de
+deuda técnica reciente en el repo.
+
+**Corrección explícita de rumbo:**
+```
+La story 11.1 no incluye correcciones de deuda tecnica por la skill de
+auditoria de deuda tecnica. Empieza por el primer punto:
+Pase de SonarQube (`skills/review-sonarqube-clean-code/SKILL.md`) sobre
+backend y frontend, sin hallazgos críticos/bloqueantes pendientes
+```
+**Resultado:** la IA abandonó el flujo de `fix-technical-debt` y siguió
+estrictamente los 5 criterios del backlog para STORY 11.1, empezando por
+el pase de SonarQube.
+
+**Pregunta de transparencia sobre el propio proceso:**
+```
+¿Que hace exactamente \skills\review-sonarqube-clean-code\scripts\
+analyze-sonarlint-workspace.ps1?
+```
+**Resultado:** explicación completa del mecanismo (trigger file → watcher
+de una extensión local de VSCode → apertura en serie de cada fichero →
+`SonarLint.AnalyseOpenFile` → export a JSON), leyendo el script y la
+extensión en vez de resumir de memoria.
+
+**Corrección tras observar que nada ocurría en pantalla:**
+```
+No estoy viendo que esté haciendo ninguna de esas cosas
+```
+**Resultado:** diagnóstico real en vez de reintentar a ciegas — comparación
+byte a byte de la extensión instalada contra el repo reveló que estaba
+desactualizada (sin el manejo de errores de la versión nueva). Tras
+refrescarla y una recarga de VSCode, un segundo intento reveló un segundo
+bug independiente (BOM UTF-8 en el trigger JSON), también corregido y
+verificado con una pasada de un solo fichero antes de relanzar el análisis
+completo.
+
+**Decisión sobre el alcance de la limpieza (con `AskUserQuestion`):**
+```
+Los 38 hallazgos son todos warnings no críticos (0 críticos/bloqueantes,
+criterio ya cumplido). ¿Los limpio también como parte de esta story, o
+dejo el pase de Sonar aquí...?
+```
+→ **"Limpiar los 38 también"**
+**Resultado:** limpieza completa de los 38 hallazgos en lotes pequeños con
+test/smoke test por cambio no trivial, no solo verificación de ausencia de
+críticos. Durante la limpieza, la propia IA detectó y corrigió una
+regresión autoinducida (`PluginExtensionController` cruzó el límite de 20
+métodos por clase al extraer 2 helpers nuevos para bajar el conteo de
+`return`) antes de dar el punto por cerrado.
+
+**Petición de revisión de cambios concurrentes del usuario:**
+```
+Revisa los cambios en curso
+```
+**Resultado:** revisión de 3 ficheros que el usuario estaba editando en
+paralelo (`AGENTS.md`, `README.md`, `backlog.md`). Encontrados y reportados
+dos errores técnicos reales (término inventado `manifest_schema.name` sin
+ninguna coincidencia en el código; `manifest_json->>'name'` sin comillas,
+sintaxis JSONB inválida) y confirmado como intencionado un tercer cambio
+(retirar una nota de `PHPRC` de `README.md`). El usuario corrigió los dos
+primeros personalmente tras la revisión.
+
+**Continuaciones del checklist ("Si") tras cada punto cerrado:** código
+muerto/TODOs, `decisiones-tecnicas.md`, rastro `clients`/`persons` y
+naming consistente — cada uno auditado de forma independiente (sin
+reutilizar sin más el listado de la auditoría de deuda técnica previa) y
+verificado contra el código real antes de tocar nada. Ejemplo destacado: al
+verificar Spinner/Skeleton/InputRadio como candidatos a código muerto, se
+encontró que `backlog.md` ya los documentaba como librería construida por
+adelantado con story futura planificada para cablearlos — se descartaron en
+vez de eliminarlos por coincidir con un hallazgo previo de auditoría.
+
+**Iteraciones:** 20+ (corrección de rumbo inicial, 2 bugs de tooling
+depurados con verificación end-to-end, 38 hallazgos de Sonar triados y 36
+corregidos con test dedicado, 1 regresión propia detectada y corregida,
+revisión de decisiones técnicas y rastro `clients`/`persons` con varios
+falsos positivos descartados tras verificación, revisión de 3 ficheros en
+edición concurrente del usuario, 3 ejecuciones completas de la suite
+backend).
+**Lección:** cuando el usuario dice "no estoy viendo que pase nada", no es
+señal para reintentar el mismo comando — es señal de que la hipótesis de
+partida (la extensión está activa y funcionando) puede estar mal, y toca
+diagnosticar desde cero comparando el estado real contra lo esperado.
+Y verificar cada candidato a "código muerto" o "rastro de client" contra
+la documentación viva del proyecto antes de tocarlo evitó al menos un
+borrado incorrecto (Spinner/Skeleton/InputRadio) y dejó fuera varios falsos
+positivos (vocabulario de seeders, prosa en inglés, documentación
+histórica legítima).
+**Estado final:** STORY 11.1 implementada y verificada — backend
+`php backend/tests/run.php all` 69/69 archivos en verde; SonarQube 38→0
+hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots
+`mt_rand` de datos demo, revisados y marcados `// NOSONAR` por el usuario);
+`AGENTS.md` corregido en dos secciones distintas (`manifest_json->>'name'`
+y claves canónicas de `persons`); siguiente foco STORY 11.2 (`EPIC 11`).

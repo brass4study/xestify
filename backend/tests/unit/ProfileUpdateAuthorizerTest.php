@@ -9,6 +9,8 @@ require_once __DIR__ . '/../../src/services/ProfileUpdateAuthorizer.php';
 use Xestify\services\ProfileUpdateAuthorizer;
 
 const PU_EMAIL = 'same@example.com';
+const PU_NEW_EMAIL = 'new@example.com';
+const PU_NEW_NAME = 'New Name';
 
 function buildProfile(bool $isSeed = false): array
 {
@@ -26,17 +28,17 @@ $authorizer = new ProfileUpdateAuthorizer();
 // -----------------------------------------------------------------------
 
 TestSuite::run('authorize() allows (null) when neither email nor password change', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['name' => 'New Name'], buildProfile());
+    $reason = $authorizer->authorize(['name' => PU_NEW_NAME], buildProfile());
     assertNull($reason);
 });
 
 TestSuite::run('authorize() allows (null) when the payload resends the same email unchanged', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['name' => 'New Name', 'email' => PU_EMAIL], buildProfile());
+    $reason = $authorizer->authorize(['name' => PU_NEW_NAME, 'email' => PU_EMAIL], buildProfile());
     assertNull($reason);
 });
 
 TestSuite::run('authorize() allows (null) when a seed profile only renames itself (email unchanged)', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['name' => 'New Name', 'email' => PU_EMAIL], buildProfile(true));
+    $reason = $authorizer->authorize(['name' => PU_NEW_NAME, 'email' => PU_EMAIL], buildProfile(true));
     assertNull($reason);
 });
 
@@ -54,7 +56,7 @@ TestSuite::run('authorize() denies with NOT_FOUND when the profile does not exis
 // -----------------------------------------------------------------------
 
 TestSuite::run('authorize() denies with PROTECTED_SEED when a seed profile attempts a real email change', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['email' => 'new@example.com', 'current_password' => 'correct-horse'], buildProfile(true));
+    $reason = $authorizer->authorize(['email' => PU_NEW_EMAIL, 'current_password' => 'correct-horse'], buildProfile(true));
     assertEquals(ProfileUpdateAuthorizer::PROTECTED_SEED, $reason);
 });
 
@@ -68,7 +70,7 @@ TestSuite::run('authorize() denies with PROTECTED_SEED when a seed profile attem
 // -----------------------------------------------------------------------
 
 TestSuite::run('authorize() denies with EMAIL_SECRET_REQUIRED when changing email without current_password', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['email' => 'new@example.com'], buildProfile());
+    $reason = $authorizer->authorize(['email' => PU_NEW_EMAIL], buildProfile());
     assertEquals(ProfileUpdateAuthorizer::EMAIL_SECRET_REQUIRED, $reason);
 });
 
@@ -83,7 +85,7 @@ TestSuite::run('authorize() denies with SECRET_MISMATCH when current_password is
 });
 
 TestSuite::run('authorize() allows (null) a real email change with the correct current_password', function () use ($authorizer): void {
-    $reason = $authorizer->authorize(['email' => 'new@example.com', 'current_password' => 'correct-horse'], buildProfile());
+    $reason = $authorizer->authorize(['email' => PU_NEW_EMAIL, 'current_password' => 'correct-horse'], buildProfile());
     assertNull($reason);
 });
 

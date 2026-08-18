@@ -113,6 +113,15 @@ final class ValidationService
             return [new ValidationError($fieldName, 'required', 'Field is required')];
         }
 
+        return $this->validateKnownPresentField($fieldName, $value, $fieldRules, $isPresent);
+    }
+
+    /**
+     * @param array<string, mixed> $fieldRules
+     * @return list<ValidationError>
+     */
+    private function validateKnownPresentField(string $fieldName, mixed $value, array $fieldRules, bool $isPresent): array
+    {
         if (!$this->shouldValidateValue($isPresent, $value)) {
             return [];
         }

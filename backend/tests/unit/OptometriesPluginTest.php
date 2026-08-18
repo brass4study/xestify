@@ -111,6 +111,8 @@ function optometriesSchemaData(): array
     return json_decode((string) file_get_contents(OPTOMETRIES_PLUGIN_DIR . '/schema.json'), true);
 }
 
+const MSG_INJECTS_ONE_TAB = 'must inject exactly one tab';
+
 const OPTOMETRIES_EXPECTED_FIELD_KEYS = [
     'date',
     'od_distance_sphere', 'od_distance_cylinder', 'od_distance_axis',
@@ -286,7 +288,7 @@ TestSuite::run('Hooks - registerTabs inyecta tab con relations embebidas cuando 
 
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
 
-    assertTrue(count($tabs) === 1, 'must inject exactly one tab');
+    assertTrue(count($tabs) === 1, MSG_INJECTS_ONE_TAB);
     $tab = $tabs[0];
     assertEquals('optometries', $tab['id'], 'tab id must be the instance slug');
     assertEquals('Optometrías', $tab['label'], 'tab label must be Optometrías');
@@ -334,7 +336,7 @@ TestSuite::run('Hooks - registerTabs embebe solo campos origin:additional en fie
 
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
 
-    assertTrue(count($tabs) === 1, 'must inject exactly one tab');
+    assertTrue(count($tabs) === 1, MSG_INJECTS_ONE_TAB);
     $tab = $tabs[0];
 
     assertEquals(1, count($tab['fields']), 'only the additional field must be embedded, not the base "date" field');
@@ -376,7 +378,7 @@ TestSuite::run('Hooks - registerTabs embebe summary_fields con campos base + add
 
     $tabs = $dispatcher->applyFilter('registerTabs', [], ['entity' => 'clients']);
 
-    assertTrue(count($tabs) === 1, 'must inject exactly one tab');
+    assertTrue(count($tabs) === 1, MSG_INJECTS_ONE_TAB);
     $tab = $tabs[0];
 
     assertEquals(4, count($tab['summary_fields']), 'summary_fields must include base fields too, unlike fields (which only has "warnings")');

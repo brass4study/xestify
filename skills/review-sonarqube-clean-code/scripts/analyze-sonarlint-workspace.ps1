@@ -29,9 +29,11 @@ function Write-Trigger {
         $request.files = @($SelectedFiles)
     }
 
-    $request |
-        ConvertTo-Json -Depth 5 |
-        Set-Content -Encoding UTF8 $Path
+    # Windows PowerShell 5.1's -Encoding UTF8 always prepends a BOM, which
+    # Node's JSON.parse (used by the VSCode extension to read this trigger)
+    # rejects outright. Write UTF-8 without BOM explicitly instead.
+    $json = $request | ConvertTo-Json -Depth 5
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding $false))
 }
 
 function Read-StatusFile {

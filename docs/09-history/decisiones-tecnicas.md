@@ -245,7 +245,7 @@ El contrato del plugin se define con cuatro bloques:
 
 ```
 Plugin define contrato schema.json        Admin configura la entidad
-(identities, fields, custom_fields,       (schema vivo en entity_metadata)
+(identities, fields, custom_fields,       (schema vivo en plugins.schema_json)
  relations)                                        │
          │                                   Mantiene obligatorios del dominio
  identities fijas                  ──→      Selecciona sugerencias opcionales
@@ -534,13 +534,13 @@ Si se adopta un bundler en fases posteriores (EPIC A1+), la configuracion de Tai
 #/users                         Gestion administrativa de usuarios
 #/users/:id                     Ficha/configuracion de usuario
 #/entity/:slug                  Listado de registros de una entidad
-#/entity/:slug/new              Alta de registro
+#/entity/:slug/#new             Alta de registro
 #/entity/:slug/:id              Detalle / edicion de registro
 #/entity/:slug/:id/:tab         Tab de un registro (ej: #/.../:id/comentarios)
+#/entity/:slug/:id/:tab/#new    Alta de item de plugin extension en un tab (STORY 10.5)
+#/entity/:slug/:id/:tab/:itemId Ficha de item de plugin extension en un tab (STORY 10.5)
 #/plugins                       PluginManager
 #/plugins/:slug                 Configuracion de un plugin
-#/result/empty                  Estado vacio reutilizable
-#/result/error                  Estado de error recuperable
 ```
 
 **Nota sobre tabs:** se prefiere subruta (`#/.../comentarios`) sobre query param (`?tab=comentarios`) para mantener consistencia. Query param solo se usa si el tab requiere estado adicional en query string.

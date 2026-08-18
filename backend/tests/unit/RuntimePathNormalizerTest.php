@@ -7,6 +7,9 @@ use Xestify\core\RuntimePathNormalizer;
 require_once __DIR__ . '/helpers.php';
 require_once dirname(__DIR__, 2) . '/src/core/RuntimePathNormalizer.php';
 
+const ROUTE_API_ENTITIES = '/api/v1/entities';
+const ROUTE_HEALTH = '/health';
+
 echo "\nRuntimePathNormalizerTest\n";
 echo str_repeat('-', 40) . "\n";
 
@@ -16,15 +19,15 @@ TestSuite::run('normaliza raiz y paths directos de runtime', function (): void {
     assertEquals('/', $normalizer->normalize(''));
     assertEquals('/', $normalizer->normalize('/'));
     assertEquals('/api', $normalizer->normalize('/api'));
-    assertEquals('/api/v1/entities', $normalizer->normalize('/api/v1/entities'));
-    assertEquals('/health', $normalizer->normalize('/health'));
+    assertEquals(ROUTE_API_ENTITIES, $normalizer->normalize(ROUTE_API_ENTITIES));
+    assertEquals(ROUTE_HEALTH, $normalizer->normalize(ROUTE_HEALTH));
 });
 
 TestSuite::run('recorta alias antes de /api y /health', function (): void {
     $normalizer = new RuntimePathNormalizer();
 
-    assertEquals('/api/v1/entities', $normalizer->normalize('/xestify/api/v1/entities'));
-    assertEquals('/health', $normalizer->normalize('/xestify/health'));
+    assertEquals(ROUTE_API_ENTITIES, $normalizer->normalize('/xestify/api/v1/entities'));
+    assertEquals(ROUTE_HEALTH, $normalizer->normalize('/xestify/health'));
     assertEquals('/health/check', $normalizer->normalize('/xestify/health/check'));
 });
 

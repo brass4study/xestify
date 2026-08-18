@@ -44,7 +44,7 @@ export class CommentsPanel {
   // ---------------------------------------------------------------------------
 
   /**
-   * @param {string}      endpointTemplate  e.g. /plugins/comments/client/{id}
+   * @param {string}      endpointTemplate  e.g. /plugins/comments/{entity}/{id}
    * @param {string|null} recordId
    * @param {object}      api
    * @returns {{ element: HTMLElement, flush: (resolvedId: string) => Promise<void> }}

@@ -304,7 +304,7 @@ final class CoreEntitySeeder extends AbstractGroupSeeder
         return [
             'name' => $name,
             'type' => FakeDataGenerator::ophthalmologistType(),
-            'numero' => FakeDataGenerator::ophthalmologistNumero(),
+            'license_number' => FakeDataGenerator::ophthalmologistNumero(),
             'surnames' => $surnames,
             'identity_document_number' => PersonDataGenerator::randomDni(),
             'address' => FakeDataGenerator::streetAddress(),

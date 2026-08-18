@@ -113,9 +113,9 @@ function seedSchema(): void
     $manifest = json_encode([
         'name' => TEST_ENTITY_SLUG,
         'label' => TEST_ENTITY_SLUG,
-        'version' => '1.0.0',
+        'version' => TEST_MANIFEST_VERSION,
         'type' => 'entity',
-        'core_version' => '1.0.0',
+        'core_version' => TEST_MANIFEST_VERSION,
         'description' => '',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 

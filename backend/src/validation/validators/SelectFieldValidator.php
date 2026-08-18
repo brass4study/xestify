@@ -15,18 +15,26 @@ final class SelectFieldValidator implements FieldValidatorInterface
             return [new ValidationError($fieldName, 'invalid_type', 'Expected scalar value for select')];
         }
 
-        $options = $rules['options'] ?? [];
-        if (!is_array($options) || $options === []) {
+        if ($this->isAllowedValue($value, $rules['options'] ?? [])) {
             return [];
+        }
+
+        return [new ValidationError($fieldName, 'invalid_option', 'Value not allowed')];
+    }
+
+    private function isAllowedValue(mixed $value, mixed $options): bool
+    {
+        if (!is_array($options) || $options === []) {
+            return true;
         }
 
         foreach ($options as $option) {
             $optionValue = is_array($option) ? ($option['value'] ?? null) : $option;
             if ($optionValue !== null && (string) $optionValue === (string) $value) {
-                return [];
+                return true;
             }
         }
 
-        return [new ValidationError($fieldName, 'invalid_option', 'Value not allowed')];
+        return false;
     }
 }

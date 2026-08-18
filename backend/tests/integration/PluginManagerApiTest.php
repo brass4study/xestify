@@ -21,6 +21,7 @@ define('BASE_PATH', dirname(__DIR__, 2));
 define('SEMVER_1_0', '1.0.0');
 define('SEMVER_2_0', '2.0.0');
 define('ASSERT_ERR_422', 'Error code should be 422');
+define('ASSERT_ERR_404', 'Error code should be 404');
 
 require_once BASE_PATH . '/tests/unit/helpers.php';
 require_once BASE_PATH . '/src/controllers/PluginManagerController.php';
@@ -563,7 +564,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/move-up returns 404 when plugin is n
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Move up for a missing plugin should fail');
-    assertEquals(404, $response['error']['code'] ?? null, 'Error code should be 404');
+    assertEquals(404, $response['error']['code'] ?? null, ASSERT_ERR_404);
 });
 
 TestSuite::run('POST /api/v1/plugins registers a new plugin and returns it already active', function (): void {
@@ -727,7 +728,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/update returns 404 when plugin is no
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Missing plugin update should fail');
-    assertEquals(404, $response['error']['code'] ?? null, 'Error code should be 404');
+    assertEquals(404, $response['error']['code'] ?? null, ASSERT_ERR_404);
 });
 
 TestSuite::run('POST /api/v1/plugins/{slug}/update returns 409 for unsupported update', function (): void {
@@ -805,7 +806,7 @@ TestSuite::run('POST /api/v1/plugins/{slug}/rollback returns 404 when plugin is 
 
     $response = json_decode($output, true);
     assertTrue($response['ok'] === false, 'Missing plugin rollback should fail');
-    assertEquals(404, $response['error']['code'] ?? null, 'Error code should be 404');
+    assertEquals(404, $response['error']['code'] ?? null, ASSERT_ERR_404);
 });
 
 TestSuite::run('POST /api/v1/plugins/{slug}/rollback returns 409 when no snapshot exists', function (): void {

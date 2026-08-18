@@ -24,8 +24,8 @@ echo str_repeat('-', 40) . "\n";
 
 TestSuite::run('execute() returns unchanged context when no callbacks registered', function (): void {
     $d = new HookDispatcher();
-    $result = $d->execute('beforeSave', ['entity' => 'client']);
-    assertEquals(['entity' => 'client'], $result, 'Context must be unchanged');
+    $result = $d->execute('beforeSave', ['entity' => 'widgets']);
+    assertEquals(['entity' => 'widgets'], $result, 'Context must be unchanged');
 });
 
 TestSuite::run('execute() calls registered callback and returns its result', function (): void {
@@ -34,7 +34,7 @@ TestSuite::run('execute() calls registered callback and returns its result', fun
         $ctx['touched'] = true;
         return $ctx;
     });
-    $result = $d->execute('beforeSave', ['entity' => 'client']);
+    $result = $d->execute('beforeSave', ['entity' => 'widgets']);
     assertTrue($result['touched'] === true, 'Callback should set touched=true');
 });
 
