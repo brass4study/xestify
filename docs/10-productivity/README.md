@@ -35,6 +35,7 @@ en `AGENTS.md`, sección "Skills locales del proyecto".
 |---|---|
 | [`audit-technical-debt`](../../skills/audit-technical-debt/SKILL.md) | Genera auditorías de deuda técnica (completa/incremental/acotada) |
 | [`fix-technical-debt`](../../skills/fix-technical-debt/SKILL.md) | Corrige hallazgos ya auditados, fase a fase |
+| [`publish-release`](../../skills/publish-release/SKILL.md) | Publica releases en GitHub con tag, notas y ZIP instalable como asset |
 | [`review-sonarqube-clean-code`](../../skills/review-sonarqube-clean-code/SKILL.md) | Revisa/corrige findings de SonarQube for IDE/SonarLint |
 | [`seed-business-data`](../../skills/seed-business-data/SKILL.md) | Siembra datos de negocio de demostración (STORY 10.6) |
 

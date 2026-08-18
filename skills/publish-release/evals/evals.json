@@ -1,0 +1,29 @@
+{
+  "skill_name": "publish-release",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Publica una release.",
+      "expected_output": "Ejecuta los checks previos (main limpia y sincronizada, gh autenticado), sugiere la siguiente version SemVer desde los tags, confirma version y notas con el usuario, crea y empuja el tag, construye el zip verificado con build-release-zip.sh y publica con gh release create adjuntando el asset.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Crea la release v1.2.0 en GitHub.",
+      "expected_output": "Usa v1.2.0 como version propuesta pero la confirma igualmente con el usuario, compone las notas en espanol desde git log del rango desde el ultimo tag, y sigue el flujo completo hasta verificar con gh release view.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Prepara el zip de la release pero no publiques nada todavia.",
+      "expected_output": "Ejecuta solo bash skills/publish-release/scripts/build-release-zip.sh HEAD (dry-run), muestra el resumen de verificacion del contenido y no crea tag ni release.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "La release v1.1.0 se creo pero el zip no llego a subirse; arreglalo.",
+      "expected_output": "Reconstruye el zip desde el tag v1.1.0 si no existe y lo adjunta con gh release upload v1.1.0 --clobber, verificando despues los assets con gh release view v1.1.0.",
+      "files": []
+    }
+  ]
+}
