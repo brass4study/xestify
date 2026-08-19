@@ -7,7 +7,8 @@ sistema de plugins.
 
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](INSTALL.md)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13%2B-4169E1?logo=postgresql&logoColor=white)](INSTALL.md)
-[![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS-F7DF1E?logo=javascript&logoColor=black)](docs/05-frontend/README.md)
+[![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS-F7DF1E?logo=javascript&logoColor=white)](docs/05-frontend/README.md)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4-38BDF8?logo=tailwindcss&logoColor=white)](docs/05-frontend/README.md)
 [![Estado](https://img.shields.io/badge/Estado-MVP%20completo-2ea44f)](docs/11-backlog/roadmap.md)
 [![Licencia](https://img.shields.io/badge/Licencia-Source--Available-lightgrey)](LICENSE.md)
 
