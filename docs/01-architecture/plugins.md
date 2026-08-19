@@ -109,7 +109,7 @@ Para plugins de tipo `entity`, el filtro:
 
 es el catalogo completo de entidades del sistema. No hay otra fuente.
 
-El slug canonico de personas (clientes/distribuidores/oculistas) en el MVP es `persons`.
+El slug canonico de personas (clientes/distribuidores/oculistas) es `persons`.
 
 ## Integracion frontend de plugins
 

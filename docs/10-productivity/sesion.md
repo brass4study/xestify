@@ -424,13 +424,14 @@ Story completada. Archivos creados/modificados:
 **Detalle de la story 10.5:** ver sesión completa más abajo (2026-08-17).
 **Detalle de la story 10.6:** ver sesión completa más abajo (2026-08-17).
 
-### 🔄 EPIC 11 — Cierre Formal y Exhaustivo del MVP (EN PROGRESO)
+### ✅ EPIC 11 — Cierre Formal y Exhaustivo del MVP (COMPLETADO)
 
 | Story | Descripción | Commit | Verificación |
 |-------|-------------|--------|--------------|
 | 11.1 ✅ | Auditoría de código limpio | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 69/69 archivos en verde (ejecutado tras cada tanda de cambios); SonarQube (`skills/review-sonarqube-clean-code`) 38→0 hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots `mt_rand`, revisados y marcados `// NOSONAR`); `frontend/tests/e2e/tests/entity-crud.spec.js` 2/2 Playwright contra runtime real ✅ |
 | 11.2 ✅ | Verificación funcional E2E final | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 72/72 archivos en verde (69 + 2 huérfanos registrados + 1 test nuevo del seeder); `npx playwright test` 21/21 tests (8 specs) en verde contra runtime Apache+PHP real, incluye 3 specs nuevas y 5 extendidas; recorrido manual real en navegador headed con pantallazos; 3 bugs funcionales reales encontrados y corregidos, cada uno con su propio test de regresión dedicado (verificado revirtiendo la corrección para confirmar que falla sin ella) ✅ |
 | 11.3 ✅ | Auditoría de coherencia de documentación | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 74/74 archivos en verde (sin código tocado, solo documentación); grep final de `system_entities\|entity_metadata\|Release A\|Release B\|STORY \d+\.\d+` y de patrones de negación de estructura eliminada (`no hay columnas\|no tiene columna\|No existe tabla\|no una columna propia`) sobre `docs/`: cero apariciones fuera de `docs/09-history/`, `docs/10-productivity/`, `docs/11-backlog/` ✅ |
+| 11.4 ✅ | Guion de defensa del TFM | `pendiente (este commit)` | Ver `docs/11-backlog/backlog.md`, STORY 11.4 ✅ |
 
 **Detalle de la story 11.1:** ver sesión completa más abajo (2026-08-18).
 **Detalle de la story 11.2:** ver sesión completa más abajo (2026-08-18).
@@ -441,8 +442,8 @@ Story completada. Archivos creados/modificados:
 ## Última actualización
 
 **Fecha:** 2026-08-19
-**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.3` completada
-**Próxima story:** STORY 11.4 - Guion de defensa del TFM (EPIC 11)
+**EPIC activo:** Ninguno — MVP completo (EPIC 0 a EPIC 11 cerrados)
+**Próxima story:** Ninguna dentro del MVP — backlog post-MVP vigente en `docs/11-backlog/backlog.md` (EPIC A1-A10)
 
 ---
 

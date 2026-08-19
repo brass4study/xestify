@@ -1,6 +1,6 @@
 # Backlog y roadmap
 
-Esta carpeta contiene el backlog, el roadmap y la planificación del MVP de Xestify.
+Esta carpeta contiene el backlog, el roadmap y la planificación del producto de Xestify (MVP cerrado, backlog post-MVP vigente).
 
 ## Contenido
 - [backlog.md](backlog.md): Historias y tareas

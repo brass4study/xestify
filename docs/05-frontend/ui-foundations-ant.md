@@ -33,7 +33,7 @@ Definidos en `frontend/tailwind.config.cjs`:
 - `fontFamily.sans` y `fontFamily.mono`: familias tipográficas corporativas.
 - `boxShadow.panel` y `boxShadow.float`: elevaciones para cards y overlays.
 
-## Mapeo inicial a componentes del MVP
+## Mapeo inicial a componentes
 
 Base para la librería de componentes, con equivalencias conceptuales:
 

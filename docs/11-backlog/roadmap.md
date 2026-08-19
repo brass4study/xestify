@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
-> **Última actualización:** 2026-08-18
-> **Estado del proyecto:** **STORY 11.3 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.4`
+> **Última actualización:** 2026-08-19
+> **Estado del proyecto:** **MVP cerrado** — `EPIC 0` a `EPIC 11` completas; roadmap vigente en `A1`-`A10` (post-MVP, producto real)
 
 ---
 
@@ -79,8 +79,8 @@ El corte funcional vigente del producto queda fijado en:
   numeración EPIC/STORY realineada entre `backlog.md`/`roadmap.md`/
   `MASTER-brief.md`/`ia-productivity-template.md`, y ruido histórico —
   incluida la negación de estructura eliminada — eliminado de `docs/01-08`)
-- siguiente foco funcional: `STORY 11.4` (guion de defensa del TFM,
-  `EPIC 11`)
+- `EPIC 11` cerrada al completo (`STORY 11.1` a `STORY 11.4`); MVP completo
+  (`EPIC 0` a `EPIC 11`), sin foco funcional pendiente dentro del MVP
 
 ### Funcionalidades nucleares (Core)
 
@@ -164,8 +164,8 @@ La estrategia vigente de implementación es:
 - cada fase deja un entregable verificable y demostrable
 - no se deben mezclar decisiones históricas ya descartadas con el modelo actual
 - el cierre de `EPIC 7` completa el ciclo operativo de plugins
-- `EPIC 9` (SPA y sistema UI) y `EPIC 10` (login/persons/plugins de demostración) están cerrados; el bloque prioritario ya abierto es `EPIC 11` (cierre formal del MVP)
-- el MVP académico cierra con `EPIC 11` (cierre formal); ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`) quedan como adiciones post-MVP
+- `EPIC 9`, `EPIC 10` y `EPIC 11` (cierre formal del MVP) están cerrados; el MVP académico queda completo
+- ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos (`A1`-`A6`, `A10`) quedan como roadmap post-MVP vigente del producto real
 
 ---
 
@@ -186,7 +186,7 @@ La estrategia vigente de implementación es:
 | 8 | Gestión de usuarios | ✅ Completada | Perfil propio + administración de usuarios |
 | 9 | Sistema UI, shell frontend y arquitectura SPA | ✅ Completada | STORY 9.1 a 9.9 cerradas |
 | 10 | Login, Persons y Plugins de Demostración | ✅ Completada | STORY 10.1 (login pulido), 10.2 (rename persons), 10.3 (plugin_name/slug, manifest_json, altas/borrado/relaciones), 10.4 (plugins demo orders/invoices/basic), 10.5 (extensiones optometries/contact_lenses) y 10.6 (seeder de datos de negocio) cerradas |
-| 11 | Cierre Formal y Exhaustivo del MVP | ⏭ Pendiente | Auditoría código/docs, guion de defensa, verificación E2E |
+| 11 | Cierre Formal y Exhaustivo del MVP | ✅ Completada | Auditoría código/docs, guion de defensa y verificación E2E — todas cerradas |
 | A1 | Ajustes finos de UI/UX | ⏭ Pendiente | i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado |
 | A2 | Operación técnica y observabilidad | ⏭ Pendiente | Health, backup, despliegue, hardening |
 | A3 | Marketplace de plugins | ⏭ Pendiente | Catálogo e instalación desde UI |
@@ -379,7 +379,7 @@ uso óptico.
 - ✅ Story 10.6 implementada: seeder de datos de negocio idempotente (`backend/src/database/seeders/BusinessDataSeeder.php`) — 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes y `comments`; idempotencia "todo o nada por grupo"; `EPIC 10` queda cerrada
 - ✅ Story 11.1 implementada: pase de SonarQube sobre backend y frontend (38→0 hallazgos pendientes, 0 críticos/bloqueantes), eliminación de código muerto (`DynamicTable.setSchema()`, `.env.example`) y TODOs obsoletos (ninguno encontrado), revisión de `decisiones-tecnicas.md` (dos decisiones corregidas), rastro `clients`/`persons` limpiado en código/tests, y naming técnico corregido en `AGENTS.md` (`mail` en vez de `email`, claves reales de `persons`)
 - ✅ Story 11.2 implementada: checklist funcional corregido (CSV/búsqueda en tablas/selector de idioma retirados por ser aspiracionales, reservados a `EPIC A1`); suite Playwright ampliada de 5 a 7 specs/18 tests (`orders-invoices`, `optometries-contact-lenses` nuevos; `entity-crud`, `plugin-manager`, `login` extendidos con borrado, desinstalación y acceso rápido de usuario normal); 2 tests backend huérfanos registrados en `run.php` y test nuevo para `BusinessDataSeeder`; corrigió dos bugs de aplicación reales encontrados en el proceso (condición de carrera en `AppController.showEntityList`, listbox de `InputSelect.js` fuera del viewport)
-- siguiente punto: Story 11.3 (auditoría de coherencia de documentación, `EPIC 11`)
+- `EPIC 11` cerrada al completo; MVP completo (`EPIC 0` a `EPIC 11`)
 
 **Alcance**
 - mejoras en login: logo, nombre, descripción y acceso rápido en modo debug
@@ -498,15 +498,16 @@ Permisos granulares por recurso y acción más allá de `admin/no-admin`.
 
 ---
 
-## 5. Priorizacion MVP (lo minimo para producir valor)
+## 5. Priorizacion — MVP cerrado, roadmap post-MVP vigente
 
-### Alcance académico vigente
+### Alcance
 
-El backlog vigente considera **in scope del MVP académico**:
+El MVP académico queda cerrado al completo:
 
 - `EPIC 0` a `EPIC 11`
 
-Y deja fuera, por ahora (post-MVP):
+A partir de aquí, el desarrollo continúa como producto real. El roadmap
+post-MVP vigente incluye:
 
 - `EPIC A1` (Ajustes finos de UI/UX)
 - `EPIC A2` (Operación técnica y observabilidad)
@@ -535,8 +536,8 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | ✅ Completada | MUST |
 | 8 | ✅ Completada | MUST |
 | 9 | ✅ Completada | SHOULD |
-| 10 | 🔄 En progreso | MUST |
-| 11 | ⏭ Pendiente | MUST |
+| 10 | ✅ Completada | MUST |
+| 11 | ✅ Completada | MUST |
 | A1 | ⏭ Pendiente | POST-MVP |
 | A2 | ⏭ Pendiente | POST-MVP |
 | A3 | ⏭ Pendiente | POST-MVP |
@@ -562,8 +563,8 @@ Y deja fuera, por ahora (post-MVP):
 | 7 | Actualizaciones de Plugins y Rollback | ✅ | Fase 7 | 21 pts | MUST |
 | 8 | Gestión de Usuarios | ✅ | Fase 8 | 19 pts | MUST |
 | 9 | Sistema UI, Shell Frontend y Arquitectura SPA | ✅ | Fase 9 | 38 pts | MUST |
-| 10 | Login, Persons y Plugins de Demostración | 🔄 | Fase 10 | 31 pts | MUST |
-| 11 | Cierre Formal y Exhaustivo del MVP | ⏭ | Fase 11 | 18 pts | MUST |
+| 10 | Login, Persons y Plugins de Demostración | ✅ | Fase 10 | 31 pts | MUST |
+| 11 | Cierre Formal y Exhaustivo del MVP | ✅ | Fase 11 | 18 pts | MUST |
 | A1 | Ajustes Finos de UI/UX | ⏭ | Adición post-MVP | 37 pts | POST-MVP |
 | A2 | Operación Técnica y Observabilidad | ⏭ | Fase A2 | 12 pts | POST-MVP |
 | A3 | Marketplace de Plugins | ⏭ | Fase A3 | 16 pts | POST-MVP |
@@ -648,8 +649,12 @@ La secuencia recomendada, por fases, es:
    `relations` en extensiones y convención `layers` — y `STORY 10.6` — seeder
    de datos de negocio idempotente — todas cerradas)
 
-2. **Cerrar el MVP con la Fase 11 y luego abordar las adiciones post-MVP**
-   - Fase 11 (dentro del MVP): `STORY 11.1` (auditoría de código/naming), `STORY 11.2`
-     (verificación funcional E2E final), `STORY 11.3` (auditoría de coherencia de
-     documentación)
-   - A1-A6 (post-MVP: ajustes finos de UI/UX, operación técnica, marketplace, QA, auditoría y permisos)
+2. **Fase 11, cerrada** (`STORY 11.1` — auditoría de código/naming —,
+   `STORY 11.2` — verificación funcional E2E final —, `STORY 11.3` —
+   auditoría de coherencia de documentación — y `STORY 11.4` — guion de
+   defensa del TFM —, todas cerradas). MVP académico completo (`EPIC 0` a
+   `EPIC 11`).
+
+3. **Abordar el roadmap post-MVP:** `A1`-`A6` y `A10` (ajustes finos de
+   UI/UX, operación técnica, marketplace, QA, auditoría, permisos y
+   relaciones avanzadas) como producto real.

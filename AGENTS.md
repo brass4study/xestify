@@ -23,9 +23,9 @@ hacer a continuacion.
 
 ## Estado del MVP
 
-- El MVP esta cerrado: EPIC 0 a EPIC 11 completas.
-- Unica pendiente: STORY 11.4 (guion de defensa del TFM), que no es
-  tecnica y no condiciona el trabajo de codigo.
+- El MVP esta cerrado: EPIC 0 a EPIC 11 completas, sin pendientes.
+- A partir de aqui el desarrollo continua como producto real: el backlog
+  post-MVP vigente (EPIC A1 a A10) vive en `docs/11-backlog/backlog.md`.
 - Si se actualiza documentacion de estado, reflejar el estado real leyendo
   `docs/10-productivity/sesion.md` y `docs/11-backlog/backlog.md` en vez de
   copiar este resumen sin comprobarlo.

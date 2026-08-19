@@ -27,7 +27,7 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 9. [08-operations](08-operations/README.md) — Despliegue, actualizaciones y operación
 10. [09-history](09-history/README.md) — Historial de decisiones y migraciones
 11. [10-productivity](10-productivity/README.md) — Productividad, IA y prompts
-12. [11-backlog](11-backlog/README.md) — Backlog, roadmap y estado del MVP
+12. [11-backlog](11-backlog/README.md) — Backlog, roadmap y estado del proyecto
 
 ---
 

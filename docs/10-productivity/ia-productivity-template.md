@@ -234,8 +234,8 @@ Generate a comprehensive .gitignore that includes:
 
 - [X] STORY 11.1: Auditoría de código limpio
 - [X] STORY 11.2: Verificación funcional E2E final
-- [ ] STORY 11.3: Auditoría de coherencia de documentación
-- [ ] STORY 11.4: Guion de defensa del TFM
+- [X] STORY 11.3: Auditoría de coherencia de documentación
+- [X] STORY 11.4: Guion de defensa del TFM
 
 ### Adición post-MVP: A1 (Ajustes Finos de UI/UX)
 

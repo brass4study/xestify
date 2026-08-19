@@ -2,16 +2,13 @@
 
 ## Estado actual auditado (2026-08-19)
 
-El corte funcional defendible queda cerrado hasta **EPIC 10 incluido**. Las
-EPIC 0-10 están completadas. El sistema dispone de pipeline `Router ->
-AuthMiddleware -> Controller`, entidades y extensiones basadas en plugins
-(`persons`, `orders`, `invoices`, `optometries`, `contact_lenses`, `comments`),
-gestión de usuarios, actualizaciones con rollback y frontend MVC con shell SPA
-persistente, layouts reutilizables y routing hash completo.
+El corte funcional defendible queda cerrado hasta **EPIC 11 incluido — MVP
+completo**. Las EPIC 0-11 están completadas. El sistema dispone de pipeline
+`Router -> AuthMiddleware -> Controller`, entidades y extensiones basadas en
+plugins (`persons`, `orders`, `invoices`, `optometries`, `contact_lenses`,
+`comments`), gestión de usuarios, actualizaciones con rollback y frontend MVC
+con shell SPA persistente, layouts reutilizables y routing hash completo.
 
-**Siguiente foco:** dentro de `EPIC 11` (cierre formal del MVP), STORY 11.1 y
-STORY 11.2 ya completadas; STORY 11.3 (auditoría de coherencia de
-documentación) en curso; STORY 11.4 (guion de defensa del TFM) pendiente.
 Ajustes finos de UI/UX, operación, marketplace, QA, auditoría y permisos finos
 (`A1`-`A6`, `A10`) quedan como adiciones post-MVP.
 
@@ -98,8 +95,7 @@ Demostrar que:
 
 **EPIC 11 - Cierre Formal y Exhaustivo del MVP**
 - ✅ Auditoría de código limpio (STORY 11.1) y verificación funcional E2E final (STORY 11.2)
-- 🔄 Auditoría de coherencia de documentación (STORY 11.3, en curso)
-- ⏭ Guion de defensa del TFM (STORY 11.4)
+- ✅ Auditoría de coherencia de documentación (STORY 11.3) y guion de defensa del TFM (STORY 11.4)
 
 ### ❌ OUT OF SCOPE (thesis posterior)
 
@@ -158,14 +154,15 @@ resiliencia transversal y testing UI automatizado.
 `plugin_name` desacoplado de `slug`, y plugins de demostración
 (`orders`, `invoices`, `optometries`, `contact_lenses`) con datos de ejemplo.
 
-### 🔄 Fase actual: EPIC 11 — cierre formal del MVP (STORY 11.1-11.2 COMPLETADAS)
-**Entregable logrado:** auditoría de código limpio y verificación funcional E2E
-final, ambas verificadas contra el runtime real.
+### ✅ EPIC 11 (COMPLETADO)
+**Entregable logrado:** auditoría de código limpio, verificación funcional E2E
+final, auditoría de coherencia de documentación y guion de defensa del TFM,
+verificadas contra el runtime real. MVP académico cerrado (EPIC 0 a EPIC 11).
 
-### ⏭ Próximas fases: STORY 11.3-11.4 + A1-A6/A10 (post-MVP)
-**Objetivo:** cerrar la auditoría de coherencia de documentación y redactar el
-guion de defensa del TFM; ajustes finos de UI/UX, operación, permisos,
-auditoría, marketplace y relaciones avanzadas quedan como adiciones post-MVP.
+### ⏭ Adiciones post-MVP: A1-A6/A10
+**Objetivo:** ajustes finos de UI/UX, operación, permisos, auditoría,
+marketplace y relaciones avanzadas quedan fuera del alcance defendible como
+TFM, como adiciones post-MVP.
 
 ---
 
@@ -249,7 +246,7 @@ sin completar retrospectivamente valores desconocidos.
 
 | Item | MVP Producción | MVP Master |
 |------|---|---|
-| Scope | Roadmap completo | EPIC 0-10 + STORY 11.1-11.2 implementadas |
+| Scope | Roadmap completo | EPIC 0-11 implementadas (MVP completo) |
 | Timeline | Evolución continua | Corte académico incremental documentado |
 | IA | Accesible | **Primario** |
 | Testing | Quality gate completo | Suites PHP (74 ficheros) + 22 runners HTML + suite E2E Playwright |
@@ -260,13 +257,11 @@ sin completar retrospectivamente valores desconocidos.
 
 ## Próximo Paso
 
-1. Cerrar STORY 11.3, auditoría de coherencia de documentación de todo `docs/`
-   contra el código real.
-2. Implementar STORY 11.4, guion de defensa del TFM, usando solo
-   funcionalidades y métricas verificadas.
-3. Mantener [sesion.md](../10-productivity/sesion.md),
-   [productividad.md](../10-productivity/productividad.md) y
-   [prompts.md](../10-productivity/prompts.md) al cerrar cada story.
+El MVP académico queda cerrado al completo (EPIC 0 a EPIC 11). Mantener
+[sesion.md](../10-productivity/sesion.md),
+[productividad.md](../10-productivity/productividad.md) y
+[prompts.md](../10-productivity/prompts.md) al día si se retoma trabajo sobre
+el proyecto.
 
 ---
 
@@ -278,7 +273,7 @@ análisis académico deben usarse los tiempos realmente registrados en
 [productividad.md](../10-productivity/productividad.md), no esa hipótesis.
 
 **P: ¿Qué ocurre si una story futura bloquea la defensa?**
-R: Se conserva como corte defendible STORY 11.2 y se documenta el bloqueo. No se
+R: El corte defendible vigente es el MVP completo (EPIC 0 a EPIC 11). No se
 deben presentar como completadas funciones no verificadas.
 
 **P: ¿Necesito aprender PHP de cero?**  

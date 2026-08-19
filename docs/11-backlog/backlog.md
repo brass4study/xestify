@@ -2,12 +2,9 @@
 
 ## Estado implementado auditado (2026-08-19)
 
-El corte funcional actual queda fijado en **STORY 11.3 incluida**.
+El corte funcional actual queda fijado en **EPIC 11 incluida al completo — MVP cerrado**.
 
-- **EPIC 0 a EPIC 10** implementadas y cerradas al completo.
-- **EPIC 11 en progreso** (cierre formal del MVP): `STORY 11.1`, `STORY 11.2`
-  y `STORY 11.3` implementadas, `STORY 11.4` (guion de defensa del TFM) como
-  siguiente foco.
+- **EPIC 0 a EPIC 11** implementadas y cerradas al completo.
 - Nota de trazabilidad: la decision arquitectonica final usa `plugins` como
   catalogo unico de entidades (`manifest_json->>'type' = 'entity'`). El
   detalle de por que se llego a este modelo vive en
@@ -43,7 +40,7 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 - EPIC 10: Login, Persons y Plugins de Demostración
 - EPIC 11: Cierre Formal y Exhaustivo del MVP
 
-### ❌ OUT OF SCOPE (para futuro/thesis)
+### 🔜 Backlog Post-MVP (roadmap vigente del producto real)
 - Adición post-MVP A1: Ajustes finos de UI/UX (i18n, búsqueda en tablas, rendimiento, accesibilidad, CRUD avanzado)
 - Adición post-MVP A2: Operación técnica y observabilidad (health, backup, despliegue, hardening)
 - Adición post-MVP A3: Marketplace de plugins
@@ -70,6 +67,11 @@ Backlog reducido para completar Xestify MVP en **4-5 semanas** como proyecto de 
 ### 📌 Cierre de MVP para defensa de TFM (2026-08-11)
 - Se incorporan `EPIC 10` (Login, Persons y Plugins de Demostración, 6 stories, 31 pts) y `EPIC 11` (Cierre Formal y Exhaustivo del MVP, 4 stories, 18 pts) como parte del MVP académico, necesarios para la defensa del TFM.
 - **IN SCOPE MVP (vigente):** EPIC 0-11
+
+### 📌 Cierre de MVP y paso a producto real (2026-08-19)
+- El MVP académico queda cerrado al completo: `EPIC 0` a `EPIC 11`.
+- A partir de aquí, el desarrollo continúa como producto real. `A1`-`A10` dejan
+  de ser "fuera de alcance" del MVP y pasan a ser el backlog post-MVP vigente.
 
 ---
 
@@ -1347,7 +1349,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Blockers:** Ninguno
 
 ### STORY 11.4: Guion de defensa del TFM
-- **Estado:** ⏭ Pendiente
+- **Estado:** ✅ Implementada
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Documentacion

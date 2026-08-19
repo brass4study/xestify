@@ -43,7 +43,7 @@ render dentro del shell SPA.
 
 ## Mapa de rutas hash
 
-### Rutas actuales del MVP
+### Rutas actuales
 
 | Vista | Hash | Template objetivo |
 |------|------|-------------------|
