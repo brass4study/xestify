@@ -22,7 +22,9 @@ instalacion CLI (`tools/setup/`: `install.php`, `create-admin-user.php`,
 `check-install.php`, seeds y sync — nunca `tools/dev/`, que es QA), los
 `.htaccess` (raiz y por directorio: `backend/`, `backend/public/`,
 `plugins/`, `tools/setup/`) y las guias `INSTALL.md`, `LICENSE.md` y
-`README.md`.
+`README.md`. Ademas, `backend/VERSION` con la version empaquetada (no
+viene del arbol git, se inyecta al construir el ZIP): la lee `/health`
+para que el footer del login muestre la release realmente instalada.
 
 La lista canonica (whitelist, rutas prohibidas y ficheros obligatorios)
 vive en `scripts/build-release-zip.sh`. No duplicarla aqui ni en otro
@@ -40,6 +42,9 @@ pasos nucleo de instalacion son autocontenidos.
    responsabilidad del flujo normal de desarrollo.
 3. En Windows, Git Bash disponible (el script de empaquetado es bash y se
    invoca siempre como `bash script.sh`, sin depender del bit de ejecucion).
+4. `git` >= 2.36 (soporte de `git archive --add-virtual-file`, usado por
+   el script para inyectar `backend/VERSION` sin depender del binario
+   `zip` externo).
 
 ## Pasos
 

@@ -135,7 +135,7 @@ persistente.
 ```js
 const loginLayout = PageLayout.create(root)
   .setTemplate('login')
-  .setFooter('Xestify MVP · v.0.1.0')
+  .setFooter('Xestify')
   .build();
 
 new Login(loginLayout.getContentTarget(), { api, appDebug, sessionExpired, onSuccess });

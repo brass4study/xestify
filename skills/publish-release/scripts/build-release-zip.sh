@@ -52,6 +52,8 @@ FORBIDDEN=(
 )
 
 # Ficheros clave cuya presencia se exige (verificacion positiva).
+# backend/VERSION no viene del arbol git (ver inyeccion mas abajo): se
+# comprueba igual porque se anade a mano a $LISTING antes de este chequeo.
 REQUIRED=(
   .htaccess
   INSTALL.md
@@ -59,6 +61,7 @@ REQUIRED=(
   README.md
   backend/.env.example
   backend/public/index.php
+  backend/VERSION
   frontend/src/index.html
   frontend/src/css/tailwind.generated.css
   backend/.htaccess
@@ -87,11 +90,23 @@ OUT_DIR="$ROOT/var/dist"
 mkdir -p "$OUT_DIR"
 ZIP="$OUT_DIR/$ZIP_NAME"
 
-git -C "$ROOT" archive --format=zip --prefix="$PREFIX" -o "$ZIP" "$REF" -- "${WHITELIST[@]}"
+# backend/VERSION no viene del arbol git (no se commitea, ver
+# skills/publish-release/SKILL.md): se inyecta como fichero virtual con
+# --add-virtual-file (git >= 2.36), sin depender del binario `zip` externo
+# (no disponible por defecto en Git Bash de Windows).
+VERSION_FILE_SPEC="${PREFIX}backend/VERSION:$VERSION
+"
 
-# Listado equivalente al contenido del zip: mismo ref y mismos pathspecs en
-# formato tar (portable: no depende de tener unzip instalado).
-LISTING="$(git -C "$ROOT" archive --format=tar --prefix="$PREFIX" "$REF" -- "${WHITELIST[@]}" | tar -tf -)"
+git -C "$ROOT" archive --format=zip --prefix="$PREFIX" \
+  --add-virtual-file="$VERSION_FILE_SPEC" \
+  -o "$ZIP" "$REF" -- "${WHITELIST[@]}"
+
+# Listado equivalente al contenido del zip: mismo ref, mismos pathspecs y
+# el mismo fichero virtual, en formato tar (portable: no depende de tener
+# unzip instalado).
+LISTING="$(git -C "$ROOT" archive --format=tar --prefix="$PREFIX" \
+  --add-virtual-file="$VERSION_FILE_SPEC" \
+  "$REF" -- "${WHITELIST[@]}" | tar -tf -)"
 
 fail=0
 for f in "${FORBIDDEN[@]}"; do

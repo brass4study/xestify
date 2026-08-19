@@ -26,6 +26,9 @@ export class PageLayout {
   /** @type {string} */
   #footerText = '';
 
+  /** @type {HTMLElement|null} */
+  #footerTarget = null;
+
   /** @type {Map<string, HTMLElement>} */
   #targets = new Map();
 
@@ -161,6 +164,9 @@ export class PageLayout {
   setFooter(text) {
     this.#footerText = typeof text === 'string' ? text : '';
     this.#shell?.setFooter(this.#footerText);
+    if (this.#footerTarget instanceof HTMLElement) {
+      this.#footerTarget.textContent = this.#footerText;
+    }
     return this;
   }
 
@@ -210,7 +216,7 @@ export class PageLayout {
     this.#contentTarget.append(this.#content);
     this.#page.append(this.#contentTarget);
     if (isLogin && this.#footerText !== '') {
-      component.create('footer', {
+      this.#footerTarget = component.create('footer', {
         className: 'pt-4 text-center text-xs text-slate-500',
         text: this.#footerText,
       })

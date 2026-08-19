@@ -2,6 +2,7 @@
 /backend/vendor/
 /backend/.env
 /backend/*.log
+/backend/VERSION
 
 # Composer
 composer.phar

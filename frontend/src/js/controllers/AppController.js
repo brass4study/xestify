@@ -181,7 +181,7 @@ export class AppController {
 
     const loginLayout = PageLayout.create(this.container)
       .setTemplate('login')
-      .setFooter('Xestify MVP · v.0.1.0')
+      .setFooter('Xestify')
       .build();
     this.contentContainer = loginLayout.getContentTarget();
 
@@ -212,24 +212,41 @@ export class AppController {
       },
     });
 
-    this.checkAppDebug().then((appDebug) => {
-      if (appDebug) {
+    this.loadHealthInfo().then(({ debug, version }) => {
+      if (debug) {
         login.setAppDebug(true);
       }
+      loginLayout.setFooter(this.formatVersionFooter(version));
     });
 
     return login;
   }
 
-  async checkAppDebug() {
+  /**
+   * `version` viene de /health: un numero de release ("0.1.0-rc1") cuando existe
+   * backend/VERSION (instalado desde un ZIP de release), o un tag de desarrollo
+   * ("dev" / "dev-<hash>") en caso contrario. Solo los primeros llevan prefijo "v.".
+   */
+  formatVersionFooter(version) {
+    if (typeof version !== 'string' || version === '') {
+      return 'Xestify · dev';
+    }
+    return version.startsWith('dev') ? `Xestify · ${version}` : `Xestify · v.${version}`;
+  }
+
+  async loadHealthInfo() {
     try {
       const response = await fetch(buildAppUrl('/health'));
       const body = await response.json();
       // /health responds inside the standard { ok, data, meta } envelope, same as
-      // every other endpoint — the flag is body.data.debug, not body.debug.
-      return body?.data?.debug === true;
+      // every other endpoint — the fields are body.data.debug / body.data.version,
+      // not body.debug / body.version.
+      return {
+        debug: body?.data?.debug === true,
+        version: typeof body?.data?.version === 'string' ? body.data.version : null,
+      };
     } catch {
-      return false;
+      return { debug: false, version: null };
     }
   }
 
