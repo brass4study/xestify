@@ -116,7 +116,7 @@ paquete de una release ya publicada en GitHub.
 ### 4.1 Clonar el repositorio
 
 ```bash
-git clone <url-del-repositorio> xestify
+git clone https://github.com/brass4study/xestify.git xestify
 cd xestify
 ```
 
@@ -132,7 +132,7 @@ ni tests — ver `skills/publish-release/SKILL.md`).
 Con GitHub CLI (`gh`):
 
 ```bash
-gh release download vX.Y.Z --repo <usuario>/<repositorio> --pattern '*.zip'
+gh release download vX.Y.Z --repo brass4study/xestify --pattern '*.zip'
 unzip xestify-vX.Y.Z.zip
 ```
 
@@ -140,11 +140,16 @@ Sin `gh`, con `curl` directamente contra la URL del asset del release:
 
 ```bash
 curl -L -o xestify-vX.Y.Z.zip \
-  https://github.com/<usuario>/<repositorio>/releases/download/vX.Y.Z/xestify-vX.Y.Z.zip
+  https://github.com/brass4study/xestify/releases/download/vX.Y.Z/xestify-vX.Y.Z.zip
 unzip xestify-vX.Y.Z.zip
 ```
 
-Cualquiera de las dos formas crea la carpeta `xestify-X.Y.Z/` (el prefijo
+O a mano desde el navegador: entra en
+[github.com/brass4study/xestify/releases](https://github.com/brass4study/xestify/releases),
+abre la release que quieras instalar y descarga el asset
+`xestify-vX.Y.Z.zip` de su sección "Assets".
+
+Cualquiera de estas formas crea la carpeta `xestify-X.Y.Z/` (el prefijo
 del zip no lleva la "v" inicial del tag). Esa carpeta hace el mismo papel
 que `xestify/` en la opción 4.1: muévela o clónala en la ruta que vaya a
 ser el `DocumentRoot` de Apache antes de continuar con el resto de la
@@ -224,15 +229,50 @@ Qué hace, en orden:
    (quedan inactivos: se activan o instancian desde PluginManager).
 9. **Datos de demostración** (solo con `--seed-business-data`, ver paso 10).
 
-Opciones útiles (`php tools/setup/install.php --help` muestra todas):
+Opciones útiles (`php tools/setup/install.php --help` muestra todas),
+agrupadas igual que en la propia ayuda del comando:
 
-| Opción | Efecto |
-|---|---|
-| `--non-interactive` | Sin preguntas: usa flags, variables de entorno y valores por defecto (para scripts/CI). Falla con código 2 si falta un secreto obligatorio. |
-| `--db-host= --db-port= --db-name= --db-user= --app-env=` | Valores de `backend/.env` cuando aún no existe. |
-| `--create-db`, `--maint-user=`, `--maint-db=` | Creación de rol y base de datos. |
-| `--admin-email=`, `--admin-name=` | Datos del administrador real. |
-| `--skip-admin`, `--with-seed-users`, `--skip-plugins`, `--seed-business-data` | Ajustan los pasos 6-9. |
+**Generales**
+
+- `--non-interactive`: no pregunta nada, usa flags, variables de entorno y
+  valores por defecto (para scripts/CI). Falla con código 2 si falta un
+  secreto obligatorio.
+
+**Configuración de `backend/.env`** (solo se usan si el fichero aún no existe)
+
+- `--db-host=`: host de PostgreSQL (por defecto `127.0.0.1`).
+- `--db-port=`: puerto de PostgreSQL (por defecto `5432`).
+- `--db-name=`: nombre de la base de datos (por defecto `xestify_dev`).
+- `--db-user=`: usuario de PostgreSQL (por defecto `postgres`).
+- `--app-env=`: `development` (por defecto) o `production` — de aquí se
+  deriva `APP_DEBUG` (solo `true` en `development`).
+
+**Base de datos**
+
+- `--create-db`: crea el rol `DB_USER` y la base de datos `DB_NAME` si no
+  existen, conectando a la base de datos de mantenimiento con
+  credenciales de superusuario.
+- `--maint-db=`: base de datos de mantenimiento a la que conectar (por
+  defecto `postgres`).
+- `--maint-user=`: usuario de mantenimiento con privilegios para crear el
+  rol/BD (por defecto `postgres`).
+
+**Usuarios**
+
+- `--admin-email=`: email del administrador real (si no se indica, se
+  pide por consola).
+- `--admin-name=`: nombre del administrador real (si no se indica, se
+  pide por consola).
+- `--skip-admin`: no crea el administrador real.
+- `--with-seed-users`: crea igualmente `admin@xestify.local` /
+  `usuario@xestify.local` (contraseñas conocidas) aunque
+  `APP_DEBUG=false`.
+
+**Plugins y datos**
+
+- `--skip-plugins`: no sincroniza los plugins de disco a la base de datos.
+- `--seed-business-data`: siembra datos de negocio de demostración
+  (requiere las instancias de plugin activas; ver paso 10).
 
 **Las contraseñas nunca se pasan como flag** (quedarían en el historial de la
 shell y en la lista de procesos): se piden por consola (sin eco en Linux/macOS)
