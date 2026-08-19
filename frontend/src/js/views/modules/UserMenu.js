@@ -1,5 +1,6 @@
 import { component } from './ComponentFactory.js';
 import { hashFromPage } from '../../controllers/RouteMapController.js';
+import { getInitials } from '../../models/UserModel.js';
 
 export class UserMenu {
 	#container;
@@ -40,7 +41,7 @@ export class UserMenu {
 		const trigger = component.create('button', {
 			dataRole: 'user-menu-trigger',
 		})
-			.setClassName('inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm text-white transition hover:bg-white/20')
+			.setClassName('inline-flex items-center gap-2 rounded-full pl-2 pr-2.5 py-1.5 text-sm text-white transition hover:bg-white/20')
 			.setAttributes({ 'aria-haspopup': 'menu', 'aria-expanded': 'false' });
 
 		const avatarWrap = component.create('div', {
@@ -192,13 +193,7 @@ export class UserMenu {
 	}
 
 	getInitials() {
-		const source = this.#name ?? this.#email ?? 'Usuario';
-		const parts = source.split(/\s+/).filter(Boolean);
-		if (parts.length === 0) {
-			return 'U';
-		}
-		const initials = parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase());
-		return initials.join('');
+		return getInitials(this.#name, this.#email ?? '');
 	}
 
 	isAdmin() {

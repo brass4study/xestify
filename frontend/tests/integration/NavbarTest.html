@@ -107,6 +107,13 @@
     assertEquals(label.textContent, 'Ana García', 'Expected displayed user name');
   });
 
+  it('renders two-letter initials for a single-word name, matching UserManager/UserConfig', (container) => {
+    const navbar = createNavbar(container, { userEmail: 'admin@xestify.local', userName: 'Admin' });
+    assertTrue(navbar instanceof Navbar, 'Navbar instance should be created');
+    const avatar = container.querySelector('[data-role="user-menu-avatar"]');
+    assertEquals(avatar.textContent, 'AD', 'Single-word name should use UserModel.getInitials, same as the rest of the app');
+  });
+
   it('starts hidden and opens on hover', (container) => {
     const userMenu = new UserMenu(container, { email: 'admin@xestify.local', roles: ['admin'] });
     assertTrue(userMenu instanceof UserMenu, 'UserMenu instance should be created');
