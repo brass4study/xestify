@@ -104,7 +104,7 @@ TestSuite::run('rollback() restores snapshot version and executes onRollback whe
         'relations' => [],
     ];
 
-    insertRollbackTestPlugin($pdo, $slug, ['label' => ROLLBACK_PLUGIN_LABEL, 'version' => ROLLBACK_V2], 'active', $currentSchema);
+    insertRollbackTestPlugin($pdo, $slug, ['label' => ROLLBACK_PLUGIN_LABEL, 'version' => ROLLBACK_V2], 'inactive', $currentSchema);
     insertRollbackSnapshot($pdo, $slug, ['label' => ROLLBACK_PLUGIN_LABEL, 'version' => ROLLBACK_V1], 'active', $snapshotSchema, ROLLBACK_V2);
 
     $lifecycle = <<<PHP
@@ -145,7 +145,7 @@ PHP;
         $decoded = json_decode((string) ($row['schema_json'] ?? '{}'), true);
 
         assertEquals(ROLLBACK_V1, (string) ($row['version'] ?? ''), 'Version should be restored from snapshot');
-        assertEquals('active', (string) ($row['status'] ?? ''), 'Status should be restored from snapshot');
+        assertEquals('inactive', (string) ($row['status'] ?? ''), 'Status must be preserved from before the rollback, not overwritten by the snapshot status');
         assertTrue(!isset($decoded['fields']['email']), 'schema_json should be restored from snapshot');
     } finally {
         cleanupPluginRecord($pdo, $slug);
@@ -180,6 +180,42 @@ TestSuite::run('rollback() fails when no snapshot matches installed version', fu
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         assertEquals(ROLLBACK_V2, (string) ($row['version'] ?? ''), 'Version must remain unchanged without snapshot');
+    } finally {
+        cleanupPluginRecord($pdo, $slug);
+    }
+});
+
+TestSuite::run('rollback() fails when the snapshot version is not older than the installed version', function () use ($pdo): void {
+    $slug = 'test_rollback_selfref_' . bin2hex(random_bytes(3));
+
+    $schema = [
+        'fields' => [
+            'name' => ['type' => 'string', 'required' => true, 'label' => 'Name'],
+        ],
+        'custom_fields' => [],
+        'relations' => [],
+    ];
+
+    insertRollbackTestPlugin($pdo, $slug, ['label' => 'Rollback Selfref', 'version' => ROLLBACK_V2], 'inactive', $schema);
+    insertRollbackSnapshot($pdo, $slug, ['label' => 'Rollback Selfref', 'version' => ROLLBACK_V2], 'active', $schema, ROLLBACK_V2);
+
+    try {
+        $service = buildPluginRollbackService(sys_get_temp_dir(), $pdo);
+        $threw = false;
+        try {
+            $service->rollback($slug);
+        } catch (DomainException) {
+            $threw = true;
+        }
+
+        assertTrue($threw, 'Rollback should fail when the snapshot is not actually an older version (self-referential/stale snapshot)');
+
+        $stmt = $pdo->prepare("SELECT manifest_json->>'version' AS version, status FROM plugins WHERE slug = :slug");
+        $stmt->execute([ROLLBACK_SLUG_PARAM => $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        assertEquals(ROLLBACK_V2, (string) ($row['version'] ?? ''), 'Version must remain unchanged when the snapshot is rejected');
+        assertEquals('inactive', (string) ($row['status'] ?? ''), 'Status must remain unchanged when the snapshot is rejected');
     } finally {
         cleanupPluginRecord($pdo, $slug);
     }

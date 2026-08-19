@@ -346,7 +346,6 @@ final class PluginWriteRepository
         $stmt = $this->pdo->prepare(
             'UPDATE plugins
                 SET manifest_json = CAST(:manifest_json AS jsonb),
-                    status = :status,
                     schema_json = CAST(:schema_json AS jsonb),
                     updated_at = NOW()
               WHERE id = :id
@@ -356,7 +355,6 @@ final class PluginWriteRepository
         $stmt->execute([
             ':id' => $pluginId,
             ':manifest_json' => $manifestJson,
-            ':status' => (string) ($snapshot['status'] ?? ''),
             ':schema_json' => $snapshot['schema_json'] ?? null,
         ]);
 

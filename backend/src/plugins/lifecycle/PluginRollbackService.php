@@ -53,6 +53,12 @@ final class PluginRollbackService
             }
 
             $toVersion = (string) ($snapshot['manifest_json']['version'] ?? '');
+            if ($toVersion === '' || version_compare($toVersion, $fromVersion, '>=')) {
+                throw new DomainException(
+                    "Plugin '{$slug}' has no earlier snapshot version available to rollback to."
+                );
+            }
+
             $context = [
                 'slug' => $slug,
                 'from_version' => $fromVersion,
