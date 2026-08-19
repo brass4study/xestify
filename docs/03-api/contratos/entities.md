@@ -19,8 +19,24 @@
   ]
 }
 ```
-  `identities` se añadió en STORY 10.3 §8 (necesario para poblar el selector de
-  `target_field` al configurar relaciones desde `PluginConfig`).
+  `identities` es necesario para poblar el selector de `target_field` al
+  configurar relaciones desde `PluginConfig`.
+
+## GET /api/v1/entities/{slug}/options
+- Lista compacta de `{id, label}` de todos los registros activos de la
+  entidad, pensada para poblar un `<select>` de relación `belongs_to` desde
+  otra entidad. `label` se construye con el mismo algoritmo que el resumen de
+  fila (ver `docs/05-frontend/arquitectura.md`, `EntityRecordModel.js`).
+- Respuesta:
+```json
+{
+  "ok": true,
+  "data": [
+    { "id": "...", "label": "Ana Ruiz" }
+  ]
+}
+```
+- Errores: `404` si el slug no corresponde a una entidad activa.
 
 ## GET /api/v1/entities/{slug}/schema
 - Devuelve el `schema_json` completo y sin procesar de la entidad (estructural:
@@ -84,7 +100,7 @@ Ejemplo: `GET /api/v1/entities/persons/records?page=2&page_size=20&sort=name&dir
 `content` viaja como cadena JSON (columna JSONB sin decodificar por PDO) — el
 frontend debe parsearla.
 
-### Filtro por campo (`?field=&value=`, STORY 10.3 §9)
+### Filtro por campo (`?field=&value=`)
 
 `GET /api/v1/entities/{slug}/records?field=id_person&value=<uuid>`
 
@@ -136,7 +152,7 @@ claves arbitrarias del contenido JSONB.
   - Tabs aportadas por un plugin `extension` vía el hook `registerTabs`
     (`{id, label, icon, endpoint, plugin_name}`) — el frontend importa
     dinámicamente su `plugin.js` y construye el panel con `PluginPanelRegistry`.
-  - Tabs de **relación inversa** (STORY 10.3 §9), generadas automáticamente por
+  - Tabs de **relación inversa**, generadas automáticamente por
     el núcleo (`ReverseRelationTabResolver`) cuando otra entidad activa declara
     una relación `belongs_to` hacia esta: `{id: "relation-{source}-{key}", label, type: "relation", source_entity, key}`.
     No pasan por `PluginPanelRegistry` ni tienen `plugin.js` propio — el

@@ -1606,3 +1606,78 @@
   story ("Documentación completa de testing ahora, dentro de esta
   story") y, después, renombrar `testing-ui.md` a `testing.md` para que
   siguiera la misma convención que el nuevo documento de backend.
+
+### STORY 11.3: Auditoría de coherencia de documentación
+
+- **Fecha:** 2026-08-19
+- **Estimado sin IA:** ~16h (leer a mano los ~35 archivos de `docs/01` a
+  `docs/09`, contrastar cada afirmación contra el código real archivo a
+  archivo, localizar y corregir la desalineación de numeración EPIC/STORY
+  cruzando 4 documentos de planificación distintos, completar `endpoints.md`
+  comparando contra `routes.php`, y una segunda pasada completa para
+  detectar el patrón de negación de estructura eliminada)
+- **Tiempo real con IA:** ~5h
+- **Aceleración:** ~69% ⚡
+- **Qué hizo IA:**
+  - Lanzó 3 agentes de exploración en paralelo para auditar completos los
+    `.md` de `docs/01` a `docs/09` contra el código real
+    (`backend/src/**`, `frontend/src/js/**`, `routes.php`, plugins reales),
+    en vez de revisar archivo por archivo de forma serial.
+  - Encontró contradicciones reales con el código que no eran solo ruido
+    histórico: una capa "Model" de backend inventada en `mvc.md`
+    (`EntityMetadata`, `EntityData`, `PluginRegistry`, `PluginHookRegistry`,
+    un `UpdateController`/`UpdateManager` inexistentes), un sistema de
+    "marketplace" ficticio en `actualizaciones.md`, tres formatos distintos
+    del envoltorio de error en `03-api` sin que ninguno coincidiera con
+    `ValidationResult::errors()` real, y un rol `lectura`/"permisos por
+    entidad" citados en dos documentos que no existen en el código (el
+    modelo real es un único gate `hasRole('admin')`).
+  - Comparó `docs/03-api/endpoints.md` contra las 39 rutas reales de
+    `routes.php` y completó las 13 que faltaban (`configurations`, `users`,
+    `entities/{slug}/options`, `plugins/{slug}/move-up`/`move-down`) con sus
+    contratos.
+  - Reconstruyó el inventario real de EPICs/STORIES cerradas cruzando
+    `backlog.md`, `roadmap.md`, `MASTER-brief.md` e
+    `ia-productivity-template.md`, y encontró que `MASTER-brief.md` — el
+    documento pensado para la defensa del TFM — seguía fijando el corte en
+    STORY 9.6 con EPIC 10/11 enteras marcadas como pendientes.
+  - En la autorevisión posterior (pedida explícitamente por el usuario antes
+    de que él revisara), encontró y corrigió una inconsistencia propia: una
+    fila de la tabla comparativa de `MASTER-brief.md` seguía con un dato
+    desactualizado (17 runners) justo al lado de una fila que sí había
+    actualizado.
+  - Tras la segunda corrección del usuario, generalizó el principio de "sin
+    ruido histórico" más allá de los síntomas ya vistos (tags de story,
+    "Release B"): localizó por grep el patrón de negación de estructura
+    eliminada ("no hay columna X separada") en 9 puntos de 8 archivos y lo
+    reescribió en afirmativo, distinguiéndolo explícitamente de negaciones
+    legítimas (condiciones de error de API, límites de diseño reales) para
+    no sobrecorregir.
+- **Iteraciones:** 20+ (3 agentes de exploración en paralelo, varias rondas
+  de `AskUserQuestion` en plan mode para acotar el alcance de 09-history y
+  fijar la regla en `AGENTS.md`, ejecución en 6 paquetes con
+  `php backend/tests/run.php all` verificado tras cada uno, una
+  autorevisión completa del diff, y una segunda pasada tras la corrección
+  del usuario sobre negación de estructura eliminada).
+- **Decisión manual:** El usuario definió el criterio de diseño desde el
+  inicio ("la documentación debe ser autoexplicativa, sin referencias a
+  decisiones históricas fuera de `09-history`/`10-productivity`/`11-backlog`")
+  y confirmó en `AskUserQuestion` que `docs/09-history/` es la tercera
+  ubicación válida para narrativa histórica, y que la regla debía fijarse de
+  forma permanente en `AGENTS.md`, no solo aplicarse una vez.
+- **Decisión manual:** A mitad de sesión el usuario pidió revisar aparte el
+  `README.md` raíz. La primera reescritura se hizo sin rondas de preguntas
+  previas sobre estructura/estilo; el usuario deshizo los cambios y corrigió
+  que, aunque el contenido "no estaba todo mal", las decisiones de
+  estructura/orden/estilo/eliminaciones no debían tomarse unilateralmente.
+  Se rehizo completo en ~6 rondas de `AskUserQuestion` antes de escribir una
+  sola línea, y la lección quedó guardada en memoria permanente.
+- **Decisión manual:** Tras revisar el resultado de los Paquetes 0-4, el
+  usuario señaló que la limpieza de ruido histórico era insuficiente: el
+  patrón de negación de estructura eliminada ("no hay columna X separada")
+  seguía presente aunque ya no llevara tags de story. Pidió generalizar la
+  regla, no solo parchear el ejemplo dado.
+- **Decisión manual:** El usuario pidió corregir dos ajustes menores que la
+  IA había señalado pero dejado sin tocar por prudencia de alcance (título
+  de `backlog.md` con duración incorrecta, sección `A10` faltante en
+  `ia-productivity-template.md`).

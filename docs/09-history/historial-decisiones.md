@@ -461,3 +461,34 @@ SonarQube, 60/60 archivos de test en verde tras el cierre completo de
 STORY 10.3 (incluidas las 4 ampliaciones de alcance §6-§9 decididas
 posteriormente en la misma sesión), contrato JSON público de la API sin
 cambios.
+
+---
+
+## DECISION 8: Prioridad de hooks de plugin — autoconsulta de `sort_order`, no tabla `plugin_hooks` dedicada
+
+### Contexto
+
+Para que un plugin `extension` pudiera hacer configurable su prioridad de
+registro de hooks desde `PluginManager` (acciones Subir/Bajar), se evaluó
+primero una tabla `plugin_hooks` dedicada (`slug`, `hook_name`, `priority`,
+`enabled`) como registro explícito de prioridades.
+
+### Opciones consideradas
+
+#### Opcion A: Tabla `plugin_hooks` dedicada
+**Contras:** `PluginHookRegistrar` nunca llegó a leerla en la implementación
+real — quedó como infraestructura muerta, una tabla más que mantener y
+migrar sin ningún consumidor.
+
+#### Opcion B: Autoconsulta de `plugins.sort_order` vía el PDO opcional que `PluginClassLoader` ya inyecta por constructor
+**Pros:** no añade tablas nuevas ni cambia el contrato de `Hooks::register()`;
+reutiliza una columna que ya existe y ya se usa para el orden manual en
+`PluginManager`.
+
+### Seleccion: Opcion B
+
+**Resultado:** `plugins/comments/Hooks.php` (`resolvePriority()`) es la
+referencia de este patrón — usa el mínimo `sort_order` entre sus propias
+instancias activas, ya que `plugin_name` no es único y una sola llamada a
+`register()` cubre todas las instancias activas de ese plugin técnico. Ver
+`docs/01-architecture/hooks.md` para el contrato vigente.

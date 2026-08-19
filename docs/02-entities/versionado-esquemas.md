@@ -6,11 +6,8 @@ Permitir evolucion de campos por plugin sin romper registros existentes.
 
 ## Estado real (no hay versionado de schema por-campo)
 
-No existe un mecanismo de `schema_version` ni una tabla `plugin_migrations`: nunca
-se implementaron tal cual, y la columna `schema_version` que sí llegó a existir en
-`plugins`/`plugin_update_history` fue eliminada por completo (STORY 10.3 §2bis) por
-ser residual — no la leía el frontend en ningún sitio y su único rol real era un
-contador interno sin consumidores.
+No existe un mecanismo de `schema_version` por campo ni una tabla
+`plugin_migrations`.
 
 Lo que existe hoy es una actualización **de plugin completo**, no de campos
 individuales versionados:
@@ -55,7 +52,7 @@ JSONB de los registros antiguos hasta que se edite ese registro.
 
 ## Ejemplo de cambio incompatible (rechazado)
 
-- Un campo existente como `email` desaparece del `schema.json` nuevo, o cambia de
+- Un campo existente como `mail` desaparece del `schema.json` nuevo, o cambia de
   tipo (`string` → objeto complejo).
 - `InstalledPluginSchemaValidator::assertCanApplyUpdate()` rechaza la actualización
   porque el campo canónico ya instalado no está presente (o no coincide) en el

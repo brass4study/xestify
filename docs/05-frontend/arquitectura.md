@@ -31,6 +31,8 @@ frontend/src/js/
 │   ├── I18nModel.js            Claves de traducción y resolución de locale
 │   ├── BasePathModel.js        Detección del base path en runtime (raíz vs subruta Apache)
 │   ├── PluginPanelModel.js     Registro runtime de paneles de plugin (PluginPanelRegistry)
+│   ├── EntityRecordModel.js    Etiqueta legible de un registro a partir de su schema y contenido
+│   ├── UserModel.js            Helpers puros para normalizar y mostrar datos de usuario
 │   ├── AvatarUpload.js         Validación de tamaño y lectura de avatar (FileReader), sin DOM
 │   └── ClipboardUtil.js        copyToClipboard() — única lógica pura del flujo de contraseña temporal
 ├── services/
@@ -41,8 +43,8 @@ frontend/src/js/
 │   ├── components/             Primitivas registradas en ComponentFactory (Button, Modal, inputs...)
 │   ├── modules/                Piezas compuestas reutilizables entre páginas (Navbar, DynamicTable,
 │   │                            DynamicForm, DynamicTabs, ThemeSettingsPanel, ComponentFactory)
-│   └── pages/                  Una clase por pantalla (Login, EntityList, EntityEdit, PluginManager,
-│                                 PluginConfig, UserManager, UserProfile, UserConfig)
+│   └── pages/                  Una clase por pantalla (Login, EntityList, EntityEdit, PluginItemEdit,
+│                                 PluginManager, PluginConfig, UserManager, UserProfile, UserConfig)
 ```
 
 Regla de ubicación para código nuevo:
@@ -85,7 +87,7 @@ frontend/src/index.html
 ```
 
 `app.js` es intencionalmente un bootstrap técnico de una línea de lógica: todo
-el arranque real vive en `AppController`. Desde STORY 9.5, las páginas
+el arranque real vive en `AppController`. Las páginas
 autenticadas comparten una única instancia de `ShellLayout`; no se crean
 shells paralelas por página. El contrato completo de `ShellLayout` /
 `PageLayout` / `ListLayout` / `FormLayout` — árbol de zonas, wiring y reglas
@@ -96,7 +98,7 @@ errores JS/red no capturados, aplica las preferencias de tema al documento en
 cada cambio (WYSIWYG) y guarda esas preferencias en el backend con un
 debounce corto cuando el usuario activo es admin.
 
-Desde STORY 10.1, también centraliza la detección de sesión caducada: `Api`
+`AppController` también centraliza la detección de sesión caducada: `Api`
 (`models/ApiClientModel.js`) invoca un único handler registrado vía
 `setSessionExpiredHandler()` ante cualquier 401 con token activo, sin
 importar la página que lo origina. `AppController` lo registra una vez en su
@@ -132,8 +134,8 @@ el panel activo y los breadcrumbs, preservando back/forward.
 
 - [README.md](README.md): componentes principales, flujo de UI dinámica y extensión por plugins
 - [renderizado-dinamico.md](renderizado-dinamico.md): mapeo de tipos de schema a controles de UI
-- [ui-foundations-ant.md](ui-foundations-ant.md): fundamentos visuales (STORY 9.1)
-- [navegacion-anatomia.md](navegacion-anatomia.md): mapa de rutas y anatomía de página (STORY 9.2)
+- [ui-foundations-ant.md](ui-foundations-ant.md): fundamentos visuales
+- [navegacion-anatomia.md](navegacion-anatomia.md): mapa de rutas y anatomía de página
 - [layouts-guide.md](layouts-guide.md): contrato completo de ShellLayout/PageLayout/ListLayout/FormLayout
 - [guia-extension.md](guia-extension.md): cómo añadir páginas nuevas y puntos de integración de plugins en UI
 - [testing.md](testing.md): jerarquía de tests de frontend y ejecución de la suite E2E

@@ -1,19 +1,19 @@
 # Brief Académico - Xestify MVP
 
-## Estado actual auditado (2026-08-10)
+## Estado actual auditado (2026-08-19)
 
-El corte funcional defendible queda cerrado hasta **STORY 9.6 incluida**. Las
-EPIC 0-8 están completadas y la EPIC 9 sigue en progreso. El sistema dispone de
-pipeline `Router -> Middleware -> Controller`, entidades y extensiones basadas en
-plugins, gestión de usuarios, actualizaciones con rollback y frontend MVC con
-shell SPA persistente, layouts reutilizables y routing hash completo.
+El corte funcional defendible queda cerrado hasta **EPIC 10 incluido**. Las
+EPIC 0-10 están completadas. El sistema dispone de pipeline `Router ->
+AuthMiddleware -> Controller`, entidades y extensiones basadas en plugins
+(`persons`, `orders`, `invoices`, `optometries`, `contact_lenses`, `comments`),
+gestión de usuarios, actualizaciones con rollback y frontend MVC con shell SPA
+persistente, layouts reutilizables y routing hash completo.
 
-**Siguiente foco:** STORY 9.7, infraestructura transversal y resiliencia del
-frontend. Después quedan UX y testing UI de EPIC 9, y a continuación EPIC 10
-(login, `persons`, `plugin_name`/slug y plugins de demostración) y EPIC 11
-(cierre formal y exhaustivo del MVP para la defensa del TFM), que es quien
-cierra el MVP. Ajustes finos de UI/UX, operación, marketplace, QA, auditoría
-y permisos finos (`A1`-`A6`) quedan como adiciones post-MVP.
+**Siguiente foco:** dentro de `EPIC 11` (cierre formal del MVP), STORY 11.1 y
+STORY 11.2 ya completadas; STORY 11.3 (auditoría de coherencia de
+documentación) en curso; STORY 11.4 (guion de defensa del TFM) pendiente.
+Ajustes finos de UI/UX, operación, marketplace, QA, auditoría y permisos finos
+(`A1`-`A6`, `A10`) quedan como adiciones post-MVP.
 
 ## Contexto: Proyecto de Master en Desarrollo con IA
 
@@ -88,17 +88,18 @@ Demostrar que:
 - ✅ Menú de usuario integrado en la navegación
 
 **EPIC 9 - Sistema UI, Shell Frontend y Arquitectura SPA**
-- ✅ STORY 9.1-9.6: diseño, navegación, componentes, MVC, shell y routing completo
-- ⏭ STORY 9.7-9.9: resiliencia, UX y testing UI
+- ✅ STORY 9.1-9.9: diseño, navegación, componentes, MVC, shell, routing,
+  resiliencia, UX transversal y testing UI documentado
 
 **EPIC 10 - Login, Persons y Plugins de Demostración**
-- ⏭ Login pulido (logo, nombre, descripción, acceso rápido en modo debug)
-- ⏭ Rename `clients` → `persons`; `plugin_name` desacoplado de `slug` editable
-- ⏭ Plugins de demostración (`orders`, `invoices`, `optometry`, `contact-lenses`) y datos de ejemplo
+- ✅ Login pulido (logo, nombre, descripción, acceso rápido en modo debug)
+- ✅ Rename `clients` → `persons`; `plugin_name` desacoplado de `slug` editable
+- ✅ Plugins de demostración (`orders`, `invoices`, `optometries`, `contact_lenses`) y datos de ejemplo
 
 **EPIC 11 - Cierre Formal y Exhaustivo del MVP**
-- ⏭ Auditoría de código limpio y de coherencia de documentación
-- ⏭ Guion de defensa del TFM y verificación funcional E2E final
+- ✅ Auditoría de código limpio (STORY 11.1) y verificación funcional E2E final (STORY 11.2)
+- 🔄 Auditoría de coherencia de documentación (STORY 11.3, en curso)
+- ⏭ Guion de defensa del TFM (STORY 11.4)
 
 ### ❌ OUT OF SCOPE (thesis posterior)
 
@@ -108,9 +109,7 @@ Demostrar que:
 - A4: QA y calidad
 - A5: Auditoría funcional
 - A6: Matriz de permisos fina
-- A7: Hardening de sesiones (expiración, refresh tokens)
-- A8: Panel de health técnico visual
-- A9: Exportación/importación de configuración entre entornos
+- A10: Relaciones avanzadas (`has_many`/`has_one`)
 
 ---
 
@@ -149,15 +148,24 @@ Demostrar que:
 ### ✅ Consolidación posterior: EPIC 6 + EPIC 7 + EPIC 8 (COMPLETADO)
 **Entregable logrado:** extensiones, PluginManager, configuración, update/rollback y gestión de usuarios.
 
-### 🔄 Fase actual: EPIC 9 (STORY 9.1-9.6 COMPLETADAS)
+### ✅ EPIC 9 (COMPLETADO)
 **Entregable logrado:** sistema visual, componentes base, MVC frontend estricto,
-shell SPA persistente, plantillas de página reutilizables y routing hash completo.
+shell SPA persistente, plantillas de página reutilizables, routing hash completo,
+resiliencia transversal y testing UI automatizado.
 
-### ⏭ Próximas fases: STORY 9.7-9.9 + EPIC 10 + EPIC 11 (cierre del MVP) + A1-A6 (post-MVP)
-**Objetivo:** completar resiliencia y UX frontend, pulir login, generalizar
-`persons`, flexibilizar la identidad de plugins, crear plugins de
-demostración y cerrar formalmente el MVP para la defensa del TFM; operación,
-permisos, auditoría, marketplace y QA quedan como adiciones post-MVP.
+### ✅ EPIC 10 (COMPLETADO)
+**Entregable logrado:** login pulido, plugin `persons` generalizado,
+`plugin_name` desacoplado de `slug`, y plugins de demostración
+(`orders`, `invoices`, `optometries`, `contact_lenses`) con datos de ejemplo.
+
+### 🔄 Fase actual: EPIC 11 — cierre formal del MVP (STORY 11.1-11.2 COMPLETADAS)
+**Entregable logrado:** auditoría de código limpio y verificación funcional E2E
+final, ambas verificadas contra el runtime real.
+
+### ⏭ Próximas fases: STORY 11.3-11.4 + A1-A6/A10 (post-MVP)
+**Objetivo:** cerrar la auditoría de coherencia de documentación y redactar el
+guion de defensa del TFM; ajustes finos de UI/UX, operación, permisos,
+auditoría, marketplace y relaciones avanzadas quedan como adiciones post-MVP.
 
 ---
 
@@ -241,10 +249,10 @@ sin completar retrospectivamente valores desconocidos.
 
 | Item | MVP Producción | MVP Master |
 |------|---|---|
-| Scope | Roadmap completo | EPIC 0-8 + STORY 9.1-9.6 implementadas |
+| Scope | Roadmap completo | EPIC 0-10 + STORY 11.1-11.2 implementadas |
 | Timeline | Evolución continua | Corte académico incremental documentado |
 | IA | Accesible | **Primario** |
-| Testing | Quality gate completo | Suites PHP + 17 runners HTML |
+| Testing | Quality gate completo | Suites PHP (74 ficheros) + 22 runners HTML + suite E2E Playwright |
 | Documentación | Operativa | **Académica + técnica** |
 | Plugins | Marketplace y catálogo remoto | Entidades, extensiones, update y rollback local |
 
@@ -252,12 +260,13 @@ sin completar retrospectivamente valores desconocidos.
 
 ## Próximo Paso
 
-1. Implementar STORY 9.7 y consolidar estado transversal, resiliencia, i18n y theming.
-2. Continuar con STORY 9.8-9.9 sin adelantar EPIC A2.
+1. Cerrar STORY 11.3, auditoría de coherencia de documentación de todo `docs/`
+   contra el código real.
+2. Implementar STORY 11.4, guion de defensa del TFM, usando solo
+   funcionalidades y métricas verificadas.
 3. Mantener [sesion.md](../10-productivity/sesion.md),
    [productividad.md](../10-productivity/productividad.md) y
    [prompts.md](../10-productivity/prompts.md) al cerrar cada story.
-4. Preparar el guion de defensa usando solo funcionalidades y métricas verificadas.
 
 ---
 
@@ -269,7 +278,7 @@ análisis académico deben usarse los tiempos realmente registrados en
 [productividad.md](../10-productivity/productividad.md), no esa hipótesis.
 
 **P: ¿Qué ocurre si una story futura bloquea la defensa?**
-R: Se conserva como corte defendible STORY 9.6 y se documenta el bloqueo. No se
+R: Se conserva como corte defendible STORY 11.2 y se documenta el bloqueo. No se
 deben presentar como completadas funciones no verificadas.
 
 **P: ¿Necesito aprender PHP de cero?**  

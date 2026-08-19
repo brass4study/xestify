@@ -61,8 +61,7 @@ Flujo obligatorio para cada story:
 4. Actualizar docs/10-productivity/productividad.md
 5. Actualizar docs/10-productivity/prompts.md
 6. Si aplica (feat de story/EPIC): actualizar docs/11-backlog/backlog.md y roadmap.md
-7. Si aplica (feat de story/EPIC): actualizar README.md
-8. git add -A && git commit con el formato obligatorio
+7. git add -A && git commit con el formato obligatorio
 ```
 
 Si el trabajo no corresponde a una story completada, no se deben tocar estos
@@ -93,7 +92,7 @@ Formato de commit obligatorio para stories y EPICs:
   cualquier duda sobre si aplica una excepcion, pausar y preguntar antes de
   actuar.
 - Antes de comitear una story, releer explicitamente la REGLA OBLIGATORIA de
-  `docs/10-productivity/` (arriba, incluye `README.md`) y tratarla como checklist
+  `docs/10-productivity/` y tratarla como checklist
   a verificar, en vez de inferir su alcance copiando el commit de documentacion
   vivo mas reciente: el commit anterior es evidencia de un alcance valido para
   ese caso, no del alcance completo exigido en general.
@@ -237,8 +236,19 @@ git config --local core.eol lf
   arquitectura o contrato, sea o no cierre de story. Para el cierre de una story
   o EPIC, `README.md` no es una revision opcional bajo este criterio: es un paso
   numerado de la REGLA OBLIGATORIA de `docs/10-productivity/` (arriba).
+- La documentacion de `docs/01-architecture` a `docs/08-operations` describe
+  unicamente el estado actual del sistema. No debe contener decisiones
+  historicas, releases pasadas, tablas/columnas eliminadas ni citas
+  `STORY X.X` como justificacion de por que algo es como es. Esto incluye
+  describir el sistema por negacion de una estructura que ya no existe (p. ej.
+  "no hay columna `plugin_type` separada — vive en `manifest_json`"): en vez
+  de nombrar lo que falta, decir directamente donde vive el dato hoy (p. ej.
+  "el tipo del plugin vive en `manifest_json`"). Ese contenido historico solo
+  puede vivir en `docs/09-history/`, `docs/10-productivity/` o
+  `docs/11-backlog/`.
 - Evitar referencias nuevas a `system_entities`, `entity_metadata` o migraciones
-  obsoletas salvo como contexto historico.  
+  obsoletas salvo como contexto historico dentro de `docs/09-history/`,
+  `docs/10-productivity/` o `docs/11-backlog/`.
 
 ## Referencias clave
 

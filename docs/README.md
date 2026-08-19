@@ -6,8 +6,8 @@ Esta carpeta centraliza toda la documentación estructurada del proyecto, organi
 
 ## Estado actual y referencias clave
 
-- **Corte funcional:** STORY 10.6 incluida; EPIC 10 cerrada al completo, siguiente foco STORY 11.1 ([ver backlog](11-backlog/backlog.md))
-- **Catálogo de entidades:** gestionado solo por la tabla `plugins` (`plugin_type = 'entity'`)
+- **Corte funcional:** STORY 11.2 incluida; EPIC 0 a EPIC 10 cerrados al completo, siguiente foco STORY 11.3 ([ver backlog](11-backlog/backlog.md))
+- **Catálogo de entidades:** gestionado solo por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
 - **Decisiones técnicas:** [09-history/decisiones-tecnicas.md](09-history/decisiones-tecnicas.md)
 - **Productividad y flujo IA:** [10-productivity/README.md](10-productivity/README.md)
 - **Skills locales (Claude Code):** [`skills/README.md`](../skills/README.md) — auditorías de deuda técnica, revisión de clean code, siembra de datos de demo

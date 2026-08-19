@@ -1,261 +1,307 @@
 # Xestify
 
-Xestify es una plataforma web local-first para pequeños negocios, pensada para ejecutarse en una Raspberry Pi 5 dentro de cada empresa. Su enfoque principal es combinar seguridad y soberanía de datos con flexibilidad funcional mediante un sistema de plugins.
+Xestify es una plataforma web local-first para pequeños negocios, pensada
+para ejecutarse en una Raspberry Pi 5 dentro de cada empresa. Combina
+soberanía de datos y seguridad local con flexibilidad funcional mediante un
+sistema de plugins.
+
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](INSTALL.md)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13%2B-4169E1?logo=postgresql&logoColor=white)](INSTALL.md)
+[![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS-F7DF1E?logo=javascript&logoColor=black)](docs/05-frontend/README.md)
+[![Estado](https://img.shields.io/badge/Estado-MVP%20completo-2ea44f)](docs/11-backlog/roadmap.md)
+[![Licencia](https://img.shields.io/badge/Licencia-Source--Available-lightgrey)](LICENSE.md)
 
 ---
 
-## Estado actual del proyecto (MVP)
+## 📑 Índice
 
-- **Corte funcional:** EPIC 9 y EPIC 10 cerradas al completo (STORY 10.1-10.6); STORY 11.1 (auditoría de código limpio) y STORY 11.2 (verificación funcional E2E final) completadas; siguiente foco STORY 11.3 (`EPIC 11`, auditoría de coherencia de documentación) (ver [backlog](docs/11-backlog/backlog.md))
-- **Catálogo de entidades:** gestionado exclusivamente por la tabla `plugins` (`manifest_json->>'type' = 'entity'`)
-- **Arquitectura:** Core minimalista, extensible solo mediante plugins
-- **Seguridad:** Pipeline protegido, autenticación JWT, roles mínimos, validación server-side y usuarios seed protegidos frente a edición/borrado/autoservicio
-- **Frontend:** SPA MVC con shell persistente, layouts reutilizables, routing hash bidireccional, feedback global, base de i18n, theming visual persistido por cliente y suite E2E Playwright contra el runtime real
-- **Operación:** Apache+PHP en un solo origen, despliegue local en RPi5 y actualizaciones controladas
-- **Estado actual del MVP:** la base funcional del producto está consolidada, la capa transversal de frontend está implementada para notificaciones, errores amigables, confirmaciones modales y preferencias visuales compartidas, la pantalla de login quedó rediseñada (identidad visual, validación, accesos rápidos de desarrollo) tras STORY 10.1, los plugins de demostración de entidad (`orders`, `sales`, `invoices`, `basic`) ya cubren el primer uso real end-to-end de las relaciones `belongs_to` del schema tras STORY 10.4, los plugins de demostración de extensión (`optometries`, `contact_lenses`) añaden historial de fichas con relaciones propias, validación server-side y la convención `layers` tras STORY 10.5, y tras STORY 10.6 la base de datos de demostración puede poblarse con un seeder de negocio idempotente (`php tools/setup/seed-business-data.php`, ver [skills/seed-business-data](skills/seed-business-data/SKILL.md)) con ~2500 registros coherentes entre sí (clientes, distribuidores, oftalmólogos, marcas, fabricantes, pedidos, ventas, facturas, fichas clínicas y comentarios)
-
-Para detalles de decisiones técnicas y cambios históricos, consulta [docs/09-history/decisiones-tecnicas.md](docs/09-history/decisiones-tecnicas.md).
+- [Visión del producto](#-visión-del-producto)
+- [¿Cómo funciona?](#-cómo-funciona)
+- [Arquitectura técnica](#️-arquitectura-técnica-resumen)
+- [Modelo de datos](#️-modelo-de-datos)
+- [Sistema de plugins](#-sistema-de-plugins)
+- [Sistema de hooks](#-sistema-de-hooks)
+- [Actualizaciones y mantenimiento](#-actualizaciones-y-mantenimiento)
+- [Seguridad](#-seguridad)
+- [Casos de uso objetivo](#-casos-de-uso-objetivo)
+- [Runtime web y desarrollo local](#️-runtime-web-y-desarrollo-local)
+- [Operaciones de instalación](#️-operaciones-de-instalación)
+- [Estado actual del proyecto (MVP)](#-estado-actual-del-proyecto-mvp)
+- [Futuro](#️-futuro)
+- [Documentación del proyecto](#-documentación-del-proyecto)
+- [Licencia y Términos de Uso](#-licencia-y-términos-de-uso)
 
 ---
 
-En lugar de desarrollar una aplicacion distinta para cada rubro, Xestify ofrece un Core estable y agnostico del negocio, que se adapta por configuracion y extensiones. Esto permite que una joyeria, una optica, un taller o una ferreteria usen la misma base de producto, pero con entidades, formularios y flujos distintos.
+## 🧭 Visión del producto
 
-## Visión del producto
+En lugar de desarrollar una aplicación distinta para cada rubro, Xestify
+ofrece un Core estable y agnóstico del negocio que se adapta por
+configuración y extensiones. Esto permite que una joyería, una óptica, un
+taller o una ferretería usen la misma base de producto, pero con entidades,
+formularios y flujos propios.
 
-Xestify busca resolver un problema frecuente en pequenos negocios: necesitan software personalizable, pero no quieren complejidad operativa ni depender completamente de la nube.
+Xestify busca resolver un problema frecuente en pequeños negocios: necesitan
+software personalizable, pero no quieren complejidad operativa ni depender
+por completo de la nube.
 
 La propuesta de valor se apoya en cuatro pilares:
 
-- Local-first real: datos y operacion principal en la sede del negocio.
-- Arquitectura modular: nuevas capacidades sin tocar el Core.
-- Evolucion controlada: actualizaciones periodicas de plugins y del sistema.
-- Reutilizacion transversal: entidades base reutilizables entre verticales de negocio.
+- **Local-first real:** datos y operación principal en la sede del negocio.
+- **Arquitectura modular:** nuevas capacidades sin tocar el Core.
+- **Evolución controlada:** actualizaciones explícitas de plugins y del sistema.
+- **Reutilización transversal:** entidades base reutilizables entre verticales de negocio.
 
-## ¿Cómo funciona?
-
+## ⚙️ ¿Cómo funciona?
 
 El sistema se divide en dos capas funcionales:
 
-1. Core
-- Gestiona autenticacion, autorizacion, API, motor de entidades dinamicas, plugins y hooks.
+1. **Core** — gestiona autenticación, autorización, API, motor de entidades
+   dinámicas, plugins y hooks.
+2. **Plugins**:
+   - *Plugins de entidad*: definen entidades base (por ejemplo, `persons`).
+   - *Plugins de extensión*: se acoplan a una entidad base para ampliar su
+     comportamiento (por ejemplo, `optometries` sobre `persons`).
 
-2. Plugins
-- Plugins de entidad: definen entidades base (por ejemplo, clientes o productos).
-- Plugins de extension: se acoplan a una entidad base para ampliar su comportamiento (por ejemplo, optometrias sobre cliente).
+Con este enfoque, una misma entidad base puede usarse en varios sectores con
+distintos campos y extensiones, sin duplicar código estructural.
 
-Con este enfoque, una misma entidad base puede usarse en varios sectores con distintos campos y extensiones, sin duplicar codigo estructural.
+```mermaid
+flowchart LR
+    Core["Core PHP<br/>Auth · Router · Motor de entidades"]
+    EntityPlugin["Plugin de entidad<br/>(persons, orders, invoices…)"]
+    ExtPlugin["Plugin de extensión<br/>(optometries, comments…)"]
+    Hooks["HookDispatcher"]
 
-## Arquitectura técnica (resumen)
+    Core -->|carga desde `plugins`| EntityPlugin
+    EntityPlugin -->|se amplía con| ExtPlugin
+    EntityPlugin -.->|beforeSave / afterSave| Hooks
+    ExtPlugin -.->|registerTabs / registerActions| Hooks
+    Hooks -.->|extiende comportamiento sin tocar el Core| Core
+```
 
-- Backend: PHP orientado a API REST ([docs/01-architecture/overview.md](docs/01-architecture/overview.md))
-- Frontend: JavaScript con renderizado dinámico por metadata ([docs/05-frontend/README.md](docs/05-frontend/README.md))
-- Estilos UI: Tailwind CSS generado localmente desde `frontend/tailwind.config.cjs` y `frontend/src/css/tailwind.src.css`
-- Persistencia: PostgreSQL con modelo híbrido relacional + JSONB ([docs/02-entities/README.md](docs/02-entities/README.md))
-- Extensión: sistema de plugins y hooks por eventos ([docs/04-plugins/README.md](docs/04-plugins/README.md))
-- Operacion: Apache+PHP como runtime canonico y despliegue local en Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
-- Distribución funcional: tienda/repositorio central de plugins
+## 🏗️ Arquitectura técnica (resumen)
 
-## Runtime web y desarrollo local
+- **Backend:** PHP nativo orientado a API REST, sin Composer ni frameworks ([docs/01-architecture/overview.md](docs/01-architecture/overview.md))
+- **Frontend:** JavaScript vanilla con renderizado dinámico por metadata, sin build step ([docs/05-frontend/README.md](docs/05-frontend/README.md))
+- **Estilos UI:** Tailwind CSS generado localmente (`frontend/tailwind.config.cjs`, `frontend/src/css/tailwind.src.css`), sin CDN en runtime
+- **Persistencia:** PostgreSQL con modelo híbrido relacional + JSONB ([docs/02-entities/README.md](docs/02-entities/README.md))
+- **Extensión:** sistema de plugins y hooks por eventos ([docs/04-plugins/README.md](docs/04-plugins/README.md))
+- **Operación:** Apache + PHP como runtime canónico, instalador CLI idempotente y despliegue local en Raspberry Pi 5 ([docs/08-operations/README.md](docs/08-operations/README.md))
 
-Xestify se sirve ahora bajo un unico origen con Apache+PHP:
-
-- `/` entrega la shell frontend (`frontend/src/index.html`)
-- `/css/*` y `/js/*` sirven los estaticos del frontend
-- `/api/*` y `/health` entran por `backend/public/index.php`
-- `/plugins/*` sirve `plugin.js` y assets de plugins
-
-La aplicacion detecta su `base path` en runtime, asi que puede colgar tanto de
-la raiz del host como de una subruta Apache, por ejemplo
-`http://localhost/xestify/`.
-
-En desarrollo, los tests HTML del frontend pueden exponerse bajo `/tests/*`
-activando `ENABLE_TEST=1` en Apache. La configuracion de referencia vive en
-[docs/08-operations/apache-vhost-examples.md](docs/08-operations/apache-vhost-examples.md).
-
-## Modelo de datos
+## 🗄️ Modelo de datos
 
 Cada empresa opera con su propia base de datos. El modelo combina:
 
-- Tablas Core para control estructural (entidades instaladas, metadata, registro de plugins, hooks).
-- JSONB para campos variables y evolucion dinamica de esquemas.
+- **Tablas Core** para control estructural: registro de plugins (catálogo de
+  entidades y extensiones), datos de entidad, datos de extensión y usuarios.
+- **JSONB** para campos variables y evolución dinámica de esquemas
+  (`manifest_json`, `schema_json`, `content`).
 
-Esto evita cambios destructivos frecuentes en tablas fisicas y permite que un plugin agregue campos o capacidades sin redisenar toda la base.
+Esto evita cambios destructivos frecuentes en tablas físicas y permite que un
+plugin agregue campos o capacidades sin rediseñar toda la base.
 
-## Sistema de plugins
+## 🧩 Sistema de plugins
 
-Cada plugin tiene una estructura estandar con metadatos y esquema declarativo. En terminos generales, incluye:
+Cada plugin tiene una estructura estándar con metadatos y esquema
+declarativo:
 
-- Manifest con identificacion, version y compatibilidad.
-- Schema con definicion de campos y reglas.
-- Logica de hooks para integracion con el Core.
-- Componentes de API/UI cuando aplica.
+- `manifest.json` con identificación, tipo (`entity`/`extension`), versión y
+  compatibilidad.
+- `schema.json` con definición de campos, identidades y relaciones.
+- Clase `Hooks.php` para integración con el Core.
+- `plugin.js` opcional para componentes de UI específicos del plugin.
 
-El sistema soporta ciclo de vida de plugin:
+El ciclo de vida soportado incluye:
 
-- Instalación
+- `onInstall`
+- `onActivate`
+- `onDeactivate`
 
----
+`onUpdate(array $context)` se soporta como convención opcional durante una
+actualización explícita del plugin.
 
-## Navegación rápida
+## 🪝 Sistema de hooks
 
-- [Guía de instalación](INSTALL.md)
-- [Visión, convenciones y glosario](docs/00-meta/README.md)
-- [Arquitectura y patrones](docs/01-architecture/README.md)
-- [Modelo de datos y entidades](docs/02-entities/README.md)
-- [API REST](docs/03-api/README.md)
-- [Plugins y extensiones](docs/04-plugins/README.md)
-- [Frontend y UI dinámica](docs/05-frontend/README.md)
-- [Seguridad](docs/07-security/README.md)
-- [Operaciones y despliegue](docs/08-operations/README.md)
-- [Historial de decisiones](docs/09-history/README.md)
-- [Productividad y flujo IA](docs/10-productivity/README.md)
-- [Backlog y roadmap](docs/11-backlog/README.md)
-
----
-
-## Sistema de hooks
-
-Los hooks permiten extender comportamiento sin modificar el nucleo. Se contemplan tres grupos:
+Los hooks permiten extender comportamiento sin modificar el núcleo. Se
+contemplan tres grupos:
 
 - Hooks de ciclo de vida de plugin.
-- Hooks de entidad (before/after en validacion, guardado y borrado).
-- Hooks de UI (tabs, acciones, widgets).
+- Hooks de entidad (`beforeSave`/`afterSave` en validación, guardado y borrado).
+- Hooks de UI (`registerTabs`, `registerActions`).
 
-Este mecanismo habilita casos como agregar pestanas y acciones personalizadas en la ficha de una entidad base.
+Este mecanismo habilita casos como agregar pestañas y acciones
+personalizadas en la ficha de una entidad base.
 
-## Actualizaciones y mantenimiento
+## 🔄 Actualizaciones y mantenimiento
 
-Xestify soporta dos modos de actualizacion:
+El ciclo de vida de un plugin ya instalado se gestiona en tres pasos
+explícitos, sin automatismos en cada request:
 
-- Manual: el usuario revisa e instala actualizaciones desde el panel.
-- Automatica: un proceso programado consulta versiones y prepara paquetes.
+1. **Sincronizar** (`POST /api/v1/plugins/sync`): registra plugins nuevos
+   encontrados en disco y detecta si hay una versión más reciente disponible,
+   preservando la versión y el schema en ejecución de los ya instalados.
+2. **Actualizar** (`POST /api/v1/plugins/{slug}/update`): aplica la nueva
+   versión con una fusión aditiva de schema, guardando primero un snapshot en
+   `plugin_update_history`.
+3. **Revertir** (`POST /api/v1/plugins/{slug}/rollback`): restaura versión y
+   schema desde el snapshot previo cuando existe.
 
-Flujo de actualizacion recomendado:
+Todo el flujo se controla desde `PluginManager` en el frontend, con feedback
+visual de versión disponible y confirmación antes de aplicar cambios.
 
-1. Consultar versiones disponibles.
-2. Descargar paquete a staging.
-3. Verificar integridad y compatibilidad.
-4. Ejecutar migraciones de metadata/datos.
-5. Activar nueva version.
-6. Registrar resultado y permitir rollback.
+## 🔐 Seguridad
 
-## Seguridad
+Como plataforma local para la operación diaria de un negocio, Xestify
+implementa:
 
-Como plataforma local de mision critica para negocio, Xestify prioriza:
+- Autenticación JWT con sesión deslizante y expiración controlada.
+- Autorización binaria por rol (`admin` / usuario estándar) en operaciones
+  administrativas (gestión de usuarios, plugins y configuración).
+- Validación server-side obligatoria contra el schema vigente de cada entidad.
+- Consultas SQL parametrizadas (PDO) en toda la capa de acceso a datos.
+- Usuarios seed de demostración protegidos frente a edición, borrado y
+  autoservicio.
+- Scripts de `tools/` exclusivamente de línea de comandos: rechazan cualquier
+  otro SAPI y quedan fuera del árbol servible por web.
 
-- Menor privilegio por rol y accion.
-- Validacion server-side obligatoria.
-- Consultas SQL parametrizadas.
-- Auditoria de operaciones sensibles.
-- Control de procedencia e integridad de plugins.
+Detalle completo en [docs/07-security/README.md](docs/07-security/README.md).
 
-## Casos de uso objetivo
+## 🎯 Casos de uso objetivo
 
-- Gestion de clientes con campos configurables por negocio.
-- Gestion de productos e inventario con metadatos propios.
-- Extensiones verticales por sector (ejemplo: optometria en optica).
-- Evolucion funcional por instalacion de plugins adicionales.
+- Gestión de clientes, distribuidores y profesionales con campos configurables por negocio.
+- Gestión de productos, pedidos y facturación con relaciones entre entidades.
+- Extensiones verticales por sector (por ejemplo, fichas de optometría en una óptica).
+- Evolución funcional por instalación de plugins adicionales, sin tocar el Core.
 
-## Estado actual
+## 🖥️ Runtime web y desarrollo local
 
-MVP implementado hasta **STORY 11.2 incluida** (EPIC 9 y EPIC 10 cerradas al completo; EPIC 11 en progreso):
+Xestify se sirve bajo un único origen con Apache + PHP:
 
-- Login JWT y rutas API protegidas por `AuthMiddleware`.
-- CRUD dinámico de entidades sobre `plugin_entity_data`.
-- Catálogo de entidades basado en plugins `entity` activos en la tabla `plugins`.
-- Plugin `persons` como entidad base canónica (clientes/distribuidores/oculistas).
-- Plugin `comments` como extensión con tab "Comentarios" y datos en `plugin_extension_data`.
-- PluginManager, detección de actualizaciones disponibles y flujo explícito de sync/update desde servicios especializados del subsistema de plugins.
-- Página de configuración de plugins activos con identidad editable (slug/nombre/descripción), campos configurables, grid de relaciones `belongs_to` editable y soporte de `target_entity` para plugins `extension`.
-- Gestión de perfil propio y administración de usuarios con rutas hash `#/profile`, `#/users` y `#/users/:id`.
-- Base visual frontend consolidada: tablas unificadas vía `DynamicTable`, tabs alineadas con patrón Ant Design y hoja Tailwind generada localmente sin CDN runtime.
-- Frontend organizado bajo MVC estricto, con `ShellLayout` persistente para páginas autenticadas y `PageLayout`, `ListLayout` y `FormLayout` como plantillas reutilizables.
-- Routing SPA hash completo con navegación programática, entrada directa, refresh y back/forward preservando el contexto de vistas parametrizadas.
-- Infraestructura transversal de frontend implementada con estado global ampliado, feedback compartido, notificaciones/error handling, confirmaciones modales, base de i18n y preferencias visuales persistidas por cliente.
-- Estados unificados de loading/vacío/error/éxito, confirmaciones consistentes en acciones sensibles, prevención de doble submit y foco/accesibilidad básica en modales y notificaciones (STORY 9.8).
-- Suite de tests reorganizada en `frontend/tests/integration/` (componente/integración con `fetch` mockeado) y `frontend/tests/e2e/` (Playwright contra el runtime real Apache+PHP+Postgres) (STORY 9.9).
-- Login rediseñado: identidad visual propia (`Logo`/`BrandLogo`/`Loader`), zona de feedback unificada con validación cliente y foco automático, interceptor centralizado de sesión caducada, accesos rápidos de desarrollo condicionados a `APP_DEBUG`, y dos usuarios seed (admin/normal) protegidos frente a edición, borrado y autoservicio (STORY 10.1).
-- Plugin `clients` renombrado a `persons` (carpeta, namespace PHP, manifest/schema y datos existentes), generalizando el modelo a clientes/distribuidores/oculistas sin ampliar sus campos (STORY 10.2).
-- `plugin_name` (identidad técnica fija = carpeta) desacoplado de `slug` (editable); tabla `plugins` consolidada en una columna `manifest_json` viva que refleja el manifest.json real en disco, eliminando columnas redundantes y `schema_version` (residual); alta manual de plugin (activo por defecto), borrado en cascada, grid de relaciones `belongs_to` editable y tab automática de relación inversa en `EntityEdit` (STORY 10.3).
-- Plugins de demostración de entidad `orders` (pedidos), `invoices` (facturas, `belongs_to orders` obligatorio con `invoice_number` único) y `basic` (plantilla mínima solo con `name`, sin activar); primer uso real end-to-end del bloque `relations` del schema. La relación `orders → persons` no se fija en el schema de disco: se configura por instalación desde el grid "Relaciones" de `PluginConfig` (STORY 10.4).
-- Plugins de demostración de extensión `optometries` (ficha de graduación óptica) y `contact_lenses` (ficha de adaptación de lentillas), ambos con historial de varias fichas por persona, relaciones `belongs_to` propias hacia catálogos reales (`ophthalmologists`, `distributors`, `brands`, `manufacturers`), gauge visual del eje (`AxisGauge`, SVG compartido) y tabla de medidas por ojo (`DynamicTable`); página independiente de ficha (`PluginItemEdit.js`) en vez de formulario inline. Ampliaron capacidades de núcleo: `relations` en plugins `extension` (antes solo en `entity`), validación server-side de `content` contra schema, y la convención general `layers`/`resortable` para organizar la UI de cualquier plugin (STORY 10.5).
-- Seeder de datos de negocio idempotente (`BusinessDataSeeder`, `php tools/setup/seed-business-data.php`) para poblar una demo en vivo realista: 200 `clients`, 25 `distributors`, 100 `ophthalmologists`, 30 `brands`, 15 `manufacturers`, 300 `orders` a distribuidor, ~270 `invoices`, 250 `sales` a cliente, fichas `optometries`/`contact_lenses` al 100% de los clientes (con correlación de actividad entre clientes) y `comments`; idempotencia "todo o nada por grupo" (STORY 10.6).
-- Auditoría de código limpio: pase de SonarQube sobre backend y frontend (38→0 hallazgos pendientes, sin críticos/bloqueantes), sin código muerto ni TODOs obsoletos pendientes, `docs/09-history/decisiones-tecnicas.md` sin decisiones superadas marcadas como vigentes, sin rastro de `clients` que debiera ser `persons`, y naming técnico consistente en inglés (`AGENTS.md` corregido: `mail` en vez de `email`, claves reales de `persons`) (STORY 11.1).
-- Verificación funcional E2E final: checklist de flujos críticos (login normal/admin/accesos rápidos, CRUD completo de persona incluido borrado, pedido+factura relacionados, gestión de plugins activar/desactivar/desinstalar, fichas de optometría/lentillas) cubierto por la suite Playwright completa contra el runtime Apache+PHP real; exportar CSV, búsqueda en tablas y selector de idioma visible quedan fuera de alcance del MVP por diseño (reservados a EPIC A1 post-MVP). Corrigió al pasar tres bugs reales de la aplicación (dos variantes de la misma condición de carrera en navegación tras guardar o cambiar de entidad, y un bug de posicionamiento del selector de relaciones fuera del viewport en formularios cortos), cada uno con su propio test de regresión dedicado (STORY 11.2).
-- Tests backend agrupados con `php backend/tests/run.php unit|integration-db|integration-plugins|all` (72 archivos) y suite E2E Playwright de 8 specs/21 tests contra el runtime real, además de las suites frontend HTML para gestión de usuarios, perfil, tema, resiliencia, login y plugins.
+- `/` entrega la shell frontend (`frontend/src/index.html`)
+- `/css/*` y `/js/*` sirven los estáticos del frontend
+- `/api/*` y `/health` entran por `backend/public/index.php`
+- `/plugins/*` sirve `plugin.js` y assets de plugins
 
-Pendiente tras STORY 11.2: auditoría de coherencia de documentación y guion de defensa del TFM (EPIC 11).
+La aplicación detecta su `base path` en runtime, así que puede colgar tanto
+de la raíz del host como de una subruta Apache, por ejemplo
+`http://localhost/xestify/`.
 
-Operaciones de setup (CLI; guía completa en [INSTALL.md](INSTALL.md)):
+En desarrollo, los tests HTML del frontend pueden exponerse bajo `/tests/*`
+activando `ENABLE_TEST=1` en Apache. La configuración de referencia vive en
+[docs/08-operations/apache-vhost-examples.md](docs/08-operations/apache-vhost-examples.md).
 
-- `php tools/setup/install.php`: instalación completa e idempotente — requisitos, `backend/.env`, rol/BD opcional (`--create-db`), esquema base (`backend/database/schema/`), administrador real, usuarios seed solo en debug, sincronización de plugins y datos demo opcionales
-- `php tools/setup/create-admin-user.php`: crea un administrador real (`is_seed=false`) en una instalación existente (la app aún no tiene alta de usuarios desde la UI, ver STORY A1.8)
-- `php tools/setup/check-install.php --url=...`: comprobación post-instalación de que las rutas públicas responden y ninguna ruta interna (`tools/`, `backend/.env`, PHP/JSON de plugins, docs) se sirve por web
-- `php tools/setup/seed-admin-user.php`: crea los usuarios seed de demostración (`admin@xestify.local` / `usuario@xestify.local`, solo pueden iniciar sesión con `APP_DEBUG=true`)
-- `php tools/setup/sync-plugins.php`: registra plugins nuevos y detecta updates disponibles sin consumir la version/schema runtime de plugins ya instalados
-- `php tools/setup/seed-business-data.php`: siembra datos de negocio de demostración de forma idempotente (ver [skills/seed-business-data](skills/seed-business-data/SKILL.md))
+## 🛠️ Operaciones de instalación
 
-Estas operaciones ya no se ejecutan en cada request. El runtime normal carga
-plugins y hooks desde la base de datos; la sincronizacion disco -> BD es
-explicita. Todos los scripts de `tools/` son exclusivamente de línea de
-comandos: `tools/setup/bootstrap.php` rechaza cualquier otro SAPI, y los
-`.htaccess` por directorio impiden servirlos por web (ver "Modelo de seguridad
-de la instalación" en `INSTALL.md`).
+Para la guía detallada de instalación y configuración (requisitos, scripts
+de `tools/setup/`, y recomendaciones de rendimiento en local), consulta
+[INSTALL.md](INSTALL.md).
 
-Para evitar latencia innecesaria en local con Apache+PHP:
+## 📊 Estado actual del proyecto (MVP)
 
-- usar `DB_HOST=127.0.0.1` en vez de `localhost`
-- dejar `xdebug.start_with_request = trigger` cuando no se este depurando
+**Corte funcional:** EPIC 0 a EPIC 11 cerrados al completo — MVP finalizado.
+Detalle completo en [backlog](docs/11-backlog/backlog.md) y
+[roadmap](docs/11-backlog/roadmap.md).
 
-## Documentación del proyecto
+- **EPIC 0 — Preparación técnica:** estructura del repo, contenedor DI,
+  router HTTP y entorno local PHP+PostgreSQL sin frameworks.
+- **EPIC 1 — Autenticación:** login JWT (HS256), middleware de autenticación
+  y usuarios persistidos en base de datos.
+- **EPIC 2 — Modelo de datos core:** esquema base con tablas relacionales +
+  JSONB y el `GenericRepository` para CRUD genérico.
+- **EPIC 3 — Motor de entidades dinámicas:** validación contra schema,
+  `EntityService`, endpoints REST y los primeros componentes de frontend
+  dinámico (`DynamicForm`, `DynamicTable`).
+- **EPIC 4 — Plugins y hooks backend:** carga y ciclo de vida de plugins,
+  `HookDispatcher` y el primer plugin de entidad real.
+- **EPIC 5 — Frontend dinámico base:** login, navegación, integración E2E
+  entidad-formulario y componentes reutilizables.
+- **EPIC 6 — Plugins de extensión:** `plugins` pasa a ser la única fuente de
+  verdad del catálogo de entidades, hooks de UI (`registerTabs`/
+  `registerActions`) y el primer plugin de extensión (`comments`).
+- **EPIC 7 — Actualizaciones y rollback de plugins:** detección de
+  versiones, sync/update explícito con schema aditivo, snapshots y rollback,
+  con su UI en `PluginManager`.
+- **EPIC 8 — Gestión de usuarios:** perfil propio, administración de
+  usuarios y menú de usuario en la navegación.
+- **EPIC 9 — Sistema UI y arquitectura SPA:** fundamentos visuales, shell
+  persistente, routing hash completo, resiliencia de UI e i18n/theming base.
+- **EPIC 10 — Login, Persons y plugins de demostración:** rediseño de login,
+  `clients` renombrado a `persons`, identidad de plugin desacoplada del
+  slug, y plugins de demostración (`orders`, `invoices`, `optometries`,
+  `contact_lenses`) con datos de ejemplo sembrados.
+- **EPIC 11 — Cierre formal del MVP:** auditoría de código limpio,
+  verificación funcional E2E, auditoría de coherencia de documentación y
+  guion de defensa del TFM.
 
-Indice principal: [docs/README.md](docs/README.md)
+Detalle story a story, tests y verificación de cada cierre en
+[docs/10-productivity/sesion.md](docs/10-productivity/sesion.md).
 
-Documentos clave:
+## 🗺️ Futuro
 
-- [docs/11-backlog/backlog.md](docs/11-backlog/backlog.md)
-- [docs/01-architecture/overview.md](docs/01-architecture/overview.md)
-- [docs/01-architecture/plugins.md](docs/01-architecture/plugins.md)
-- [docs/01-architecture/hooks.md](docs/01-architecture/hooks.md)
-- [docs/02-entities/README.md](docs/02-entities/README.md)
-- [docs/03-api/endpoints.md](docs/03-api/endpoints.md)
-- [docs/05-frontend/README.md](docs/05-frontend/README.md)
-- [docs/08-operations/deploy-rpi5.md](docs/08-operations/deploy-rpi5.md)
-- [docs/08-operations/apache-vhost-examples.md](docs/08-operations/apache-vhost-examples.md)
-- [docs/07-security/README.md](docs/07-security/README.md)
+Con el MVP cerrado, el roadmap se centra en profundizar la experiencia de
+usuario, la operación en producción y la extensibilidad del ecosistema de
+plugins: pulir accesibilidad y rendimiento percibido del frontend, dotar al
+sistema de observabilidad y hardening para despliegues reales, abrir un
+marketplace de plugins publicables e instalables desde la propia UI, y
+completar el modelo de relaciones y permisos para casos de uso más
+avanzados.
 
-## Roadmap resumido
+### Adiciones post-MVP
 
-1. Implementar Core MVC backend.
-2. Implementar motor de metadata y CRUD dinamico.
-3. Implementar subsistema de plugins y HookDispatcher.
-4. Implementar frontend dinamico (formularios, tablas, tabs).
-5. Implementar sistema de actualizaciones y rollback.
-6. Integrar marketplace de plugins y ciclo de versionado.
+- **EPIC A1 — Ajustes finos de UI/UX:** internacionalización real, búsqueda
+  en tablas, rendimiento percibido, accesibilidad y operaciones avanzadas de
+  tabla/CRUD.
+- **EPIC A2 — Operación técnica y observabilidad:** health checks, backup
+  automatizado y hardening básico para despliegue en Raspberry Pi 5.
+- **EPIC A3 — Marketplace de plugins:** repositorio central de plugins,
+  navegables e instalables desde la UI.
+- **EPIC A4 — QA y calidad:** suite de tests completa, automatización CI y
+  cobertura mínima establecida.
+- **EPIC A5 — Auditoría funcional:** trazabilidad de acciones críticas
+  sobre configuración, usuarios y plugins.
+- **EPIC A6 — Matriz de permisos fina:** permisos granulares por
+  recurso/acción, más allá del gate binario admin/no-admin actual.
+- **EPIC A10 — Relaciones avanzadas (`has_many`/`has_one`):** completar el
+  modelo de relaciones más allá de `belongs_to`.
 
-## Alcance inicial (MVP)
+Detalle completo en [docs/11-backlog/roadmap.md](docs/11-backlog/roadmap.md).
 
-- Entidades dinamicas con schema declarativo.
-- CRUD generico validado por metadata.
-- Carga de plugins de entidad.
-- Primer flujo de plugin de extension sobre entidad base.
-- Actualizacion de plugin con registro de ejecucion.
+## 📚 Documentación del proyecto
 
-## Futuro
+Índice principal: [docs/README.md](docs/README.md)
 
-- Plantillas de verticales de negocio por sector.
-- Herramientas de backup y restauracion guiada.
-- Mayor automatizacion de despliegue y monitoreo en RPi5.
-- Hardening avanzado de cadena de suministro de plugins.
+| Área | Documento |
+|---|---|
+| Instalación | [INSTALL.md](INSTALL.md) |
+| Visión, convenciones y glosario | [docs/00-meta/README.md](docs/00-meta/README.md) |
+| Arquitectura y patrones | [docs/01-architecture/README.md](docs/01-architecture/README.md) |
+| Modelo de datos y entidades | [docs/02-entities/README.md](docs/02-entities/README.md) |
+| API REST | [docs/03-api/README.md](docs/03-api/README.md) |
+| Plugins y extensiones | [docs/04-plugins/README.md](docs/04-plugins/README.md) |
+| Frontend y UI dinámica | [docs/05-frontend/README.md](docs/05-frontend/README.md) |
+| Seguridad | [docs/07-security/README.md](docs/07-security/README.md) |
+| Operaciones y despliegue | [docs/08-operations/README.md](docs/08-operations/README.md) |
+| Historial de decisiones | [docs/09-history/README.md](docs/09-history/README.md) |
+| Productividad y flujo IA | [docs/10-productivity/README.md](docs/10-productivity/README.md) |
+| Backlog y roadmap | [docs/11-backlog/README.md](docs/11-backlog/README.md) |
 
 ## 🔒 Licencia y Términos de Uso
 
-Este proyecto es el resultado de un Trabajo de Fin de Máster (TFM) y se publica bajo una **Licencia Propietaria de Fuente Disponible (Source-Available / Read-Only)**.
+Este proyecto es el resultado de un Trabajo de Fin de Máster (TFM) y se
+publica bajo una **Licencia Propietaria de Fuente Disponible (Source-Available
+/ Read-Only)**.
 
-* **Permitido:** Consulta visual, lectura y auditoría del código fuente con fines académicos o de evaluación.
-* **Estrictamente Prohibido:** La ejecución, compilación, despliegue, modificación, redistribución o uso del software, ya sea para **fines comerciales o personales**, sin la autorización previa y por escrito del autor.
+- **Permitido:** consulta visual, lectura y auditoría del código fuente con
+  fines académicos o de evaluación.
+- **Estrictamente prohibido:** la ejecución, compilación, despliegue,
+  modificación, redistribución o uso del software, ya sea con fines
+  comerciales o personales, sin la autorización previa y por escrito del
+  autor.
 
-Para más detalles, consulta el archivo completo [`LICENSE`](./LICENSE.md).
+Para más detalles, consulta el archivo completo [`LICENSE.md`](LICENSE.md).
 
 ---
-*Si deseas obtener una licencia de uso comercial o evaluación extendida, ponte en contacto en: brass4study@gmail.com*
+
+*Si deseas obtener una licencia de uso comercial o evaluación extendida,
+ponte en contacto en: brass4study@gmail.com*

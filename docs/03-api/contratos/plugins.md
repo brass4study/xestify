@@ -1,11 +1,9 @@
 # Contrato: Plugins
 
-Todas las rutas de este contrato requieren `AuthMiddleware` (JWT) y rol `admin`
-(`PluginManagerController` — ver docblock de cabecera para la lista completa de
-rutas). Las respuestas que incluyen un objeto "plugin" aplanado (`slug`, `name`,
-`description`, `plugin_type`, `status`, `version`) lo derivan de la columna
-`manifest_json` de `plugins` (STORY 10.3 §2bis) — no existen columnas propias
-`plugin_type`/`name`/`version`/`description` en la tabla.
+Todas las rutas de este contrato requieren `AuthMiddleware` (JWT) y rol
+`admin` (`PluginManagerController`). Las respuestas que incluyen un objeto
+"plugin" aplanado (`slug`, `name`, `description`, `plugin_type`, `status`,
+`version`) lo derivan de la columna `manifest_json` de `plugins`.
 
 ## GET /api/v1/plugins
 - Lista todos los plugins instalados (cualquier estado).
@@ -116,6 +114,18 @@ rutas). Las respuestas que incluyen un objeto "plugin" aplanado (`slug`, `name`,
 - Restaura la última foto guardada en `plugin_update_history` para ese slug.
 - Respuesta: `{ "ok": true, "data": { "plugin": { /* fila cruda, sin aplanar */ }, "rollback": { "from_version", "to_version", "snapshot_id" } } }`
 - Errores: 404 si no existe; 409 si no hay snapshot disponible.
+
+## POST /api/v1/plugins/{slug}/move-up
+- Sube un puesto el `sort_order` manual del plugin (intercambia posición con el
+  vecino anterior). Afecta al orden en que `PluginManager` lista los plugins.
+- Respuesta: `{ "ok": true, "data": { /* plugin, forma aplanada */ } }`
+- Errores: 404 si el slug no existe.
+
+## POST /api/v1/plugins/{slug}/move-down
+- Baja un puesto el `sort_order` manual del plugin (intercambia posición con
+  el vecino siguiente).
+- Respuesta: `{ "ok": true, "data": { /* plugin, forma aplanada */ } }`
+- Errores: 404 si el slug no existe.
 
 ## GET /api/v1/plugins/{slug}/config
 - Solo plugins `entity`/`extension` activos.

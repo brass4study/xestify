@@ -29,7 +29,7 @@ Nota: `onUpdate` y `onRollback` son opcionales — un plugin los declara impleme
 3. Hooks de UI
 - registerTabs — un plugin `extension` puede devolver por tab, más allá
   del mínimo `{id, label, endpoint}`: `{icon, plugin_name, entity,
-  relations, fields}` (STORY 10.5). `entity` es el slug de la entidad
+  relations, fields}`. `entity` es el slug de la entidad
   activa; `relations` son las relaciones declaradas en `schema.json`
   (misma forma que en entidades, más `layer`); `fields` son **solo** los
   campos con `origin: 'additional'` (añadidos después vía "Añadir campo"
@@ -74,10 +74,9 @@ En cada request, `PluginHookRegistrar::registerActiveHooks()` recorre los plugin
 `plugins.status = 'active'` (`PluginRepository::listActiveSlugs()`) y llama
 `Hooks::register($dispatcher)` de cada uno, sin condiciones adicionales — es el propio
 plugin quien decide qué hooks registra y con qué prioridad. Activar/desactivar el plugin
-completo (`plugins.status`) es la única palanca real; no existe activación/desactivación
-de un hook individual.
+completo (`plugins.status`) es la única palanca de control sobre qué hooks se ejecutan.
 
-No existe ninguna interfaz formal para `Hooks::register()` (es pura convención), y
+`Hooks::register()` es pura convención, sin interfaz formal que la declare, y
 `registerActiveHooks()` invoca a `register($dispatcher)` de forma polimórfica sobre
 cualquier plugin activo — cambiar esa firma afectaría a todos los plugins, no solo a los
 que usan `registerTabs`/`registerActions`. Por eso, un plugin `extension` que quiera que
@@ -88,12 +87,6 @@ pasa como `priority` al registrar. `plugins/comments/Hooks.php` (`resolvePriorit
 la referencia de este patrón — usa el mínimo `sort_order` entre sus propias instancias
 activas, ya que `plugin_name` no es único y una sola llamada a `register()` cubre todas
 las instancias activas de ese plugin técnico.
-
-(Nota histórica: hubo un intento anterior de resolver esto con una tabla `plugin_hooks`
-dedicada — `slug`, `hook_name`, `priority`, `enabled` — pero `PluginHookRegistrar` nunca
-llegó a leerla y se eliminó como infraestructura muerta. El patrón de autoconsulta vía
-`sort_order` evita esa complejidad: no añade tablas ni cambia el contrato de
-`register()`.)
 
 ## Buenas practicas
 

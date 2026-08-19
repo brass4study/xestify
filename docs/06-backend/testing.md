@@ -104,10 +104,10 @@ Tablas core, repositorios genéricos y controladores que las usan directamente.
 | `DatabaseTest.php` | Conexión a PostgreSQL, saltando las pruebas si la base de datos no está disponible |
 | `SchemaIdempotenceTest.php` | Los ficheros de `backend/database/schema/` se descubren en orden y se aplican dos veces sin error ni pérdida de datos vía `SchemaInstaller` (mismo camino que `tools/setup/install.php`, sin `psql`); comprobaciones de solo lectura de `DatabaseProvisioner` (existencia de rol/BD, rechazo de identificadores inválidos) |
 | `EntityDataTableTest.php` | La tabla `plugin_entity_data` fue creada correctamente por su migración |
-| `EntityMetadataTableTest.php` | `plugin_entity_metadata` ya no existe y `plugins` tiene la columna `schema_json` |
+| `EntityMetadataTableTest.php` | Verifica que no exista una tabla de metadata de entidad separada; el schema vive en `plugins.schema_json` |
 | `PluginsRegistryTableTest.php` | La tabla `plugins` fue creada correctamente por su migración |
 | `PluginUpdateHistoryTableTest.php` | La tabla `plugin_update_history` fue creada correctamente por su migración |
-| `SystemEntitiesTableTest.php` | La tabla obsoleta `system_entities` no existe en el esquema de migraciones actual |
+| `SystemEntitiesTableTest.php` | Verifica que no exista una tabla de catálogo de entidades separada de `plugins` |
 | `GenericRepositoryTest.php` | Ciclo CRUD completo de `GenericRepository` contra PostgreSQL real |
 | `UserRepositoryTest.php` | Migración de perfiles y superficie CRUD de `UserRepository` |
 | `ConfigurationRepositoryTest.php` | `ConfigurationRepository` guarda y recupera configuraciones (p. ej. `ui-preferences`) en BD |
@@ -116,7 +116,7 @@ Tablas core, repositorios genéricos y controladores que las usan directamente.
 | `AuthControllerTest.php` | Endpoint de login (`POST /api/v1/auth/login`) |
 | `EntityServiceTest.php` | Operaciones CRUD (crear, actualizar, borrar, listar) de `EntityService` contra BD real |
 | `EntityControllerTest.php` | Métodos de `EntityController` de extremo a extremo contra BD real |
-| `BusinessDataSeederTest.php` | `BusinessDataSeeder` genera datos demo de forma idempotente y con relaciones cruzadas válidas (STORY 11.2) |
+| `BusinessDataSeederTest.php` | `BusinessDataSeeder` genera datos demo de forma idempotente y con relaciones cruzadas válidas |
 | `AdminUserCreatorTest.php` | `AdminUserCreator` crea un administrador real (`is_seed=false`, rol admin, hash bcrypt verificable), detecta si ya existe uno y rechaza email inválido/duplicado, nombre vacío y contraseña corta sin insertar |
 
 ## Grupo `integration-plugins` (23 ficheros)
@@ -145,7 +145,7 @@ Ciclo de vida de plugins, hooks activos en runtime y endpoints de gestión.
 | `PluginBootTest.php` | El registro de hooks activos al arrancar la app es idempotente y expone tabs |
 | `HookFilterApiTest.php` | El hook `registerTabs` de un plugin aparece en `GET /entities/{slug}/tabs` |
 | `CommentsPluginTest.php` | Instalación del plugin `comments` y sus endpoints de listar/crear comentarios |
-| `ExtensionRelationsTest.php` | Las extensiones validan su contenido contra su schema y soportan `relations` (STORY 10.5) |
+| `ExtensionRelationsTest.php` | Las extensiones validan su contenido contra su schema y soportan `relations` |
 | `AppWiringTest.php` | Cableado de producción del container y router (`AuthMiddleware`, `HookDispatcher` compartido) |
 | `PluginManagerApiTest.php` | Endpoints REST de gestión de plugins (listar, sync, update, rollback, status, orden, config) |
 

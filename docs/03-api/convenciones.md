@@ -8,7 +8,7 @@
 ## Parámetros y filtros
 - Paginación: `?page=1&page_size=20`
 - Filtros: `?field=value`
-- Ordenación: `?sort=campo,-campo2`
+- Ordenación: `?sort=campo&direction=asc|desc` (un solo campo de orden)
 
 ## Status codes
 - 200 OK, 201 Created, 204 No Content
@@ -22,7 +22,24 @@
 
 ## Formato de respuesta
 - Siempre JSON
-- Envoltorio estándar: `{ ok, data, error }`
+- Envoltorio de éxito: `{ ok, data, meta? }`
+- Envoltorio de error: `{ ok, error: { code, message, details? } }`
+
+## Ejemplo de listado paginado (`meta`)
+```json
+{
+  "ok": true,
+  "data": [ ],
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total": 42,
+    "total_pages": 3,
+    "sort": "created_at",
+    "direction": "asc"
+  }
+}
+```
 
 ## Ejemplo de error
 ```json
@@ -30,8 +47,10 @@
   "ok": false,
   "error": {
     "code": 422,
-    "message": "Campo requerido: email",
-    "details": { "email": ["Obligatorio"] }
+    "message": "Validation failed.",
+    "details": [
+      { "field": "email", "code": "required", "message": "Obligatorio" }
+    ]
   }
 }
 ```

@@ -10,14 +10,9 @@ Aplicar MVC en backend PHP y frontend JS sin acoplar la UI del negocio al servid
 
 Representa datos core y metadata.
 
-- El catálogo de entidades se lee directamente de `plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`
-  (`manifest_json` reemplaza a las antiguas columnas `plugin_type`/`plugin_name`/`version` — STORY 10.3 §2bis). No existe un
-  modelo `SystemEntity` (fue eliminado por completo, no queda como facade) ni la tabla `system_entities`.
-- EntityMetadata
-- EntityData
-- PluginRegistry
-- PluginHookRegistry
-- User
+- El catálogo de entidades se lee directamente de `plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`.
+- La persistencia real vive en `backend/src/repositories/`: `GenericRepository` (CRUD JSONB genérico),
+  `PluginRepository`, `UserRepository`, `ConfigurationRepository`, `PluginUpdateHistoryRepository`.
 
 Responsabilidades:
 
@@ -29,13 +24,16 @@ Responsabilidades:
 
 Expone endpoints API y orquesta servicios.
 
-- EntityController — expone además `ReverseRelationTabResolver` (STORY 10.3 §9):
+- EntityController — expone además `ReverseRelationTabResolver`:
   `GET /entities/{slug}/tabs` mezcla las tabs registradas por plugins con las tabs
   automáticas de "relación inversa" cuando otra entidad declara una relación
   `belongs_to` hacia esta.
 - PluginManagerController
+- PluginExtensionController
 - AuthController
-- UpdateController
+- ConfigurationController
+- UserController
+- HealthController
 
 Responsabilidades:
 
@@ -49,7 +47,7 @@ La vista real se implementa en frontend JS consumiendo API.
 
 - DynamicForm
 - DynamicTable
-- EntityDetail
+- EntityEdit
 - DynamicTabs
 
 Responsabilidades:
@@ -70,10 +68,13 @@ raiz `app.js` es un bootstrap tecnico minimo: localiza `#app`, instancia
 	renderizado y comportamiento de interfaz.
 - `models/`: estado global, sesion, cliente API, helpers de base path y
 	runtime/registro de plugins frontend.
+- `services/`: servicios transversales de infraestructura de UI (por ejemplo
+	`UiResilienceService`) que no encajan como estado (`models/`) ni como
+	renderizado (`views/`).
 
 No deben existir carpetas o capas paralelas de primer nivel fuera de
-`controllers/`, `views/` y `models/`; el bootstrap raiz `app.js` no constituye
-una capa adicional.
+`controllers/`, `views/`, `models/` y `services/`; el bootstrap raiz `app.js`
+no constituye una capa adicional.
 
 ### Shell y layouts de pagina
 
@@ -94,9 +95,8 @@ El contrato completo y sus targets se documentan en
 
 - ValidationService
 - EntityService
-- PluginSyncService / PluginUpdateService / PluginStatusService
+- PluginSyncService / PluginUpdateService / PluginStatusService / PluginRollbackService
 - HookDispatcher
-- UpdateManager
 
 Nota: se usan servicios para evitar controladores gordos y mantener logica de negocio en una capa testeable.
 

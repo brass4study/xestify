@@ -6,8 +6,10 @@
   "ok": false,
   "error": {
     "code": 422,
-    "message": "Campo requerido: email",
-    "details": { "email": ["Obligatorio"] }
+    "message": "Validation failed.",
+    "details": [
+      { "field": "email", "code": "required", "message": "Obligatorio" }
+    ]
   }
 }
 ```
@@ -27,8 +29,10 @@
   "ok": false,
   "error": {
     "code": 422,
-    "message": "El campo 'name' es obligatorio",
-    "details": { "name": ["Obligatorio"] }
+    "message": "Validation failed.",
+    "details": [
+      { "field": "name", "code": "required", "message": "Obligatorio" }
+    ]
   }
 }
 ```

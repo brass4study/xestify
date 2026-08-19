@@ -124,8 +124,8 @@ XESTIFY_E2E_BASE_URL=http://127.0.0.1/otra-ruta/ npx playwright test
 | `input-select-viewport.spec.js` | 1 | Regresión: el panel de un selector de relación con muchas opciones se abre dentro del viewport, no por debajo |
 
 **Los 2 tests de regresión de `shell-navigation.spec.js`** documentan dos
-variantes de la misma condición de carrera de navegación encontrada durante
-STORY 11.2 (`AppController`/`EntityList`/`EntityEdit`): navegar a una
+variantes de la misma condición de carrera de navegación
+(`AppController`/`EntityList`/`EntityEdit`): navegar a una
 entidad mientras una llamada anterior (una redirección tras guardar, o una
 navegación previa) sigue en curso podía dejar la pantalla equivocada en
 pantalla. Ambos fuerzan el orden de las respuestas con `page.route()` en

@@ -5,11 +5,9 @@
 1. Plugin de entidad (`type: 'entity'` en el manifest)
 - Define una entidad reusable con su schema.
 - Al instalarse, registra una fila en `plugins` con `slug`, `status`, `manifest_json`
-  (refleja el `manifest.json` del plugin) y `schema_json` (refleja el `schema.json`).
-  No hay columnas `plugin_type`/`name`/`version`/`description` separadas
-  (STORY 10.3 §2bis) — todo eso vive dentro de `manifest_json`.
+  (refleja el `manifest.json` del plugin, incluyendo tipo, nombre técnico,
+  version y descripcion) y `schema_json` (refleja el `schema.json`).
 - Es el catalogo de entidades del sistema.
-- No existe tabla separada `system_entities`.
 - Ejemplo: `persons`.
 
 2. Plugin de extension (`type: 'extension'` en el manifest)
@@ -22,7 +20,7 @@
   required, label}` — más una clave `layer`) para enlazar a entidades
   catálogo reales; su propio `Hooks.php` debe embeberlas (junto con
   `entity`) en el tab que registra, porque `PluginPanelRegistry.build()` no
-  pasa el schema al panel (STORY 10.5). Ejemplo con historial de varios
+  pasa el schema al panel. Ejemplo con historial de varios
   registros por owner, relaciones y página de ficha independiente:
   `optometries`/`contact_lenses`.
 - Puede declarar un catálogo `layers` (`[{key, label}]`) en su
@@ -55,9 +53,8 @@ Notas:
   - `Xestify\plugins\<slug>\`
 
 **Catálogo y tests:**
-- Los tests de catálogo de entidades, validación y CRUD deben operar siempre sobre la tabla `plugins` y nunca sobre tablas legacy.
+- Los tests de catálogo de entidades, validación y CRUD deben operar siempre sobre la tabla `plugins`.
 - Los seeders y fixtures deben poblar la tabla `plugins` para entidades base.
-- El modelo `SystemEntity` fue eliminado por completo (no queda como facade ni en ninguna otra forma).
 
 ## manifest.json (minimo)
 
@@ -72,10 +69,9 @@ Notas:
 ```
 
 `name` es la identidad técnica fija (= carpeta, nunca editable); `label` es el
-nombre de negocio, editable por instancia desde `PluginConfig`. No existe una
-clave `slug` en el manifest — `slug` es solo una columna de la tabla `plugins`,
-editable a nivel de aplicación. Ver `docs/04-plugins/plantilla-plugin-entidad.md`
-para el detalle completo.
+nombre de negocio, editable por instancia desde `PluginConfig`. `slug` vive
+como columna editable de la tabla `plugins`, gestionada a nivel de aplicación.
+Ver `docs/04-plugins/plantilla-plugin-entidad.md` para el detalle completo.
 
 ## Descubrimiento y registro
 
@@ -122,7 +118,7 @@ El slug canonico de personas (clientes/distribuidores/oculistas) en el MVP es `p
   1. Obtiene tabs desde `/api/v1/entities/{slug}/tabs`.
   2. Importa dinamicamente `/plugins/{plugin_slug}/plugin.js`.
   3. Construye panel usando `PluginPanelRegistry`.
-- Excepción (STORY 10.3 §9): `/api/v1/entities/{slug}/tabs` también incluye tabs
+- Excepción: `/api/v1/entities/{slug}/tabs` también incluye tabs
   `type: 'relation'`, generadas automáticamente por el núcleo
   (`ReverseRelationTabResolver`) cuando otra entidad declara una relación
   `belongs_to` hacia esta — no vienen de ningún `plugin.js` ni pasan por
@@ -134,7 +130,7 @@ Contrato de panel frontend:
 - `element: HTMLElement`
 - `flush(resolvedId): Promise<void>`
 
-**Página independiente de ítem de plugin (STORY 10.5):** para un plugin
+**Página independiente de ítem de plugin:** para un plugin
 `extension` con **historial de varios registros por owner** (una ficha por
 fecha, no un único registro), el panel inline de arriba no basta — crear o
 editar cada ítem navega a una página propia y genérica,
@@ -152,7 +148,7 @@ plugin), con URL real (`#/entity/:slug/:id/:tab/:itemId` o
    solo aporta navegación y persistencia (Guardar/Cancelar/Eliminar).
 El panel inline dentro de `EntityEdit` (`{element, flush}`) queda entonces
 reducido a listar el historial (`DynamicTable`) y navegar a esta página —
-`flush()` pasa a ser un no-op, ya no hay staging en memoria.
+`flush()` es un no-op, sin staging en memoria.
 
 **Forma completa de un tab de plugin `extension`** devuelto por
 `registerTabs` (más allá del mínimo `{id, label, endpoint}`):
@@ -166,7 +162,7 @@ originales del plugin siguen teniendo UI escrita a mano en su `plugin.js`
 y nunca se embeben aquí; solo los que no tienen UI propia se renderizan de
 forma genérica en el formulario, según su `type`.
 
-## Convención `layers` (STORY 10.5)
+## Convención `layers`
 
 Un plugin (`entity` o `extension`) puede declarar opcionalmente un
 catálogo de **capas/zonas de UI con nombre** en su `manifest.json`:
@@ -256,9 +252,9 @@ implementadas — ver `docs/04-plugins/README.md`.
 - `comments` usa frontend propio en `plugin.js`.
 - `comments` persiste sus datos en `plugin_extension_data` con `plugin_slug='comments'`.
 
-**Caso ejemplo — historial con relaciones y capas (STORY 10.5):**
+**Caso ejemplo — historial con relaciones y capas:**
 - `optometries` (ficha de graduación) y `contact_lenses` (ficha de
-  lentillas) son plugins `extension` con `target_entity: "clients"`,
+  lentillas) son plugins `extension` con `target_entity: "persons"`,
   historial de varias fichas por persona (cada guardado crea un registro
   nuevo con su propia fecha) y relaciones `belongs_to` hacia catálogos
   reales (`ophthalmologists`, `distributors`, `brands`, `manufacturers`).

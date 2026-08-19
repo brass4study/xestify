@@ -20,7 +20,7 @@ raiz `app.js` es solo un bootstrap tecnico minimo que delega en `AppController`.
 `layout/`, `components/`, `modules/` y `pages/`; `models/` concentra estado,
 sesion, cliente API, helpers de base path y runtime de plugins.
 
-Desde STORY 9.5, las páginas autenticadas comparten una única instancia de
+Las páginas autenticadas comparten una única instancia de
 `ShellLayout`. `PageLayout`, `ListLayout` y `FormLayout` componen cabeceras,
 breadcrumbs, toolbars, contenido y acciones sin generar layouts paralelos.
 Login usa la plantilla standalone `login` de `PageLayout` y no monta navbar.
@@ -136,8 +136,8 @@ form.render();
 - [guia-extension.md](guia-extension.md): Cómo añadir páginas nuevas y puntos de integración de plugins en UI
 - [testing.md](testing.md): Jerarquía de tests de frontend y ejecución de la suite E2E
 - [renderizado-dinamico.md](renderizado-dinamico.md): Guía detallada de renderizado y mapeo de tipos
-- [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño de STORY 9.1 inspirados en Ant Design
-- [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy de STORY 9.2
+- [ui-foundations-ant.md](ui-foundations-ant.md): Fundamentos de diseño inspirados en Ant Design
+- [navegacion-anatomia.md](navegacion-anatomia.md): Contrato de navegación hash, anatomía de páginas y convenciones de copy
 - [layouts-guide.md](layouts-guide.md): Wiring directo Shell-Page y contratos fluent de PageLayout, ListLayout y FormLayout
 - [../backend/](../../backend/): Contratos de API y ejemplos de payload
 - [../04-plugins/](../04-plugins/): Plantillas y ejemplos de plugins

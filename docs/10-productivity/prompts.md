@@ -1898,6 +1898,94 @@ dedicados. Ambos escritos, y verificados como regresión real revirtiendo
 temporalmente cada fix con `git stash` — los 2 tests fallaron exactamente
 como se esperaba antes de restaurar la corrección.
 
+### STORY 11.3 — Auditoría de coherencia de documentación
+
+**Prompt inicial:**
+```
+Preparemos la implementacion de la story 11.3.
+
+La documentacion debe ser autoexplicativa.
+Textos a decisiones que ya no existen solo deben vivir en el 11-backlog o
+en 10-productivity. Por ejemplo:
+ - ¿Para que mencionar system_entities si ya no existe? Poner "Esta tabla
+   es la unica verdad por que system_entities fue eliminado en la release b"
+   no explica nada
+ - Decir `manifest_json` reemplaza antiguas columnas reemplazadas en STOY
+   10.3, no explica nada, esas columnas ya no existe, no son fuente de
+   verdad y no deberian estart en ninguna parte de la documentacion por que
+   ya no existe
+ - "sustituye a la antigua tabla `system_entities` (eliminada en Release B)"
+   no explica nada, si ya no existe, ¿para que puntualizarlo?
+
+Este tipo de puntualizaciones lo unico que hacen es ensuciar la
+documentacion, hacerla mas turbia y mas dificil de comprender para futuros
+desarrolladores. Acuerdate que por ahora todo este es un proyecto MVP, nadie
+ha leido la documentacion o probado la aplicacion. La documentacion debe
+parecer limpia. Las decisiones historicas solo deben vivvir en 11-backlog o
+en 10-productivity
+
+Si tienes cualquier duda o pregunta, no dudes en hacerme tandas de preguntas
+o sugerencias hasta que todo quede afinado y detallado al 100%
+```
+**Resultado:** en plan mode, dos preguntas de alcance antes de escribir el
+plan (`docs/09-history/` como tercera ubicación válida para narrativa
+histórica; fijar la regla de forma permanente en `AGENTS.md`, no solo
+aplicarla una vez). 3 agentes de exploración en paralelo auditaron `docs/01`
+a `docs/09` contra el código real y encontraron, además del ruido histórico
+señalado, contradicciones reales con el código (capa Model inventada en
+`mvc.md`, marketplace ficticio en `actualizaciones.md`, formato de error
+incorrecto, roles inexistentes) y numeración EPIC/STORY desalineada en 4
+documentos. Plan aprobado en 6 paquetes, ejecutados sobre 33 archivos +
+`AGENTS.md`, con `php backend/tests/run.php all` verde tras cada uno.
+
+**Corrección de proceso, no de contenido (a mitad de sesión, sobre un
+detour del `README.md` pedido aparte):**
+```
+He desecho los cambios que has hecho en README.md, no estaban todo mal,
+pero no deberias haber tomado decisiones por tu cuenta, deberias haberme
+preguntado por absolutamente todo en rondas de preguntas, hasta que todo
+quedase claramente definido. Por el orden de seccion, reescrituras, estilo
+de escritura, correcciones, eliminaciones, etc...
+```
+**Resultado:** memoria permanente ampliada
+(`feedback_discutir_antes_de_planificar`) para cubrir explícitamente
+reescrituras de contenido/documentación, no solo decisiones de
+seguridad/arquitectura/alcance — y para dejar claro que rige también fuera
+de plan mode. El `README.md` se rehizo completo en ~6 rondas de
+`AskUserQuestion` (diagnóstico, esqueleto de secciones con dos alternativas
+en preview, tratamiento de cada duplicado, tono, decoración) antes de
+escribir una sola línea, con confirmación explícita final antes de aplicar.
+
+**Segunda corrección, sobre el criterio de fondo de la story (tras cerrar
+los Paquetes 0-4 y una autorevisión del propio diff):**
+```
+Sigo viendo el mismo tipo de puntualizaciones en negativo que no deberian
+existir. Por ejemplo en plugins.md:
+"No hay columnas `plugin_type`/`name`/`version`/`description` separadas"
+Para que describir unos campos que no existen, lo que hay que documentar es
+lo que existe, no campos cambiados por una decision o refactorizacion
+historica.
+Esto sigue pasando en toda la documentacion, los arreglos hechos no son
+suficientes.
+```
+**Resultado:** generalización del criterio, no un parche del ejemplo dado.
+Localizado por grep el patrón de negación de estructura eliminada en 9
+puntos de 8 archivos, con un criterio explícito para no sobrecorregir
+(distinguir negaciones que solo tienen sentido conociendo algo ya eliminado
+de negaciones legítimas — condiciones de error de API, límites de diseño
+reales) documentado en el plan y aprobado antes de tocar nada. `AGENTS.md`
+ampliado con el ejemplo concreto del usuario para fijar la distinción de
+forma permanente. Verificación final: grep de ambos patrones (ruido
+histórico + negación de estructura eliminada) sobre `docs/` → cero
+apariciones fuera de `09-history`/`10-productivity`/`11-backlog`, y
+`php backend/tests/run.php all` 74/74 en verde.
+
+**Autorevisión pedida explícitamente antes de que el usuario revisara:**
+el propio diff completo (34 archivos, ~1180 líneas) se releyó entero antes
+de devolver el turno; encontró y corrigió una inconsistencia propia (una
+fila de `MASTER-brief.md` con un dato desactualizado — "17 runners" — justo
+al lado de una fila que sí se había actualizado en el mismo paquete).
+
 **Iteraciones:** 30+ (2 exploraciones de valoración previa, 4 preguntas de
 alcance, ~10 rondas de diagnóstico con specs de debug desechables para los
 2 bugs de aplicación, 1 tanda de autoevaluación + 2 preguntas de

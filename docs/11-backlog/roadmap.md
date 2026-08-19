@@ -1,7 +1,7 @@
 # Roadmap de Implementación - Xestify
 
 > **Última actualización:** 2026-08-18
-> **Estado del proyecto:** **STORY 11.2 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.3`
+> **Estado del proyecto:** **STORY 11.3 incluida** — EPIC 10 cerrada, `EPIC 11` en progreso, siguiente foco `STORY 11.4`
 
 ---
 
@@ -71,8 +71,16 @@ El corte funcional vigente del producto queda fijado en:
   carrera en la redirección tras guardar un registro, y posicionamiento del
   selector de relaciones fuera del viewport —, cada uno con su propio test
   de regresión dedicado)
-- siguiente foco funcional: `STORY 11.3` (auditoría de coherencia de
-  documentación, `EPIC 11`)
+- `STORY 11.3` completada (auditoría de coherencia de documentación:
+  `docs/01` a `docs/09` revisados contra el código real, contradicciones
+  reales corregidas — capa Model inventada en `mvc.md`, marketplace
+  ficticio en `actualizaciones.md`, formato de error incorrecto en
+  `03-api` —, `endpoints.md` completado con las 13 rutas que faltaban,
+  numeración EPIC/STORY realineada entre `backlog.md`/`roadmap.md`/
+  `MASTER-brief.md`/`ia-productivity-template.md`, y ruido histórico —
+  incluida la negación de estructura eliminada — eliminado de `docs/01-08`)
+- siguiente foco funcional: `STORY 11.4` (guion de defensa del TFM,
+  `EPIC 11`)
 
 ### Funcionalidades nucleares (Core)
 

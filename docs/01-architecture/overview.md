@@ -27,10 +27,9 @@ Xestify usa arquitectura micro-kernel local-first:
 - Campos variables en JSONB
 - Indices por slug, owner y contenido JSONB
 
-4. Marketplace central
-- Catalogo de plugins
-- Distribucion de paquetes versionados
-- Endpoint de actualizaciones
+4. Distribucion de plugins
+- Carpeta `plugins/` en disco, sincronizada a la tabla `plugins` con `PluginSyncService`
+- Actualizacion y rollback explicitos por administrador (ver `docs/08-operations/actualizaciones.md`)
 
 ## Reglas de diseno
 
@@ -38,7 +37,7 @@ Xestify usa arquitectura micro-kernel local-first:
 - Toda entidad vive como metadata + data
 - Toda extension se registra por hook
 - Toda actualizacion de plugin debe ser reversible
-- **`plugins` es la unica fuente de verdad para el catalogo de entidades** — `manifest_json->>'type' = 'entity'` sustituye a la antigua tabla `system_entities` (eliminada en Release B)
+- **`plugins` es la unica fuente de verdad para el catalogo de entidades** — filtro `manifest_json->>'type' = 'entity' AND status = 'active'`, sin tabla de catalogo paralela
 
 ## Flujo base
 
@@ -54,22 +53,24 @@ El flujo runtime de una peticion API protegida es:
 
 `Router -> AuthMiddleware -> Controller`
 
-Las rutas bajo `/api/v1/entities` y `/api/v1/plugins` requieren JWT. El
-`Router` construye una unica instancia `Request`, `AuthMiddleware` valida el
-token y adjunta `Request::user()`, y el controller recibe esa misma request.
-`/health` y `/api/v1/auth/login` permanecen publicas.
+Toda ruta requiere JWT por defecto: el `Router` marca cada ruta como
+protegida salvo que se declare explicitamente lo contrario, por lo que una
+ruta nueva nunca queda desprotegida por omision. `Router` construye una
+unica instancia `Request`, `AuthMiddleware` valida el token y adjunta
+`Request::user()`, y el controller recibe esa misma request. Las unicas
+rutas publicas son `/health` y `/api/v1/auth/login`.
 
 ## Paradigma de registro de entidades
 
 Todo tipo de entidad es un plugin de tipo `entity` instalado en la tabla `plugins`.
-No existe tabla separada de catálogo: el filtro
+El filtro
 `WHERE manifest_json->>'type' = 'entity' AND status = 'active'`
-sobre la tabla `plugins` reemplaza completamente a la antigua `system_entities` (eliminada en Release B).
+sobre la tabla `plugins` es la unica fuente del catalogo de entidades.
 
-La tabla `plugins` no tiene columnas propias `plugin_type`/`name`/`version`/
-`description`/`schema_version` (STORY 10.3 §2bis): son `id, slug, status,
-manifest_json, schema_json, installed_at, updated_at`, y `manifest_json` refleja
-el `manifest.json` real del plugin en disco.
+Las columnas reales de `plugins` son `id, slug, status, manifest_json,
+schema_json, sort_order, installed_at, updated_at`. El tipo, nombre tecnico,
+version y descripcion del plugin viven dentro de `manifest_json`, que
+refleja el `manifest.json` real del plugin en disco.
 
 **Consulta ejemplo:**
 ```sql

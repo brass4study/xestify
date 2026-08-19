@@ -1,10 +1,10 @@
-# STORY 9.2 - Fundamentos de navegacion y anatomia de paginas
+# Fundamentos de navegación y anatomía de páginas
 
 ## Objetivo
 
-Definir el contrato base de navegacion SPA y la anatomia objetivo de paginas para que
-las siguientes stories del EPIC 9 construyan componentes, shell y router sobre un
-mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cada vista.
+Definir el contrato base de navegacion SPA y la anatomia de paginas, para que
+los componentes, shell y router del frontend se construyan sobre un
+mapa consistente, sin hardcodear rutas o jerarquias de contenido en cada vista.
 
 ## Fuente de verdad
 
@@ -36,8 +36,8 @@ mapa consistente, sin volver a hardcodear rutas o jerarquias de contenido en cad
 - Plugin config: `Sistema > Plugins > Configuracion`.
 - Result states: `Area > Estado` cuando el contexto exista; si no, pantalla aislada.
 
-Estos breadcrumbs forman parte del contrato base definido en STORY 9.2. La
-implementacion visual reusable ya se materializa desde STORY 9.5 mediante
+Estos breadcrumbs forman parte del contrato base de navegacion. La
+implementacion visual reusable se materializa mediante
 `PageLayout` y el componente `Breadcrumb`, usando esta jerarquia como guia de
 render dentro del shell SPA.
 
@@ -58,7 +58,7 @@ render dentro del shell SPA.
 | Alta de ítem de plugin de extensión | `#/entity/:slug/:id/:tab/#new` | `plugin-item-edit` |
 | Ficha de ítem de plugin de extensión | `#/entity/:slug/:id/:tab/:itemId` | `plugin-item-edit` |
 
-Las dos últimas (STORY 10.5) navegan **siempre reconstruyendo la página**
+Las dos últimas navegan **siempre reconstruyendo la página**
 — a diferencia de un cambio de tab normal dentro de `EntityEdit` (que
 reutiliza la instancia sin remontar), ir a la ficha de un ítem de plugin
 instancia `PluginItemEdit.js` de nuevo. Solo aplican a plugins `extension`
@@ -66,7 +66,7 @@ con historial de varios registros por owner (ej. `optometries`,
 `contact_lenses`) — un plugin con panel inline simple (ej. `comments`) no
 las usa.
 
-### Rutas reservadas para stories siguientes
+### Rutas reservadas para funcionalidad futura
 
 | Vista | Hash | Uso previsto |
 |------|------|--------------|
@@ -128,13 +128,6 @@ plugins se crean una vez, quedan precargados y conservan su estado sin guardar.
 - Usar frases breves y accionables; los mensajes de error deben describir el problema y la siguiente accion posible.
 - Reservar terminologia tecnica estable en ingles para claves y payloads, y dejar el idioma visible a la capa de presentacion.
 
-Estas convenciones no externalizan textos todavia; solo dejan el contrato y la
-estructura listos para que STORY 9.7 aplique i18n y theming sin rehacer la
+Estas convenciones no externalizan textos todavia; dejan el contrato y la
+estructura listos para aplicar i18n y theming sin rehacer la
 anatomia de paginas definida aqui.
-
-## Estado de implementacion y stories siguientes
-
-- STORY 9.3 implementó los componentes `Page`, `PageHeader`, `Breadcrumb`, `Empty` y `Alert` sobre estas plantillas.
-- STORY 9.5 montó el shell SPA y los layouts de página usando estas áreas y jerarquías.
-- STORY 9.6 formalizó el router sobre el mapa centralizado en `RouteMapController.js` y `PluginRouteController.js`, con navegación programática, entrada directa, refresh y back/forward.
-- STORY 9.7 debe consolidar estado transversal, resiliencia, i18n y theming sobre este contrato de navegación ya cerrado.

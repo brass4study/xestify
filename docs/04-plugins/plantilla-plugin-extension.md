@@ -43,7 +43,7 @@ que el plugin no se pueda leer. `name` es la identidad técnica fija (= carpeta)
 ## schema.json base
 
 Un plugin `extension` declara `fields` y, opcionalmente, `relations`
-(mismo `belongs_to` que las entidades — STORY 10.5): no tiene `identities`
+(mismo `belongs_to` que las entidades): no tiene `identities`
 (eso sigue siendo un concepto exclusivo de la entidad a la que se acopla),
 pero sí puede enlazar sus propios campos a entidades catálogo reales.
 

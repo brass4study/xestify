@@ -19,14 +19,14 @@ Reducir superficie de ataque manteniendo versatilidad de plugins.
 
 ## Controles de autorizacion
 
-- Roles minimos: admin, operador, lectura
-- Permisos por entidad y accion
-- Permisos especiales para gestion de plugins
+- Dos niveles: `admin` (gate binario `hasRole('admin')` en cada endpoint
+  administrativo) y cualquier otro usuario autenticado (acceso a entidades y
+  registros)
+- Gestion de usuarios, plugins y configuracion reservada a `admin`
 
 ## Seguridad de plugins
 
 - Solo instalar desde fuentes confiables
-- Verificar checksum y metadatos
 - Bloquear plugin con incompatibilidad declarada
 - Sandbox logico para hooks
 

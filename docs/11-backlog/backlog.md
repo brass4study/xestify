@@ -1,13 +1,17 @@
-# Backlog Ejecutable - MVP Xestify (MASTER - 1 mes)
+# Backlog Ejecutable - MVP Xestify (TFM)
 
-## Estado implementado auditado (2026-08-10)
+## Estado implementado auditado (2026-08-19)
 
-El corte funcional actual queda fijado en **STORY 9.7 incluida**.
+El corte funcional actual queda fijado en **STORY 11.3 incluida**.
 
-- **EPIC 9 en progreso** con `STORY 9.1` a `STORY 9.7` implementadas y `STORY 9.8` como siguiente foco.
-- **STORY 9.6** ya implementada: mapa hash completo, navegación programática, entrada directa, refresh y back/forward con persistencia de contexto.
-- **STORY 9.7** ya implementada: estado global ampliado, resiliencia de UI, feedback compartido, i18n base y theming persistido.
-- Nota de trazabilidad: la decision arquitectonica final usa `plugins` como catalogo unico de entidades. Las referencias historicas a `system_entities`, `entity_metadata` o migraciones `009/010` describen decisiones/refactors previos, pero el repo actual usa las migraciones `001-005` y `plugins.schema_json`.
+- **EPIC 0 a EPIC 10** implementadas y cerradas al completo.
+- **EPIC 11 en progreso** (cierre formal del MVP): `STORY 11.1`, `STORY 11.2`
+  y `STORY 11.3` implementadas, `STORY 11.4` (guion de defensa del TFM) como
+  siguiente foco.
+- Nota de trazabilidad: la decision arquitectonica final usa `plugins` como
+  catalogo unico de entidades (`manifest_json->>'type' = 'entity'`). El
+  detalle de por que se llego a este modelo vive en
+  `docs/09-history/decisiones-tecnicas.md`, no aqui.
 
 ## Objetivo
 
@@ -1297,6 +1301,7 @@ Objetivo: Completar el MVP para la defensa del TFM: pulir la experiencia de logi
 Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpio y auditado, documentación coherente con la implementación real, guion de defensa verificado, y una verificación funcional E2E completa.
 
 ### STORY 11.1: Auditoría de código limpio
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** QA
@@ -1311,6 +1316,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Blockers:** Ninguno
 
 ### STORY 11.2: Verificación funcional E2E final
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** QA
@@ -1325,6 +1331,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Blockers:** Ninguno
 
 ### STORY 11.3: Auditoría de coherencia de documentación
+- **Estado:** ✅ Implementada
 - **Points:** 5
 - **Priority:** MUST
 - **Type:** Documentacion
@@ -1340,6 +1347,7 @@ Objetivo: Cerrar el proyecto con el rigor de un entregable de TFM: código limpi
 - **Blockers:** Ninguno
 
 ### STORY 11.4: Guion de defensa del TFM
+- **Estado:** ⏭ Pendiente
 - **Points:** 3
 - **Priority:** MUST
 - **Type:** Documentacion
@@ -1820,88 +1828,17 @@ real en `EntityEdit`/`EntityList` análoga a la ya construida para
 
 ---
 
-## 📊 Resumen del Backlog Académico (MVP: EPIC 0-11 · post-MVP: A1-A6, A10)
-
-### Conteo de Puntos por EPIC (MUST priority)
-
-| EPIC | Título | Puntos | Historias | Semana(s) |
-|------|--------|--------|-----------|-----------|
-| 0 | Setup técnico | 15 pts | 0.1-0.6 | Semana 1 |
-| 1 | Autenticación | 12 pts | 1.1-1.4 | Semana 1-2 |
-| 2 | Modelo de datos | 10 pts | 2.1-2.6 | Semana 2 |
-| 3 | Motor de entidades | 23 pts | 3.1-3.11 | Semana 2-3 |
-| 4 | Sistema de plugins | 13 pts | 4.1-4.5 | Semana 3 |
-| 5 | Frontend base | 15 pts | 5.1-5.3 | Semana 3-4 |
-| **TOTAL** | **40 puntos MUST** | **88 pts** | **25 historias** | **4 semanas** |
-
-> **Nota:** Los 88 puntos incluyen 40 MUST + 8 SHOULD. Para Master, enfocarse en completar 40 MUST en 4 semanas.
-
-### Breakdown por Semana (con IA)
-
-**Semana 1: EPIC 0 + EPIC 1 (inicio)**
-- Setup repo, DI container, router HTTP, Docker
-- Setup database schema, users table
-- **Estimado sin IA:** 54 horas
-- **Estimado con IA:** 30 horas (44% ahorro)
-
-**Semana 2: EPIC 1 (fin) + EPIC 2 + EPIC 3 (inicio)**
-- JWT auth, AuthController, AuthMiddleware
-- System entities schema, plugins_registry tabla
-- ValidationService, EntityService inicio
-- **Estimado sin IA:** 60 horas
-- **Estimado con IA:** 35 horas (42% ahorro)
-
-**Semana 3: EPIC 3 (fin) + EPIC 4 + EPIC 5 (inicio)**
-- EntityController REST, CRUD dinámico
-- Subsistema de plugins y ciclo de vida
-- Frontend login, navbar, Entity list/edit dinámico
-- **Estimado sin IA:** 56 horas
-- **Estimado con IA:** 32 horas (43% ahorro)
-
-**Semana 4: Polish + Testing + Documentation**
-- Integración E2E (login → crear cliente → guardar)
-- Tests unitarios críticos
-- README, guía instalación
-- Documentar IA usage metrics
-- **Estimado sin IA:** 40 horas
-- **Estimado con IA:** 24 horas (40% ahorro)
-
-### Aceleración Total Esperada
-
-- **Horas sin IA:** 210 horas (~5.25 semanas full-time)
-- **Horas con IA:** 121 horas (~3 semanas full-time)
-- **Factor de aceleración:** **1.74x** (42% de ahorro promedio)
-
-### Instrucciones de Uso
-
-1. **Lee primero:** [MASTER-brief.md](../09-history/MASTER-brief.md) - scope reducido, timeline, entregas
-2. **Copia template:** `ia-productivity-template.md` → `ia-productivity-analysis.md`
-3. **Para cada STORY:**
-   - Estima horas (ver tabla "Sin IA")
-   - Trabaja con IA (CodeVibe/Copilot)
-   - Registra tiempo real en `ia-productivity-analysis.md`
-   - Calcula aceleración %
-4. **Al final de Semana 4:** Compila análisis final de IA acceleration
-
-### Criterios de Aceptación Global
-
-✅ Repositorio clonado y funcional  
-✅ Login con JWT funciona  
-✅ CRUD dinámico: crear cliente, guardar, listar  
-✅ Plugin sistema básico operativo  
-✅ Frontend carga sin errores  
-✅ Docker Compose sube sin problemas  
-✅ Tests unitarios core: ValidationService, EntityService, JWT  
-✅ ia-productivity-analysis.md completado con métricas reales  
-
----
-
 ## Notas Importantes
 
-- **Puntos son relativos:** Si una historia toma más de lo previsto, ajusta estimación en tiempo real.
-- **IA va a acelerar:** Usa CodeVibe para generar boilerplate, tests, documentación.
-- **Foco en flujo E2E:** Semana 4 debe tener el flujo completo: login → crear entidad → guardar funcionando end-to-end.
-- **OUT OF SCOPE para Master:** A1 (Ajustes finos de UI/UX), A2 (Operación técnica), A3 (Marketplace), A4 (QA y calidad), A5 (Auditoría funcional), A6 (Matriz de permisos), A7 (Hardening sesiones), A8 (Panel health técnico), A9 (Export/import config).
+- **Puntos son relativos:** si una historia toma más de lo previsto, ajusta la estimación en tiempo real.
+- **Estado y métricas reales:** el resumen de puntos por EPIC, la aceleración
+  real con IA y el calendario ejecutado viven en
+  [docs/11-backlog/roadmap.md](roadmap.md) y
+  [docs/10-productivity/productividad.md](../10-productivity/productividad.md);
+  este backlog define alcance y criterios por story, no una estimación
+  cerrada de calendario.
+- **Post-MVP:** `A1`-`A6` y `A10` quedan fuera del corte del MVP (ver los
+  EPICs correspondientes arriba).
 
 ---
 

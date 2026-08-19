@@ -24,8 +24,10 @@
   "ok": false,
   "error": {
     "code": 422,
-    "message": "El campo 'email' es obligatorio",
-    "details": { "email": ["Obligatorio"] }
+    "message": "Validation failed.",
+    "details": [
+      { "field": "email", "code": "required", "message": "Obligatorio" }
+    ]
   }
 }
 ```

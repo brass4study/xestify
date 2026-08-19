@@ -1,4 +1,4 @@
-# STORY 9.1 - Fundamentos de diseño (concepto Ant Design)
+# Fundamentos de diseño (concepto Ant Design)
 
 ## Objetivo
 
@@ -35,7 +35,7 @@ Definidos en `frontend/tailwind.config.cjs`:
 
 ## Mapeo inicial a componentes del MVP
 
-La Story 9.1 establece las bases para la librería de 9.3 con equivalencias conceptuales:
+Base para la librería de componentes, con equivalencias conceptuales:
 
 - `Button`: botón semántico (primario/secundario/peligro) implementado con utilidades Tailwind y atributos `data-role` cuando se necesita anclaje estable.
 - `Typography`: títulos/subtítulos con jerarquía estable.
@@ -52,10 +52,4 @@ La Story 9.1 establece las bases para la librería de 9.3 con equivalencias conc
 - `frontend/src/css/main.css` queda restringido a **overrides mínimos** justificados.
 - Los botones de accion de tablas pueden ajustar el tamaño del icono inline cuando el foco es la legibilidad del glyph; no se deben crear clases CSS paralelas para ese caso.
 - Los iconos se implementan siempre con Font Awesome (`fa-solid`, `aria-hidden="true"`), cargado vía CDN en `index.html`; no se mezclan SVG inline ni glifos Unicode como alternativa.
-- Excepción vigente a "Tailwind como capa principal": `frontend/src/css/brand.css` (Logo/BrandLogo, STORY 10.1) es CSS a mano, sin utilidades Tailwind, por requerir un layout de marca (chevrons superpuestos, tipografía a medida) que las utilidades no expresan con la misma fidelidad. Sigue reaccionando a los tokens de tema (`--x-brand-*`) igual que el resto de componentes.
-
-## Siguientes pasos (EPIC 9)
-
-- STORY 9.2: anatomía de páginas y navegación SPA.
-- STORY 9.3: formalizar API de componentes base reutilizables.
-- STORY 9.4+: modularización, shell completo, resiliencia y UX transversal.
+- Excepción vigente a "Tailwind como capa principal": `frontend/src/css/brand.css` (Logo/BrandLogo) es CSS a mano, sin utilidades Tailwind, por requerir un layout de marca (chevrons superpuestos, tipografía a medida) que las utilidades no expresan con la misma fidelidad. Sigue reaccionando a los tokens de tema (`--x-brand-*`) igual que el resto de componentes.

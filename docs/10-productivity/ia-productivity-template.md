@@ -219,23 +219,23 @@ Generate a comprehensive .gitignore that includes:
 - [X] STORY 9.6: Implementación del routing SPA
 - [X] STORY 9.7: Infraestructura transversal de frontend y resiliencia
 - [X] STORY 9.8: UX transversal, accesibilidad y microinteracciones
-- [ ] STORY 9.9: Documentación de arquitectura frontend y testing UI automatizado
+- [X] STORY 9.9: Documentación de arquitectura frontend y testing UI automatizado
 
 ### EPIC 10: Login, Persons y Plugins de Demostración
 
-- [ ] STORY 10.1: Mejoras en la sección de login
-- [ ] STORY 10.2: Renombrar plugin `clients` a `persons`
-- [ ] STORY 10.3: Desacoplar `plugin_name` de `slug` y descripción editable con i18n
-- [ ] STORY 10.4: Plugins de demostración — entidades
-- [ ] STORY 10.5: Plugins de demostración — extensiones
-- [ ] STORY 10.6: Datos de ejemplo para los plugins de demostración
+- [X] STORY 10.1: Mejoras en la sección de login
+- [X] STORY 10.2: Renombrar plugin `clients` a `persons`
+- [X] STORY 10.3: Desacoplar `plugin_name` de `slug` y descripción editable con i18n
+- [X] STORY 10.4: Plugins de demostración — entidades
+- [X] STORY 10.5: Plugins de demostración — extensiones
+- [X] STORY 10.6: Datos de ejemplo para los plugins de demostración
 
 ### EPIC 11: Cierre Formal y Exhaustivo del MVP
 
-- [ ] STORY 11.1: Auditoría de código limpio
-- [ ] STORY 11.2: Auditoría de coherencia de documentación
-- [ ] STORY 11.3: Guion de defensa del TFM
-- [ ] STORY 11.4: Verificación funcional E2E final
+- [X] STORY 11.1: Auditoría de código limpio
+- [X] STORY 11.2: Verificación funcional E2E final
+- [ ] STORY 11.3: Auditoría de coherencia de documentación
+- [ ] STORY 11.4: Guion de defensa del TFM
 
 ### Adición post-MVP: A1 (Ajustes Finos de UI/UX)
 
@@ -278,6 +278,11 @@ Generate a comprehensive .gitignore that includes:
 - [ ] STORY A6.2: AuthorizationService con permisos por acción
 - [ ] STORY A6.3: Enforcement en endpoints críticos
 - [ ] STORY A6.4: UI condicional por permisos
+
+### Adición post-MVP: A10 (Relaciones Avanzadas — `has_many`/`has_one`)
+
+- [ ] STORY A10.1: Configuración de relaciones `has_many`/`has_one` en `PluginConfig`
+- [ ] STORY A10.2: Visibilidad de `has_many`/`has_one` en `EntityEdit`
 
 ---
 

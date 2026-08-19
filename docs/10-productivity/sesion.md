@@ -430,17 +430,19 @@ Story completada. Archivos creados/modificados:
 |-------|-------------|--------|--------------|
 | 11.1 ✅ | Auditoría de código limpio | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 69/69 archivos en verde (ejecutado tras cada tanda de cambios); SonarQube (`skills/review-sonarqube-clean-code`) 38→0 hallazgos pendientes (0 críticos/bloqueantes; los 2 últimos, hotspots `mt_rand`, revisados y marcados `// NOSONAR`); `frontend/tests/e2e/tests/entity-crud.spec.js` 2/2 Playwright contra runtime real ✅ |
 | 11.2 ✅ | Verificación funcional E2E final | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 72/72 archivos en verde (69 + 2 huérfanos registrados + 1 test nuevo del seeder); `npx playwright test` 21/21 tests (8 specs) en verde contra runtime Apache+PHP real, incluye 3 specs nuevas y 5 extendidas; recorrido manual real en navegador headed con pantallazos; 3 bugs funcionales reales encontrados y corregidos, cada uno con su propio test de regresión dedicado (verificado revirtiendo la corrección para confirmar que falla sin ella) ✅ |
+| 11.3 ✅ | Auditoría de coherencia de documentación | `pendiente (este commit)` | Backend `php backend/tests/run.php all` 74/74 archivos en verde (sin código tocado, solo documentación); grep final de `system_entities\|entity_metadata\|Release A\|Release B\|STORY \d+\.\d+` y de patrones de negación de estructura eliminada (`no hay columnas\|no tiene columna\|No existe tabla\|no una columna propia`) sobre `docs/`: cero apariciones fuera de `docs/09-history/`, `docs/10-productivity/`, `docs/11-backlog/` ✅ |
 
 **Detalle de la story 11.1:** ver sesión completa más abajo (2026-08-18).
 **Detalle de la story 11.2:** ver sesión completa más abajo (2026-08-18).
+**Detalle de la story 11.3:** ver sesión completa más abajo (2026-08-19).
 
 ---
 
 ## Última actualización
 
-**Fecha:** 2026-08-18
-**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.2` completada
-**Próxima story:** STORY 11.3 - Auditoría de coherencia de documentación (EPIC 11)
+**Fecha:** 2026-08-19
+**EPIC activo:** EPIC 11 - Cierre Formal y Exhaustivo del MVP (EN PROGRESO) — `STORY 11.3` completada
+**Próxima story:** STORY 11.4 - Guion de defensa del TFM (EPIC 11)
 
 ---
 
@@ -2213,5 +2215,154 @@ real que tenía el fichero cuando se creó entonces, no una referencia rota.
   asumir una limitación o una clasificación sin comprobarla primero.
 - Backlog alineado: STORY 11.2 queda implementada; el siguiente punto es
   STORY 11.3 (`EPIC 11`, auditoría de coherencia de documentación).
+
+---
+
+## Sesion 2026-08-19 - STORY 11.3 Auditoría de coherencia de documentación
+
+Story completada, en varias rondas de corrección del usuario sobre el
+mismo criterio de fondo. Auditoría inicial: 3 agentes Explore en paralelo
+leyeron completos los `.md` de `docs/01` a `docs/09` y los contrastaron
+contra el código real (`backend/src/**`, `backend/database/schema/**`,
+`frontend/src/js/**`, `routes.php`, plugins reales), encontrando tres tipos
+de problema, no solo ruido histórico:
+
+1. **Ruido histórico:** tags `(STORY X.X §Y)`, "eliminado en Release A/B",
+   citas de story como justificación — repartidos por `01-architecture`,
+   `02-entities`, `04-plugins`, `03-api`, `05-frontend`, `06-backend`.
+2. **Contradicciones reales con el código:** `mvc.md` describía una capa
+   "Model" de backend inventada (`EntityMetadata`, `EntityData`,
+   `PluginRegistry`, `PluginHookRegistry`, un `UpdateController` y un
+   `UpdateManager` que no existen, `EntityDetail` en vez de `EntityEdit` real
+   en la capa View) y omitía `frontend/src/js/services/`;
+   `docs/08-operations/actualizaciones.md` describía un sistema de
+   "marketplace" con endpoints `/api/v1/updates/*` nunca implementados;
+   `docs/03-api/` documentaba tres formatos distintos del envoltorio de
+   error, ninguno igual al real (`ValidationResult::errors()`); citaba un rol
+   `lectura` y "permisos por entidad" inexistentes (el modelo real es un
+   único gate binario `hasRole('admin')`); faltaba la columna real
+   `sort_order` de `plugins`.
+3. **Numeración EPIC/STORY desalineada:** `ia-productivity-template.md`
+   tenía las STORY 11.2/11.3/11.4 en orden distinto al de
+   `backlog.md`/`roadmap.md`; `docs/09-history/MASTER-brief.md` — el
+   documento pensado para la defensa del TFM — seguía fijando el corte en
+   STORY 9.6 con EPIC 10/11 enteras marcadas como pendientes; la cabecera de
+   `backlog.md` seguía en STORY 9.7; `docs/README.md` (índice de `docs/`) en
+   "siguiente foco STORY 11.1".
+
+**Ejecución en paquetes** (plan mode, aprobado por el usuario antes de cada
+tanda):
+
+- **Paquete 0:** regla nueva en `AGENTS.md` — `docs/01-architecture` a
+  `docs/08-operations` describe solo el estado actual; el contenido
+  histórico (decisiones pasadas, releases, tablas/columnas eliminadas, citas
+  `STORY X.X` como justificación) solo puede vivir en `docs/09-history/`,
+  `docs/10-productivity/` o `docs/11-backlog/`.
+- **Paquete 1:** corrección de las contradicciones reales (punto 2 arriba):
+  `mvc.md` reescrito con la estructura real de controllers/repositorios/
+  servicios; `actualizaciones.md` reescrito con el flujo real
+  sync/update/rollback; formato de error unificado en 4 archivos de
+  `03-api`; roles/permisos ficticios corregidos en `autenticacion.md`/
+  `modelo-seguridad-local.md`; columna `sort_order` añadida; alcance real de
+  JWT corregido (protegido por defecto, no solo `entities`/`plugins`).
+- **Paquete 2:** `docs/03-api/endpoints.md` completado con las 13 rutas
+  reales que faltaban (`configurations`, `users`, `entities/{slug}/options`,
+  `plugins/{slug}/move-up`/`move-down`) + contratos nuevos.
+- **Paquete 3:** numeración EPIC/STORY realineada en
+  `ia-productivity-template.md`, `MASTER-brief.md` (el más desalineado),
+  `backlog.md` y `docs/README.md`.
+- **Paquete 4:** limpieza de tags `STORY X.X` y menciones de Release
+  restantes en el resto de `01-08`; una nota histórica legítima de
+  `hooks.md` (tabla `plugin_hooks` descartada) movida a
+  `docs/09-history/historial-decisiones.md` como DECISION 8, en vez de
+  borrada.
+
+**Trabajo relacionado, fuera del alcance formal de esta story:** en medio de
+la sesión el usuario pidió reescribir el `README.md` raíz (roto/desordenado,
+con secciones duplicadas y una sección "Sistema de plugins" cortada a mitad
+de frase) — se hizo aparte, en rondas de `AskUserQuestion` sobre estructura/
+estilo/decoración una por una, tras un aviso explícito del usuario de que no
+debía tomar esas decisiones por mi cuenta (ver más abajo). Ese trabajo no
+forma parte de los criterios de STORY 11.3 y no se detalla aquí.
+
+**Primera corrección del usuario — proceso, no contenido:** tras la
+reescritura del `README.md` sin rondas de preguntas previas, el usuario
+deshizo los cambios y corrigió: el contenido "no estaba todo mal", pero no
+debí decidir unilateralmente estructura/orden/estilo/eliminaciones sin
+preguntar antes. Se guardó como memoria permanente (`feedback_discutir_antes_de_planificar`,
+ampliada) y se rehizo el README completo en ~6 rondas de `AskUserQuestion`
+antes de escribir una sola línea.
+
+**Segunda corrección del usuario — el ruido histórico seguía ahí, más
+sutil:** tras cerrar los Paquetes 0-4 y una autorevisión (que encontró y
+corrigió una fila desactualizada en la tabla comparativa de
+`MASTER-brief.md`), el usuario señaló que la limpieza era insuficiente:
+aunque ya no quedaban tags `STORY X.X` ni "Release A/B", seguía existiendo
+un patrón más sutil de la misma raíz — describir el sistema **por negación
+de una estructura eliminada** ("no hay columnas `plugin_type`/`name`/
+`version`/`description` separadas — todo eso vive dentro de `manifest_json`")
+en vez de describirlo afirmativamente. La regla del Paquete 0 ya prohibía
+nombrar "tablas/columnas eliminadas", pero el patrón se coló igual porque no
+usaba tags de story ni la palabra "eliminada".
+
+- **Paquete 5:** reescritura afirmativa de 9 instancias en 8 archivos
+  (`overview.md`, `mvc.md`, `plugins.md`, `hooks.md`, `02-entities/README.md`,
+  `postgresql-jsonb.md`, `contratos/plugins.md`,
+  `plantilla-plugin-entidad.md`), con un criterio explícito para no
+  sobrecorregir: solo se reescriben frases que solo tienen sentido si el
+  lector conoce una estructura previa ya eliminada; se conservan las
+  negaciones que describen un límite real y autocontenido del sistema actual
+  (p. ej. "404 si el slug no existe", o los dos test names de
+  `06-backend/testing.md` que describen el propósito literal de un test de
+  regresión).
+- **Paquete 6:** `AGENTS.md` ampliado con el ejemplo concreto del usuario,
+  para fijar la distinción de forma permanente.
+
+**Dos ajustes menores adicionales pedidos por el usuario tras revisar:**
+título de `backlog.md` corregido (`(MASTER - 1 mes)` → `(TFM)`, el proyecto
+real llevó ~3.5 meses, no 1); sección `### Adición post-MVP: A10` añadida a
+`ia-productivity-template.md` (faltaba, A5/A6 sí estaban ya cubiertos).
+
+**Incidente aparte, no relacionado con el trabajo de esta story:** a mitad
+de sesión se detectó que `AGENTS.md` había perdido el paso "actualizar
+`README.md`" de la REGLA OBLIGATORIA de cierre de story (ver "Errores y
+lecciones aprendidas" más abajo) — el usuario confirmó que fue un cambio
+manual suyo, deliberado. Memoria `feedback_readme_cierre_story` actualizada
+para reflejar que esa regla ya no está vigente.
+
+**Archivos modificados:** 33 archivos de `docs/` + `AGENTS.md` (ver diff
+completo en el commit). Ningún archivo de código (`backend/src`,
+`frontend/src`, `plugins/`) se tocó — confirmado con
+`php backend/tests/run.php all` en verde después de cada paquete.
+
+**Tests finales:**
+- Backend: `php backend/tests/run.php all` → 74/74 archivos en verde
+  (ejecutado después de cada paquete, sin cambios de código en ningún
+  momento).
+- Grep de verificación final: `system_entities|entity_metadata|Release A|
+  Release B|STORY \d+\.\d+` y `no hay columnas|no tiene columna|No existe
+  tabla|no una columna propia|no existen columnas` sobre `docs/` → cero
+  apariciones fuera de `docs/09-history/`, `docs/10-productivity/`,
+  `docs/11-backlog/`.
+
+**Cierre verificado (2026-08-19):**
+- Commit de story: pendiente (este commit)
+- Verificación crítica: la auditoría no se quedó en "quitar menciones de
+  story" — encontró y corrigió bugs reales de documentación (capa Model
+  inventada en `mvc.md`, sistema de marketplace ficticio en
+  `actualizaciones.md`, formato de error incorrecto en 4 archivos de
+  `03-api`) que habrían inducido a error a cualquiera que usara esos
+  documentos como mapa del código real.
+- Lección de proceso (dos correcciones del usuario en la misma story): la
+  primera — no tomar decisiones de estructura/estilo de un documento
+  visible sin pasar por rondas de preguntas primero, ni siquiera cuando el
+  diagnóstico técnico es correcto. La segunda — una regla de estilo nueva
+  ("nada de ruido histórico") no basta con aplicarla contra los síntomas ya
+  vistos (tags de story, "Release B"); hay que verificar la generalización
+  completa del principio (aquí: cualquier negación que solo tiene sentido
+  conociendo algo que ya no existe), no solo los ejemplos concretos que se
+  dieron al principio.
+- Backlog alineado: STORY 11.3 queda implementada; el siguiente punto es
+  STORY 11.4 (`EPIC 11`, guion de defensa del TFM).
 
 ---

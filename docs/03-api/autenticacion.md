@@ -13,9 +13,10 @@
   forma transparente y lo persiste vía `SessionModel`.
 
 ## Roles y permisos
-- admin: acceso total
-- operador: acceso a entidades y registros
-- lectura: solo consulta
+- `admin`: además del acceso estándar, puede gestionar usuarios, plugins y
+  configuración (gate binario `hasRole('admin')` por endpoint administrativo)
+- Cualquier otro usuario autenticado: acceso a entidades y registros, sin
+  las operaciones administrativas anteriores
 
 ## Ejemplo de login
 ```json

@@ -36,8 +36,7 @@ Notas:
 
 `name` es la identidad tecnica fija del plugin (= nombre de carpeta, igual al
 namespace PHP) y **nunca** se muestra ni se edita desde `PluginConfig` — se guarda
-tal cual en `manifest_json.name` (STORY 10.3 §2bis) y nunca cambia tras la
-instalacion. `label` es el nombre de negocio editable por instancia (p. ej. "Clientes"
+tal cual en `manifest_json.name` y nunca cambia tras la instalacion. `label` es el nombre de negocio editable por instancia (p. ej. "Clientes"
 en vez de "Personas"): se instala con el valor de este manifest por defecto, pero el
 admin puede cambiarlo desde `PluginConfig` sin que un `syncAll()`/`update()`
 posterior lo sobrescriba. `label_singular` (solo en plugins `entity`) es fijo y
@@ -200,17 +199,16 @@ Esto lo hace siempre `PluginSyncService::installFromManifest()` (invocado por
 un plugin de entidad tipico no necesita hacer nada en `onInstall()` — ver
 `plugins/persons/Lifecycle.php` como ejemplo de no-op.
 
-`plugin_name` (= `manifest_json.name`, no una columna propia — STORY 10.3 §2bis) es
+`plugin_name` (= `manifest_json.name`) es
 la identidad tecnica fija del plugin (= nombre de carpeta, igual al namespace PHP) y
 nunca cambia tras la instalacion; `slug` es editable desde `PluginConfig`
-(STORY 10.3) y solo sirve para navegacion/URL. `plugin_name` no es unico: pueden
+y solo sirve para navegacion/URL. `plugin_name` no es unico: pueden
 coexistir varias filas con el mismo `plugin_name` y distinto `slug` (varias
 instancias del mismo plugin). En el alta inicial de una instancia, `slug` coincide
 con `plugin_name` salvo que se indique uno distinto explicitamente.
 
-**No escribir en `system_entities`** - esa tabla fue eliminada en Release B.
-`plugins` ya no tiene una columna `plugin_type`: el tipo vive en `manifest_json`
-(STORY 10.3 §2bis). Toda consulta al catalogo de entidades usa:
+El tipo del plugin vive en `manifest_json->>'type'`.
+Toda consulta al catalogo de entidades usa:
 `SELECT * FROM plugins WHERE manifest_json->>'type' = 'entity' AND status = 'active'`.
 
 ## Unicidad de un campo en Hooks.php

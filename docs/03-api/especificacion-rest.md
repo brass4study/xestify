@@ -31,12 +31,13 @@
 {
   "ok": false,
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Payload invalido",
+    "code": 422,
+    "message": "Validation failed.",
     "details": [
       {
         "field": "email",
-        "reason": "required"
+        "code": "required",
+        "message": "Obligatorio"
       }
     ]
   }

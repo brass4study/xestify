@@ -30,8 +30,7 @@ transversales, ver [arquitectura.md](arquitectura.md).
 5. **Reusar la infraestructura transversal**: estados de carga/vacío/error y
    notificaciones van siempre por `UiResilienceService`
    (`setViewState`/`clearViewState`, `showNotification`, `confirm`,
-   `setButtonPending`). No repliques estos estados a mano por página — es
-   precisamente lo que consolidó STORY 9.7/9.8.
+   `setButtonPending`). No repliques estos estados a mano por página.
 6. **Añadir tests**:
    - Un runner HTML en `frontend/tests/integration/MiPaginaTest.html`
      (componente/integración con `fetch` mockeado, patrón de
@@ -66,10 +65,10 @@ esta sección solo cubre el primero:
    `entity`, que aportan un catálogo completo): añaden una pestaña y un panel
    propio dentro de `EntityEdit` para una entidad destino (`target_entity` en su
    manifest). Es el flujo que describe el resto de esta sección.
-2. **Tabs de "relación inversa" (STORY 10.3 §9)**, `{type: "relation"}`: las
+2. **Tabs de "relación inversa"**, `{type: "relation"}`: las
    genera automáticamente el **núcleo** (`ReverseRelationTabResolver` en
    backend) cuando otra entidad activa declara una relación `belongs_to` hacia
-   la entidad actual (grid "Relaciones" de `PluginConfig`, STORY 10.3 §8). **No
+   la entidad actual (grid "Relaciones" de `PluginConfig`). **No
    tienen `plugin.js` propio, no pasan por `PluginPanelRegistry` y `EntityEdit`
    las excluye explícitamente del import dinámico** (`#loadPluginModules`
    filtra `tab.type !== 'relation'`) — construye directamente un
@@ -93,8 +92,8 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
    `docs/04-plugins/`) devolviendo `{ id, label, endpoint }` por cada tab que
    aporta para la entidad activa (opcionalmente también `icon`,
    `plugin_name`, `entity` y `relations`/`fields` si el plugin declara
-   relaciones o campos añadidos después vía "Añadir campo" — STORY 10.5,
-   ver `docs/01-architecture/hooks.md`).
+   relaciones o campos añadidos después vía "Añadir campo" — ver
+   `docs/01-architecture/hooks.md`).
 2. **Frontend — carga**: `EntityEdit` pide `GET /entities/{slug}/tabs`,
    importa dinámicamente `plugins/{plugin_name}/plugin.js` para cada tab de
    plugin recibida (`#loadPluginModules`, usa `tab.plugin_name`, la identidad
@@ -131,9 +130,9 @@ Flujo completo, usando `plugins/comments/plugin.js` como referencia real:
 ## Añadir un plugin de extensión con historial de ítems en página independiente
 
 Aplica cuando el plugin guarda **varios registros por owner** (una ficha
-por fecha, no un único registro — ej. `optometries`, `contact_lenses`,
-STORY 10.5), a diferencia del panel inline simple de la sección anterior
-(un solo registro, ej. `comments`).
+por fecha, no un único registro — ej. `optometries`, `contact_lenses`), a
+diferencia del panel inline simple de la sección anterior (un solo
+registro, ej. `comments`).
 
 Contrato adicional sobre el de arriba:
 - `plugin.js` exporta `buildDetailForm(content, relations, loadOptions,

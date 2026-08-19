@@ -6,7 +6,7 @@ Esta carpeta contiene plantillas, ejemplos y documentación sobre el desarrollo 
 
 ## Tipos de plugin
 
-- **Plugin de entidad** (`type: "entity"`): define una entidad base reusable (ejemplo: `persons`). Gestiona su propio schema y lógica de validación. Se registra en la tabla `plugins`, cuya columna `manifest_json` refleja en vivo el `manifest.json` del plugin (STORY 10.3 §2bis) y `schema_json` el `schema.json`.
+- **Plugin de entidad** (`type: "entity"`): define una entidad base reusable (ejemplo: `persons`). Gestiona su propio schema y lógica de validación. Se registra en la tabla `plugins`, cuya columna `manifest_json` refleja en vivo el `manifest.json` del plugin y `schema_json` el `schema.json`.
 - **Plugin de extensión** (`type: "extension"`): amplía el comportamiento de una entidad existente mediante hooks y UI adicional (ejemplo: `comments`). Puede inyectar tabs, acciones o paneles personalizados.
 
 ---
@@ -32,7 +32,7 @@ Esta carpeta contiene plantillas, ejemplos y documentación sobre el desarrollo 
 ## Ejemplo real: plugin de entidad `persons`
 
 - [plugins/persons/manifest.json](../../plugins/persons/manifest.json): metadatos y compatibilidad
-- [plugins/persons/schema.json](../../plugins/persons/schema.json): definición de campos, custom_fields e identidades (el bloque `relations` es funcional desde STORY 10.3 §8 — editable desde la sección "Relaciones" de `PluginConfig`, validado al guardar)
+- [plugins/persons/schema.json](../../plugins/persons/schema.json): definición de campos, custom_fields e identidades (el bloque `relations` es editable desde la sección "Relaciones" de `PluginConfig`, validado al guardar)
 - [plugins/persons/Hooks.php](../../plugins/persons/Hooks.php): validación de unicidad de email
 - [plugins/persons/Lifecycle.php](../../plugins/persons/Lifecycle.php): registro y activación
 
