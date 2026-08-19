@@ -23,9 +23,12 @@ hacer a continuacion.
 
 ## Estado del MVP
 
-- El corte oficial del MVP esta implementado hasta la Story 6.4 incluida.
-- No implementar Story 6.5 ni PluginManager salvo peticion explicita.
-- Si se actualiza documentacion de estado, reflejar que 6.5+ sigue pendiente.
+- El MVP esta cerrado: EPIC 0 a EPIC 11 completas.
+- Unica pendiente: STORY 11.4 (guion de defensa del TFM), que no es
+  tecnica y no condiciona el trabajo de codigo.
+- Si se actualiza documentacion de estado, reflejar el estado real leyendo
+  `docs/10-productivity/sesion.md` y `docs/11-backlog/backlog.md` en vez de
+  copiar este resumen sin comprobarlo.
 
 ## REGLA OBLIGATORIA: actualizar docs/ia antes de cada commit
 
