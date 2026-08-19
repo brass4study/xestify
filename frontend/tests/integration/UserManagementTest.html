@@ -112,6 +112,10 @@
     const rows = container.querySelectorAll('tbody tr');
     assertEquals(rows.length, 2, 'Debe mostrar dos filas de usuarios');
 
+    const fechaAltaIndex = headers.indexOf('Fecha alta');
+    const firstRowCells = Array.from(rows[0].querySelectorAll('td')).map((td) => td.textContent.trim());
+    assertEquals(firstRowCells[fechaAltaIndex], '01/08/2026', 'Fecha alta debe mostrarse en formato dd/mm/yyyy con ceros, igual que el resto de tablas');
+
     const hasResetInTable = Array.from(container.querySelectorAll('tbody button')).some((button) => button.textContent.includes('Reset'));
     assertTrue(!hasResetInTable, 'La tabla no debe incluir acción de reset');
   });

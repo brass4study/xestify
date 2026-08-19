@@ -105,7 +105,7 @@ export class UserManager {
 			name: displayName(user),
 			email: displayEmail(user),
 			roles: this.#displayRoles(user),
-			created_at: this.#formatDate(user?.created_at),
+			created_at: user?.created_at,
 		}));
 
 		const schema = {
@@ -113,7 +113,7 @@ export class UserManager {
 				{ name: 'name', label: 'Nombre' },
 				{ name: 'email', label: 'Email' },
 				{ name: 'roles', label: 'Roles' },
-				{ name: 'created_at', label: 'Fecha alta' },
+				{ name: 'created_at', label: 'Fecha alta', type: 'date' },
 			],
 		};
 
@@ -125,7 +125,7 @@ export class UserManager {
 					name: displayName(user),
 					email: displayEmail(user),
 					roles: this.#displayRoles(user),
-					created_at: this.#formatDate(user?.created_at),
+					created_at: user?.created_at,
 				})));
 			},
 			extraColumns: [
@@ -209,19 +209,6 @@ export class UserManager {
 
 	#userRoles(user) {
 		return normalizeRoleList(user?.roles);
-	}
-
-	#formatDate(value) {
-		if (typeof value !== 'string' || value.trim() === '') {
-			return 'N/D';
-		}
-
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) {
-			return 'N/D';
-		}
-
-		return date.toLocaleDateString('es-ES');
 	}
 
 	#getUserId(user) {
