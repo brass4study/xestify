@@ -18,7 +18,8 @@ guía es puramente técnica: cómo dejar la aplicación funcionando.
 | Apache       | 2.4+            | Módulos `mod_rewrite` y `mod_headers` habilitados |
 | PHP          | 8.1+            | Extensiones `pdo_pgsql` y `mbstring` habilitadas |
 | PostgreSQL   | 13+             | El esquema usa `gen_random_uuid()` nativo (disponible sin extensiones desde la 13) |
-| git          | cualquiera reciente | Para clonar el repositorio |
+| git          | cualquiera reciente | Para clonar el repositorio (opción 4.1) |
+| unzip        | cualquiera reciente | Para descomprimir el ZIP de una release (opción 4.2) |
 
 Sistemas operativos cubiertos en esta guía: **Linux/Debian/Raspberry Pi OS**
 (runtime de producción recomendado) y **Windows** (entorno de desarrollo).
@@ -109,6 +110,11 @@ superusuario `postgres` en producción). Tienes dos opciones:
 
 ## 4. Obtener el código fuente
 
+Dos formas de obtener el código: clonando el repositorio, o descargando el
+paquete de una release ya publicada en GitHub.
+
+### 4.1 Clonar el repositorio
+
 ```bash
 git clone <url-del-repositorio> xestify
 cd xestify
@@ -116,6 +122,33 @@ cd xestify
 
 Clónalo directamente en la ruta que vaya a ser el `DocumentRoot` de Apache
 (o muévelo allí después).
+
+### 4.2 Descargar una release de GitHub
+
+Recomendado para producción: el ZIP de una release contiene solo lo
+necesario para instalar y ejecutar la aplicación (sin `docs/`, `skills/`
+ni tests — ver `skills/publish-release/SKILL.md`).
+
+Con GitHub CLI (`gh`):
+
+```bash
+gh release download vX.Y.Z --repo <usuario>/<repositorio> --pattern '*.zip'
+unzip xestify-vX.Y.Z.zip
+```
+
+Sin `gh`, con `curl` directamente contra la URL del asset del release:
+
+```bash
+curl -L -o xestify-vX.Y.Z.zip \
+  https://github.com/<usuario>/<repositorio>/releases/download/vX.Y.Z/xestify-vX.Y.Z.zip
+unzip xestify-vX.Y.Z.zip
+```
+
+Cualquiera de las dos formas crea la carpeta `xestify-X.Y.Z/` (el prefijo
+del zip no lleva la "v" inicial del tag). Esa carpeta hace el mismo papel
+que `xestify/` en la opción 4.1: muévela o clónala en la ruta que vaya a
+ser el `DocumentRoot` de Apache antes de continuar con el resto de la
+guía.
 
 ---
 
