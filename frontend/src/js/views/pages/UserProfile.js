@@ -1,6 +1,7 @@
 import { UserConfig } from './UserConfig.js';
 import { component } from '../modules/ComponentFactory.js';
 import { evaluatePasswordStrength } from '../components/PasswordStrength.js';
+import { InputPasswordComponent } from '../components/InputPassword.js';
 
 const PROFILE_PASSWORD_RULES = Object.freeze([
 	{ key: 'length', label: 'Más de 9 caracteres', missing: 'más de 9 caracteres', test: (value) => value.length > 9 },
@@ -51,29 +52,31 @@ export class UserProfile extends UserConfig {
 		const initialConfirmPassword = this.getDraftValue('confirmPassword');
 
 		return [
-			this.buildPasswordField('Contraseña actual', 'currentPassword', initialCurrentPassword, 'currentPassword'),
-			this.buildPasswordField('Nueva contraseña', 'newPassword', initialNewPassword, 'newPassword'),
+			this.buildPasswordField('Contraseña actual', 'currentPassword', initialCurrentPassword, 'currentPassword', 'current-password'),
+			this.buildPasswordField('Nueva contraseña', 'newPassword', initialNewPassword, 'newPassword', 'new-password'),
 			this.buildPasswordStrengthWidget(initialNewPassword),
-			this.buildPasswordField('Repetir nueva contraseña', 'confirmPassword', initialConfirmPassword, 'confirmPassword'),
+			this.buildPasswordField('Repetir nueva contraseña', 'confirmPassword', initialConfirmPassword, 'confirmPassword', 'new-password'),
 		];
 	}
 
-	buildPasswordField(labelText, fieldName, value, errorField) {
+	buildPasswordField(labelText, fieldName, value, errorField, autocomplete) {
 		const label = component.create('label');
 		component.create('span', {
 			className: 'text-sm font-medium text-slate-700',
 			text: labelText,
 		}).setParent(label);
 
-		component.create('input', {
-			attributes: {
-				type: 'password',
-				name: fieldName,
-			},
-			className: `w-full rounded-lg text-sm text-slate-900 ${this.fieldErrorClass(errorField)}`,
-		})
-			.setValue(value)
-			.setParent(label);
+		const wrapper = InputPasswordComponent.createToggleable({
+			name: fieldName,
+			value,
+			autocomplete,
+		});
+
+		const input = wrapper.querySelector('input');
+		if (input instanceof HTMLInputElement) {
+			input.setClassName(`w-full rounded-lg pr-10 text-sm text-slate-900 ${this.fieldErrorClass(errorField)}`);
+		}
+		wrapper.setParent(label);
 
 		const errorNode = this.createFieldErrorNode(errorField);
 		if (errorNode instanceof Node) {

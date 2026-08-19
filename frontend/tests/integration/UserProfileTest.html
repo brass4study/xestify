@@ -59,9 +59,20 @@
     const page = new UserProfile(container, { ...api.user }, api);
     assertTrue(page instanceof UserProfile, 'Debe crear instancia de UserProfile');
 
-    assertTrue(container.querySelector('input[name="currentPassword"]') !== null, 'Debe mostrar contraseña actual');
-    assertTrue(container.querySelector('input[name="newPassword"]') !== null, 'Debe mostrar nueva contraseña');
-    assertTrue(container.querySelector('input[name="confirmPassword"]') !== null, 'Debe mostrar repetir contraseña');
+    const currentPasswordInput = container.querySelector('input[name="currentPassword"]');
+    const newPasswordInput = container.querySelector('input[name="newPassword"]');
+    const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
+    assertTrue(currentPasswordInput !== null, 'Debe mostrar contraseña actual');
+    assertTrue(newPasswordInput !== null, 'Debe mostrar nueva contraseña');
+    assertTrue(confirmPasswordInput !== null, 'Debe mostrar repetir contraseña');
+    assertEquals(currentPasswordInput.type, 'password', 'Contraseña actual debe ser type="password", no texto plano');
+    assertEquals(newPasswordInput.type, 'password', 'Nueva contraseña debe ser type="password", no texto plano');
+    assertEquals(confirmPasswordInput.type, 'password', 'Repetir contraseña debe ser type="password", no texto plano');
+    assertEquals(currentPasswordInput.autocomplete, 'current-password', 'Contraseña actual debe anunciar autocomplete="current-password"');
+    assertEquals(newPasswordInput.autocomplete, 'new-password', 'Nueva contraseña debe anunciar autocomplete="new-password"');
+    assertEquals(confirmPasswordInput.autocomplete, 'new-password', 'Repetir contraseña debe anunciar autocomplete="new-password"');
+    assertTrue(container.querySelector('[data-role="password-visibility-toggle"]') !== null,
+      'Debe ofrecer el botón de mostrar/ocultar contraseña, igual que el resto de la app');
     const passwordStrength = container.querySelector('[data-password-strength]');
     assertTrue(passwordStrength !== null, 'Debe renderizar el medidor de contraseña');
     assertTrue(passwordStrength.hidden, 'El medidor debe permanecer oculto sin nueva contraseña inicial');
