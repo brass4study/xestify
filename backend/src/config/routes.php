@@ -9,7 +9,9 @@ use Xestify\controllers\HealthController;
 use Xestify\controllers\PluginExtensionController;
 use Xestify\controllers\PluginManagerController;
 use Xestify\controllers\UserController;
+use Xestify\core\Container;
 use Xestify\core\Request;
+use Xestify\core\Router;
 
 if (!defined('ROUTE_ENTITY_RECORD')) {
     define('ROUTE_ENTITY_RECORD', '/api/v1/entities/{slug}/records/{id}');
@@ -18,6 +20,9 @@ if (!defined('ROUTE_ENTITY_RECORD')) {
 if (!defined('ROUTE_USER_ITEM')) {
     define('ROUTE_USER_ITEM', '/api/v1/users/{id}');
 }
+
+/** @var Container $container injected by app.php */
+/** @var Router $router injected by app.php */
 
 $router->get('/health', fn() => $container->get(HealthController::class)->index(), protected: false);
 $router->post('/api/v1/auth/login', fn(array $params, Request $request) => $container->get(AuthController::class)->login($params, $request), protected: false);
