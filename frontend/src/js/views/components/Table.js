@@ -63,6 +63,9 @@ export class TableComponent extends BaseComponent {
       if (column.shrink === true) {
         header.classList.add('w-[1%]', 'whitespace-nowrap');
       }
+      if (typeof column.width === 'string' && column.width !== '') {
+        header.classList.add(...column.width.split(' ').filter(Boolean));
+      }
       if (isSorted) {
         header.classList.add('bg-slate-200');
         header.setData('sorted', 'true');
@@ -113,6 +116,9 @@ export class TableComponent extends BaseComponent {
           }
           if (column.shrink === true) {
             td.classList.add('w-[1%]', 'whitespace-nowrap');
+          }
+          if (typeof column.width === 'string' && column.width !== '') {
+            td.classList.add(...column.width.split(' ').filter(Boolean));
           }
           const value = this.addCell(row, column, rowIndex);
           if (value instanceof Node) {

@@ -113,6 +113,7 @@ export class DynamicTable {
 			sortDirection: this.#sortKey === column.name ? this.#sortDirection : null,
 			onSort: () => this.sortBy(column.name),
 			render: (record) => this.formatCellValue(record?.[column.name], column),
+			width: column.width,
 		}));
 		const toTableColumn = (column) => ({
 			key: column.key,
@@ -124,6 +125,7 @@ export class DynamicTable {
 			sortDirection: this.#sortKey === column.key ? this.#sortDirection : null,
 			onSort: () => this.sortBy(column.key, column.sortValue),
 			shrink: column.shrink,
+			width: column.width,
 		});
 		const columns = [
 			...this.#extraColumnsStart.filter((column) => this.#visibleColumns.has(column.key)).map(toTableColumn),
@@ -658,6 +660,7 @@ export class DynamicTable {
 						label: field.label ?? name,
 						type: typeof field.type === 'string' ? field.type : null,
 						options: Array.isArray(field.options) ? field.options : null,
+						width: typeof field.width === 'string' && field.width !== '' ? field.width : null,
 					};
 				})
 				.filter((column) => column !== null);
@@ -673,7 +676,8 @@ export class DynamicTable {
 				const label = cfg && typeof cfg === 'object' ? (cfg.label ?? name) : name;
 				const type = cfg && typeof cfg === 'object' && typeof cfg.type === 'string' ? cfg.type : null;
 				const options = cfg && typeof cfg === 'object' && Array.isArray(cfg.options) ? cfg.options : null;
-				return { name, label, type, options };
+				const width = cfg && typeof cfg === 'object' && typeof cfg.width === 'string' && cfg.width !== '' ? cfg.width : null;
+				return { name, label, type, options, width };
 			}).filter((column) => column !== null);
 		}
 
@@ -696,6 +700,7 @@ export class DynamicTable {
 				renderCell: column.renderCell,
 				sortValue: typeof column.sortValue === 'function' ? column.sortValue : null,
 				shrink: column.shrink === true,
+				width: typeof column.width === 'string' && column.width !== '' ? column.width : null,
 			}));
 	}
 

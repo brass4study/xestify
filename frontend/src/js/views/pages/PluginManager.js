@@ -205,7 +205,7 @@ export class PluginManager {
 
 		const schema = {
 			fields: [
-				{ name: 'name', label: 'Nombre' },
+				{ name: 'name', label: 'Nombre', width: 'w-56' },
 			],
 		};
 
@@ -218,12 +218,14 @@ export class PluginManager {
 				{
 					key: 'version',
 					label: 'Versión',
+					width: 'w-56',
 					sortValue: (row) => row.__plugin?.version,
 					renderCell: (row) => this.#renderVersionCell(row.__plugin, row.__update),
 				},
 				{
 					key: 'status',
 					label: 'Estado',
+					width: 'w-24',
 					sortValue: (row) => row.__plugin?.status,
 					renderCell: (row) => this.#renderStatusBadge(row.__plugin),
 				},
@@ -262,13 +264,13 @@ export class PluginManager {
 	}
 
 	#renderVersionCell(plugin, updateInfo) {
-		const container = component.create('div').setClassName('flex flex-col gap-1');
+		const container = component.create('div').setClassName('flex items-center gap-4');
 
 		component.create('span').setText(String(plugin.version ?? '')).setParent(container);
 
 		if (updateInfo !== null) {
 			component.create('span')
-				.setClassName('inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide')
+				.setClassName('bg-sky-100 text-sky-700 inline-flex rounded-full px-2.5 text-[10px] font-semibold uppercase tracking-wide')
 				.setData('role', 'plugin-update-badge')
 				.setText(`${t('plugins.update.available', 'Actualización disponible')}: ${String(updateInfo.available_version ?? '')}`)
 				.setParent(container);
