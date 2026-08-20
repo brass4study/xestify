@@ -35,3 +35,6 @@ desktop.ini
 /backend/storage/cache/
 /plugins/*.zip
 /var/*
+
+# TFM presentation (local-only, not part of the app)
+/tfm/

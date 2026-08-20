@@ -26,6 +26,9 @@ RewriteRule ^plugins/([^/]+)/plugin\.js$ plugins/$1/plugin.js [END]
 RewriteRule ^plugins/([^/]+)/assets/(.*)$ plugins/$1/assets/$2 [END]
 RewriteRule ^plugins/ - [F,NC,END]
 
+# TFM defense presentation (static, local-only).
+RewriteRule ^tfm/?$ tfm/index.html [END]
+
 # SPA shell.
 RewriteRule ^$ frontend/src/index.html [END]
 RewriteRule . frontend/src/index.html [END]
