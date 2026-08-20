@@ -239,7 +239,7 @@ function buildEyeColumn(prefix, gauge, content, onAxisChange, relationsForLayer,
  */
 function buildGeneralLayer(content, relationsForLayer, extraFieldsForLayer, loadOptions) {
   const layer = document.createElement('div');
-  layer.className = 'grid gap-4 border-t border-slate-200 pt-4';
+  layer.className = 'grid gap-4';
 
   const pdInput = component.create('inputNumber', { name: 'pupillary_distance', value: content.pupillary_distance ?? '' });
   pdInput.setAttributes({ min: BOUNDS.pupillary_distance.min, max: BOUNDS.pupillary_distance.max, step: 'any' });
