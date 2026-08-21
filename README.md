@@ -87,6 +87,11 @@ flowchart TD
     EntityPlugin -.->|beforeSave / afterSave| Hooks
     ExtPlugin -.->|registerTabs / registerActions| Hooks
     Hooks -.->|extiende comportamiento sin tocar el Core| Core
+
+    classDef pluginNode fill:#DCEEFF,stroke:#2F6FED
+    classDef instanceNode fill:#EFF7FF,stroke:#6FA8FF
+    class EntityPlugin,ExtPlugin pluginNode
+    class Persons,Clients,Suppliers,Vendors instanceNode
 ```
 
 ## 🏗️ Arquitectura técnica (resumen)
