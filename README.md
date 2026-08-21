@@ -68,7 +68,7 @@ Con este enfoque, una misma entidad base puede usarse en varios sectores con
 distintos campos y extensiones, sin duplicar código estructural.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Core["Core PHP<br/>Auth · Router · Motor de entidades"]
     EntityPlugin["Plugin de entidad<br/>(persons, orders, invoices…)"]
     Persons["persons<br/>(identidad fija)"]
