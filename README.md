@@ -71,11 +71,19 @@ distintos campos y extensiones, sin duplicar código estructural.
 flowchart LR
     Core["Core PHP<br/>Auth · Router · Motor de entidades"]
     EntityPlugin["Plugin de entidad<br/>(persons, orders, invoices…)"]
+    Persons["persons<br/>(identidad fija)"]
+    Clients["clients<br/>(slug)"]
+    Suppliers["suppliers<br/>(slug)"]
+    Vendors["vendors<br/>(slug)"]
     ExtPlugin["Plugin de extensión<br/>(optometries, comments…)"]
     Hooks["HookDispatcher"]
 
     Core -->|carga desde `plugins`| EntityPlugin
-    EntityPlugin -->|se amplía con| ExtPlugin
+    EntityPlugin -->|ej.| Persons
+    Persons -->|instancia slug| Clients
+    Persons -->|instancia slug| Suppliers
+    Persons -->|instancia slug| Vendors
+    Clients -->|se amplía con| ExtPlugin
     EntityPlugin -.->|beforeSave / afterSave| Hooks
     ExtPlugin -.->|registerTabs / registerActions| Hooks
     Hooks -.->|extiende comportamiento sin tocar el Core| Core
