@@ -89,7 +89,7 @@ flowchart TD
     Hooks -.->|extiende comportamiento sin tocar el Core| Core
 
     classDef pluginNode fill:#DCEEFF,stroke:#2F6FED
-    classDef instanceNode fill:#EFF7FF,stroke:#6FA8FF
+    classDef instanceNode fill:#F1F9FF,stroke:#A9DFFF
     class EntityPlugin,ExtPlugin pluginNode
     class Persons,Clients,Suppliers,Vendors instanceNode
 ```
